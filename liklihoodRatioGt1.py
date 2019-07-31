@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import argparse
 import os
 import gzip
@@ -8,7 +7,6 @@ from collections import defaultdict
 from scipy.stats.distributions import chi2
 from scipy.stats import binom
 from math import log
-
 
 def get_gzip_tsv_files(dir):
     """
