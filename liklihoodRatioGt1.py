@@ -131,8 +131,12 @@ def likelihood_ratio_test(twisted, simple):
 
 parser = argparse.ArgumentParser(description='Process gt1 interaction files.')
 parser.add_argument('--gzdir', help='path to directory with gt1 gzip files')
+parser.add_argument('--outdir', help='path to directory to which the results will be written')
+parser.add_argument('--outprefix', help='prefix for output files')
 args = parser.parse_args()
 gzpath = args.gzdir
+outdir = args.outdir
+outprefix = args.outprefix
 
 print("[INFO] Will parse all gz files in", gzpath)
 
@@ -155,7 +159,7 @@ n_incomplete_data = 0
 
 i = 0
 
-fname = 'interactions.txt'
+fname = outdir + "/" + outprefix + "_interactions.txt"
 outfh = open(fname, 'w')
 
 for key, iaction in d.items():
