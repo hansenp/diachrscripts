@@ -167,8 +167,8 @@ for key, iaction in d.items():
         i += 1
         pthreshold = 0.0001
         outfh.write(iaction.output_summary(LR, p, pthreshold) + "\n")
-        if p < 0.0001:
-            print("{}\n".format(iaction.output_summary(LR, p, pthreshold)))
+        #if p < 0.0001:
+            #print("{}".format(iaction.output_summary(LR, p, pthreshold)))
 
 print("[INFO] Interactions with all {} data points: {}, lacking data {}".format(n_experiments, n_has_all_data,
                                                                                 n_incomplete_data))
