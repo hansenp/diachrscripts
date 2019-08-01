@@ -113,7 +113,7 @@ with open(fpkm_tracking_file) as fp:
         elif fpkm < upper_second_q:
             expression_categories[gene_id] = 1
         elif fpkm < upper_third_q:
-            expression_categories[gene_id] = 1 # djdjdej
+            expression_categories[gene_id] = 1
         else:
             expression_categories[gene_id] = 1
 
