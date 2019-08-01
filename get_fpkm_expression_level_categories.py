@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import gzip
 import sys
 import numpy as np
 from scipy.stats import binom
@@ -11,6 +12,24 @@ diachromatic_interaction_file = sys.argv[4] # UCSC refGene file (must be the sam
 PAIR_hash_simple = {}
 PAIR_hash_twisted = {}
 PAIR_hash_undirected = {}
+
+def categorizeDigest(chr_name, d_sta, d_end):
+    current_expression_category = -1
+    for i in range(d_sta, d_end):
+        key = chr_name + ":" + str(i)
+        if key in tss_pos_to_gene_id and tss_pos_to_gene_id[key] in expression_categories:
+            if current_expression_category == -1: # first TSS on digest
+                current_expression_category = expression_categories[tss_pos_to_gene_id[key]]
+                continue
+            if current_expression_category != expression_categories[tss_pos_to_gene_id[key]]:
+                return "d"
+
+    return current_expression_category
+
+def categorizeDigestPair(chr_name_1, d_sta_1, d_end_1, chr_name_2, d_sta_2, d_end_2):
+    digest_category_1 = categorizeDigest(chr_name_1, d_sta_1, d_end_1)
+    digest_category_2 = categorizeDigest(chr_name_2, d_sta_2, d_end_2)
+    return str(digest_category_1) + "/" + str(digest_category_2)
 
 def getDigestCategory(chr_name, d_sta, d_end):
     for i in range(d_sta, d_end):
@@ -92,7 +111,7 @@ with open(fpkm_tracking_file) as fp:
         elif fpkm < upper_first_q:
             expression_categories[gene_id] = 0
         elif fpkm < upper_second_q:
-            expression_categories[gene_id] = 0
+            expression_categories[gene_id] = 1
         elif fpkm < upper_third_q:
             expression_categories[gene_id] = 1
         else:
@@ -129,7 +148,7 @@ with open(ref_gene_file) as fp:
 fp.close()
 
 # iterate over interaction file
-with open(diachromatic_interaction_file) as fp:
+with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
     line = fp.readline()
 
     while line:
@@ -177,15 +196,30 @@ with open(diachromatic_interaction_file) as fp:
         else:
             p_value = 1 - binom.cdf(cnt_simple-1, cnt_total, 0.5)
 
+        pair_key = categorizeDigestPair(chr_name_1,d_sta_1,d_end_1,chr_name_2, d_sta_2, d_end_2)
+
         if p_value <= 0.05:  # significantly directed interactions
 
 
             if cnt_twisted < cnt_simple: # simple
-                getDigestCategoryStrandPairs(chr_name_1,d_sta_1,d_end_1,chr_name_2, d_sta_2, d_end_2, "simple")
+                if pair_key in PAIR_hash_simple:
+                    PAIR_hash_simple[pair_key] = PAIR_hash_simple[pair_key] + 1
+                else:
+                    PAIR_hash_simple[pair_key] = 1
+                # getDigestCategoryStrandPairs(chr_name_1,d_sta_1,d_end_1,chr_name_2, d_sta_2, d_end_2, "simple")
             else:  # twisted
-                getDigestCategoryStrandPairs(chr_name_1, d_sta_1, d_end_1, chr_name_2, d_sta_2, d_end_2, "twisted")
+                if pair_key in PAIR_hash_twisted:
+                    PAIR_hash_twisted[pair_key] = PAIR_hash_twisted[pair_key] + 1
+                else:
+                    PAIR_hash_twisted[pair_key] = 1
+                #getDigestCategoryStrandPairs(chr_name_1, d_sta_1, d_end_1, chr_name_2, d_sta_2, d_end_2, "twisted")
+
         else:  # undirected (not significantly directed)
-            getDigestCategoryStrandPairs(chr_name_1, d_sta_1, d_end_1, chr_name_2, d_sta_2, d_end_2, "undirected")
+            if pair_key in PAIR_hash_undirected:
+                PAIR_hash_undirected[pair_key] = PAIR_hash_undirected[pair_key] + 1
+            else:
+                PAIR_hash_undirected[pair_key] = 1
+            #getDigestCategoryStrandPairs(chr_name_1, d_sta_1, d_end_1, chr_name_2, d_sta_2, d_end_2, "undirected")
 
         line = fp.readline()
 
