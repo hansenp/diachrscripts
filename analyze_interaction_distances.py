@@ -8,7 +8,7 @@ from scipy.stats import binom
 import gzip
 
 # Arguments
-interaction_file = sys.argv[1] # Diachromatic interaction file
+interaction_file = sys.argv[1] # Diachromatic interaction file gzipped
 interaction_category = sys.argv[2] # Interaction category (TBA)
 
 distance_array_simple = []
@@ -95,14 +95,15 @@ plt.xlabel("Distance")
 plt.ylabel("Frequency")
 
 ax1.set_title("Simple")
-n, bins, patches = ax1.hist(distance_array_simple, num_bins, facecolor='blue', alpha=0.5, range=(0,400000))
+n, bins, patches = ax1.hist(distance_array_simple, num_bins, facecolor='blue', alpha=0.5, range=(0,100000))
 
 ax2.set_title("Twisted")
-n, bins, patches = ax2.hist(distance_array_twisted, num_bins, facecolor='blue', alpha=0.5, range=(0,400000))
+n, bins, patches = ax2.hist(distance_array_twisted, num_bins, facecolor='blue', alpha=0.5, range=(0,100000))
 
 ax3.set_title("Undirected")
-n, bins, patches = ax3.hist(distance_array_undirected, num_bins, facecolor='blue', alpha=0.5, range=(0,400000))
+n, bins, patches = ax3.hist(distance_array_undirected, num_bins, facecolor='blue', alpha=0.5, range=(0,100000))
 
 plt.show()
+
 
 
