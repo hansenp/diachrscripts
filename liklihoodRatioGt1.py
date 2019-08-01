@@ -62,10 +62,11 @@ class Interaction:
         'private' method to add the counts
         """
         cc = counts.split(":")
+
         if len(cc) != 2:
             raise TypeError("Malformed counts string {}".format(cc))
-        self.twisted.append(int(cc[0]))
-        self.simple.append(int(cc[1]))
+        self.simple.append(int(cc[0]))
+        self.twisted.append(int(cc[1]))
         self.counts_string.append(counts)
 
     @staticmethod
