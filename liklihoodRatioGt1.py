@@ -123,6 +123,10 @@ def likelihood_ratio_test(twisted, simple):
     p2 = float(tw) / float(tw + si)
     b1 = binom.pmf(tw, (tw + si), p1)
     b2 = binom.pmf(tw, (tw + si), p2)
+    if b1 < 0 or b2 < 0:
+        print b1
+        print b2
+        return 100000.00, 2.0
     LR = 2 * (log(b2) - log(b1))
     p = chi2.sf(LR, 1)  # one degree of freedom, chi2 distributed
     return LR, p
