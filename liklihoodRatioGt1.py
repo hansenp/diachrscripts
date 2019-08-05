@@ -120,19 +120,21 @@ def likelihood_ratio_test(twisted, simple):
     tw = sum(twisted)
     si = sum(simple)
     # p2 is estimated by maximum likelihood here:
-    p2 = float(tw) / float(tw + si)
+    p2 = float(tw) / float(tw + si) # for large 'si' thousands and small 'tw' p2 is almost zero
     b1 = binom.pmf(tw, (tw + si), p1)
-    b2 = binom.pmf(tw, (tw + si), p2)
-    if b1 <= 0 or b2 <= 0:
-        print b1
-        print b2
-        print p1
-        print p2
-        print tw
-        print si
-        return 100000.00, 2.0
-    LR = 2 * (log(b2) - log(b1))
-    p = chi2.sf(LR, 1)  # one degree of freedom, chi2 distributed
+    b2 = binom.pmf(tw, (tw + si), p2) # in such cases b2 will also e zero
+    if b1 == 0 or b2 == 0:
+        print "b1:", b1
+        print "b2:", b2
+        print "p1:", p1
+        print "p2:", p2
+        print "tw:", tw
+        print "si:", si
+        print("[WARNING] Either \'b1\' or \'b2\' in \'LR = 2 * (log(b2) - log(b1))\' was 0. Presumably, because of large number of simple and small number of read twisted pairs. Will return \'NA\' for \'LR\'.")
+        return "NA", "NA"
+    else:
+        LR = 2 * (log(b2) - log(b1))
+        p = chi2.sf(LR, 1)  # one degree of freedom, chi2 distributed
     return LR, p
 
 
