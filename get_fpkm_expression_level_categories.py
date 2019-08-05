@@ -258,6 +258,8 @@ PAIR_hash_twisted = {}
 PAIR_hash_undirected = {}
 init_pair_hashs("two") # available modes: 'two' of 'five'
 
+n_interaction = 0
+print "[INFO] Determining pair category for each interaction..."
 with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
     line = fp.readline()
 
@@ -315,6 +317,10 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
             line = fp.readline()
             print interaction_type
             exit("Interaction type is neither NA, S, T or U. This should never happen.")
+
+        n_interaction += 1
+        if n_interaction%1000 == 0:
+            print "[INFO]", n_interaction, "processed."
 
         line = fp.readline()
 
