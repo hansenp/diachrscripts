@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 import argparse
 import gzip
-import sys
 import numpy as np
 from scipy.stats import binom
 
 parser = argparse.ArgumentParser(description='Determine expression category levels for interacting digest pairs.')
-parser.add_argument('--out-prefix', help='Prefix for output.')
+parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--fpkm-file', help='Path to a \'*_genes.fpkm_tracking\' file produced with cuffdiff.')
 parser.add_argument('--ref-gene-file', help='UCSC refGene file (must be the same that was used to create the digest map for Diachromatic).')
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
-parser.add_argument('--categorization-model', help='Choose \'two\' for inactive/active categorization and \'five\' for categorization with five expression levels.')
+parser.add_argument('--categorization-model', help='Choose \'two\' for inactive/active categorization and \'five\' for categorization with five expression levels.', default="two", choices=['two','five'])
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -207,7 +206,11 @@ def get_expression_level_category_hash(fpkm_tracking_file, model, upper_first_q,
     return expression_categories
 
 def parse_refGene_file(ref_gene_file):
+    """
 
+    :param ref_gene_file: refGene file downloaded from UCSC. Make sure to use the same version that was used to create the digest map with GOPHER.
+    :return: Hash with TSS coordinates as keys and and gene IDs values.
+    """
     tss_pos_to_gene_id = {}
 
     with open(ref_gene_file) as fp:
@@ -250,10 +253,10 @@ expression_categories = get_expression_level_category_hash(fpkm_tracking_file, "
 tss_pos_to_gene_id = parse_refGene_file(ref_gene_file)
 
 # iterate over interaction file and determine counts of pair categories
-PAIR_hash_simple = {} # Keys: digest pair categories; Values: Corresponding counts
+PAIR_hash_simple = {} # keys: digest pair categories; values: corresponding counts
 PAIR_hash_twisted = {}
 PAIR_hash_undirected = {}
-init_pair_hashs("two")
+init_pair_hashs("two") # available modes: 'two' of 'five'
 
 with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
     line = fp.readline()
@@ -319,10 +322,10 @@ fp.close()
 
 print out_prefix
 # print results to screen
-print "SIMPLE\tTWISTED\tUNDIRECTED" # absolute numbers
+print "PAIR\tSIMPLE\tTWISTED\tUNDIRECTED" # absolute numbers
 for i in PAIR_hash_simple:
     print i + "\t" + str(PAIR_hash_simple[i]) + "\t" + str(PAIR_hash_twisted[i]) + "\t" + str(PAIR_hash_undirected[i])
 
-print "SIMPLE\tTWISTED\tUNDIRECTED" # relative frequencies within simple, twisted and undirected
+print "PAIR\tSIMPLE\tTWISTED\tUNDIRECTED" # relative frequencies within simple, twisted and undirected
 for i in PAIR_hash_simple:
     print i + "\t" + str(float(1.0*PAIR_hash_simple[i]/sum(PAIR_hash_simple.values()))) + "\t" + str(float(1.0*PAIR_hash_twisted[i]/sum(PAIR_hash_twisted.values()))) + "\t" + str(float(1.0*PAIR_hash_undirected[i]/sum(PAIR_hash_undirected.values())))

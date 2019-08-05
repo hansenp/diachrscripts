@@ -155,7 +155,7 @@ d = defaultdict(Interaction)
 
 gzfiles = get_gzip_tsv_files(gzpath)
 for f in gzfiles:
-    print("[INFO] Extracting interactions from ", f)
+    print "[INFO] Extracting interactions from", f, "."
     parse_gzip_tsv_file(f, d)
 if len(gzfiles) == 0:
     print("[FATAL] Did not find any gzipped files. Note: Need to give path to directory with *.tsv.gz files.")
@@ -172,7 +172,7 @@ i = 0
 
 fname = outdir + "/" + outprefix + "_interactions.txt"
 outfh = open(fname, 'w')
-
+print "[INFO] Calculating LR and p for each interaction..."
 for key, iaction in d.items():
     if not iaction.has_data_for_all_experiments(n_experiments):
         n_incomplete_data += 1
@@ -185,6 +185,8 @@ for key, iaction in d.items():
         #if p < 0.0001:
             #print("{}".format(iaction.output_summary(LR, p, pthreshold)))
 
-print("[INFO] Interactions with all {} data points: {}, lacking data {}".format(n_experiments, n_has_all_data,
-                                                                                n_incomplete_data))
+    if (n_incomplete_data + n_has_all_data)%10000==0:
+        print "[INFO]", (n_incomplete_data + n_has_all_data), "interactions processed."
+
+print("[INFO] Interactions with all {} data points: {}, lacking data {}".format(n_experiments, n_has_all_data, n_incomplete_data))
 print("[INFO] We wrote all interactions to file: {}".format(fname))
