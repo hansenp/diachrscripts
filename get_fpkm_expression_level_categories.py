@@ -2,6 +2,7 @@
 import argparse
 import gzip
 import numpy as np
+from sklearn.linear_model import LinearRegression
 from scipy.stats import binom
 
 parser = argparse.ArgumentParser(description='Determine expression category levels for interacting digest pairs.')
@@ -10,6 +11,8 @@ parser.add_argument('--fpkm-file', help='Path to a \'*_genes.fpkm_tracking\' fil
 parser.add_argument('--ref-gene-file', help='UCSC refGene file (must be the same that was used to create the digest map for Diachromatic).')
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
 parser.add_argument('--categorization-model', help='Choose \'two\' for inactive/active categorization and \'five\' for categorization with five expression levels.', default="two", choices=['two','five'])
+parser.add_argument('--use-linear-regression', help='', default='false', choices=['true','false'])
+
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -17,6 +20,60 @@ fpkm_tracking_file = args.fpkm_file
 ref_gene_file = args.ref_gene_file
 diachromatic_interaction_file = args.interaction_file
 categorization_model = args.categorization_model
+use_linear_regression = args.use_linear_regression
+
+
+def categrizeDigestPairLinearRegression(chr_name_1, d_sta_1, d_end_1, chr_name_2, d_sta_2, d_end_2, gene_id_to_fpkm_hash):
+
+    # get FPKM values for both digest
+    FPKM_D1 = []
+    FPKM_D2 = []
+    for i in range(d_sta_1, d_end_1):
+        key = chr_name_1 + ":" + str(i)
+        if key in tss_pos_to_gene_id and tss_pos_to_gene_id[key] in gene_id_to_fpkm_hash:
+            FPKM_D1.append(float(gene_id_to_fpkm_hash[tss_pos_to_gene_id[key]]))
+
+    for i in range(d_sta_2, d_end_2):
+        key = chr_name_2 + ":" + str(i)
+        if key in tss_pos_to_gene_id and tss_pos_to_gene_id[key] in gene_id_to_fpkm_hash:
+            FPKM_D2.append(float(gene_id_to_fpkm_hash[tss_pos_to_gene_id[key]]))
+    xx = []
+    yy = []
+    for i in FPKM_D1:
+        for j in FPKM_D2:
+            xx = xx[:len(FPKM_D2)-1]
+            yy = yy[:len(FPKM_D2)-1]
+            xx.append(i)
+            yy.append(j)
+            x = np.array(xx).reshape((-1, 1))
+            y = np.array(yy)
+            model_1 = LinearRegression().fit(x, y)
+            r_sq = model_1.score(x, y)
+            if r_sq < 1 and 0.2 < r_sq:
+                print "======"
+                print FPKM_D1
+                print FPKM_D2
+                print len(FPKM_D1)
+                print len(FPKM_D2)
+                print len(xx)
+                print len(xx)
+                print "x:", x
+                print "y:", y
+                print('Coefficient of determination D1:', r_sq)
+                xx *= 0
+                yy *= 0
+
+
+
+
+    # # perform LR to determine category of D2
+    # x = np.array(FPKM_D2).reshape((-1,1))
+    # y = np.array(FPKM_D1)
+    # model_2 = LinearRegression().fit(x, y)
+    # r_sq = model_2.score(x, y)
+    #print('Coefficient of determination D2:', r_sq)
+
+    return "Hurz"
 
 def init_pair_hashs(mode):
     """
@@ -65,6 +122,23 @@ def categorizeDigest(chr_name, d_sta, d_end):
 
     return current_expression_category
 
+def categorizeDigestMaxApproach(chr_name, d_sta, d_end):
+    """
+    Returns the highest expression category for given digest.
+
+    :param chr_name:
+    :param d_sta:
+    :param d_end:
+    :return:
+    """
+    current_expression_category = -1
+    for i in range(d_sta, d_end):
+        key = chr_name + ":" + str(i)
+        if key in tss_pos_to_gene_id and tss_pos_to_gene_id[key] in expression_categories:
+            if current_expression_category < expression_categories[tss_pos_to_gene_id[key]]:
+                current_expression_category = expression_categories[tss_pos_to_gene_id[key]]
+    return current_expression_category
+
 def categorizeDigestPair(chr_name_1, d_sta_1, d_end_1, chr_name_2, d_sta_2, d_end_2):
     """
     This function uses the function 'categorizeDigest' in order to determine the expression level categories of two
@@ -78,8 +152,8 @@ def categorizeDigestPair(chr_name_1, d_sta_1, d_end_1, chr_name_2, d_sta_2, d_en
     :param d_end_2: Last position of second digest.
     :return:
     """
-    digest_category_1 = categorizeDigest(chr_name_1, d_sta_1, d_end_1)
-    digest_category_2 = categorizeDigest(chr_name_2, d_sta_2, d_end_2)
+    digest_category_1 = categorizeDigestMaxApproach(chr_name_1, d_sta_1, d_end_1)
+    digest_category_2 = categorizeDigestMaxApproach(chr_name_2, d_sta_2, d_end_2)
     return str(digest_category_1) + "/" + str(digest_category_2)
 
 def getInteractionType(simple,twisted):
@@ -122,17 +196,20 @@ def parse_cuffdiff_genes_fpkm_tracking_file(fpkm_tracking_file):
 
     # read non-zero FPKM vaules to array
     fpkm_array = []
+    gene_id_to_fpkm = {}
+
     with open(fpkm_tracking_file) as fp:
         line = fp.readline()
 
         while line:
             values = line.split("\t")
-
-            if values[0] == "tracking_id": # skip first line
+            gene_id = values[0]
+            if gene_id  == "tracking_id": # skip first line
                 line = fp.readline()
                 continue
             else:
                 fpkm = float(values[9])
+                gene_id_to_fpkm[gene_id] = fpkm
                 if 0 < fpkm:
                     fpkm_array.append(fpkm)
                 else:
@@ -146,7 +223,7 @@ def parse_cuffdiff_genes_fpkm_tracking_file(fpkm_tracking_file):
     upper_second_q = np.quantile(fpkm_array, .50)
     upper_third_q = np.quantile(fpkm_array, .75)
 
-    return n_zero_fpkm, upper_first_q, upper_second_q, upper_third_q
+    return gene_id_to_fpkm, n_zero_fpkm, upper_first_q, upper_second_q, upper_third_q
 
 def get_expression_level_category_hash(fpkm_tracking_file, model, upper_first_q, upper_second_q, upper_third_q):
     """
@@ -239,7 +316,7 @@ def parse_refGene_file(ref_gene_file):
 ###################
 
 # determine genes with zero FPKM and quartiles for categorization into expression levels
-n_zero_fpkm, upper_first_q, upper_second_q, upper_third_q = parse_cuffdiff_genes_fpkm_tracking_file(fpkm_tracking_file)
+gene_id_to_fpkm_hash, n_zero_fpkm, upper_first_q, upper_second_q, upper_third_q = parse_cuffdiff_genes_fpkm_tracking_file(fpkm_tracking_file)
 
 print "[INFO] There were", n_zero_fpkm, "genes with zero FPKM."
 print "[INFO] Upper FPKM limit of the first quartile:", upper_first_q
@@ -302,6 +379,11 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         else: # file from LRT script
             interaction_type = values[13]
 
+        if use_linear_regression == "true":
+            categrizeDigestPairLinearRegression(chr_name_1,d_sta_1,d_end_1,chr_name_2, d_sta_2, d_end_2,gene_id_to_fpkm_hash)
+            line = fp.readline()
+            continue
+
         pair_key = categorizeDigestPair(chr_name_1,d_sta_1,d_end_1,chr_name_2, d_sta_2, d_end_2)
 
         if interaction_type == "NA":
@@ -328,10 +410,17 @@ fp.close()
 
 print out_prefix
 # print results to screen
-print "PAIR\tSIMPLE\tTWISTED\tUNDIRECTED" # absolute numbers
+print "PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED" # absolute numbers
 for i in PAIR_hash_simple:
-    print i + "\t" + str(PAIR_hash_simple[i]) + "\t" + str(PAIR_hash_twisted[i]) + "\t" + str(PAIR_hash_undirected[i])
+    print i + "\t" + str(PAIR_hash_simple[i]) + "\t" + str(PAIR_hash_twisted[i]) + "\t" + str(PAIR_hash_simple[i]+PAIR_hash_twisted[i]) + "\t" + str(PAIR_hash_undirected[i])
 
-print "PAIR\tSIMPLE\tTWISTED\tUNDIRECTED" # relative frequencies within simple, twisted and undirected
+print "PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED" # relative frequencies within simple, twisted and undirected
 for i in PAIR_hash_simple:
-    print i + "\t" + str(float(1.0*PAIR_hash_simple[i]/sum(PAIR_hash_simple.values()))) + "\t" + str(float(1.0*PAIR_hash_twisted[i]/sum(PAIR_hash_twisted.values()))) + "\t" + str(float(1.0*PAIR_hash_undirected[i]/sum(PAIR_hash_undirected.values())))
+    print i + "\t" + str(float(1.0*PAIR_hash_simple[i]/sum(PAIR_hash_simple.values()))) + "\t" + str(float(1.0*PAIR_hash_twisted[i]/sum(PAIR_hash_twisted.values()))) + "\t" + str(
+
+        float(
+            (1.0*PAIR_hash_simple[i]+PAIR_hash_twisted[i])/(sum(PAIR_hash_simple.values())+sum(PAIR_hash_twisted.values()))
+
+        )
+
+    ) + "\t" + str(float(1.0*PAIR_hash_undirected[i]/sum(PAIR_hash_undirected.values())))
