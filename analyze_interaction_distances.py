@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import diachrscripts__classes as dclass
 import numpy as np
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
@@ -9,7 +10,7 @@ import gzip
 
 # Arguments
 interaction_file = sys.argv[1] # Diachromatic interaction file gzipped
-interaction_category = sys.argv[2] # Interaction category (TBA)
+interaction_category = sorted(sys.argv[2])[0] + sorted(sys.argv[2])[1] # Interaction category (TBA)
 
 distance_array_simple = []
 distance_array_twisted = []
@@ -19,6 +20,14 @@ with gzip.open(interaction_file, 'r' + 't') as fp:
     line = fp.readline()
     while line:
         values = line.split("\t")
+
+        digest_1 = dclass.Digest(values[0], int(values[1]), int(values[2]))
+        if values[3] == 'A':
+            digest_1.set_active()
+        digest_2 = dclass.Digest(values[4], int(values[5]), int(values[6]))
+        if values[7] == 'A':
+            digest_2.set_active()
+        interaction = dclass.Interaction(digest_1, digest_2)
 
         chr_name_1 = values[0]
         d_sta_1 = int(values[1])
@@ -35,12 +44,19 @@ with gzip.open(interaction_file, 'r' + 't') as fp:
         twisted_cnt = int(values2[1])
 
         # restrict analysis to subset of interactions
+        if(interaction_category != "ALL" and interaction_category != interaction.get_interaction_category()):
+            line = fp.readline()
+            continue
         if (interaction_category != d_state_1 + d_state_2) & (interaction_category != d_state_2 + d_state_1) & (
                 interaction_category != "ALL"):
             line = fp.readline()
             continue
 
         # restrict analysis to cis interactions
+        if not(interaction.is_cis()):
+            line = fp.readline()
+            continue
+
         if chr_name_1 != chr_name_2:
             line = fp.readline()
             continue
@@ -64,7 +80,7 @@ with gzip.open(interaction_file, 'r' + 't') as fp:
             else: # twisted
                 distance_array_twisted.append(distance)
 
-        else: #undirected
+        else: # undirected
             distance_array_undirected.append(distance)
 
         line = fp.readline()
