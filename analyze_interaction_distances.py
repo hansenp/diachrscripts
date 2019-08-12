@@ -1,24 +1,34 @@
 #!/usr/bin/env python
-import sys
 import diachrscripts__classes as dclass
-import numpy as np
-import matplotlib.mlab as mlab
-import matplotlib.pyplot as plt
-import statistics as statistics
-from scipy.stats import binom
+import argparse
 import gzip
+import statistics as statistics
+import matplotlib.pyplot as plt
 
-# Arguments
-interaction_file = sys.argv[1] # Diachromatic interaction file gzipped
-interaction_category = sorted(sys.argv[2])[0] + sorted(sys.argv[2])[1] # Interaction category (TBA)
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Analyze distances between interacting digest pairs.')
+parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
+parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
+parser.add_argument('--status-pair-flag', help='Pair of \'A\' and \'I\' depending on whether a digest was selected for enrichment (A) or not (I).')
 
+args = parser.parse_args()
+out_prefix = args.out_prefix
+diachromatic_interaction_file = args.interaction_file
+status_pair_flag = args.status_pair_flag
+if status_pair_flag != "ALL":
+    status_pair_flag = sorted(status_pair_flag)[0] + sorted(status_pair_flag)[1]
+
+# Init arrays for distribution of distances between digests
 distance_array_simple = []
 distance_array_twisted = []
 distance_array_undirected = []
 
-with gzip.open(interaction_file, 'r' + 't') as fp:
+# Iterate interactions and collect distances
+with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
     line = fp.readline()
     while line:
+
+        # Parse line
         values = line.split("\t")
 
         digest_1 = dclass.Digest(values[0], int(values[1]), int(values[2]))
@@ -27,55 +37,33 @@ with gzip.open(interaction_file, 'r' + 't') as fp:
         digest_2 = dclass.Digest(values[4], int(values[5]), int(values[6]))
         if values[7] == 'A':
             digest_2.set_active()
-        interaction = dclass.Interaction(digest_1, digest_2)
-
-        chr_name_1 = values[0]
-        d_sta_1 = int(values[1])
-        d_end_1 = int(values[2])
-        d_state_1 = values[3]
-
-        chr_name_2 = values[4]
-        d_sta_2 = int(values[5])
-        d_end_2 = int(values[6])
-        d_state_2 = values[7]
 
         values2 = values[8].split(":")
-        simple_cnt = int(values2[0])
-        twisted_cnt = int(values2[1])
+        n_simple = int(values2[0])
+        n_twisted = int(values2[1])
+        interaction = dclass.Interaction(digest_1, digest_2, n_simple, n_twisted)
 
-        # restrict analysis to subset of interactions
-        if(interaction_category != "ALL" and interaction_category != interaction.get_interaction_category()):
-            line = fp.readline()
-            continue
-        if (interaction_category != d_state_1 + d_state_2) & (interaction_category != d_state_2 + d_state_1) & (
-                interaction_category != "ALL"):
+        # Restrict analysis to subset of interactions, e.g. 'AA'
+        if(status_pair_flag != "ALL" and status_pair_flag != interaction.get_interaction_category()):
             line = fp.readline()
             continue
 
-        # restrict analysis to cis interactions
+        # Restrict analysis to cis interactions
         if not(interaction.is_cis()):
             line = fp.readline()
             continue
 
-        if chr_name_1 != chr_name_2:
-            line = fp.readline()
-            continue
+        # Get binomial P-value
+        p_value = interaction.get_binomial_p_value()
 
-        # calculate binomial P-value
-        if simple_cnt < twisted_cnt:
-            p_value = 1 - binom.cdf(twisted_cnt-1, simple_cnt + twisted_cnt, 0.5)
-        else:
-            p_value = 1 - binom.cdf(simple_cnt-1, simple_cnt + twisted_cnt, 0.5)
+        # Determine distance between the centers of digests
+        distance = interaction.get_digest_distance()
 
-        # determine distance between the centers of digests
-        center_1 = int(d_sta_1 + (d_end_1 - d_sta_1) / 2)
-        center_2 = int(d_sta_2 + (d_end_2 - d_sta_2) / 2)
-        distance = center_2 - center_1
-
+        # Collect distances
         if p_value <= 0.05: # significant interactions
 
             # simple
-            if twisted_cnt < simple_cnt:
+            if n_twisted < n_simple:
                 distance_array_simple.append(distance)
             else: # twisted
                 distance_array_twisted.append(distance)
@@ -87,7 +75,7 @@ with gzip.open(interaction_file, 'r' + 't') as fp:
 
 fp.close()
 
-# determine mean distances
+# Determine mean distances
 mean_simple = statistics.mean(distance_array_simple)
 print "Mean simple:", mean_simple
 mean_twisted = statistics.mean(distance_array_twisted)
@@ -95,7 +83,7 @@ print "Mean twisted:", mean_twisted
 mean_undirected = statistics.mean(distance_array_undirected)
 print "Mean undirected:", mean_undirected
 
-# determine median distances
+# Determine median distances
 median_simple = statistics.median(distance_array_simple)
 print "Median simple:", median_simple
 median_twisted = statistics.median(distance_array_twisted)
@@ -103,7 +91,7 @@ print "Median twisted:", median_twisted
 median_undirected = statistics.median(distance_array_undirected)
 print "Median undirected:", median_undirected
 
-# create plot
+# Create plot
 num_bins = 100
 f, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=False)
 f.canvas.set_window_title('Distances between interacting digests')
@@ -120,6 +108,3 @@ ax3.set_title("Undirected")
 n, bins, patches = ax3.hist(distance_array_undirected, num_bins, facecolor='blue', alpha=0.5, range=(0,100000))
 
 plt.show()
-
-
-
