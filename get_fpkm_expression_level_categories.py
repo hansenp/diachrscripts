@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import gzip
+import diachrscripts_classes as dclass
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from scipy.stats import binom
@@ -8,11 +9,10 @@ from scipy.stats import binom
 parser = argparse.ArgumentParser(description='Determine expression category levels for interacting digest pairs.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--fpkm-file', help='Path to a \'*_genes.fpkm_tracking\' file produced with cuffdiff.')
-parser.add_argument('--ref-gene-file', help='UCSC refGene file (must be the same that was used to create the digest map for Diachromatic).')
+parser.add_argument('--ref-gene-file', help='UCSC refGene file (must be gzipped and the same version that was used to create the digest map for Diachromatic).')
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
 parser.add_argument('--categorization-model', help='Choose \'two\' for inactive/active categorization and \'five\' for categorization with five expression levels.', default="two", choices=['two','five'])
 parser.add_argument('--use-linear-regression', help='', default='false', choices=['true','false'])
-
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -22,8 +22,15 @@ diachromatic_interaction_file = args.interaction_file
 categorization_model = args.categorization_model
 use_linear_regression = args.use_linear_regression
 
+def categorizeDigestPairLinearRegression(interaction, gene_id_to_fpkm_hash):
 
-def categrizeDigestPairLinearRegression(chr_name_1, d_sta_1, d_end_1, chr_name_2, d_sta_2, d_end_2, gene_id_to_fpkm_hash):
+    chr_name_1 = interaction.get_first_digets().get_chromosome()
+    d_sta_1 = interaction.get_first_digets().get_start()
+    d_end_1 = interaction.get_first_digets().get_end()
+
+    chr_name_2 = interaction.get_second_digets().get_chromosome()
+    d_sta_2 = interaction.get_second_digets().get_start()
+    d_end_2 = interaction.get_second_digets().get_end()
 
     # get FPKM values for both digest
     FPKM_D1 = []
@@ -63,9 +70,6 @@ def categrizeDigestPairLinearRegression(chr_name_1, d_sta_1, d_end_1, chr_name_2
                 xx *= 0
                 yy *= 0
 
-
-
-
     # # perform LR to determine category of D2
     # x = np.array(FPKM_D2).reshape((-1,1))
     # y = np.array(FPKM_D1)
@@ -73,7 +77,7 @@ def categrizeDigestPairLinearRegression(chr_name_1, d_sta_1, d_end_1, chr_name_2
     # r_sq = model_2.score(x, y)
     #print('Coefficient of determination D2:', r_sq)
 
-    return "Hurz"
+    return "Foo"
 
 def init_pair_hashs(mode):
     """
@@ -122,7 +126,7 @@ def categorizeDigest(chr_name, d_sta, d_end):
 
     return current_expression_category
 
-def categorizeDigestMaxApproach(chr_name, d_sta, d_end):
+def categorizeDigestMaxApproach(digest):
     """
     Returns the highest expression category for given digest.
 
@@ -132,14 +136,14 @@ def categorizeDigestMaxApproach(chr_name, d_sta, d_end):
     :return:
     """
     current_expression_category = -1
-    for i in range(d_sta, d_end):
-        key = chr_name + ":" + str(i)
+    for i in range(digest.get_start(), digest.get_end()):
+        key = digest.get_chromosome() + ":" + str(i)
         if key in tss_pos_to_gene_id and tss_pos_to_gene_id[key] in expression_categories:
             if current_expression_category < expression_categories[tss_pos_to_gene_id[key]]:
                 current_expression_category = expression_categories[tss_pos_to_gene_id[key]]
     return current_expression_category
 
-def categorizeDigestPair(chr_name_1, d_sta_1, d_end_1, chr_name_2, d_sta_2, d_end_2):
+def categorizeDigestPair(interaction):
     """
     This function uses the function 'categorizeDigest' in order to determine the expression level categories of two
     interacting digests and assembles the corresponding pair key, e.g. 1/1 if both digests have category 1.
@@ -152,8 +156,8 @@ def categorizeDigestPair(chr_name_1, d_sta_1, d_end_1, chr_name_2, d_sta_2, d_en
     :param d_end_2: Last position of second digest.
     :return:
     """
-    digest_category_1 = categorizeDigestMaxApproach(chr_name_1, d_sta_1, d_end_1)
-    digest_category_2 = categorizeDigestMaxApproach(chr_name_2, d_sta_2, d_end_2)
+    digest_category_1 = categorizeDigestMaxApproach(interaction.get_first_digest())
+    digest_category_2 = categorizeDigestMaxApproach(interaction.get_second_digest())
     return str(digest_category_1) + "/" + str(digest_category_2)
 
 def getInteractionType(simple,twisted):
@@ -290,7 +294,7 @@ def parse_refGene_file(ref_gene_file):
     """
     tss_pos_to_gene_id = {}
 
-    with open(ref_gene_file) as fp:
+    with gzip.open(ref_gene_file) as fp:
         line = fp.readline()
 
         while line:
@@ -329,6 +333,14 @@ expression_categories = get_expression_level_category_hash(fpkm_tracking_file, "
 # init hash map, key=<coordinates, e.g. chr1:12345>, value=<gene_id, e.g. NR_157147>
 tss_pos_to_gene_id = parse_refGene_file(ref_gene_file)
 
+# Hash map that returns TSS at a given coordinate
+ref_gene_tss_map = dclass.TSSMap(ref_gene_file, "refGene") # is going to replace 'tss_pos_to_gene_id'
+
+ref_gene_tss_map.add_fpkm_values(fpkm_tracking_file)
+
+
+#exit("Hey")
+
 # iterate over interaction file and determine counts of pair categories
 PAIR_hash_simple = {} # keys: digest pair categories; values: corresponding counts
 PAIR_hash_twisted = {}
@@ -342,85 +354,83 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
     while line:
 
+        # Parse line representing one interaction
         values = line.split("\t")
 
-        chr_name_1 = values[0]
-        d_sta_1 = int(values[1])
-        d_end_1 = int(values[2])
-        d_state_1 = values[3]
+        digest_1 = dclass.Digest(values[0], int(values[1]), int(values[2]))
+        if values[3] == 'A':
+            digest_1.set_active()
+        digest_2 = dclass.Digest(values[4], int(values[5]), int(values[6]))
+        if values[7] == 'A':
+            digest_2.set_active()
 
-        chr_name_2 = values[4]
-        d_sta_2 = int(values[5])
-        d_end_2 = int(values[6])
-        d_state_2 = values[7]
+        if ':' in values[8]: # regular Diachromatic file
+            values2 = values[8].split(":")
+            n_simple = int(values2[0])
+            n_twisted = int(values2[1])
+        else: # from LRT script
+            n_simple = values[8]
+            n_twisted = values[9]
+            i_type = values[13].rstrip()
+        interaction = dclass.Interaction(digest_1, digest_2, n_simple, n_twisted)
+        interaction.set_interaction_type(i_type)
 
-        # restrict analysis to cis interactions (why?)
-        if chr_name_1 != chr_name_2:
+        # Restrict analysis to cis interactions
+        if not(interaction.is_cis()):
             line = fp.readline()
             continue
 
-        # restrict analysis to long range interactions
-        if d_sta_2 - d_end_1 < 10000:
+        # Restrict analysis to long range interactions
+        if interaction.get_digest_distance() < 10000:
             line = fp.readline()
             continue
 
-        # restrict analysis to interactions between targeted promoters
-        if d_state_1 != "A" or d_state_2 != "A":
+        # Restrict analysis to interactions between targeted promoters
+        if interaction.get_status_pair_flag() != "AA":
             line = fp.readline()
             continue
 
-        # calculate binomial P-value
-        values2 = values[8].split(":")
-
-        if len(values2) == 2: # regular Diachromatic file
-            cnt_simple = int(values2[0])
-            cnt_twisted = int(values2[1])
-            interaction_type = getInteractionType(cnt_simple, cnt_twisted)
-        else: # file from LRT script
-            interaction_type = values[13]
-
+        # Assign expression level category to digest using linear regression
         if use_linear_regression == "true":
-            categrizeDigestPairLinearRegression(chr_name_1,d_sta_1,d_end_1,chr_name_2, d_sta_2, d_end_2,gene_id_to_fpkm_hash)
+            categorizeDigestPairLinearRegression(interaction, gene_id_to_fpkm_hash)
             line = fp.readline()
             continue
 
-        pair_key = categorizeDigestPair(chr_name_1,d_sta_1,d_end_1,chr_name_2, d_sta_2, d_end_2)
+        # Assign expression level category to digest using max approach
+        pair_key = categorizeDigestPair(interaction)
 
-        if interaction_type == "NA":
+        if interaction.get_interaction_type() == None:
             line = fp.readline()
             continue
-        elif interaction_type == "S\n" or interaction_type == "S":
+        elif interaction.get_interaction_type() == "S":
             PAIR_hash_simple[pair_key] = PAIR_hash_simple[pair_key] + 1
-        elif interaction_type == "T\n" or interaction_type == "T":
+        elif interaction.get_interaction_type() == "T":
             PAIR_hash_twisted[pair_key] = PAIR_hash_twisted[pair_key] + 1
-        elif interaction_type == "U\n" or interaction_type == "U":
+        elif interaction.get_interaction_type() == "U":
             PAIR_hash_undirected[pair_key] = PAIR_hash_undirected[pair_key] + 1
         else:
             line = fp.readline()
-            print interaction_type
-            exit("Interaction type is neither NA, S, T or U. This should never happen.")
+            print interaction.get_interaction_type()
+            raise Exception('[FATAL] Invalid interaction type. Should be either \'S\', \'T\' or \'U\' but was {}.',
+                            interaction.get_interaction_type())
 
         n_interaction += 1
         if n_interaction%1000 == 0:
-            print "[INFO]", n_interaction, "processed."
+            print "[INFO]", n_interaction, "processed..."
 
         line = fp.readline()
 
+    print("...done.")
 fp.close()
 
+# Print results to screen
 print out_prefix
-# print results to screen
 print "PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED" # absolute numbers
 for i in PAIR_hash_simple:
     print i + "\t" + str(PAIR_hash_simple[i]) + "\t" + str(PAIR_hash_twisted[i]) + "\t" + str(PAIR_hash_simple[i]+PAIR_hash_twisted[i]) + "\t" + str(PAIR_hash_undirected[i])
 
 print "PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED" # relative frequencies within simple, twisted and undirected
 for i in PAIR_hash_simple:
-    print i + "\t" + str(float(1.0*PAIR_hash_simple[i]/sum(PAIR_hash_simple.values()))) + "\t" + str(float(1.0*PAIR_hash_twisted[i]/sum(PAIR_hash_twisted.values()))) + "\t" + str(
-
-        float(
-            (1.0*PAIR_hash_simple[i]+PAIR_hash_twisted[i])/(sum(PAIR_hash_simple.values())+sum(PAIR_hash_twisted.values()))
-
-        )
-
-    ) + "\t" + str(float(1.0*PAIR_hash_undirected[i]/sum(PAIR_hash_undirected.values())))
+    print i + "\t" + str(float(1.0*PAIR_hash_simple[i]/sum(PAIR_hash_simple.values()))) + "\t" + str(float(1.0*PAIR_hash_twisted[i]/sum(PAIR_hash_twisted.values()))) + "\t"\
+          + str(float((1.0*PAIR_hash_simple[i]+PAIR_hash_twisted[i])/(sum(PAIR_hash_simple.values())+sum(PAIR_hash_twisted.values())))) + "\t"\
+          + str(float(1.0*PAIR_hash_undirected[i]/sum(PAIR_hash_undirected.values())))
