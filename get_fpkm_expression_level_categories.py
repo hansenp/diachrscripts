@@ -334,12 +334,18 @@ expression_categories = get_expression_level_category_hash(fpkm_tracking_file, "
 tss_pos_to_gene_id = parse_refGene_file(ref_gene_file)
 
 # Hash map that returns TSS at a given coordinate
-ref_gene_tss_map = dclass.TSSMap(ref_gene_file, "refGene") # is going to replace 'tss_pos_to_gene_id'
+ref_gene_tss_map = dclass.TSSCoordinateMap(ref_gene_file, "refGene") # is going to replace 'tss_pos_to_gene_id'
+
+for coord in ref_gene_tss_map.tss_coord_dict.values():
+    if 1 < coord.get_num_of_genes() and coord.has_tss_on_both_strands():
+        coord.print_tss_info()
+
+print(len(ref_gene_tss_map.tss_coord_dict))
+
+ref_gene_tss_map.analyze_coordinates_and_print_report()
 
 ref_gene_tss_map.add_fpkm_values(fpkm_tracking_file)
 
-
-#exit("Hey")
 
 # iterate over interaction file and determine counts of pair categories
 PAIR_hash_simple = {} # keys: digest pair categories; values: corresponding counts

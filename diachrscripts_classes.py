@@ -3,66 +3,67 @@ import gzip
 
 class Digest:
 
-    # Class to represent a genomic region that corresponds to a restriction digest.
+    # Class to represent a genomic region that corresponds to a restriction digest
 
-    # Class Attribute
-    __chromosome = None
-    __start = None
-    __end = None
-    __active = False
+    # Attributes
+    chromosome = None
+    start = None
+    end = None
+    active = False
 
-    # Initializer / Instance Attributes
+    # Initializer
     def __init__(self, chromosome, start, end):
-        self.__chromosome = chromosome
-        self.__start = start
-        self.__end = end
+        self.chromosome = chromosome
+        self.start = start
+        self.end = end
 
+    # Methods
     def set_active(self):
-        self.__active = True
+        self.active = True
 
     def is_active(self):
-        return self.__active
+        return self.active
 
     def get_chromosome(self):
-        return self.__chromosome
+        return self.chromosome
 
     def get_start(self):
-        return self.__start
+        return self.start
 
     def get_end(self):
-        return self.__end
+        return self.end
 
 
 class Interaction:
 
-    # Class to represent a genomic interaction between two restriction digests.
+    # Class to represent a genomic interaction between two restriction digests
 
     # Class attributes
-    __digest_distance = None  # Distance between the two interacting digests
-    __n_simple = 0            # Number of simple read pairs
-    __n_twisted = 0           # Number of twisted read pairs
-    __cis = None              # Intrachromosomal interaction
-    __type = None             # Either simple, twisted or undirected
+    digest_distance = None  # Distance between the two interacting digests
+    n_simple = 0            # Number of simple read pairs
+    n_twisted = 0           # Number of twisted read pairs
+    cis = None              # Intrachromosomal interaction
+    type = None             # Either simple, twisted or undirected
 
     # Initializer / instance Attributes
     def __init__(self, digest_1, digest_2, n_simple, n_twisted):
         self.digest_1 = digest_1
         self.digest_2 = digest_2
         if digest_1.get_chromosome() == digest_2.get_chromosome():
-            self.__cis = True
+            self.cis = True
         else:
-            self.__cis = False
-        self.__n_simple = n_simple
-        self.__n_twisted = n_twisted
+            self.cis = False
+        self.n_simple = n_simple
+        self.n_twisted = n_twisted
 
     # Instance method
     def get_digest_distance(self):
-        if self.__digest_distance == None:
-            self.__digest_distance = self.digest_2.get_start() - self.digest_1.get_end() # distance between digest ends
-        return self.__digest_distance
+        if self.digest_distance == None:
+            self.digest_distance = self.digest_2.get_start() - self.digest_1.get_end() # distance between digest ends
+        return self.digest_distance
 
     def is_cis(self):
-        return self.__cis
+        return self.cis
 
     def get_status_pair_flag(self):
         if self.digest_1.is_active():
@@ -77,19 +78,19 @@ class Interaction:
         return sorted(category)[0]+sorted(category)[1]
 
     def get_binomial_p_value(self): # check this function for small simple and twisted read counts
-        if self.__n_simple < self.__n_twisted:
-            return 1 - binom.cdf(self.__n_twisted-1, self.__n_simple + self.__n_twisted, 0.5)
+        if self.n_simple < self.n_twisted:
+            return 1 - binom.cdf(self.n_twisted-1, self.n_simple + self.n_twisted, 0.5)
         else:
-            return 1 - binom.cdf(self.__n_simple-1, self.__n_simple + self.__n_twisted, 0.5)
+            return 1 - binom.cdf(self.n_simple-1, self.n_simple + self.n_twisted, 0.5)
 
     def set_interaction_type(self, type):
         if(type != 'S' and type != 'T' and type != 'U'):
             raise Exception('[FATAL] Invalid interaction type. Should be either \'S\', \'T\' or \'U\' but was {}.', type)
         else:
-            self.__type = type
+            self.type = type
 
     def get_interaction_type(self):
-        return self.__type
+        return self.type
 
     def get_first_digest(self):
         return self.digest_1
@@ -98,67 +99,108 @@ class Interaction:
         return self.digest_2
 
 
-class TSS:
+class TSSInfo:
+
+    # Class that represents a TSS/gene
 
     # Attributes
-    __chromosome = None
-    __position = None
-    __strand = None
-    __gene_id = None
-    __gene_symbol = None
-    __fpkm = None
+    strand = None
+    gene_id = None
+    gene_symbol = None
+    fpkm = None
+
+    # Initializer
+    def __init__(self, strand, gene_id, gene_symbol):
+        self.strand = strand
+        self.gene_id = gene_id
+        self.gene_symbol = gene_symbol
+
+    # Methods
+    def set_fpkm(self, fpkm):
+        self.fpkm = fpkm
+
+
+class TSSCoordinate:
+
+    # Class that represents a genomic coordinate that corresponds to a TSS for one or more genes
+
+    # Attributes
+    chromosome = None
+    position = None
+    tss_info_dict = None   # stores information for all TSS at this position
 
     # Initializer
     def __init__(self, chromosome, position, strand, gene_id, gene_symbol):
-        self.__chromosome = chromosome
-        self.__position = position
-        self.__strand = strand
-        self.__gene_id = gene_id
-        self.__gene_symbol = gene_symbol
+        self.chromosome = chromosome
+        self.position = position
+        self.tss_info_dict = {}
+        self.tss_info_dict[gene_symbol] = TSSInfo(strand, gene_id, gene_symbol) # use gene_id as key
 
-    def get_gene_id(self):
-        return self.__gene_id
+    # Methods
+    def append_TSSInfo(self, strand, gene_id, gene_symbol):
+        self.tss_info_dict[gene_symbol] = TSSInfo(strand, gene_id, gene_symbol) # use gene_id as key
 
-    def set_fpkm(self, fpkm):
-        self.__fpkm = fpkm
+    def get_num_of_genes(self):
+        return len(self.tss_info_dict)
 
-    def get_chromosome(self):
-        return self.__chromosome
+    def has_multiple_genes(self):
+        return 1 < self.get_num_of_genes()
 
-    def get_position(self):
-        return self.__position
+    def has_tss_on_both_strands(self):
+        current_strand = None
+        for info in self.tss_info_dict.values():
+            if current_strand == None:
+                current_strand = info.strand
+            elif current_strand != info.strand:
+                return True
+        return False
 
-    def get_strand(self):
-        return self.__strand
+    def print_tss_info(self):
+        if self.has_tss_on_both_strands():
+            print("[INFO] Found TSS on both strands for " + str(self.get_num_of_genes()) + " genes at " + self.chromosome + ":" + str(self.position))
+        else:
+            print("[INFO] Found TSS for " + str(self.get_num_of_genes()) + " genes at " + self.chromosome + ":" + str(self.position))
+        for info in self.tss_info_dict.values():
+            print("\tgene_id:" + info.gene_id + "|" + "gene_symbol:" + info.gene_symbol + "|" + "strand:" + info.strand)
 
-    def get_gene_symbol(self):
-        return self.__gene_symbol
 
-class TSSMap:
+
+
+
+
+class TSSCoordinateMap:
+
+    # Class that represents all coordinates that have one or more TSS
 
     # Attributes
-    __chr_pos_to_tss = {}      # Hash with <chromosome:pos> keys and TSS as values
-    __format = None            # Until now only the refGene format
+    tss_coord_dict = None      # dictionary with <chromosome:pos> keys and TSS as values
+    annotation_format = None
+    annotation_file_path = None
 
     # Initializer
-    def __init__(self, annotation_file, format):
-        self.__format = format
+    def __init__(self, annotation_file_path, format):
+        self.annotation_format = format
+        self.annotation_file_path = annotation_file_path
         if format == "refGene":
-            __tss_to_gene_id = self.__parse_ref_gene_file(annotation_file)
+            self.tss_coord_dict = {}
+            self.parse_ref_gene_file()
 
-    # Parse UCSC refGene file
-    def __parse_ref_gene_file(self, annotation_file):
+    # Methods
+    def parse_ref_gene_file(self):
 
-        print("[INFO] Parsing refGene file...")
+        print("[INFO] Parsing " + self.annotation_format + " file: " + self.annotation_file_path + " ...")
 
-        cnt_multiple_tss_at_same_position = 0
-        cnt_multiple_gene_symols_at_same_position = 0
-        with gzip.open(annotation_file) as fp:
+        # open file
+        with gzip.open(self.annotation_file_path) as fp:
+
+            # get first line
             line = fp.readline()
 
+            # iterate file
             while line:
-                values = line.split("\t")
 
+                # parse line
+                values = line.split("\t")
                 gene_id = values[1]
                 chromosome = values[2]
                 strand = values[3]
@@ -166,33 +208,54 @@ class TSSMap:
                     position = values[4]
                 else:
                     position = values[5]
-
-                chr_pos_key = chromosome + ":" + position
-
                 gene_symbol = values[12]
 
-                if chr_pos_key in self.__chr_pos_to_tss:
-                    cnt_multiple_tss_at_same_position += 1;
-                    #if strand != self.__chr_pos_to_tss[chr_pos_key].get_strand():
-                    #if gene_symbol != self.__chr_pos_to_tss[chr_pos_key].get_gene_symbol():
-                    if gene_id != self.__chr_pos_to_tss[chr_pos_key].get_gene_id():
-                       # print("---------")
-                       # print("Gene ID: " + gene_id + "\t" + self.__chr_pos_to_tss[chr_pos_key].get_gene_id())
-                       # print("Chromosome: " + chromosome + "\t" + self.__chr_pos_to_tss[chr_pos_key].get_chromosome())
-                       # print("Position: " + position + "\t" + self.__chr_pos_to_tss[chr_pos_key].get_position())
-                        #print("Strand: " + strand + "\t" + self.__chr_pos_to_tss[chr_pos_key].get_strand())
-                        #print("Gene symbol: " + gene_symbol + "\t" + self.__chr_pos_to_tss[chr_pos_key].get_gene_symbol())
-                        cnt_multiple_gene_symols_at_same_position += 1;
+                # construct key
+                chr_pos_key = chromosome + ":" + position
 
+                # check whether this coordinate has been seen already
+                if chr_pos_key in self.tss_coord_dict.keys():
+                    # append TSS info to existing coordinate
+                    self.tss_coord_dict[chr_pos_key].append_TSSInfo(strand, gene_id, gene_symbol)
+                else:
+                    # create new coordinate
+                    self.tss_coord_dict[chr_pos_key] = TSSCoordinate(chromosome, position, strand, gene_id, gene_symbol)
 
-                tss = TSS(chromosome, position, strand, gene_id, gene_symbol)
-                self.__chr_pos_to_tss[chr_pos_key] = tss
-
+                # get next line
                 line = fp.readline()
 
+        # close file
         fp.close()
-        print(cnt_multiple_tss_at_same_position)
-        print(cnt_multiple_gene_symols_at_same_position)
+
+    def analyze_coordinates_and_print_report(self):
+
+        # declare count variables
+        n_coord_total = 0
+        n_genes_total = 0
+        n_coord_multiple_genes = 0
+        n_coord_multiple_genes_different_strands = 0
+
+        # iterate coordinates and count
+        for coord in self.tss_coord_dict.values():
+            n_coord_total += 1
+            n_genes_total += coord.get_num_of_genes()
+            if 1 < coord.get_num_of_genes():
+                n_coord_multiple_genes += 1
+                if coord.has_tss_on_both_strands():
+                    n_coord_multiple_genes_different_strands += 1
+
+        # print report
+        print("[INFO] Found " + str(n_coord_total) + " coordinates that host TSS for " + str(n_genes_total) + " genes.")
+        print("[INFO] Found " + str(n_coord_multiple_genes) + " coordinates that host TSS for more than one gene.")
+        print("[INFO] Found " + str(n_coord_multiple_genes_different_strands) + " coordinates that host TSS on different strands.")
+
+
+    def get_num_of_coords_with_miltiple_genes(self):
+        num = 0
+        for coord in self.tss_coord_dict.values():
+            if 1 < coord.get_num_of_genes():
+                num += 1
+        return num
 
     def add_fpkm_values(self, cuffdiff_genes_fpkm_tracking_file):
 
