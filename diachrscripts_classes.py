@@ -1,5 +1,8 @@
-from scipy.stats import binom
 import gzip
+from scipy.stats import binom
+import numpy as np
+
+#######################################################################################################################
 
 class Digest:
 
@@ -12,6 +15,7 @@ class Digest:
     active = False
 
     # Initializer
+
     def __init__(self, chromosome, start, end):
         self.chromosome = chromosome
         self.start = start
@@ -33,19 +37,21 @@ class Digest:
     def get_end(self):
         return self.end
 
+#######################################################################################################################
 
 class Interaction:
 
     # Class to represent a genomic interaction between two restriction digests
 
-    # Class attributes
+    # Attributes
+
     digest_distance = None  # Distance between the two interacting digests
     n_simple = 0            # Number of simple read pairs
     n_twisted = 0           # Number of twisted read pairs
     cis = None              # Intrachromosomal interaction
     type = None             # Either simple, twisted or undirected
 
-    # Initializer / instance Attributes
+    # Initializer
     def __init__(self, digest_1, digest_2, n_simple, n_twisted):
         self.digest_1 = digest_1
         self.digest_2 = digest_2
@@ -56,7 +62,8 @@ class Interaction:
         self.n_simple = n_simple
         self.n_twisted = n_twisted
 
-    # Instance method
+    # Methods
+
     def get_digest_distance(self):
         if self.digest_distance == None:
             self.digest_distance = self.digest_2.get_start() - self.digest_1.get_end() # distance between digest ends
@@ -98,47 +105,59 @@ class Interaction:
     def get_second_digest(self):
         return self.digest_2
 
+#######################################################################################################################
 
 class TSSInfo:
 
-    # Class that represents a TSS/gene
+    # Class that represents additional information about TSS beyond coordinates
 
     # Attributes
+
     strand = None
     gene_id = None
     gene_symbol = None
     fpkm = None
+    expression_category = None
 
     # Initializer
+
     def __init__(self, strand, gene_id, gene_symbol):
         self.strand = strand
         self.gene_id = gene_id
         self.gene_symbol = gene_symbol
 
     # Methods
+
     def set_fpkm(self, fpkm):
         self.fpkm = fpkm
 
+    def set_expression_category(self, category):
+        self.expression_category = category
+
+#######################################################################################################################
 
 class TSSCoordinate:
 
     # Class that represents a genomic coordinate that corresponds to a TSS for one or more genes
 
     # Attributes
+
     chromosome = None
     position = None
     tss_info_dict = None   # stores information for all TSS at this position
 
     # Initializer
+
     def __init__(self, chromosome, position, strand, gene_id, gene_symbol):
         self.chromosome = chromosome
         self.position = position
         self.tss_info_dict = {}
-        self.tss_info_dict[gene_symbol] = TSSInfo(strand, gene_id, gene_symbol) # use gene_id as key
+        self.tss_info_dict[gene_id] = TSSInfo(strand, gene_id, gene_symbol) # use gene_id as key
 
     # Methods
+
     def append_TSSInfo(self, strand, gene_id, gene_symbol):
-        self.tss_info_dict[gene_symbol] = TSSInfo(strand, gene_id, gene_symbol) # use gene_id as key
+        self.tss_info_dict[gene_id] = TSSInfo(strand, gene_id, gene_symbol) # use gene_id as key
 
     def get_num_of_genes(self):
         return len(self.tss_info_dict)
@@ -161,23 +180,27 @@ class TSSCoordinate:
         else:
             print("[INFO] Found TSS for " + str(self.get_num_of_genes()) + " genes at " + self.chromosome + ":" + str(self.position))
         for info in self.tss_info_dict.values():
-            print("\tgene_id:" + info.gene_id + "|" + "gene_symbol:" + info.gene_symbol + "|" + "strand:" + info.strand)
+            print("\tgene_id:" + info.gene_id + "|" + "gene_symbol:" + info.gene_symbol + "|" + "strand:" + info.strand + "|" + "fpkm:" + str(info.fpkm))
 
-
-
-
-
+#######################################################################################################################
 
 class TSSCoordinateMap:
 
     # Class that represents all coordinates that have one or more TSS
 
     # Attributes
-    tss_coord_dict = None      # dictionary with <chromosome:pos> keys and TSS as values
+
+    tss_coord_dict = None
     annotation_format = None
     annotation_file_path = None
 
+    fpkm_n_zero = None
+    fpkm_upper_first_q = None
+    fpkm_upper_second_q = None
+    fpkm_upper_third_q = None
+
     # Initializer
+
     def __init__(self, annotation_file_path, format):
         self.annotation_format = format
         self.annotation_file_path = annotation_file_path
@@ -186,9 +209,10 @@ class TSSCoordinateMap:
             self.parse_ref_gene_file()
 
     # Methods
+
     def parse_ref_gene_file(self):
 
-        print("[INFO] Parsing " + self.annotation_format + " file: " + self.annotation_file_path + " ...")
+        print("[INFO] Parsing " + self.annotation_format + " annotation file: " + self.annotation_file_path + " ...")
 
         # open file
         with gzip.open(self.annotation_file_path) as fp:
@@ -245,9 +269,9 @@ class TSSCoordinateMap:
                     n_coord_multiple_genes_different_strands += 1
 
         # print report
-        print("[INFO] Found " + str(n_coord_total) + " coordinates that host TSS for " + str(n_genes_total) + " genes.")
-        print("[INFO] Found " + str(n_coord_multiple_genes) + " coordinates that host TSS for more than one gene.")
-        print("[INFO] Found " + str(n_coord_multiple_genes_different_strands) + " coordinates that host TSS on different strands.")
+        print("\t[INFO] Found " + str(n_coord_total) + " coordinates that host TSS for " + str(n_genes_total) + " genes.")
+        print("\t[INFO] Found " + str(n_coord_multiple_genes) + " coordinates that host TSS for more than one gene.")
+        print("\t[INFO] Found " + str(n_coord_multiple_genes_different_strands) + " coordinates that host TSS on different strands.")
 
 
     def get_num_of_coords_with_miltiple_genes(self):
@@ -257,40 +281,104 @@ class TSSCoordinateMap:
                 num += 1
         return num
 
-    def add_fpkm_values(self, cuffdiff_genes_fpkm_tracking_file):
+    def parse_cuffdiff_genes_fpkm_tracking_file(self, cuffdiff_genes_fpkm_tracking_file):
 
-        # read FPKM values to hash with gene IDs as keys
+        print("[INFO] Parsing genes.fpkm_tracking file of cuffdiff: " + cuffdiff_genes_fpkm_tracking_file + " ...")
 
-        fpkm_hash = {}
+        # read FPKM values to temporary dictionary
+
+        tmp_fpkm_hash = {}
 
         with open(cuffdiff_genes_fpkm_tracking_file) as fp:
 
+            line = fp.readline() # skip first line
             line = fp.readline()
-
             while line:
-                values = line.split("\t")
-                gene_id = values[3]
-                if gene_id == "gene_id":  # skip first line
-                    line = fp.readline()
-                    continue
-                else:
-                    if gene_id in fpkm_hash:
-                        print "Multiple FPKM for a gene!"
-                    else:
-                        fpkm_hash[gene_id] = float(values[9])
-
+                line_fields = line.split("\t")
+                gene_id = line_fields[3]
+                fpkm = float(line_fields[9])
+                tmp_fpkm_hash[gene_id] = fpkm
                 line = fp.readline()
 
-        fp.close()
+        # determine number of zero FPKMs and quartiles
 
-        # Add FPKM to TSSMap
-        cnt_no_fpkm = []
-        cnt_yes_fpkm = 0
-        for key, tss in self.__chr_pos_to_tss.iteritems():
-            if tss.get_gene_id() in fpkm_hash:
-                tss.set_fpkm(fpkm_hash[tss.get_gene_id()])
-                cnt_yes_fpkm += 1
-            else:
-                cnt_no_fpkm.append(tss.get_gene_id())
+        tmp_fpkm_list = tmp_fpkm_hash.values()
+        self.fpkm_n_zero = tmp_fpkm_list.count(0)
+        tmp_fpkm_list = filter(lambda a: a != 0, tmp_fpkm_list) # remove zero FPKMs
+        self.fpkm_upper_first_q = round(np.quantile(tmp_fpkm_list, .25),2)
+        self.fpkm_upper_second_q = round(np.quantile(tmp_fpkm_list, .50),2)
+        self.fpkm_upper_third_q = round(np.quantile(tmp_fpkm_list, .75),2)
 
-        print("[WARNING] No FPKM for " + str(len(cnt_no_fpkm)) + " TSS out of " + str(len(self.__chr_pos_to_tss)) + " in total. List of gene IDs: " + str(cnt_no_fpkm))
+        # add FPKM values to TSSInfo
+        genes_without_fpkm = []
+        for coord in self.tss_coord_dict.values():
+            for tss_info in coord.tss_info_dict.values():
+                if tss_info.gene_id in tmp_fpkm_hash:
+                    tss_info.set_fpkm(tmp_fpkm_hash[tss_info.gene_id])
+                else:
+                    genes_without_fpkm.append(tss_info.gene_id)
+
+        if 0 < len(genes_without_fpkm):
+            print("\t[WARNING] No FPKM for the following " + str(len(genes_without_fpkm)) + " genes: " + " ".join(genes_without_fpkm))
+
+        # print info about zero FPKM and quartiles
+        print "\t[INFO] There were", self.fpkm_n_zero, "genes with zero FPKM."
+        print "\t[INFO] Upper FPKM limit of the first quartile:", self.fpkm_upper_first_q
+        print "\t[INFO] Upper FPKM limit of the second quartile:", self.fpkm_upper_second_q
+        print "\t[INFO] Upper FPKM limit of the third quartile:", self.fpkm_upper_third_q
+
+    def set_expression_categories(self, q_limit):
+
+        print("[INFO] Setting expression level categories...")
+
+        if q_limit == 1:
+            thresh = self.fpkm_upper_first_q
+            print("\t[INFO] Will use upper limit of the first quartile (" + str(self.fpkm_upper_first_q)  + ") as FPKM threshold for inactive genes.")
+        elif q_limit == 2:
+            thresh = self.fpkm_upper_second_q
+            print("\t[INFO] Will use upper limit of the second quartile (" + str(self.fpkm_upper_second_q) + ") as FPKM threshold for inactive genes.")
+        elif q_limit == 3:
+            thresh = self.fpkm_upper_third_q
+            print("\t[INFO] Will use upper limit of the third quartile (" + str(self.fpkm_upper_third_q) + ") as FPKM threshold for inactive genes.")
+        else:
+            raise Exception("\t[FATAL] Threshold must be an upper limits of the first three quartiles. Should be either 1, 2 or 3 but was " + str(q_limit) + ".")
+
+        none_fpkm = 0
+        inactive_category = 0
+        active_category = 0
+
+        for coord in self.tss_coord_dict.values():
+            for tss_info in coord.tss_info_dict.values():
+                if tss_info.fpkm == None:
+                    tss_info.set_expression_category(None)
+                    none_fpkm += 1
+                elif tss_info.fpkm == 0 or tss_info.fpkm < thresh:
+                    tss_info.set_expression_category(0)
+                    inactive_category +=1
+                else:
+                    tss_info.set_expression_category(1)
+                    active_category += 1
+
+        print("\t[WARNING] There are " + str(none_fpkm) + " without FPKM. Category was set to 'None'.")
+        print("\t[INFO] " + str(inactive_category) + " genes were categorized as inactive.")
+        print("\t[INFO] " + str(active_category) + " genes were categorized as active.")
+
+    def has_key(self, key):
+        return key in self.tss_coord_dict
+
+    def get_coord_category(self, key):
+        coord_expression_categories = [] # note that there may be multiple TSS a given coordinate
+        if key in self.tss_coord_dict:
+            for tss_info in self.tss_coord_dict[key].tss_info_dict.values():
+                coord_expression_categories.append(tss_info.expression_category)
+        else:
+            return -1 # no TSS annotated at this position
+
+        if 1 in coord_expression_categories:
+            return 1 # one active coord is enough to make the digest active
+        elif 0 in coord_expression_categories:
+            return 0
+        else:
+            return tss_info.gene_id # no FPKM for annotated TSS
+
+

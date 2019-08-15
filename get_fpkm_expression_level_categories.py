@@ -85,8 +85,8 @@ def init_pair_hashs(mode):
     :return: Nothing. Only the global hashes for digest category pair counting are initialized.
     """
     if mode == "two":
-        for i in ['d','0','1','-1']:
-            for j in ['d','0','1','-1']:
+        for i in ['0','1','-1','None']:
+            for j in ['0','1','-1','None']:
                 key = i + "/" + j
                 PAIR_hash_simple[key] = 0
                 PAIR_hash_twisted[key] = 0
@@ -128,20 +128,27 @@ def categorizeDigest(chr_name, d_sta, d_end):
 
 def categorizeDigestMaxApproach(digest):
     """
-    Returns the highest expression category for given digest.
+    Returns the highest expression level category for given digest.
 
     :param chr_name:
     :param d_sta:
     :param d_end:
-    :return:
+    :return: Expression level category of the digest. Either 0, 1 or None.
     """
-    current_expression_category = -1
+    digest_expression_categories = []
+
+    # iterate digest and collect expression categories of TSS on digest
     for i in range(digest.get_start(), digest.get_end()):
         key = digest.get_chromosome() + ":" + str(i)
-        if key in tss_pos_to_gene_id and tss_pos_to_gene_id[key] in expression_categories:
-            if current_expression_category < expression_categories[tss_pos_to_gene_id[key]]:
-                current_expression_category = expression_categories[tss_pos_to_gene_id[key]]
-    return current_expression_category
+        if ref_gene_tss_map.get_coord_category(key) != -1: # no annotated TSS at this position
+            digest_expression_categories.append(ref_gene_tss_map.get_coord_category(key))
+
+    if 1 in digest_expression_categories:
+        return 1 # one active TSS is enough to make the coordinate active
+    elif 0 in digest_expression_categories:
+        return 0
+    else:
+        return None # the digest has annotated TSS but FPKM is missing
 
 def categorizeDigestPair(interaction):
     """
@@ -160,7 +167,7 @@ def categorizeDigestPair(interaction):
     digest_category_2 = categorizeDigestMaxApproach(interaction.get_second_digest())
     return str(digest_category_1) + "/" + str(digest_category_2)
 
-def getInteractionType(simple,twisted):
+def getInteractionTypeBinom(simple, twisted):
     """
     This function determines whether a given interaction is significantly directed, i.e. simple or twisted,
     and returns a 'S' for simple and 'T' for twisted. Otherwise, the function returns an 'U' for undirected
@@ -322,10 +329,7 @@ def parse_refGene_file(ref_gene_file):
 # determine genes with zero FPKM and quartiles for categorization into expression levels
 gene_id_to_fpkm_hash, n_zero_fpkm, upper_first_q, upper_second_q, upper_third_q = parse_cuffdiff_genes_fpkm_tracking_file(fpkm_tracking_file)
 
-print "[INFO] There were", n_zero_fpkm, "genes with zero FPKM."
-print "[INFO] Upper FPKM limit of the first quartile:", upper_first_q
-print "[INFO] Upper FPKM limit of the second quartile:", upper_second_q
-print "[INFO] Upper FPKM limit of the third quartile:", upper_third_q
+
 
 # init hash map, key=<gene_id, e.g. NR_157147>, value=<category, i.e. 0 and 1 or 0 to 4>
 expression_categories = get_expression_level_category_hash(fpkm_tracking_file, "two", upper_first_q, upper_second_q, upper_third_q)
@@ -335,23 +339,15 @@ tss_pos_to_gene_id = parse_refGene_file(ref_gene_file)
 
 # Hash map that returns TSS at a given coordinate
 ref_gene_tss_map = dclass.TSSCoordinateMap(ref_gene_file, "refGene") # is going to replace 'tss_pos_to_gene_id'
-
-for coord in ref_gene_tss_map.tss_coord_dict.values():
-    if 1 < coord.get_num_of_genes() and coord.has_tss_on_both_strands():
-        coord.print_tss_info()
-
-print(len(ref_gene_tss_map.tss_coord_dict))
-
 ref_gene_tss_map.analyze_coordinates_and_print_report()
-
-ref_gene_tss_map.add_fpkm_values(fpkm_tracking_file)
-
+ref_gene_tss_map.parse_cuffdiff_genes_fpkm_tracking_file(fpkm_tracking_file)
+ref_gene_tss_map.set_expression_categories(1)
 
 # iterate over interaction file and determine counts of pair categories
 PAIR_hash_simple = {} # keys: digest pair categories; values: corresponding counts
 PAIR_hash_twisted = {}
 PAIR_hash_undirected = {}
-init_pair_hashs("two") # available modes: 'two' of 'five'
+init_pair_hashs("two") # available modes: "two" or 'five'
 
 n_interaction = 0
 print "[INFO] Determining pair category for each interaction..."
@@ -360,7 +356,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
     while line:
 
-        # Parse line representing one interaction
+        # parse line representing one interaction
         values = line.split("\t")
 
         digest_1 = dclass.Digest(values[0], int(values[1]), int(values[2]))
@@ -381,29 +377,29 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         interaction = dclass.Interaction(digest_1, digest_2, n_simple, n_twisted)
         interaction.set_interaction_type(i_type)
 
-        # Restrict analysis to cis interactions
+        # restrict analysis to cis interactions
         if not(interaction.is_cis()):
             line = fp.readline()
             continue
 
-        # Restrict analysis to long range interactions
+        # restrict analysis to long range interactions
         if interaction.get_digest_distance() < 10000:
             line = fp.readline()
             continue
 
-        # Restrict analysis to interactions between targeted promoters
+        # restrict analysis to interactions between targeted promoters
         if interaction.get_status_pair_flag() != "AA":
             line = fp.readline()
             continue
 
-        # Assign expression level category to digest using linear regression
+        # assign expression level category to digest using linear regression
         if use_linear_regression == "true":
             categorizeDigestPairLinearRegression(interaction, gene_id_to_fpkm_hash)
             line = fp.readline()
             continue
 
         # Assign expression level category to digest using max approach
-        pair_key = categorizeDigestPair(interaction)
+        pair_key = categorizeDigestPair(interaction) ######
 
         if interaction.get_interaction_type() == None:
             line = fp.readline()
@@ -417,12 +413,12 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         else:
             line = fp.readline()
             print interaction.get_interaction_type()
-            raise Exception('[FATAL] Invalid interaction type. Should be either \'S\', \'T\' or \'U\' but was {}.',
-                            interaction.get_interaction_type())
+            raise Exception("[FATAL] Invalid interaction type. Should be either 'S', 'T' or 'U' but was " + interaction.get_interaction_type() + "."
+                            )
 
         n_interaction += 1
         if n_interaction%1000 == 0:
-            print "[INFO]", n_interaction, "processed..."
+            print "\t[INFO]", n_interaction, "interactions processed..."
 
         line = fp.readline()
 
