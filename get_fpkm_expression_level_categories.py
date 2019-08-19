@@ -6,12 +6,13 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from scipy.stats import binom
 
+
+
 parser = argparse.ArgumentParser(description='Determine expression category levels for interacting digest pairs.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--fpkm-file', help='Path to a \'*_genes.fpkm_tracking\' file produced with cuffdiff.')
 parser.add_argument('--ref-gene-file', help='UCSC refGene file (must be gzipped and the same version that was used to create the digest map for Diachromatic).')
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
-parser.add_argument('--categorization-model', help='Choose \'two\' for inactive/active categorization and \'five\' for categorization with five expression levels.', default="two", choices=['two','five'])
 parser.add_argument('--use-linear-regression', help='', default='false', choices=['true','false'])
 
 args = parser.parse_args()
@@ -19,112 +20,7 @@ out_prefix = args.out_prefix
 fpkm_tracking_file = args.fpkm_file
 ref_gene_file = args.ref_gene_file
 diachromatic_interaction_file = args.interaction_file
-categorization_model = args.categorization_model
 use_linear_regression = args.use_linear_regression
-
-def categorizeDigestPairLinearRegression(interaction, gene_id_to_fpkm_hash):
-
-    chr_name_1 = interaction.get_first_digets().get_chromosome()
-    d_sta_1 = interaction.get_first_digets().get_start()
-    d_end_1 = interaction.get_first_digets().get_end()
-
-    chr_name_2 = interaction.get_second_digets().get_chromosome()
-    d_sta_2 = interaction.get_second_digets().get_start()
-    d_end_2 = interaction.get_second_digets().get_end()
-
-    # get FPKM values for both digest
-    FPKM_D1 = []
-    FPKM_D2 = []
-    for i in range(d_sta_1, d_end_1):
-        key = chr_name_1 + ":" + str(i)
-        if key in tss_pos_to_gene_id and tss_pos_to_gene_id[key] in gene_id_to_fpkm_hash:
-            FPKM_D1.append(float(gene_id_to_fpkm_hash[tss_pos_to_gene_id[key]]))
-
-    for i in range(d_sta_2, d_end_2):
-        key = chr_name_2 + ":" + str(i)
-        if key in tss_pos_to_gene_id and tss_pos_to_gene_id[key] in gene_id_to_fpkm_hash:
-            FPKM_D2.append(float(gene_id_to_fpkm_hash[tss_pos_to_gene_id[key]]))
-    xx = []
-    yy = []
-    for i in FPKM_D1:
-        for j in FPKM_D2:
-            xx = xx[:len(FPKM_D2)-1]
-            yy = yy[:len(FPKM_D2)-1]
-            xx.append(i)
-            yy.append(j)
-            x = np.array(xx).reshape((-1, 1))
-            y = np.array(yy)
-            model_1 = LinearRegression().fit(x, y)
-            r_sq = model_1.score(x, y)
-            if r_sq < 1 and 0.2 < r_sq:
-                print "======"
-                print FPKM_D1
-                print FPKM_D2
-                print len(FPKM_D1)
-                print len(FPKM_D2)
-                print len(xx)
-                print len(xx)
-                print "x:", x
-                print "y:", y
-                print('Coefficient of determination D1:', r_sq)
-                xx *= 0
-                yy *= 0
-
-    # # perform LR to determine category of D2
-    # x = np.array(FPKM_D2).reshape((-1,1))
-    # y = np.array(FPKM_D1)
-    # model_2 = LinearRegression().fit(x, y)
-    # r_sq = model_2.score(x, y)
-    #print('Coefficient of determination D2:', r_sq)
-
-    return "Foo"
-
-def init_pair_hashs(mode):
-    """
-    :param mode: Either 'two' for simple active/inactive categorization or 'five' for categorization with five expression levels.
-    :return: Nothing. Only the global hashes for digest category pair counting are initialized.
-    """
-    if mode == "two":
-        for i in ['0','1','-1','None']:
-            for j in ['0','1','-1','None']:
-                key = i + "/" + j
-                PAIR_hash_simple[key] = 0
-                PAIR_hash_twisted[key] = 0
-                PAIR_hash_undirected[key] = 0
-    if mode == "five":
-        for i in ['d','0','1','2','3','4','-1']:
-            for j in ['d','0','1','2','3','4','-1']:
-                key = i + "/" + j
-                PAIR_hash_simple[key] = 0
-                PAIR_hash_twisted[key] = 0
-                PAIR_hash_undirected[key] = 0
-
-def categorizeDigest(chr_name, d_sta, d_end):
-    """
-    Input parameters are coordinates of a digest. This function checks for each digest position whether there is
-    a TSS with associated expression level category (either 0 or 1 for active/inactive or 0 to 4).
-    If all associated expression level categories are the same, the function returns the corresponding category.
-    Otherwise, if there are discordant categories, the this function returns a 'd'.
-    Finally, if there is no TSS on the digest at all, the function returns a '-1'.
-    This may happen due to slight differences of the annotation used for intercation calling, RNA-seq analysis
-    and refGene file. Ideally, the same annotation is used for all analyses.
-
-    :param chr_name: Chromosome name, e.g. chr1
-    :param d_sta: First position of a digest.
-    :param d_end: Last position of a digest.
-    :return: Concordant expression level category or 'd' if discordant categories were found or '-1' of no TSS was found.
-    """
-    current_expression_category = -1
-    for i in range(d_sta, d_end):
-        key = chr_name + ":" + str(i)
-        if key in tss_pos_to_gene_id and tss_pos_to_gene_id[key] in expression_categories:
-            if current_expression_category == -1: # first TSS on digest
-                current_expression_category = expression_categories[tss_pos_to_gene_id[key]]
-                continue
-            if current_expression_category != expression_categories[tss_pos_to_gene_id[key]]:
-                return "d"
-
-    return current_expression_category
 
 def categorizeDigestMaxApproach(digest):
     """
@@ -140,7 +36,7 @@ def categorizeDigestMaxApproach(digest):
     # iterate digest and collect expression categories of TSS on digest
     for i in range(digest.get_start(), digest.get_end()):
         key = digest.get_chromosome() + ":" + str(i)
-        if ref_gene_tss_map.get_coord_category(key) != -1: # no annotated TSS at this position
+        if ref_gene_tss_map.get_coord_category(key) != -1: # '-1' means no annotated TSS at this position
             digest_expression_categories.append(ref_gene_tss_map.get_coord_category(key))
 
     if 1 in digest_expression_categories:
@@ -194,164 +90,25 @@ def getInteractionTypeBinom(simple, twisted):
         else:
             return "U"
 
-def parse_cuffdiff_genes_fpkm_tracking_file(fpkm_tracking_file):
-    """
-    This function parses a *_genes.fpkm_tracking file produced by 'cuffdiff' and determines the number of genes with
-    zero FPKM as well as the upper limits of the first three quartiles used for categorization into five expression
-    levels (or inctive/active categories).
-
-    :param fpkm_tracking_file: TSV file with FPKM values for genes
-    :return: Number of genes with zero FPKM and upper limits of the first three quartiles.
-    """
-    n_zero_fpkm = 0
-
-    # read non-zero FPKM vaules to array
-    fpkm_array = []
-    gene_id_to_fpkm = {}
-
-    with open(fpkm_tracking_file) as fp:
-        line = fp.readline()
-
-        while line:
-            values = line.split("\t")
-            gene_id = values[0]
-            if gene_id  == "tracking_id": # skip first line
-                line = fp.readline()
-                continue
-            else:
-                fpkm = float(values[9])
-                gene_id_to_fpkm[gene_id] = fpkm
-                if 0 < fpkm:
-                    fpkm_array.append(fpkm)
-                else:
-                    n_zero_fpkm += 1
-
-            line = fp.readline()
-    fp.close()
-
-    # determine quartiles
-    upper_first_q = np.quantile(fpkm_array, .25)
-    upper_second_q = np.quantile(fpkm_array, .50)
-    upper_third_q = np.quantile(fpkm_array, .75)
-
-    return gene_id_to_fpkm, n_zero_fpkm, upper_first_q, upper_second_q, upper_third_q
-
-def get_expression_level_category_hash(fpkm_tracking_file, model, upper_first_q, upper_second_q, upper_third_q):
-    """
-    This function assigns each gene an expression level category based on FPKM values. There are two models for
-    categorization: For the model 'two', genes are either inactive (0) or active (1). For the model 'five',
-    genes with zero FPKM belong to category 0, and the remaining genes to category 1 to 4 depending on FPKM quartiles.
-
-    :param fpkm_tracking_file: fpkm_tracking_file: TSV file with FPKM values for genes
-    :param upper_first_q: Upper limit of first quartile.
-    :param upper_second_q: Upper limit of second quartile.
-    :param upper_third_q: Upper limit of third quartile.
-    :return: Hash with gene IDs as keys and category numbers as values.
-    """
-    expression_categories = {}
-
-    with open(fpkm_tracking_file) as fp:
-        line = fp.readline()
-
-        while line:
-            values = line.split("\t")
-
-            if values[0] == "tracking_id":
-                line = fp.readline()
-                continue
-
-            gene_id = values[3]
-            fpkm = float(values[9])
-
-            if model == "two": # only inactive/active
-                if fpkm == 0:
-                    expression_categories[gene_id] = 0
-                elif fpkm < upper_first_q:
-                    expression_categories[gene_id] = 0
-                elif fpkm < upper_second_q:
-                    expression_categories[gene_id] = 1
-                elif fpkm < upper_third_q:
-                    expression_categories[gene_id] = 1
-                else:
-                    expression_categories[gene_id] = 1
-            elif model == "five":
-                if fpkm == 0:
-                    expression_categories[gene_id] = 0
-                elif fpkm < upper_first_q:
-                    expression_categories[gene_id] = 1
-                elif fpkm < upper_second_q:
-                    expression_categories[gene_id] = 2
-                elif fpkm < upper_third_q:
-                    expression_categories[gene_id] = 3
-                else:
-                    expression_categories[gene_id] = 4
-            else:
-                raise Exception('[FATAL] Invalid categorization model. Should be either \'two\' or \'five\' but was {}.', model)
-
-            line = fp.readline()
-
-    fp.close()
-    return expression_categories
-
-def parse_refGene_file(ref_gene_file):
-    """
-
-    :param ref_gene_file: refGene file downloaded from UCSC. Make sure to use the same version that was used to create the digest map with GOPHER.
-    :return: Hash with TSS coordinates as keys and and gene IDs values.
-    """
-    tss_pos_to_gene_id = {}
-
-    with gzip.open(ref_gene_file) as fp:
-        line = fp.readline()
-
-        while line:
-            values = line.split("\t")
-
-            gene_id = values[1]
-            chr_name = values[2]
-            tss_strand = values[3]
-            if tss_strand == "+":
-                tss_pos = values[4]
-            else:
-                tss_pos = values[5]
-
-            tss_pos_to_gene_id[chr_name + ":" + tss_pos] = gene_id
-
-            line = fp.readline()
-
-    fp.close()
-
-    return tss_pos_to_gene_id
-
 ### Start Execution
 ###################
 
-# determine genes with zero FPKM and quartiles for categorization into expression levels
-gene_id_to_fpkm_hash, n_zero_fpkm, upper_first_q, upper_second_q, upper_third_q = parse_cuffdiff_genes_fpkm_tracking_file(fpkm_tracking_file)
+ref_gene_tss_map = dclass.TSSCoordinateMap(ref_gene_file, "refGene") # parse refGene file with TSS
+ref_gene_tss_map.analyze_coordinates_and_print_report() # collect counts and print report
 
-
-
-# init hash map, key=<gene_id, e.g. NR_157147>, value=<category, i.e. 0 and 1 or 0 to 4>
-expression_categories = get_expression_level_category_hash(fpkm_tracking_file, "two", upper_first_q, upper_second_q, upper_third_q)
-
-# init hash map, key=<coordinates, e.g. chr1:12345>, value=<gene_id, e.g. NR_157147>
-tss_pos_to_gene_id = parse_refGene_file(ref_gene_file)
-
-# Hash map that returns TSS at a given coordinate
-ref_gene_tss_map = dclass.TSSCoordinateMap(ref_gene_file, "refGene") # is going to replace 'tss_pos_to_gene_id'
-ref_gene_tss_map.analyze_coordinates_and_print_report()
-ref_gene_tss_map.parse_cuffdiff_genes_fpkm_tracking_file(fpkm_tracking_file)
+ref_gene_tss_map.parse_cuffdiff_genes_fpkm_tracking_file(fpkm_tracking_file) # add FPKM values for genes
 ref_gene_tss_map.set_expression_categories(1)
 
 # iterate over interaction file and determine counts of pair categories
-PAIR_hash_simple = {} # keys: digest pair categories; values: corresponding counts
-PAIR_hash_twisted = {}
-PAIR_hash_undirected = {}
-init_pair_hashs("two") # available modes: "two" or 'five'
+strand_simple = dclass.PairKeyDict(['0', '1', '-1', 'None'])
+strand_twisted = dclass.PairKeyDict(['0', '1', '-1', 'None'])
+strand_undirected = dclass.PairKeyDict(['0', '1', '-1', 'None'])
+strand_undefined = dclass.PairKeyDict(['0', '1', '-1', 'None'])
 
 n_interaction = 0
 print "[INFO] Determining pair category for each interaction..."
 with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
+
     line = fp.readline()
 
     while line:
@@ -393,23 +150,19 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
             line = fp.readline()
             continue
 
-        # assign expression level category to digest using linear regression
-        if use_linear_regression == "true":
-            categorizeDigestPairLinearRegression(interaction, gene_id_to_fpkm_hash)
-            line = fp.readline()
-            continue
-
-        # Assign expression level category to digest using max approach
+        # assign expression level category to digest using max approach
         pair_key = categorizeDigestPair(interaction)
 
         if interaction.get_interaction_type() == None:
             raise Exception("[FATAL] Interaction type is 'None'. This should never happen.")
         elif interaction.get_interaction_type() == "S":
-            PAIR_hash_simple[pair_key] = PAIR_hash_simple[pair_key] + 1
+            strand_simple.pair_dict[pair_key] = strand_simple.pair_dict[pair_key] + 1
         elif interaction.get_interaction_type() == "T":
-            PAIR_hash_twisted[pair_key] = PAIR_hash_twisted[pair_key] + 1
+            strand_twisted.pair_dict[pair_key] = strand_twisted.pair_dict[pair_key] + 1
         elif interaction.get_interaction_type() == "U":
-            PAIR_hash_undirected[pair_key] = PAIR_hash_undirected[pair_key] + 1
+            strand_undirected.pair_dict[pair_key] = strand_undirected.pair_dict[pair_key] + 1
+        elif interaction.get_interaction_type() == "NA":
+            strand_undefined.pair_dict[pair_key] = strand_undefined.pair_dict[pair_key] + 1
         else:
             line = fp.readline()
             print interaction.get_interaction_type()
@@ -423,16 +176,107 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         line = fp.readline()
 
     print("...done.")
+
 fp.close()
 
-# Print results to screen
+# print results to screen
 print out_prefix
-print "PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED" # absolute numbers
-for i in PAIR_hash_simple:
-    print i + "\t" + str(PAIR_hash_simple[i]) + "\t" + str(PAIR_hash_twisted[i]) + "\t" + str(PAIR_hash_simple[i]+PAIR_hash_twisted[i]) + "\t" + str(PAIR_hash_undirected[i])
+print "PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tUNDEFINED" # absolute numbers
+for i in strand_simple.pair_dict.keys():
+    print i + "\t" + str(strand_simple.pair_dict[i]) + "\t" + str(strand_twisted.pair_dict[i]) + "\t" + str(strand_simple.pair_dict[i] + strand_twisted.pair_dict[i]) + "\t" + str(strand_undirected.pair_dict[i]) + "\t" + str(strand_undefined.pair_dict[i])
 
-print "PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED" # relative frequencies within simple, twisted and undirected
-for i in PAIR_hash_simple:
-    print i + "\t" + str(float(1.0*PAIR_hash_simple[i]/sum(PAIR_hash_simple.values()))) + "\t" + str(float(1.0*PAIR_hash_twisted[i]/sum(PAIR_hash_twisted.values()))) + "\t"\
-          + str(float((1.0*PAIR_hash_simple[i]+PAIR_hash_twisted[i])/(sum(PAIR_hash_simple.values())+sum(PAIR_hash_twisted.values())))) + "\t"\
-          + str(float(1.0*PAIR_hash_undirected[i]/sum(PAIR_hash_undirected.values())))
+print "PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tUNDEFINED" # relative frequencies within simple, twisted and undirected
+for i in strand_simple.pair_dict.keys():
+    print i + "\t" + str(float(1.0 * strand_simple.pair_dict[i] / sum(strand_simple.pair_dict.values()))) + "\t" + str(float(1.0 * strand_twisted.pair_dict[i] / sum(strand_twisted.pair_dict.values()))) + "\t" \
+          + str(float((1.0 * strand_simple.pair_dict[i] + strand_twisted.pair_dict[i]) / (sum(strand_simple.pair_dict.values()) + sum(strand_twisted.pair_dict.values())))) + "\t" \
+          + str(float(1.0 * strand_undirected.pair_dict[i] / sum(strand_undirected.pair_dict.values()))) + "\t" \
+          + str(float(1.0 * strand_undefined.pair_dict[i] / sum(strand_undefined.pair_dict.values())))
+
+
+### Graveyard
+#############
+
+# def categorizeDigestPairLinearRegression(interaction, gene_id_to_fpkm_hash):
+#
+#     chr_name_1 = interaction.get_first_digets().get_chromosome()
+#     d_sta_1 = interaction.get_first_digets().get_start()
+#     d_end_1 = interaction.get_first_digets().get_end()
+#
+#     chr_name_2 = interaction.get_second_digets().get_chromosome()
+#     d_sta_2 = interaction.get_second_digets().get_start()
+#     d_end_2 = interaction.get_second_digets().get_end()
+#
+#     # get FPKM values for both digest
+#     FPKM_D1 = []
+#     FPKM_D2 = []
+#     for i in range(d_sta_1, d_end_1):
+#         key = chr_name_1 + ":" + str(i)
+#         if key in tss_pos_to_gene_id and tss_pos_to_gene_id[key] in gene_id_to_fpkm_hash:
+#             FPKM_D1.append(float(gene_id_to_fpkm_hash[tss_pos_to_gene_id[key]]))
+#
+#     for i in range(d_sta_2, d_end_2):
+#         key = chr_name_2 + ":" + str(i)
+#         if key in tss_pos_to_gene_id and tss_pos_to_gene_id[key] in gene_id_to_fpkm_hash:
+#             FPKM_D2.append(float(gene_id_to_fpkm_hash[tss_pos_to_gene_id[key]]))
+#     xx = []
+#     yy = []
+#     for i in FPKM_D1:
+#         for j in FPKM_D2:
+#             xx = xx[:len(FPKM_D2)-1]
+#             yy = yy[:len(FPKM_D2)-1]
+#             xx.append(i)
+#             yy.append(j)
+#             x = np.array(xx).reshape((-1, 1))
+#             y = np.array(yy)
+#             model_1 = LinearRegression().fit(x, y)
+#             r_sq = model_1.score(x, y)
+#             if r_sq < 1 and 0.2 < r_sq:
+#                 print "======"
+#                 print FPKM_D1
+#                 print FPKM_D2
+#                 print len(FPKM_D1)
+#                 print len(FPKM_D2)
+#                 print len(xx)
+#                 print len(xx)
+#                 print "x:", x
+#                 print "y:", y
+#                 print('Coefficient of determination D1:', r_sq)
+#                 xx *= 0
+#                 yy *= 0
+#
+#     # # perform LR to determine category of D2
+#     # x = np.array(FPKM_D2).reshape((-1,1))
+#     # y = np.array(FPKM_D1)
+#     # model_2 = LinearRegression().fit(x, y)
+#     # r_sq = model_2.score(x, y)
+#     #print('Coefficient of determination D2:', r_sq)
+#
+#     return "Foo"
+
+
+# def categorizeDigest(chr_name, d_sta, d_end):
+#     """
+#     Input parameters are coordinates of a digest. This function checks for each digest position whether there is
+#     a TSS with associated expression level category (either 0 or 1 for active/inactive or 0 to 4).
+#     If all associated expression level categories are the same, the function returns the corresponding category.
+#     Otherwise, if there are discordant categories, the this function returns a 'd'.
+#     Finally, if there is no TSS on the digest at all, the function returns a '-1'.
+#     This may happen due to slight differences of the annotation used for intercation calling, RNA-seq analysis
+#     and refGene file. Ideally, the same annotation is used for all analyses.
+#
+#     :param chr_name: Chromosome name, e.g. chr1
+#     :param d_sta: First position of a digest.
+#     :param d_end: Last position of a digest.
+#     :return: Concordant expression level category or 'd' if discordant categories were found or '-1' of no TSS was found.
+#     """
+#     current_expression_category = -1
+#     for i in range(d_sta, d_end):
+#         key = chr_name + ":" + str(i)
+#         if key in tss_pos_to_gene_id and tss_pos_to_gene_id[key] in expression_categories:
+#             if current_expression_category == -1: # first TSS on digest
+#                 current_expression_category = expression_categories[tss_pos_to_gene_id[key]]
+#                 continue
+#             if current_expression_category != expression_categories[tss_pos_to_gene_id[key]]:
+#                 return "d"
+#
+#     return current_expression_category

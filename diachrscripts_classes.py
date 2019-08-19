@@ -84,7 +84,7 @@ class Interaction:
         category = state_1 + state_2
         return sorted(category)[0]+sorted(category)[1]
 
-    def get_binomial_p_value(self): # check this function for small simple and twisted read counts
+    def get_binomial_p_value(self): # ToDo: check this function for small simple and twisted read counts in R
         if self.n_simple < self.n_twisted:
             return 1 - binom.cdf(self.n_twisted-1, self.n_simple + self.n_twisted, 0.5)
         else:
@@ -95,7 +95,9 @@ class Interaction:
             raise Exception("[FATAL] Invalid interaction type. Should be either 'S', 'T', 'U' or 'TBD' but was " + type + ".")
         else:
             if type == "TBD":
-                if self.get_binomial_p_value() <= 0.05:
+                if self.n_twisted + self.n_simple < 5:
+                    type = 'NA' # an interaction with less than 5 read pairs cannot be significant with a binomial P-value threshold of 0.05
+                elif self.get_binomial_p_value() <= 0.05:
                     if self.n_twisted < self.n_simple:
                         type = 'S'
                     else:
@@ -112,6 +114,10 @@ class Interaction:
 
     def get_second_digest(self):
         return self.digest_2
+
+    def is_cis_long_range(self, d_dist):
+        return self.digest_1.get_chromosome() == self.digest_1.get_chromosome() and 10000 < self.get_digest_distance()
+
 
 #######################################################################################################################
 
@@ -295,7 +301,7 @@ class TSSCoordinateMap:
 
         # read FPKM values to temporary dictionary
 
-        tmp_fpkm_hash = {}
+        tmp_fpkm_dict = {}
 
         with open(cuffdiff_genes_fpkm_tracking_file) as fp:
 
@@ -305,12 +311,11 @@ class TSSCoordinateMap:
                 line_fields = line.split("\t")
                 gene_id = line_fields[3]
                 fpkm = float(line_fields[9])
-                tmp_fpkm_hash[gene_id] = fpkm
+                tmp_fpkm_dict[gene_id] = fpkm
                 line = fp.readline()
 
         # determine number of zero FPKMs and quartiles
-
-        tmp_fpkm_list = tmp_fpkm_hash.values()
+        tmp_fpkm_list = tmp_fpkm_dict.values()
         self.fpkm_n_zero = tmp_fpkm_list.count(0)
         tmp_fpkm_list = filter(lambda a: a != 0, tmp_fpkm_list) # remove zero FPKMs
         self.fpkm_upper_first_q = round(np.quantile(tmp_fpkm_list, .25),2)
@@ -321,8 +326,8 @@ class TSSCoordinateMap:
         genes_without_fpkm = []
         for coord in self.tss_coord_dict.values():
             for tss_info in coord.tss_info_dict.values():
-                if tss_info.gene_id in tmp_fpkm_hash:
-                    tss_info.set_fpkm(tmp_fpkm_hash[tss_info.gene_id])
+                if tss_info.gene_id in tmp_fpkm_dict:
+                    tss_info.set_fpkm(tmp_fpkm_dict[tss_info.gene_id])
                 else:
                     genes_without_fpkm.append(tss_info.gene_id)
 
@@ -375,7 +380,9 @@ class TSSCoordinateMap:
         return key in self.tss_coord_dict
 
     def get_coord_category(self, key):
+
         coord_expression_categories = [] # note that there may be multiple TSS a given coordinate
+
         if key in self.tss_coord_dict:
             for tss_info in self.tss_coord_dict[key].tss_info_dict.values():
                 coord_expression_categories.append(tss_info.expression_category)
@@ -388,5 +395,46 @@ class TSSCoordinateMap:
             return 0
         else:
             return tss_info.gene_id # no FPKM for annotated TSS
+
+    def get_coord_strand(self, coord_key):
+
+        coord_strands = []  # note that there may be multiple TSS a given coordinate
+
+        if coord_key in self.tss_coord_dict:
+            for tss_info in self.tss_coord_dict[coord_key].tss_info_dict.values():
+                coord_strands.append(tss_info.strand)
+        else:
+            return -1
+
+        if '-' in coord_strands and '+' in coord_strands:
+            return 'd'
+        elif '-' in coord_strands:
+            return '-'
+        elif '+' in coord_strands:
+            return '+'
+        else:
+            raise Exception("[FATAL] Invalid strand symbol. Should be either '-' or '+' but was " + str(coord_strands) + ".")
+
+
+
+#######################################################################################################################
+
+class PairKeyDict:
+
+    states = []
+
+    def __init__(self, states):
+        self.states = states
+        self.pair_dict = {}
+        for i in states:
+            for j in states:
+                key = i + "/" + j
+                self.pair_dict[key] = 0
+
+    def print_pair_key_dict(self):
+        for i in self.states:
+            for j in self.states:
+                key = i + "/" + j
+                print(key + "\t" + str(self.pair_dict[key]))
 
 
