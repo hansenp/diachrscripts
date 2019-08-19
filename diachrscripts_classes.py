@@ -91,9 +91,17 @@ class Interaction:
             return 1 - binom.cdf(self.n_simple-1, self.n_simple + self.n_twisted, 0.5)
 
     def set_interaction_type(self, type):
-        if(type != 'S' and type != 'T' and type != 'U'):
-            raise Exception('[FATAL] Invalid interaction type. Should be either \'S\', \'T\' or \'U\' but was {}.', type)
+        if(type != 'S' and type != 'T' and type != 'U' and type != "TBD"):
+            raise Exception("[FATAL] Invalid interaction type. Should be either 'S', 'T', 'U' or 'TBD' but was " + type + ".")
         else:
+            if type == "TBD":
+                if self.get_binomial_p_value() <= 0.05:
+                    if self.n_twisted < self.n_simple:
+                        type = 'S'
+                    else:
+                        type = 'T'
+                else:
+                    type = 'U'
             self.type = type
 
     def get_interaction_type(self):
@@ -152,12 +160,12 @@ class TSSCoordinate:
         self.chromosome = chromosome
         self.position = position
         self.tss_info_dict = {}
-        self.tss_info_dict[gene_id] = TSSInfo(strand, gene_id, gene_symbol) # use gene_id as key
+        self.tss_info_dict[gene_id] = TSSInfo(strand, gene_id, gene_symbol)
 
     # Methods
 
     def append_TSSInfo(self, strand, gene_id, gene_symbol):
-        self.tss_info_dict[gene_id] = TSSInfo(strand, gene_id, gene_symbol) # use gene_id as key
+        self.tss_info_dict[gene_id] = TSSInfo(strand, gene_id, gene_symbol)
 
     def get_num_of_genes(self):
         return len(self.tss_info_dict)
@@ -225,7 +233,7 @@ class TSSCoordinateMap:
 
                 # parse line
                 values = line.split("\t")
-                gene_id = values[1]
+                gene_id = values[12] # for refGene we use gene symbols as gene ID because refSeq gene IDs correspond to transcripts
                 chromosome = values[2]
                 strand = values[3]
                 if strand == "+":

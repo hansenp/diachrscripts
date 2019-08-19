@@ -370,6 +370,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
             values2 = values[8].split(":")
             n_simple = int(values2[0])
             n_twisted = int(values2[1])
+            i_type = "TBD" # will be determined using binomial P-value
         else: # from LRT script
             n_simple = values[8]
             n_twisted = values[9]
@@ -399,11 +400,10 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
             continue
 
         # Assign expression level category to digest using max approach
-        pair_key = categorizeDigestPair(interaction) ######
+        pair_key = categorizeDigestPair(interaction)
 
         if interaction.get_interaction_type() == None:
-            line = fp.readline()
-            continue
+            raise Exception("[FATAL] Interaction type is 'None'. This should never happen.")
         elif interaction.get_interaction_type() == "S":
             PAIR_hash_simple[pair_key] = PAIR_hash_simple[pair_key] + 1
         elif interaction.get_interaction_type() == "T":
