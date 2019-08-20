@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import diachrscripts_classes as dclass
+import diachrscripts_toolkit as dclass
 import argparse
 import gzip
 import statistics as statistics
@@ -48,7 +48,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         interaction = dclass.Interaction(digest_1, digest_2, n_simple, n_twisted)
 
         # Restrict analysis to subset of interactions, e.g. 'AA'
-        if(status_pair_flag != "ALL" and status_pair_flag != interaction.get_status_pair_flag()):
+        if(status_pair_flag != "ALL" and status_pair_flag != interaction.get_digest_status_pair_flag()):
             line = fp.readline()
             continue
 

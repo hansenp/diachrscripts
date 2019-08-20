@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 import argparse
 import gzip
-import diachrscripts_classes as dclass
+import diachrscripts_toolkit as dclass
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from scipy.stats import binom
 
 
+### Parse command line
+######################
 
 parser = argparse.ArgumentParser(description='Determine expression category levels for interacting digest pairs.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
@@ -22,14 +24,18 @@ ref_gene_file = args.ref_gene_file
 diachromatic_interaction_file = args.interaction_file
 use_linear_regression = args.use_linear_regression
 
-def categorizeDigestMaxApproach(digest):
-    """
-    Returns the highest expression level category for given digest.
 
-    :param chr_name:
-    :param d_sta:
-    :param d_end:
-    :return: Expression level category of the digest. Either 0, 1 or None.
+### Define auxiliary functions
+##############################
+
+def get_digest_expression_tag(digest, ref_gene_tss_map):
+    """
+    This function traverses the input digest from left to right and, for each position, queries a help structure
+    that allows assign the digest a expression tag.
+
+    :param digest: A digest that is part of an interaction.
+    :param ref_gene_tss_map: A help structure that combines information about TSS and expression.
+    :return: Expression level tag of the digest. Either 0 (inactive), 1 (active) or None (?).
     """
     digest_expression_categories = []
 
@@ -46,151 +52,122 @@ def categorizeDigestMaxApproach(digest):
     else:
         return None # the digest has annotated TSS but FPKM is missing
 
-def categorizeDigestPair(interaction):
-    """
-    This function uses the function 'categorizeDigest' in order to determine the expression level categories of two
-    interacting digests and assembles the corresponding pair key, e.g. 1/1 if both digests have category 1.
-
-    :param chr_name_1: Chromosome name of first digest.
-    :param d_sta_1: First position of a first digest.
-    :param d_end_1: Last position of first digest.
-    :param chr_name_2: Chromosome name of second digest.
-    :param d_sta_2: First position of a second digest.
-    :param d_end_2: Last position of second digest.
-    :return:
-    """
-    digest_category_1 = categorizeDigestMaxApproach(interaction.get_first_digest())
-    digest_category_2 = categorizeDigestMaxApproach(interaction.get_second_digest())
+def get_interaction_expression_tag_pair_key(interaction, ref_gene_tss_map):
+    digest_category_1 = get_digest_expression_tag(interaction.get_first_digest(), ref_gene_tss_map)
+    digest_category_2 = get_digest_expression_tag(interaction.get_second_digest(), ref_gene_tss_map)
     return str(digest_category_1) + "/" + str(digest_category_2)
 
-def getInteractionTypeBinom(simple, twisted):
-    """
-    This function determines whether a given interaction is significantly directed, i.e. simple or twisted,
-    and returns a 'S' for simple and 'T' for twisted. Otherwise, the function returns an 'U' for undirected
-    or a 'NA', if the sum of twisted and simple is smaller than five because interactions with less read pairs
-    cannot be significant using the binomial distribution.
 
-    :param simple: Number of simple read pairs.
-    :param twisted: Number of Twisted read pairs.
-    :return: 'S' (simple),'T' (twisted), 'U' (undirected), 'NA' (not available)
-    """
-    if simple + twisted < 5:
-        return "NA"
-
-    if simple < twisted:
-        p_value = 1 - binom.cdf(twisted - 1, simple + twisted, 0.5)
-        if p_value <= 0.05:
-            return "T"
-        else:
-            return "U"
-    else:
-        p_value = 1 - binom.cdf(simple - 1, simple + twisted, 0.5)
-        if p_value <= 0.05:
-            return "S"
-        else:
-            return "U"
-
-### Start Execution
+### Start execution
 ###################
 
 ref_gene_tss_map = dclass.TSSCoordinateMap(ref_gene_file, "refGene") # parse refGene file with TSS
 ref_gene_tss_map.analyze_coordinates_and_print_report() # collect counts and print report
 
 ref_gene_tss_map.parse_cuffdiff_genes_fpkm_tracking_file(fpkm_tracking_file) # add FPKM values for genes
-ref_gene_tss_map.set_expression_categories(1)
+ref_gene_tss_map.set_expression_categories(2) # set expression categories depending on FPKM quartiles
 
 # iterate over interaction file and determine counts of pair categories
 strand_simple = dclass.PairKeyDict(['0', '1', '-1', 'None'])
 strand_twisted = dclass.PairKeyDict(['0', '1', '-1', 'None'])
 strand_undirected = dclass.PairKeyDict(['0', '1', '-1', 'None'])
-strand_undefined = dclass.PairKeyDict(['0', '1', '-1', 'None'])
+strand_indefinable = dclass.PairKeyDict(['0', '1', '-1', 'None'])
 
-n_interaction = 0
-print "[INFO] Determining pair category for each interaction..."
+n_interaction_total = 0
+n_trans_short_range_interaction = 0
+n_non_promoter_promoter_interaction = 0
+n_simple_interaction = 0
+n_twisted_interaction = 0
+n_undirected_interaction = 0
+n_indefinable_interaction = 0
+
+# iterate interactions
+print("[INFO] Determining pair category for each interaction in " + diachromatic_interaction_file + " ...")
 with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
     line = fp.readline()
 
     while line:
 
+        if n_interaction_total%10000 == 0:
+            print "\t[INFO]", n_interaction_total, "interactions processed ..."
+        n_interaction_total += 1
+
         # parse line representing one interaction
-        values = line.split("\t")
+        interaction = dclass.Interaction(line)
 
-        digest_1 = dclass.Digest(values[0], int(values[1]), int(values[2]))
-        if values[3] == 'A':
-            digest_1.set_active()
-        digest_2 = dclass.Digest(values[4], int(values[5]), int(values[6]))
-        if values[7] == 'A':
-            digest_2.set_active()
-
-        if ':' in values[8]: # regular Diachromatic file
-            values2 = values[8].split(":")
-            n_simple = int(values2[0])
-            n_twisted = int(values2[1])
-            i_type = "TBD" # will be determined using binomial P-value
-        else: # from LRT script
-            n_simple = values[8]
-            n_twisted = values[9]
-            i_type = values[13].rstrip()
-        interaction = dclass.Interaction(digest_1, digest_2, n_simple, n_twisted)
-        interaction.set_interaction_type(i_type)
-
-        # restrict analysis to cis interactions
-        if not(interaction.is_cis()):
-            line = fp.readline()
-            continue
-
-        # restrict analysis to long range interactions
-        if interaction.get_digest_distance() < 10000:
+        # restrict analysis to cis long range interactions
+        if not(interaction.is_cis_long_range(10000)):
+            n_trans_short_range_interaction += 1
             line = fp.readline()
             continue
 
         # restrict analysis to interactions between targeted promoters
-        if interaction.get_status_pair_flag() != "AA":
+        if interaction.get_digest_status_pair_flag() != "AA":
+            n_non_promoter_promoter_interaction += 1
             line = fp.readline()
             continue
 
         # assign expression level category to digest using max approach
-        pair_key = categorizeDigestPair(interaction)
+        pair_key = get_interaction_expression_tag_pair_key(interaction, ref_gene_tss_map)
 
         if interaction.get_interaction_type() == None:
             raise Exception("[FATAL] Interaction type is 'None'. This should never happen.")
         elif interaction.get_interaction_type() == "S":
             strand_simple.pair_dict[pair_key] = strand_simple.pair_dict[pair_key] + 1
+            n_simple_interaction += 1
         elif interaction.get_interaction_type() == "T":
             strand_twisted.pair_dict[pair_key] = strand_twisted.pair_dict[pair_key] + 1
+            n_twisted_interaction += 1
         elif interaction.get_interaction_type() == "U":
             strand_undirected.pair_dict[pair_key] = strand_undirected.pair_dict[pair_key] + 1
+            n_undirected_interaction += 1
         elif interaction.get_interaction_type() == "NA":
-            strand_undefined.pair_dict[pair_key] = strand_undefined.pair_dict[pair_key] + 1
+            strand_indefinable.pair_dict[pair_key] = strand_indefinable.pair_dict[pair_key] + 1
+            n_indefinable_interaction += 1
         else:
             line = fp.readline()
             print interaction.get_interaction_type()
-            raise Exception("[FATAL] Invalid interaction type. Should be either 'S', 'T' or 'U' but was " + interaction.get_interaction_type() + "."
-                            )
-
-        n_interaction += 1
-        if n_interaction%1000 == 0:
-            print "\t[INFO]", n_interaction, "interactions processed..."
+            raise Exception("[FATAL] Invalid interaction type. Should be either 'S', 'T' or 'U' but was " + interaction.get_interaction_type() + ".")
 
         line = fp.readline()
 
-    print("...done.")
+    print("... done.")
 
 fp.close()
 
-# print results to screen
-print out_prefix
-print "PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tUNDEFINED" # absolute numbers
-for i in strand_simple.pair_dict.keys():
-    print i + "\t" + str(strand_simple.pair_dict[i]) + "\t" + str(strand_twisted.pair_dict[i]) + "\t" + str(strand_simple.pair_dict[i] + strand_twisted.pair_dict[i]) + "\t" + str(strand_undirected.pair_dict[i]) + "\t" + str(strand_undefined.pair_dict[i])
 
-print "PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tUNDEFINED" # relative frequencies within simple, twisted and undirected
-for i in strand_simple.pair_dict.keys():
-    print i + "\t" + str(float(1.0 * strand_simple.pair_dict[i] / sum(strand_simple.pair_dict.values()))) + "\t" + str(float(1.0 * strand_twisted.pair_dict[i] / sum(strand_twisted.pair_dict.values()))) + "\t" \
-          + str(float((1.0 * strand_simple.pair_dict[i] + strand_twisted.pair_dict[i]) / (sum(strand_simple.pair_dict.values()) + sum(strand_twisted.pair_dict.values())))) + "\t" \
-          + str(float(1.0 * strand_undirected.pair_dict[i] / sum(strand_undirected.pair_dict.values()))) + "\t" \
-          + str(float(1.0 * strand_undefined.pair_dict[i] / sum(strand_undefined.pair_dict.values())))
+### Print results to screen
+###########################
+
+# sum up simple and twisted counts
+simple_twisted_dict = {}
+for key in strand_simple.pair_dict.keys():
+    simple_twisted_dict[key] = strand_simple.pair_dict[key] + strand_twisted.pair_dict[key]
+
+# print absolute frequencies, calculate and print relative frequencies
+print out_prefix
+print "PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tINDEFINABLE\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tINDEFINABLE"
+for key in strand_simple.pair_dict.keys():
+
+    # absolute frequencies
+    print "\'" + key + "\'" + "\t" + str(strand_simple.pair_dict[key]) + "\t" + str(strand_twisted.pair_dict[key]) + "\t" + str(strand_simple.pair_dict[key] + strand_twisted.pair_dict[key]) + "\t" + str(strand_undirected.pair_dict[key]) + "\t" + str(strand_indefinable.pair_dict[key]),
+
+    # relative frequencies
+    fraction_simple = dclass.get_fraction(strand_simple.pair_dict[key], strand_simple.pair_dict.values())
+    fraction_twisted = dclass.get_fraction(strand_twisted.pair_dict[key], strand_twisted.pair_dict.values())
+    fraction_directed = dclass.get_fraction(simple_twisted_dict[key], simple_twisted_dict.values())
+    fraction_undirected = dclass.get_fraction(strand_undirected.pair_dict[key], strand_undirected.pair_dict.values())
+    fraction_indefinable = dclass.get_fraction(strand_indefinable.pair_dict[key], strand_indefinable.pair_dict.values())
+    print("\t" + fraction_simple + "\t" + fraction_twisted + "\t" + str(fraction_directed) + "\t" + str(fraction_undirected) + "\t" + str(fraction_indefinable))
+
+print("Total number of interactions: " + str(n_interaction_total))
+print("Number of trans and short range interactions: " + str(n_trans_short_range_interaction) + " (discarded)")
+print("Number of non promoter-promoter interactions: " + str(n_non_promoter_promoter_interaction) + " (discarded)")
+print("Number of directed simple interactions: " + str(n_simple_interaction))
+print("Number of directed twisted interactions: " + str(n_twisted_interaction))
+print("Number of undirected interactions: " + str(n_undirected_interaction))
+print("Number of indefinable interactions: " + str(n_indefinable_interaction))
 
 
 ### Graveyard
