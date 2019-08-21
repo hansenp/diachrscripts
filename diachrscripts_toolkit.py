@@ -485,3 +485,9 @@ def get_fraction(value, values):
         return str(Decimal(float(1.0*value/sum(values))).quantize(Decimal(10) ** -2))
     else:
         return str(0.00)
+
+def get_string_formatted_fraction(numerator, denominator):
+    if 0 < denominator or 0 > denominator:
+        return str(Decimal(float(1.0 * numerator / denominator)).quantize(Decimal(10) ** -2))
+    else:
+        return str(0.00)
