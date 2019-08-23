@@ -59,7 +59,7 @@ class kInteractionCounter:
         return p * (self.k_interaction_dict[k][0])
 
     def print_k_interaction_counts(self):
-        print("K\tN_INTERACTION\tN_ZERO_SIMPLE\tN_ZERO_TWISTED\tN_ZERO_TOTAL\tF_ZERO_TOTAL\tN_ZERO_TOTAL_EXPECTED   ")
+        print("K\tN_INTERACTION\tN_ZERO_SIMPLE\tN_ZERO_TWISTED\tN_ZERO_TOTAL\tF_ZERO_TOTAL\tN_ZERO_TOTAL_EXPECTED\tLOG_P_VAL")
         for i in range(2, self.max_k + 1):
             k = str(i)
             n_interaction = str(self.k_interaction_dict[i][0])
@@ -69,23 +69,30 @@ class kInteractionCounter:
             f_zero_total = dclass.get_string_formatted_fraction(self.k_interaction_dict[i][1] + self.k_interaction_dict[i][2], self.k_interaction_dict[i][0])
             n_zero_total_expected = str(int(round(self.get_expected_number_zero_interactions(i))))
             frac_expected_among_observed = dclass.get_string_formatted_fraction(self.get_expected_number_zero_interactions(i), self.k_interaction_dict[i][1] + self.k_interaction_dict[i][2])
-            p_value = str(dclass.get_binomial_p_value(self.k_interaction_dict[i][1] + self.k_interaction_dict[i][2], self.k_interaction_dict[i][0], 2*(0.5 ** i)))
+            p_value, error_status = dclass.get_binomial_p_value(self.k_interaction_dict[i][1] + self.k_interaction_dict[i][2], self.k_interaction_dict[i][0], i)
+
+            print(str(p_value) + "\t" + str(error_status))
+            if error_status == 1:
+                p_value == "NA"
+            elif error_status == 3:
+                p_value = "<" + str(p_value)
+            else:
+                p_value = str(p_value)
+
             print(k + "\t" + n_interaction\
-                  + "\t" + n_zero_simple\
-                  + "\t" + n_zero_twisted\
-                  + "\t" + n_zero_total\
-                  + "\t" + f_zero_total\
-                  + "\t" + n_zero_total_expected \
-                  + "\t" + frac_expected_among_observed \
-                  + "\t" + p_value)
-
-
+                    + "\t" + n_zero_simple\
+                    + "\t" + n_zero_twisted\
+                    + "\t" + n_zero_total\
+                    + "\t" + f_zero_total\
+                    + "\t" + n_zero_total_expected \
+                    + "\t" + frac_expected_among_observed \
+                    + "\t" + p_value)
 
 
 ### Start execution
 ###################
 
-k_interaction_counter = kInteractionCounter(50)
+k_interaction_counter = kInteractionCounter(100)
 
 n_interaction_total = 0
 n_trans_short_range_interaction = 0

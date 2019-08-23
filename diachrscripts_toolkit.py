@@ -2,6 +2,11 @@ import gzip
 from scipy.stats import binom
 import numpy as np
 from decimal import *
+import warnings
+warnings.filterwarnings("error")
+from decimal import Decimal, getcontext
+from math import log10
+import sys
 
 #######################################################################################################################
 
@@ -492,5 +497,30 @@ def get_string_formatted_fraction(numerator, denominator):
     else:
         return str(0.00)
 
-def get_binomial_p_value(k, n, p):
-    return -binom.logsf(k, n, p)
+def get_binomial_p_value(k, n, x):
+    """
+    Calculate a P-value using a binomial distribution for observing k out of n interactions with a total number of x
+    read pairs that have either zero simple or zero twisted read pairs, given an equal probability of 0.5 for simple
+    and twisted read pairs.
+
+    For instance, a single interaction with zero simple and two twisted read pairs corresponds to sequence of two
+    independent Bernoulli trials and in each trial the probability for drawing a twisted read pair is 0.5.
+    Therefore, the probability to draw two twisted read pairs in a sequence of two trials is 0.5^2,
+    and the probability to draw three twisted read pairs in a sequence of three trials is 0.5^3 and so on,
+    i.e. p=0.5^x and since we do not distinguish between zero simple and zero twisted interactions, we have 2*0.5^x.
+
+    This function uses a binomial distribution binom(n,k,p) in order to calculate the P-value.
+
+    :param k: Number of interactions with either zero simple or zero twisted read pairs
+    :param n: Total number of interactions with a fixed number of x read pairs
+    :param x: Total number of read pairs in n interactions
+    :return: Negative decadic logarithm of the binomial P-value
+    """
+    if n==0: # no interaction, no P-value
+        return "NA", 1
+    #print("-log10(binom.sf(" + str(k) + ", " + str(n) + ", 2*(0.5 ** " + str(x) + ")))")
+    try:
+        return -log10(binom.sf(k, n, 2*(0.5 ** x))), 2
+    except ValueError: # underflow
+       return -log10(sys.float_info.min * sys.float_info.epsilon), 3
+
