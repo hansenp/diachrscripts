@@ -491,3 +491,6 @@ def get_string_formatted_fraction(numerator, denominator):
         return str(Decimal(float(1.0 * numerator / denominator)).quantize(Decimal(10) ** -2))
     else:
         return str(0.00)
+
+def get_binomial_p_value(k, n, p):
+    return -binom.logsf(k, n, p)
