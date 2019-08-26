@@ -69,12 +69,11 @@ class kInteractionCounter:
             f_zero_total = dclass.get_string_formatted_fraction(self.k_interaction_dict[i][1] + self.k_interaction_dict[i][2], self.k_interaction_dict[i][0])
             n_zero_total_expected = str(int(round(self.get_expected_number_zero_interactions(i))))
             frac_expected_among_observed = dclass.get_string_formatted_fraction(self.get_expected_number_zero_interactions(i), self.k_interaction_dict[i][1] + self.k_interaction_dict[i][2])
-            p_value, error_status = dclass.get_binomial_p_value(self.k_interaction_dict[i][1] + self.k_interaction_dict[i][2], self.k_interaction_dict[i][0], i)
+            p_value, error_code = dclass.get_x_inter_binomial_log10_p_value(self.k_interaction_dict[i][1] + self.k_interaction_dict[i][2], self.k_interaction_dict[i][0], i)
 
-            print(str(p_value) + "\t" + str(error_status))
-            if error_status == 1:
+            if error_code == 1:
                 p_value == "NA"
-            elif error_status == 3:
+            elif error_code == 2:
                 p_value = "<" + str(p_value)
             else:
                 p_value = str(p_value)
@@ -86,7 +85,8 @@ class kInteractionCounter:
                     + "\t" + f_zero_total\
                     + "\t" + n_zero_total_expected \
                     + "\t" + frac_expected_among_observed \
-                    + "\t" + p_value)
+                    + "\t" + p_value \
+                    + "\t" + str(error_code))
 
 
 ### Start execution

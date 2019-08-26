@@ -5,8 +5,9 @@ from decimal import *
 import warnings
 warnings.filterwarnings("error")
 from decimal import Decimal, getcontext
-from math import log10
+from math import log, log10
 import sys
+import warnings
 
 #######################################################################################################################
 
@@ -497,7 +498,7 @@ def get_string_formatted_fraction(numerator, denominator):
     else:
         return str(0.00)
 
-def get_binomial_p_value(k, n, x):
+def get_x_inter_binomial_log10_p_value(k, n, x):
     """
     Calculate a P-value using a binomial distribution for observing k out of n interactions with a total number of x
     read pairs that have either zero simple or zero twisted read pairs, given an equal probability of 0.5 for simple
@@ -514,13 +515,12 @@ def get_binomial_p_value(k, n, x):
     :param k: Number of interactions with either zero simple or zero twisted read pairs
     :param n: Total number of interactions with a fixed number of x read pairs
     :param x: Total number of read pairs in n interactions
-    :return: Negative decadic logarithm of the binomial P-value
+    :return: Negative decadic logarithm of the binomial P-value and error code
     """
     if n==0: # no interaction, no P-value
         return "NA", 1
-    #print("-log10(binom.sf(" + str(k) + ", " + str(n) + ", 2*(0.5 ** " + str(x) + ")))")
+    #print("-binom.logsf(" + str(k) + ", " + str(n) + ", 2*(0.5 ** " + str(x) + "))/log(10)")
     try:
-        return -log10(binom.sf(k, n, 2*(0.5 ** x))), 2
-    except ValueError: # underflow
-       return -log10(sys.float_info.min * sys.float_info.epsilon), 3
-
+        return -binom.logsf(k, n, 2*(0.5 ** x))/log(10), 0
+    except RuntimeWarning: # underflow
+       return -log(sys.float_info.min * sys.float_info.epsilon)/log(10), 2 # return smallest possible float
