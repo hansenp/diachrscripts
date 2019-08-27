@@ -28,9 +28,14 @@ n_significant_twisted_interactions = 0
 n_undirected_interactions = 0
 
 # Iterate interactions and collect distances
+n_interaction_total = 0
 with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
     line = fp.readline()
     while line:
+
+        if n_interaction_total%1000000 == 0:
+            print "\t[INFO]", n_interaction_total, "interactions processed ..."
+        n_interaction_total += 1
 
         # Parse line
         values = line.split("\t")
@@ -45,7 +50,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         values2 = values[8].split(":")
         n_simple = int(values2[0])
         n_twisted = int(values2[1])
-        interaction = dclass.Interaction(digest_1, digest_2, n_simple, n_twisted)
+        interaction = dclass.Interaction(line)
 
         # Restrict analysis to subset of interactions, e.g. 'AA'
         if(status_pair_flag != "ALL" and status_pair_flag != interaction.get_digest_status_pair_flag()):
