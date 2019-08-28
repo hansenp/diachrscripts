@@ -376,10 +376,10 @@ class TSSCoordinateMap:
             print("\t[WARNING] No FPKM for the following " + str(len(genes_without_fpkm)) + " genes: " + " ".join(genes_without_fpkm))
 
         # print info about zero FPKM and quartiles
-        print "\t[INFO] There were", self.fpkm_n_zero, "genes with zero FPKM."
-        print "\t[INFO] Upper FPKM limit of the first quartile:", self.fpkm_upper_first_q
-        print "\t[INFO] Upper FPKM limit of the second quartile:", self.fpkm_upper_second_q
-        print "\t[INFO] Upper FPKM limit of the third quartile:", self.fpkm_upper_third_q
+        print ("\t[INFO] There were", self.fpkm_n_zero, "genes with zero FPKM.")
+        print ("\t[INFO] Upper FPKM limit of the first quartile:", self.fpkm_upper_first_q)
+        print ("\t[INFO] Upper FPKM limit of the second quartile:", self.fpkm_upper_second_q)
+        print ("\t[INFO] Upper FPKM limit of the third quartile:", self.fpkm_upper_third_q)
 
     def set_expression_categories(self, q_limit):
 
