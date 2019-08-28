@@ -270,7 +270,7 @@ class TSSCoordinateMap:
         print("[INFO] Parsing " + self.annotation_format + " annotation file: " + self.annotation_file_path + " ...")
 
         # open file
-        with gzip.open(self.annotation_file_path) as fp:
+        with gzip.open(self.annotation_file_path, mode='rt') as fp:
 
             # get first line
             line = fp.readline()
@@ -279,7 +279,7 @@ class TSSCoordinateMap:
             while line:
 
                 # parse line
-                values = line.split("\t")
+                values = line.split('\t')
                 gene_id = values[12] # for refGene we use gene symbols as gene ID because refSeq gene IDs correspond to transcripts
                 chromosome = values[2]
                 strand = values[3]
