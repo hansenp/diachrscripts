@@ -92,6 +92,11 @@ class Interaction:
             i_type = fields[13].rstrip() # has been determined already using LRT
         self.set_interaction_type(i_type)
 
+        if self.digest_1.get_chromosome() == self.digest_2.get_chromosome():
+            self.cis = True
+        else:
+            self.cis = False
+
     # Methods
 
     def get_digest_distance(self):
