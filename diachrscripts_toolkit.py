@@ -356,9 +356,9 @@ class TSSCoordinateMap:
                 line = fp.readline()
 
         # determine number of zero FPKMs and quartiles
-        tmp_fpkm_list = tmp_fpkm_dict.values()
+        tmp_fpkm_list = list(tmp_fpkm_dict.values())
         self.fpkm_n_zero = tmp_fpkm_list.count(0)
-        tmp_fpkm_list = filter(lambda a: a != 0, tmp_fpkm_list) # remove zero FPKMs
+        tmp_fpkm_list = list(filter(lambda a: a != 0, tmp_fpkm_list)) # remove zero FPKMs
         self.fpkm_upper_first_q = round(np.quantile(tmp_fpkm_list, .25),2)
         self.fpkm_upper_second_q = round(np.quantile(tmp_fpkm_list, .50),2)
         self.fpkm_upper_third_q = round(np.quantile(tmp_fpkm_list, .75),2)

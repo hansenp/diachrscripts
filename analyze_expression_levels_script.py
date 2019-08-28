@@ -2,9 +2,6 @@
 import argparse
 import gzip
 import diachrscripts_toolkit as dclass
-import numpy as np
-from sklearn.linear_model import LinearRegression
-from scipy.stats import binom
 
 
 ### Parse command line
@@ -89,8 +86,8 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
     while line:
 
-        if n_interaction_total%10000 == 0:
-            print "\t[INFO]", n_interaction_total, "interactions processed ..."
+        if n_interaction_total%1000000 == 0:
+            print("\t[INFO]", n_interaction_total, "interactions processed ...")
         n_interaction_total += 1
 
         # parse line representing one interaction
@@ -127,7 +124,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
             n_indefinable_interaction += 1
         else:
             line = fp.readline()
-            print interaction.get_interaction_type()
+            print(interaction.get_interaction_type())
             raise Exception("[FATAL] Invalid interaction type. Should be either 'S', 'T' or 'U' but was " + interaction.get_interaction_type() + ".")
 
         line = fp.readline()
@@ -146,12 +143,12 @@ for key in strand_simple.pair_dict.keys():
     simple_twisted_dict[key] = strand_simple.pair_dict[key] + strand_twisted.pair_dict[key]
 
 # print absolute frequencies, calculate and print relative frequencies
-print out_prefix
-print "PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tINDEFINABLE\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tINDEFINABLE"
+print(out_prefix)
+print("PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tINDEFINABLE\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tINDEFINABLE")
 for key in strand_simple.pair_dict.keys():
 
     # absolute frequencies
-    print "\'" + key + "\'" + "\t" + str(strand_simple.pair_dict[key]) + "\t" + str(strand_twisted.pair_dict[key]) + "\t" + str(strand_simple.pair_dict[key] + strand_twisted.pair_dict[key]) + "\t" + str(strand_undirected.pair_dict[key]) + "\t" + str(strand_indefinable.pair_dict[key]),
+    print("\'" + key + "\'" + "\t" + str(strand_simple.pair_dict[key]) + "\t" + str(strand_twisted.pair_dict[key]) + "\t" + str(strand_simple.pair_dict[key] + strand_twisted.pair_dict[key]) + "\t" + str(strand_undirected.pair_dict[key]) + "\t" + str(strand_indefinable.pair_dict[key])),
 
     # relative frequencies
     fraction_simple = dclass.get_fraction(strand_simple.pair_dict[key], strand_simple.pair_dict.values())
