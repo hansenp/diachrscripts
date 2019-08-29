@@ -29,12 +29,12 @@ n_undirected_interactions = 0
 
 # Iterate interactions and collect distances
 n_interaction_total = 0
-with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
+with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
     line = fp.readline()
     while line:
 
         if n_interaction_total%1000000 == 0:
-            print "\t[INFO]", n_interaction_total, "interactions processed ..."
+            print("\t[INFO]", n_interaction_total, "interactions processed ...")
         n_interaction_total += 1
 
         # Parse line
@@ -88,17 +88,18 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 fp.close()
 
 # Output summary
+print("\n")
 print("Summary")
 print("=======\n")
 print("Analysis for: " + out_prefix)
 print("Input file: " + diachromatic_interaction_file)
 print("Status pair flag: " + status_pair_flag)
-print("\n\n")
+print("\n")
 
 print("Number of significant simple interactions: " + str(n_significant_simple_interactions))
-print("Number of significant twisted simple interactions: " + str(n_significant_twisted_interactions))
-print("Number of undirected interactions: " + str(n_significant_twisted_interactions))
-print("\n\n")
+print("Number of significant twisted interactions: " + str(n_significant_twisted_interactions))
+print("Number of undirected interactions: " + str(n_undirected_interactions))
+print("\n")
 
 # Determine mean distances
 mean_simple = statistics.mean(distance_array_simple)

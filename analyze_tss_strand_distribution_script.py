@@ -69,7 +69,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
     while line:
 
-        if n_interaction_total%10000 == 0:
+        if n_interaction_total%1000000 == 0:
             print("\t[INFO]", n_interaction_total, "interactions processed ...")
         n_interaction_total += 1
 

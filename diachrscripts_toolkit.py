@@ -92,6 +92,11 @@ class Interaction:
             i_type = fields[13].rstrip() # has been determined already using LRT
         self.set_interaction_type(i_type)
 
+        if self.digest_1.get_chromosome() == self.digest_2.get_chromosome():
+            self.cis = True
+        else:
+            self.cis = False
+
     # Methods
 
     def get_digest_distance(self):
@@ -270,7 +275,7 @@ class TSSCoordinateMap:
         print("[INFO] Parsing " + self.annotation_format + " annotation file: " + self.annotation_file_path + " ...")
 
         # open file
-        with gzip.open(self.annotation_file_path) as fp:
+        with gzip.open(self.annotation_file_path, mode='rt') as fp:
 
             # get first line
             line = fp.readline()
@@ -279,7 +284,7 @@ class TSSCoordinateMap:
             while line:
 
                 # parse line
-                values = line.split("\t")
+                values = line.split('\t')
                 gene_id = values[12] # for refGene we use gene symbols as gene ID because refSeq gene IDs correspond to transcripts
                 chromosome = values[2]
                 strand = values[3]
@@ -356,9 +361,9 @@ class TSSCoordinateMap:
                 line = fp.readline()
 
         # determine number of zero FPKMs and quartiles
-        tmp_fpkm_list = tmp_fpkm_dict.values()
+        tmp_fpkm_list = list(tmp_fpkm_dict.values())
         self.fpkm_n_zero = tmp_fpkm_list.count(0)
-        tmp_fpkm_list = filter(lambda a: a != 0, tmp_fpkm_list) # remove zero FPKMs
+        tmp_fpkm_list = list(filter(lambda a: a != 0, tmp_fpkm_list)) # remove zero FPKMs
         self.fpkm_upper_first_q = round(np.quantile(tmp_fpkm_list, .25),2)
         self.fpkm_upper_second_q = round(np.quantile(tmp_fpkm_list, .50),2)
         self.fpkm_upper_third_q = round(np.quantile(tmp_fpkm_list, .75),2)
