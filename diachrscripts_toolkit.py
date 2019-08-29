@@ -60,17 +60,6 @@ class Interaction:
     digest_1 = None
     digest_2 = None
 
-    # Initializer
-    # def __init__(self, digest_1, digest_2, n_simple, n_twisted):
-    #     self.digest_1 = digest_1
-    #     self.digest_2 = digest_2
-    #     if digest_1.get_chromosome() == digest_2.get_chromosome():
-    #         self.cis = True
-    #     else:
-    #         self.cis = False
-    #     self.n_simple = n_simple
-    #     self.n_twisted = n_twisted
-
     def __init__(self, diachromatic_interaction_line):
 
         fields = diachromatic_interaction_line.split("\t")
@@ -85,12 +74,12 @@ class Interaction:
             fields2 = fields[8].split(":")
             self.n_simple = int(fields2[0])
             self.n_twisted = int(fields2[1])
-            i_type = "TBD"  # to be determined using binomial P-value
+            self.type = "TBD"  # to be determined using binomial P-value
         else: # line from LRT script
             self.n_simple = fields[8]
             self.n_twisted = fields[9]
-            i_type = fields[13].rstrip() # has been determined already using LRT
-        self.set_interaction_type(i_type)
+            self.type = fields[13].rstrip() # has been determined already using LRT
+        #self.set_interaction_type(i_type)
 
         if self.digest_1.get_chromosome() == self.digest_2.get_chromosome():
             self.cis = True

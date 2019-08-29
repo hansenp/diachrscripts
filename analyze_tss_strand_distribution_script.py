@@ -40,6 +40,39 @@ def get_interaction_strand_pair_key(interaction, ref_gene_tss_map):
     d2_strand = get_digest_strand_tag(interaction.get_second_digest(), ref_gene_tss_map)
     return str(d1_strand) + "/" + str(d2_strand)
 
+def print_tss_strand_pair_counts_to_file(file_path_name):
+
+    # open file handle
+    fh = open(file_path_name, "w", newline='')
+
+    # print header to file
+    fh.write("PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tINDEFINABLE\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tINDEFINABLE\n")
+
+    # sum up simple and twisted counts
+    simple_twisted_dict = {}
+    for key in strand_simple.pair_dict.keys():
+        simple_twisted_dict[key] = strand_simple.pair_dict[key] + strand_twisted.pair_dict[key]
+
+    # print absolute frequencies, calculate and print relative frequencies
+
+    for key in strand_simple.pair_dict.keys():
+
+        # calculate relative frequencies
+        fraction_simple = dclass.get_fraction(strand_simple.pair_dict[key], strand_simple.pair_dict.values())
+        fraction_twisted = dclass.get_fraction(strand_twisted.pair_dict[key], strand_twisted.pair_dict.values())
+        fraction_directed = dclass.get_fraction(simple_twisted_dict[key], simple_twisted_dict.values())
+        fraction_undirected = dclass.get_fraction(strand_undirected.pair_dict[key],
+                                                  strand_undirected.pair_dict.values())
+        fraction_indefinable = dclass.get_fraction(strand_indefinable.pair_dict[key],
+                                                   strand_indefinable.pair_dict.values())
+
+        fh.write("\'" + key + "\'" + "\t" + str(strand_simple.pair_dict[key]) + "\t" + str(strand_twisted.pair_dict[key]) + "\t" + str(strand_simple.pair_dict[key] + strand_twisted.pair_dict[key]) + "\t" + str(strand_undirected.pair_dict[key]) + "\t" + str(strand_indefinable.pair_dict[key])
+
+        + "\t" + fraction_simple + "\t" + fraction_twisted + "\t" + str(fraction_directed) + "\t" + str(fraction_undirected) + "\t" + str(fraction_indefinable) + "\n")
+
+    # close file handle
+    fh.close()
+
 
 ### Start execution
 ###################
@@ -69,7 +102,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
     while line:
 
-        if n_interaction_total%1000000 == 0:
+        if n_interaction_total%10000 == 0:
             print("\t[INFO]", n_interaction_total, "interactions processed ...")
         n_interaction_total += 1
 
@@ -88,23 +121,28 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
             line = fp.readline()
             continue
 
+
+        # setting the interaction type here would save a lot of time
+        if interaction.get_interaction_type() == "TBD":
+            interaction.set_interaction_type("TBD")
+
         # assign expression level category to digest using max approach
         pair_key = get_interaction_strand_pair_key(interaction, ref_gene_tss_map)
 
         if interaction.get_interaction_type() == None:
             raise Exception("[FATAL] Interaction type is 'None'. This should never happen.")
+        elif interaction.get_interaction_type() == "NA":
+            strand_indefinable.pair_dict[pair_key] = strand_indefinable.pair_dict[pair_key] + 1 # less than 5 read pairs
+            n_indefinable_interaction += 1
+        elif interaction.get_interaction_type() == "U":
+            strand_undirected.pair_dict[pair_key] = strand_undirected.pair_dict[pair_key] + 1
+            n_undirected_interaction += 1
         elif interaction.get_interaction_type() == "S":
             strand_simple.pair_dict[pair_key] = strand_simple.pair_dict[pair_key] + 1
             n_simple_interaction += 1
         elif interaction.get_interaction_type() == "T":
             strand_twisted.pair_dict[pair_key] = strand_twisted.pair_dict[pair_key] + 1
             n_twisted_interaction += 1
-        elif interaction.get_interaction_type() == "U":
-            strand_undirected.pair_dict[pair_key] = strand_undirected.pair_dict[pair_key] + 1
-            n_undirected_interaction += 1
-        elif interaction.get_interaction_type() == "NA":
-            strand_indefinable.pair_dict[pair_key] = strand_indefinable.pair_dict[pair_key] + 1 # less than 5 read pairs
-            n_indefinable_interaction += 1
         else:
             line = fp.readline()
             print(interaction.get_interaction_type())
@@ -126,25 +164,19 @@ for key in strand_simple.pair_dict.keys():
     simple_twisted_dict[key] = strand_simple.pair_dict[key] + strand_twisted.pair_dict[key]
 
 # print absolute frequencies, calculate and print relative frequencies
-print( out_prefix)
-print("PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tINDEFINABLE\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tINDEFINABLE")
-for key in strand_simple.pair_dict.keys():
+file_path_name = out_prefix + "_tss_strand_pair.tab"
+print_tss_strand_pair_counts_to_file(file_path_name = file_path_name)
 
-    # absolute frequencies
-    print("\'" + key + "\'" + "\t" + str(strand_simple.pair_dict[key]) + "\t" + str(strand_twisted.pair_dict[key]) + "\t" + str(strand_simple.pair_dict[key] + strand_twisted.pair_dict[key]) + "\t" + str(strand_undirected.pair_dict[key]) + "\t" + str(strand_indefinable.pair_dict[key]))
+print("[INFO] " + "Summary statistics")
+print("\t[INFO] Total number of interactions: " + str(n_interaction_total))
+print("\t[INFO] Number of trans and short range interactions: " + str(n_trans_short_range_interaction) + " (discarded)")
+print("\t[INFO] Number of non promoter-promoter interactions: " + str(n_non_promoter_promoter_interaction) + " (discarded)")
+print("\t[INFO] Number of directed simple interactions: " + str(n_simple_interaction))
+print("\t[INFO] Number of directed twisted interactions: " + str(n_twisted_interaction))
+print("\t[INFO] Number of undirected interactions: " + str(n_undirected_interaction))
+print("\t[INFO] Number of indefinable interactions: " + str(n_indefinable_interaction))
+print("[INFO] Output written to: " + file_path_name)
+print("[INFO] Done.")
 
-    # relative frequencies
-    fraction_simple = dclass.get_fraction(strand_simple.pair_dict[key], strand_simple.pair_dict.values())
-    fraction_twisted = dclass.get_fraction(strand_twisted.pair_dict[key], strand_twisted.pair_dict.values())
-    fraction_directed = dclass.get_fraction(simple_twisted_dict[key], simple_twisted_dict.values())
-    fraction_undirected = dclass.get_fraction(strand_undirected.pair_dict[key], strand_undirected.pair_dict.values())
-    fraction_indefinable = dclass.get_fraction(strand_indefinable.pair_dict[key], strand_indefinable.pair_dict.values())
-    print("\t" + fraction_simple + "\t" + fraction_twisted + "\t" + str(fraction_directed) + "\t" + str(fraction_undirected) + "\t" + str(fraction_indefinable))
 
-print("Total number of interactions: " + str(n_interaction_total))
-print("Number of trans and short range interactions: " + str(n_trans_short_range_interaction) + " (discarded)")
-print("Number of non promoter-promoter interactions: " + str(n_non_promoter_promoter_interaction) + " (discarded)")
-print("Number of directed simple interactions: " + str(n_simple_interaction))
-print("Number of directed twisted interactions: " + str(n_twisted_interaction))
-print("Number of undirected interactions: " + str(n_undirected_interaction))
-print("Number of indefinable interactions: " + str(n_indefinable_interaction))
+
