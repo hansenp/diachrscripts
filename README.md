@@ -34,6 +34,27 @@ For this purpose, use:
 ```
 
 
+# Intallation (new)
+To make a smaller requirements file, we start off like this
+```
+conda create -n p3dia
+```
+To check the environment, enter
+```
+conda activate p3dia
+```
+
+To add the packages we need for diachromatic-scripts,
+```
+pip install --user --requirement requirements.txt
+```
+
+We now want to put this kernel into jupypter. We will use the ipykernel package for this.
+```
+pip install ipykernel
+python -m ipykernel install --user
+```
+
 
 
 
