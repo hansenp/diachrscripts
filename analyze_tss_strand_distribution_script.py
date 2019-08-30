@@ -122,7 +122,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
             continue
 
 
-        # setting the interaction type here would save a lot of time
+        # set the type of interaction based on P-value ('S', 'T', 'U', 'NA')
         if interaction.get_interaction_type() == "TBD":
             interaction.set_interaction_type("TBD")
 
