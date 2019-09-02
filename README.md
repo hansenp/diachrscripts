@@ -20,17 +20,17 @@ $ conda env create -f environment_mac_p37env.yml
 ```
 Active the environment as follows:
 ```shell script
-$ conda activate diachscripts_env
+$ conda activate diachscripts_p37env
 ```
 
 Install an ipython kernel for the Jupyter notebooks with:
 ```shell script
-python -m ipykernel install --user --name diachscripts_env --display-name "Python 3 (diachscripts_env)"
+python -m ipykernel install --user --name diachscripts_p37env --display-name "Python 3 (diachscripts_p37env)"
 ```
 
 From this environment start Jupyter notebooks with:
 ```shell script
-(diachscripts_env) $ jupyter-notebook
+(diachscripts_p37env) $ jupyter-notebook
 ```
 
 Open one of the notebooks in ```diachscripts/jupyter-notebooks``` and choose the right kernel via:
@@ -46,7 +46,7 @@ You can select the environment in ```PyCharm``` via:
 Don't forget to update the YML file after changing the environment.
 For this purpose, u         se:
 ```shell script
-(diachscripts_env) $ conda env export --no-builds > environment.yml
+(diachscripts_p37env) $ conda env export --no-builds > environment_linux_p37env.yml
 ```
 
 

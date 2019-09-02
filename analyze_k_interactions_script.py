@@ -31,7 +31,10 @@ class kInteractionCounter:
         self.k_interaction_dict = {}
         for i in range(2, max_k + 1):
             self.max_k = max_k
-            self.k_interaction_dict[i] = [0, 0, 0] # [K, N_ZERO_SIMPLE, N_ZERO_TWISTED]
+            self.k_interaction_dict[i] = [0, 0, 0] # [NK, NK_ZERO_SIMPLE, NK_ZERO_TWISTED]
+            # NK - all interactions with k read pairs
+            # NK_ZERO_SIMPLE - interactions with k read pairs and zero simple read pairs
+            # NK_ZERO_TWISTED - interactions with k read pairs and zero twisted read pairs
 
     def increment_k_interaction(self, n_simple_rp, n_twisted_rp):
         if (n_simple_rp + n_twisted_rp) < self.max_k:
