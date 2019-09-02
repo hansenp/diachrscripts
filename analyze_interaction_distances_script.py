@@ -19,6 +19,11 @@ status_pair_flag = args.status_pair_flag
 if status_pair_flag != "ALL":
     status_pair_flag = sorted(status_pair_flag)[0] + sorted(status_pair_flag)[1]
 
+print("[INFO] " + "Input parameters")
+print("\t[INFO] Analysis for: " + out_prefix)
+print("\t[INFO] Input file: " + diachromatic_interaction_file)
+print("\t[INFO] Status pair flag: " + status_pair_flag)
+
 # Init arrays for distribution of distances between digests
 distance_array_simple = []
 distance_array_twisted = []
@@ -34,6 +39,7 @@ n_trans_short_range_interaction = 0
 n_non_status_pair_flag_interaction = 0
 
 # Iterate interactions and collect distances
+print("[INFO] Determining distances between digest pairs in " + diachromatic_interaction_file + " ...")
 n_interaction_total = 0
 with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
     line = fp.readline()
@@ -90,38 +96,13 @@ fp.close()
 
 # Output summary
 print("[INFO] " + "Summary statistics")
-print("\t[INFO] Analysis for: " + out_prefix)
-print("\t[INFO] Input file: " + diachromatic_interaction_file)
-print("\t[INFO] Status pair flag: " + status_pair_flag)
 print("\t[INFO] Number of non " + status_pair_flag + " interactions: " + str(n_non_status_pair_flag_interaction) + " (discarded)")
 print("\t[INFO] Number of trans and short range interactions: " + str(n_trans_short_range_interaction) + " (discarded)")
 print("\t[INFO] Number of simple interactions: " + str(n_simple_interaction))
 print("\t[INFO] Number of twisted interactions: " + str(n_twisted_interaction))
 print("\t[INFO] Number of undirected interactions: " + str(n_undirected_interaction))
 print("\t[INFO] Number of indefinable interactions: " + str(n_indefinable_interaction))
-
-# Determine mean distances
-print("[INFO] " + "Mean distances")
-mean_simple = statistics.mean(distance_array_simple)
-print("\t[INFO] Mean simple: " + str(mean_simple))
-mean_twisted = statistics.mean(distance_array_twisted)
-print("\t[INFO] Mean twisted: " + str(mean_twisted))
-mean_undirected = statistics.mean(distance_array_undirected)
-print("\t[INFO] Mean undirected: " + str(mean_undirected))
-mean_indefinable = statistics.mean(distance_array_indefinable)
-print("\t[INFO] Mean indefinable: " + str(mean_indefinable))
-
-# Determine median distances
-print("[INFO] " + "Median distances")
-median_simple = statistics.median(distance_array_simple)
-print("\t[INFO] Median simple: " + str(median_simple))
-median_twisted = statistics.median(distance_array_twisted)
-print("\t[INFO] Median twisted: " + str(median_twisted))
-median_undirected = statistics.median(distance_array_undirected)
-print("\t[INFO] Median undirected: " + str(median_undirected))
-median_indefinable = statistics.median(distance_array_indefinable)
-print("\t[INFO] Median indefinable: " + str(median_indefinable))
-print("\n")
+print("[INFO] " + "Writing numpy arrays with distances to disk ...")
 
 # save numpy arrays to disk so as we can use them in the notebook
 file_path_name = out_prefix + "_distance_array_simple"
@@ -133,23 +114,4 @@ np.save(file_path_name, np.array(distance_array_undirected))
 file_path_name = out_prefix + "_distance_array_indefinable"
 np.save(file_path_name , np.array(distance_array_indefinable))
 
-# Create plot
-num_bins = 1000
-f, (ax1, ax2, ax3, ax4) = plt.subplots(4, sharex=True, sharey=False)
-f.canvas.set_window_title('Distances between interacting digests')
-plt.xlabel("Distance")
-plt.ylabel("Frequency")
-
-ax1.set_title("Simple")
-n, bins, patches = ax1.hist(distance_array_simple, num_bins, facecolor='blue', alpha=0.5, range=(0,2000000))
-
-ax2.set_title("Twisted")
-n, bins, patches = ax2.hist(distance_array_twisted, num_bins, facecolor='blue', alpha=0.5, range=(0,2000000))
-
-ax3.set_title("Undirected")
-n, bins, patches = ax3.hist(distance_array_undirected, num_bins, facecolor='blue', alpha=0.5, range=(0,2000000))
-
-ax4.set_title("Indefinable")
-n, bins, patches = ax4.hist(distance_array_indefinable, num_bins, facecolor='blue', alpha=0.5, range=(0,2000000))
-
-plt.show()
+print("[INFO] " + "Done.")
