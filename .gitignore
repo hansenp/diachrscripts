@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# numpy arrays saved to disk
+# Numpy arrays saved to disk
 *.npy
 
 # C extensions
