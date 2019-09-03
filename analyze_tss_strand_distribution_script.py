@@ -16,6 +16,11 @@ out_prefix = args.out_prefix
 ref_gene_file = args.ref_gene_file
 diachromatic_interaction_file = args.interaction_file
 
+print("[INFO] " + "Input parameters")
+print("\t[INFO] Analysis for: " + out_prefix)
+print("\t[INFO] Interaction file: " + diachromatic_interaction_file)
+print("\t[INFO] refGene file: " + ref_gene_file)
+
 
 ### Define auxiliary functions
 ##############################
@@ -46,7 +51,7 @@ def print_tss_strand_pair_counts_to_file(file_path_name):
     fh = open(file_path_name, "w", newline='')
 
     # print header to file
-    fh.write("PAIR\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tINDEFINABLE\tSIMPLE\tTWISTED\tSIMPLE+SIMPLE\tUNDIRECTED\tINDEFINABLE\n")
+    fh.write("PAIR\tSIMPLE\tTWISTED\tSIMPLE+TWISTED\tUNDIRECTED\tINDEFINABLE\tSIMPLE\tTWISTED\tSIMPLE+TWISTED\tUNDIRECTED\tINDEFINABLE\n")
 
     # sum up simple and twisted counts
     simple_twisted_dict = {}
@@ -102,7 +107,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
     while line:
 
-        if n_interaction_total%10000 == 0:
+        if n_interaction_total%1000000 == 0:
             print("\t[INFO]", n_interaction_total, "interactions processed ...")
         n_interaction_total += 1
 
@@ -120,7 +125,6 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
             n_non_promoter_promoter_interaction +=1
             line = fp.readline()
             continue
-
 
         # set the type of interaction based on P-value ('S', 'T', 'U', 'NA')
         if interaction.get_interaction_type() == "TBD":

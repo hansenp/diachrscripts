@@ -21,7 +21,7 @@ if status_pair_flag != "ALL":
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] Analysis for: " + out_prefix)
-print("\t[INFO] Input file: " + diachromatic_interaction_file)
+print("\t[INFO] Interaction file: " + diachromatic_interaction_file)
 print("\t[INFO] Status pair flag: " + status_pair_flag)
 
 # Init arrays for distribution of distances between digests
