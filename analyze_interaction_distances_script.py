@@ -114,4 +114,4 @@ np.save(file_path_name, np.array(distance_array_undirected))
 file_path_name = out_prefix + "_distance_array_indefinable"
 np.save(file_path_name , np.array(distance_array_indefinable))
 
-print("[INFO] " + "Done.")
+print("[INFO] " + "... done.")

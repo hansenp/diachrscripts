@@ -8,6 +8,7 @@ from decimal import Decimal, getcontext
 from math import log, log10
 import sys
 import warnings
+from copy import deepcopy
 
 #######################################################################################################################
 
@@ -152,6 +153,19 @@ class Interaction:
     def is_cis_long_range(self, d_dist):
         return self.digest_1.get_chromosome() == self.digest_1.get_chromosome() and 10000 < self.get_digest_distance()
 
+    def get_simulated_copy(self):
+
+        # create new instance
+        sim_interaction =  deepcopy(self)
+
+        # simulate simple and twisted read pairs
+        n = self.n_simple + self.n_twisted
+        simple = binom.rvs(n, 0.5, size=1)
+        twisted = n - simple
+        sim_interaction.n_simple = simple[0]
+        sim_interaction.n_twisted = twisted[0]
+
+        return sim_interaction
 
 
 #######################################################################################################################
