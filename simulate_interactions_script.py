@@ -44,19 +44,19 @@ pvals_simulated = []
 
 # open two streams for gzipped output of original and simulated reads
 file_name_original = out_prefix + "_original_interactions.tsv.gz"
-output_original = gzip.open(file_name_original, 'wt')
+f_output_original = gzip.open(file_name_original, 'wt')
 file_name_simulated = out_prefix + "_simulated_interactions.tsv.gz"
-output_simulated = gzip.open(file_name_simulated, 'wt')
+f_output_simulated = gzip.open(file_name_simulated, 'wt')
 
 # iterate interactions
 print("[INFO] Simulating random simple twisted read pairs for each interaction in " + diachromatic_interaction_file + " ...")
-with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
+with gzip.open(diachromatic_interaction_file, 'r' + 't') as f_input:
 
-    line = fp.readline()
+    line = f_input.readline()
 
     while line:
 
-        if n_interaction_total%1000000 == 0:
+        if n_interaction_total%100000 == 0:
             print("\t[INFO]", n_interaction_total, "interactions processed ...")
         n_interaction_total += 1
 
@@ -65,9 +65,9 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         sim_interaction = interaction.get_simulated_copy()
 
         # restrict analysis to cis long range interactions
-        if not(interaction.is_cis_long_range(100000)):
+        if not(interaction.is_cis_long_range(10000)):
             n_trans_short_range_interaction += 1
-            line = fp.readline()
+            line = f_input.readline()
             continue
 
         # set the type of interaction based on P-value ('S', 'T', 'U', 'NA')
@@ -89,7 +89,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         elif interaction.get_interaction_type() == "T":
             n_twisted_interaction += 1
         else:
-            line = fp.readline()
+            line = f_input.readline()
             print(interaction.get_interaction_type())
             raise Exception("[FATAL] Invalid interaction type. Should be either 'S', 'T', 'U' or 'NA' but was " + interaction.get_interaction_type() + ".")
 
@@ -105,7 +105,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         elif sim_interaction.get_interaction_type() == "T":
             n_twisted_interaction_sim += 1
         else:
-            line = fp.readline()
+            line = f_input.readline()
             print(interaction.get_interaction_type())
             raise Exception("[FATAL] Invalid interaction type. Should be either 'S', 'T', 'U' or 'NA' but was " + interaction.get_interaction_type() + ".")
 
@@ -116,20 +116,20 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
                                 + interaction.get_second_digest().chromosome + '\t' \
                                 + str(interaction.get_second_digest().start) + '\t' \
                                 + str(interaction.get_second_digest().end) + '\t'
-        output_original.write(interaction_coords + '\t' + str(interaction.n_simple) + '\t' + str(interaction.n_twisted) + '\t' + str(interaction.get_binomial_p_value()) + '\n')
-        output_simulated.write(interaction_coords + '\t' + str(sim_interaction.n_simple) + '\t' + str(sim_interaction.n_twisted) + '\t' + str(sim_interaction.get_binomial_p_value()) + '\n')
+        f_output_original.write(interaction_coords + '\t' + str(interaction.n_simple) + '\t' + str(interaction.n_twisted) + '\t' + str(interaction.get_binomial_p_value()) + '\n')
+        f_output_simulated.write(interaction_coords + '\t' + str(sim_interaction.n_simple) + '\t' + str(sim_interaction.n_twisted) + '\t' + str(sim_interaction.get_binomial_p_value()) + '\n')
 
         # add P-values to array for qq plot
         pvals_original.append(interaction.get_binomial_p_value())
         pvals_simulated.append(sim_interaction.get_binomial_p_value())
 
-        line = fp.readline()
+        line = f_input.readline()
 
     print("... done.")
 
-fp.close()
-output_original.close()
-output_simulated.close()
+f_input.close()
+f_output_original.close()
+f_output_simulated.close()
 
 # output summary
 print("[INFO] " + "Summary statistics")
@@ -155,5 +155,3 @@ print("\t[INFO] Simulated interactions with P-values: " + file_name_simulated)
 print("[INFO] " + "Two numpy arrays with P-values were saved to disk:")
 print("\t[INFO] P-values of original data: " + file_path_name_original)
 print("\t[INFO] P-values of simulated data: " + file_path_name_simulated)
-
-

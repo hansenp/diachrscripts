@@ -5,6 +5,7 @@ import diachrscripts_toolkit as dclass
 from decimal import *
 from math import isinf
 
+
 ### Parse command line
 ######################
 

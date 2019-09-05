@@ -1,5 +1,5 @@
 import gzip
-from scipy.stats import binom
+from scipy.stats import binom, poisson
 import numpy as np
 from decimal import *
 import warnings
@@ -60,6 +60,7 @@ class Interaction:
     type = None             # Either simple, twisted or undirected
     digest_1 = None
     digest_2 = None
+    p_value = None
 
     def __init__(self, diachromatic_interaction_line):
 
@@ -109,11 +110,16 @@ class Interaction:
         category = state_1 + state_2
         return sorted(category)[0]+sorted(category)[1]
 
-    def get_binomial_p_value(self): # ToDo: check this function for small simple and twisted read counts in R
-        if self.n_simple < self.n_twisted:
-            return 1 - binom.cdf(self.n_twisted-1, self.n_simple + self.n_twisted, 0.5)
+    def get_binomial_p_value(self):
+        if self.p_value != None:
+            return self.p_value
         else:
-            return 1 - binom.cdf(self.n_simple-1, self.n_simple + self.n_twisted, 0.5)
+            if self.n_simple < self.n_twisted:
+                self.p_value = 1 - binom.cdf(self.n_twisted-1, self.n_simple + self.n_twisted, 0.5)
+                return self.p_value
+            else:
+                self.p_value = 1 - binom.cdf(self.n_simple-1, self.n_simple + self.n_twisted, 0.5)
+                return self.p_value
 
     def set_interaction_type(self, type):
         """
@@ -175,7 +181,6 @@ class TSSInfo:
     # Class that represents additional information about TSS beyond coordinates
 
     # Attributes
-
     strand = None
     gene_id = None
     gene_symbol = None
