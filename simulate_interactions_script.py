@@ -65,7 +65,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as f_input:
         sim_interaction = interaction.get_simulated_copy()
 
         # restrict analysis to cis long range interactions
-        if not(interaction.is_cis_long_range(10000)):
+        if not(interaction.is_cis_long_range(1000)):
             n_trans_short_range_interaction += 1
             line = f_input.readline()
             continue

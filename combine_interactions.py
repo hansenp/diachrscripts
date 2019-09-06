@@ -213,7 +213,7 @@ for key, iaction in d.items():
         outfh.write(iaction.output_summary_2() + "\n")
 
     if (n_incomplete_data + n_has_all_data)%10000==0:
-        print("[INFO]" + (n_incomplete_data + n_has_all_data) + " interactions processed.")
+        print("[INFO]" + (str(n_incomplete_data) + str(n_has_all_data)) + " interactions processed.")
 
 print("Total number of interactions: " + str(n_interactions))
 print("[INFO] Significant interactions with {} data points: {}, lacking significant interactions: {}".format(n_experiments, n_has_all_data, n_incomplete_data))

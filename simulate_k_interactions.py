@@ -73,10 +73,10 @@ class ChcInteraction:
         Choose a number k from [0,N] by random uniform distribution
         :return: k, N-k
         """
-        k = random.randint(0, self.N)
+        #k = random.randint(0, self.N)
+        k = binom.rvs(self.N, 0.5, size=1)
+        #return self.n_simple, self.n_twisted
         return k, self.N - k
-
-
 
 
 def binomial_p_value(n_simple, n_twisted):
@@ -93,8 +93,16 @@ def binomial_p_value(n_simple, n_twisted):
             pval_memo[key] = p_value
             return p_value
 
+def random_numbers_dict(n_dict):
+    random_numbers_dict = {}
+    for n, num in n_dict.items():
+        random_numbers_dict[n] = list(binom.rvs(n, p=0.5, size=num))
+    return random_numbers_dict
+
 ####  Input diachromatic file
 #############################
+
+n_dict = {}
 
 chc_interactions = []
 observed_significant_interactions = None
@@ -116,20 +124,23 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         pv = binomial_p_value(n_simple, n_twisted)
         if pv < NOMINAL_ALPHA:
             n_significant += 1
+        n = n_simple + n_twisted
+        if n in n_dict:
+            n_dict[n] +=1
+        else:
+            n_dict[n] = 1
 print("[INFO]] Number of nominally significant pvalues: {}".format(n_significant))
 
 
-
-
-
-
 ## Now calculate 10,000 permutations and see if we get more p values by chance
-
 def count_signicant_pvals_in_permutation():
     n_perm_significant = 0
+    random_dict = random_numbers_dict(n_dict)
     for chci in chc_interactions:
-        n_simple, n_twisted = chci.get_permuted_counts()
-        #print("permuted simple {} twisted {}".format(n_simple, n_twisted))
+        n = chci.n_simple + chci.n_twisted
+        n_simple = random_dict[n].pop()
+        n_twisted = n - n_simple
+        #n_simple, n_twisted = chci.get_permuted_counts()
         pv = binomial_p_value(n_simple, n_twisted)
         if pv < NOMINAL_ALPHA:
             n_perm_significant += 1
@@ -137,13 +148,11 @@ def count_signicant_pvals_in_permutation():
 
 
 random_better_than_observed = 0
-for n in range(10):
+for n in range(100):
     nsig = count_signicant_pvals_in_permutation()
     permutation_significant_interactions.append(nsig)
-    print("nsig (permuted): {} nsig (observed: {}".format(nsig, n_significant))
-    if random_better_than_observed >= n_significant:
+    print("nsig (permuted): {} nsig (observed: {})".format(nsig, n_significant))
+    if nsig >= n_significant:
         random_better_than_observed += 1
 
-print("{} out of {} permutations had more signfiicant p values than in the observed data".format(random_better_than_observed, len(permutation_significant_interactions)))
-
-
+print("{} out of {} permutations had more signficant p values than in the observed data".format(random_better_than_observed, len(permutation_significant_interactions)))
