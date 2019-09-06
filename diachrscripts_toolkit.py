@@ -469,6 +469,15 @@ class TSSCoordinateMap:
         else:
             raise Exception("[FATAL] Invalid strand symbol. Should be either '-' or '+' but was " + str(coord_strands) + ".")
 
+    def get_coord_symbols(self, coord_key):
+        coord_symbols = []
+        if coord_key in self.tss_coord_dict:
+            for tss_info in self.tss_coord_dict[coord_key].tss_info_dict.values():
+                coord_symbols.append(tss_info.gene_symbol)
+        else:
+            return -1
+        return coord_symbols
+
 
 
 #######################################################################################################################

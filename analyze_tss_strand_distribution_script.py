@@ -181,6 +181,3 @@ print("\t[INFO] Number of undirected interactions: " + str(n_undirected_interact
 print("\t[INFO] Number of indefinable interactions: " + str(n_indefinable_interaction))
 print("[INFO] Output written to: " + file_path_name)
 print("[INFO] Done.")
-
-
-

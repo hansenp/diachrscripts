@@ -2,7 +2,6 @@
 import argparse
 import os
 import gzip
-import numpy as np
 from collections import defaultdict
 from scipy.stats.distributions import chi2
 from scipy.stats import binom
@@ -124,12 +123,12 @@ def likelihood_ratio_test(twisted, simple):
     b1 = binom.pmf(tw, (tw + si), p1)
     b2 = binom.pmf(tw, (tw + si), p2) # in such cases b2 will also e zero
     if b1 == 0 or b2 == 0:
-        print "b1:", b1
-        print "b2:", b2
-        print "p1:", p1
-        print "p2:", p2
-        print "tw:", tw
-        print "si:", si
+        print("b1: " + b1)
+        print("b2: " + b2)
+        print("p1: " + p1)
+        print("p2: " + p2)
+        print("tw: " + tw)
+        print("si: " + si)
         print("[WARNING] Either \'b1\' or \'b2\' in \'LR = 2 * (log(b2) - log(b1))\' was 0. Presumably, because of large number of simple and small number of read twisted pairs. Will return \'NA\' for \'LR\'.")
         return "NA", "NA"
     else:
@@ -149,13 +148,13 @@ gzpath = args.gzdir
 outdir = args.outdir
 outprefix = args.outprefix
 
-print("[INFO] Will parse all gz files in", gzpath)
+print("[INFO] Will parse all gz files in " + gzpath)
 
 d = defaultdict(Interaction)
 
 gzfiles = get_gzip_tsv_files(gzpath)
 for f in gzfiles:
-    print "[INFO] Extracting interactions from", f, "."
+    print("[INFO] Extracting interactions from " + f + ".")
     parse_gzip_tsv_file(f, d)
 if len(gzfiles) == 0:
     print("[FATAL] Did not find any gzipped files. Note: Need to give path to directory with *.tsv.gz files.")
@@ -172,7 +171,7 @@ i = 0
 
 fname = outdir + "/" + outprefix + "_interactions.txt"
 outfh = open(fname, 'w')
-print "[INFO] Calculating LR and p for each interaction..."
+print("[INFO] Calculating LR and p for each interaction...")
 for key, iaction in d.items():
     if not iaction.has_data_for_all_experiments(n_experiments):
         n_incomplete_data += 1
@@ -186,7 +185,7 @@ for key, iaction in d.items():
             #print("{}".format(iaction.output_summary(LR, p, pthreshold)))
 
     if (n_incomplete_data + n_has_all_data)%10000==0:
-        print "[INFO]", (n_incomplete_data + n_has_all_data), "interactions processed."
+        print("[INFO] " + str(n_incomplete_data + n_has_all_data) + " interactions processed ...")
 
 print("[INFO] Interactions with all {} data points: {}, lacking data {}".format(n_experiments, n_has_all_data, n_incomplete_data))
 print("[INFO] We wrote all interactions to file: {}".format(fname))

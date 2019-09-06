@@ -98,7 +98,8 @@ class Interaction:
         pstring = ",".join(p_vals)
 
         combined_p_val = calculate_binomial_p_value(sum(self.simple),sum(self.twisted))
-        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}:{}\t{}\t{}\t{}".format(self.chrA, self.fromA, self.toA,
+        dist = str(int(self.fromB) -  int(self.toA))
+        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}:{}\t{}\t{}\t{}\t{}".format(self.chrA, self.fromA, self.toA,
                                                                                self.statusA,
                                                                                self.chrB, self.fromB, self.toB,
                                                                                self.statusB,
@@ -106,6 +107,7 @@ class Interaction:
                                                                                combined_p_val,
                                                                                cstring,
                                                                                pstring,
+                                                                          dist
                                                                                )
 
     def set_binomial_p_value(self, p_val):
