@@ -173,6 +173,11 @@ class Interaction:
 
         return sim_interaction
 
+    def get_coord_string(self):
+        d1_coords = self.digest_1.get_chromosome() + ":" + str(self.digest_1.get_start()) + "-" + str(self.digest_1.get_end())
+        d2_coords = self.digest_2.get_chromosome() + ":" + str(self.digest_2.get_start()) + "-" + str(self.digest_2.get_end())
+        return d1_coords + ";" + d2_coords
+
 
 #######################################################################################################################
 

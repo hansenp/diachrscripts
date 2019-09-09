@@ -47,11 +47,12 @@ def get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map):
 
     return gene_symbols_d1, gene_symbols_d2
 
+
 ### Start execution
 ###################
 
-file_name_original = out_prefix + "_original_interactions_with_genesymbols.tsv.gz"
-f_output_original = gzip.open(file_name_original, 'wt')
+file_name_original = out_prefix + "_original_interactions_with_genesymbols.tsv"
+f_output_original = open(file_name_original, 'wt')
 
 # prepare variables and data structures
 ref_gene_tss_map = dclass.TSSCoordinateMap(ref_gene_file, "refGene") # parse refGene file with TSS
@@ -67,7 +68,7 @@ n_indefinable_interaction = 0
 
 # iterate interactions
 print("[INFO] Determining pair category for each interaction in " + diachromatic_interaction_file + " ...")
-with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
+with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
     line = fp.readline()
 
@@ -99,9 +100,8 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         # assign expression level category to digest using max approach
         d1_symbols, d2_symbols = get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map)
 
-        symbols_d12 = ",".join(set(sum(d1_symbols, [] ))) + "|" + ",".join(set(sum(d2_symbols, [] )))
-        line = line.rstrip()
-        f_output_original.write(line + "\t" + symbols_d12 + "\n")
+        symbols_d12 = ",".join(set(sum(d1_symbols, [] ))) + ";" + ",".join(set(sum(d2_symbols, [] )))
+
 
         if interaction.get_interaction_type() == None:
             raise Exception("[FATAL] Interaction type is 'None'. This should never happen.")
@@ -117,6 +117,10 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
             line = fp.readline()
             print(interaction.get_interaction_type())
             raise Exception("[FATAL] Invalid interaction type. Should be either 'S', 'T', 'U' or 'NA' but was " + interaction.get_interaction_type() + ".")
+
+        line = line.rstrip()
+
+        f_output_original.write(interaction.get_coord_string() + "\t" + str(interaction.get_digest_distance())  + "\t" + interaction.get_interaction_type() + "\t" + symbols_d12 + "\n")
 
         line = fp.readline()
 
