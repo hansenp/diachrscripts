@@ -121,6 +121,7 @@ class Interaction:
                 self.p_value = 1 - binom.cdf(self.n_simple-1, self.n_simple + self.n_twisted, 0.5)
                 return self.p_value
 
+
     def set_interaction_type(self, type):
         """
         This function determines whether this interaction is significantly directed, i.e. simple or twisted, using a
@@ -177,6 +178,17 @@ class Interaction:
         d1_coords = self.digest_1.get_chromosome() + ":" + str(self.digest_1.get_start()) + "-" + str(self.digest_1.get_end())
         d2_coords = self.digest_2.get_chromosome() + ":" + str(self.digest_2.get_start()) + "-" + str(self.digest_2.get_end())
         return d1_coords + ";" + d2_coords
+
+    def get_permuted_counts(self):
+        """
+        Choose a number k from [0,N] by random uniform distribution
+        :return: k, N-k
+        """
+        k = binom.rvs(self.N, 0.5, size=1)
+        return k, self.N - k
+
+    def get_counts(self):
+        return self.n_simple, self.n_twisted
 
 
 #######################################################################################################################
