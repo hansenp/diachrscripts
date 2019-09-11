@@ -203,7 +203,7 @@ n_incomplete_data = 0
 
 i = 0
 
-fname = out_dir + "/" + out_prefix + "_interactions.txt"
+fname = out_dir + "/" + out_prefix + "_interactions.txt" # AtLeastTwoReplicates
 outfh = open(fname, 'w')
 print("[INFO] Calculating P-values for combined interactions...")
 for key, iaction in d.items():
@@ -214,9 +214,12 @@ for key, iaction in d.items():
         i += 1
         outfh.write(iaction.output_summary_2() + "\n")
 
-    if (n_incomplete_data + n_has_all_data)%10000==0:
-        print("[INFO]" + (str(n_incomplete_data) + str(n_has_all_data)) + " interactions processed.")
+    if (n_incomplete_data + n_has_all_data)%100000==0:
+        print("\t[INFO] " + (str(n_incomplete_data + n_has_all_data)) + " interactions processed ...")
+
+outfh.close()
 
 print("Total number of interactions: " + str(n_interactions))
 print("[INFO] Significant interactions with {} data points: {}, lacking significant interactions: {}".format(n_experiments, n_has_all_data, n_incomplete_data))
 print("[INFO] We wrote all interactions to file: {}".format(fname))
+print("[INFO] ... done.")
