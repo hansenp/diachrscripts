@@ -122,7 +122,7 @@ class Interaction:
                 return self.p_value
 
 
-    def set_interaction_type(self, type):
+    def set_interaction_type(self, type, p_thresh):
         """
         This function determines whether this interaction is significantly directed, i.e. simple or twisted, using a
         binomial distribution with p = 0.5 and returns a 'S' for simple and 'T' for twisted.
@@ -139,7 +139,7 @@ class Interaction:
             if type == "TBD":
                 if self.n_twisted + self.n_simple < 5:
                     type = 'NA' # an interaction with less than 5 read pairs cannot be significant with a binomial P-value threshold of 0.05
-                elif self.get_binomial_p_value() <= 0.05:
+                elif self.get_binomial_p_value() <= p_thresh:
                     if self.n_twisted < self.n_simple:
                         type = 'S'
                     else:

@@ -11,6 +11,8 @@ parser = argparse.ArgumentParser(description='Analyze distances between interact
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
 parser.add_argument('--status-pair-flag', help='Pair of \'A\' and \'I\' depending on whether a digest was selected for enrichment (A) or not (I).')
+parser.add_argument('--p-value-cutoff', help='P-value cutoff used for categorization of interactions.')
+
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -18,11 +20,13 @@ diachromatic_interaction_file = args.interaction_file
 status_pair_flag = args.status_pair_flag
 if status_pair_flag != "ALL":
     status_pair_flag = sorted(status_pair_flag)[0] + sorted(status_pair_flag)[1]
+p_value_cutoff = float(args.p_value_cutoff)
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] Analysis for: " + out_prefix)
 print("\t[INFO] Interaction file: " + diachromatic_interaction_file)
 print("\t[INFO] Status pair flag: " + status_pair_flag)
+print("\t[INFO] P-value cutoff: " + str(p_value_cutoff))
 
 # Init arrays for distribution of distances between digests
 distance_array_simple = []
@@ -69,7 +73,7 @@ with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
 
         # set the type of interaction based on P-value ('S', 'T', 'U', 'NA')
         if interaction.get_interaction_type() == "TBD":
-            interaction.set_interaction_type("TBD")
+            interaction.set_interaction_type("TBD", p_value_cutoff)
 
         if interaction.get_interaction_type() == None:
             raise Exception("[FATAL] Interaction type is 'None'. This should never happen.")

@@ -142,13 +142,13 @@ def parse_gzip_tsv_file(file, interaction_dict):
             # ADD SIGNIFICANT INTERACTIONS ONLY
             simple_twisted = F[8].rstrip().split(':')
             p_val = calculate_binomial_p_value(int(simple_twisted[0]), int(simple_twisted[1]))
-            if p_val <= 0.05:
-                mykey = Interaction.make_key(F)
-                if mykey in interaction_dict:
-                    iaction = interaction_dict[mykey]
-                    iaction.append_interaction_data(F)
-                else:
-                    interaction_dict[mykey] = Interaction(F)
+            #if p_val <= 0.05:
+            mykey = Interaction.make_key(F)
+            if mykey in interaction_dict:
+                iaction = interaction_dict[mykey]
+                iaction.append_interaction_data(F)
+            else:
+                interaction_dict[mykey] = Interaction(F)
 
     return n_iteraction
 

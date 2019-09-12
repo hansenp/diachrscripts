@@ -6,6 +6,7 @@ from scipy.stats import binom
 from collections import defaultdict
 from statistics import mean
 import time
+import numpy as np
 
 
 """
@@ -32,6 +33,7 @@ parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFI
 parser.add_argument('--iter-num', help='Number of iterations.', default=10000)
 parser.add_argument('--bonferroni-adjustment', help='Perform Bonferroni adjustment of P-value threshold.', default=False, action='store_true')
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
+
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -144,6 +146,7 @@ print("[INFO] Ingesting diachromatic file at ", diachromatic_interaction_file, "
 nsig_o = 0 # number of observed significant interactions
 n_cis_long_range_interaction = 0
 n_trans_short_range_interaction = 0
+p_val_o_list = []
 with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
     for line in fp:
         fields = line.rstrip('\n').split('\t')
@@ -163,6 +166,8 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
                 pv = chci.get_binomial_p_value()
                 pval_memo[key] = pv
 
+            p_val_o_list.append(pv)
+
             if pv < NOMINAL_ALPHA:
                 nsig_o += 1
             n = n_simple + n_twisted
@@ -179,9 +184,10 @@ print("[INFO] Total number of cis long range interactions: {}".format(n_cis_long
 print("[INFO] Total number of trans short range interactions: {}".format(n_trans_short_range_interaction))
 print("[INFO] Number of nominally significant P-values: {}".format(nsig_o))
 ## Now calculate 10,000 permutations and see if we get more p values by chance
-def count_signicant_pvals_in_permutation():
+def count_significant_pvals_in_permutation(n_alpha=NOMINAL_ALPHA):
     n_perm_significant = 0
     random_dict = random_numbers_dict(n_dict)
+
     for chci in chc_interactions:
         n = chci.n_simple + chci.n_twisted
         n_simple = random_dict[n].pop()
@@ -193,8 +199,9 @@ def count_signicant_pvals_in_permutation():
             pv = chci.get_binomial_p_value()
             pval_memo[key] = pv
 
-        if pv <= NOMINAL_ALPHA:
+        if pv <= n_alpha:
             n_perm_significant += 1
+
     return n_perm_significant
 
 random_better_than_observed = 0
@@ -204,7 +211,7 @@ for n in range(ITER_NUM):
     if n % int(ITER_NUM/10) == 0:
         elapsed_time = time.process_time() - t
         print("\t[INFO] " + str(n) + " permuations for " + str(len(chc_interactions)) +  " interactions performed in " + str(elapsed_time) + " sec.")
-    nsig_p = count_signicant_pvals_in_permutation()
+    nsig_p = count_significant_pvals_in_permutation(NOMINAL_ALPHA)
     nsig_p_list.append(nsig_p)
     permutation_significant_interactions.append(nsig_p)
     if nsig_p >= nsig_o:
@@ -230,5 +237,14 @@ for nsig_p in nsig_p_list:
     f_output.write(str(nsig_p) + "\n")
 f_output.close()
 
-FDR = nsig_p_average/nsig_o
-print(FDR)
+# Find FDR cutoff
+file_name = out_prefix + "_fdr_analysis_results.txt"
+f_output = open(file_name, 'wt')
+#p_val_o_array = np.array(p_val_o_list)
+for pc in np.arange(0.0015, 0.1, 0.0005):
+    nsig_o = (p_val_o_list <= pc).sum()
+    nsig_p = count_significant_pvals_in_permutation(pc)
+    fdr = nsig_p/nsig_o
+    f_output.write(str(pc) + "\t" + str(fdr) + "\n")
+    print(str(pc) + "\t" + str(fdr) + "\t" + str(nsig_p) + "\t" + str(nsig_o))
+f_output.close()

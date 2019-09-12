@@ -128,7 +128,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
         # set the type of interaction based on P-value ('S', 'T', 'U', 'NA')
         if interaction.get_interaction_type() == "TBD":
-            interaction.set_interaction_type("TBD")
+            interaction.set_interaction_type("TBD", 0.05)
 
         # assign expression level category to digest using max approach
         pair_key = get_interaction_strand_pair_key(interaction, ref_gene_tss_map)

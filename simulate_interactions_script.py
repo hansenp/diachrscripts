@@ -72,10 +72,10 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as f_input:
 
         # set the type of interaction based on P-value ('S', 'T', 'U', 'NA')
         if interaction.get_interaction_type() == "TBD":
-            interaction.set_interaction_type("TBD")
+            interaction.set_interaction_type("TBD", 0.05)
 
         if sim_interaction.get_interaction_type() == "TBD":
-            sim_interaction.set_interaction_type("TBD")
+            sim_interaction.set_interaction_type("TBD", 0.05)
 
         # count interaction type for original interaction
         if interaction.get_interaction_type() == None:
