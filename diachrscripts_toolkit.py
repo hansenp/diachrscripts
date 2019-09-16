@@ -314,13 +314,13 @@ class TSSCoordinateMap:
                 chromosome = values[2]
                 strand = values[3]
                 if strand == "+":
-                    position = values[4]
+                    position = int(values[4]) + 1 # UCSC start coordinates are 0-based-> convert to 1-based coordinates so as they are compatible with GOPHER's digest map
                 else:
-                    position = values[5]
+                    position = int(values[5])
                 gene_symbol = values[12]
 
                 # construct key
-                chr_pos_key = chromosome + ":" + position
+                chr_pos_key = chromosome + ":" + str(position)
 
                 # check whether this coordinate has been seen already
                 if chr_pos_key in self.tss_coord_dict.keys():

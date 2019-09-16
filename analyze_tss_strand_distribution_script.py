@@ -10,16 +10,20 @@ parser = argparse.ArgumentParser(description='Determine expression category leve
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--ref-gene-file', help='UCSC refGene file (must be gzipped and the same version that was used to create the digest map for Diachromatic).')
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
+parser.add_argument('--p-value-cutoff', help='P-value cutoff used for categorization of interactions.', default=0.05)
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
 ref_gene_file = args.ref_gene_file
 diachromatic_interaction_file = args.interaction_file
+p_value_cutoff = float(args.p_value_cutoff)
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] Analysis for: " + out_prefix)
 print("\t[INFO] Interaction file: " + diachromatic_interaction_file)
 print("\t[INFO] refGene file: " + ref_gene_file)
+print("\t[INFO] P-value cutoff: " + str(p_value_cutoff))
+
 
 
 ### Define auxiliary functions
@@ -27,7 +31,7 @@ print("\t[INFO] refGene file: " + ref_gene_file)
 
 def get_digest_strand_tag(digest, ref_gene_tss_map):
     strand = -1
-    for i in range(digest.get_start(), digest.get_end()): # iterate digest from left to right
+    for i in range(digest.get_start(), digest.get_end()+1): # iterate digest from left to right ToDo: check 0/1-based, there shouldn't be digests without TSS
         key = digest.get_chromosome() + ":" + str(i)
         if ref_gene_tss_map.get_coord_strand(key) == -1: # no TSS at this position
             continue
@@ -40,9 +44,26 @@ def get_digest_strand_tag(digest, ref_gene_tss_map):
                 return 'd'
     return strand
 
+def get_digest_strand_tag_2(digest, ref_gene_tss_map):
+    strand = -2
+    for i in range(digest.get_start(), digest.get_end() + 1):
+        key = digest.get_chromosome() + ":" + str(i)
+        s = ref_gene_tss_map.get_coord_strand(key)
+        if s == -1: # no TSS at this position
+            continue
+        if s == 'd': # TSS on '+' and '-' strand at this position (rare)
+            return 'd'
+        if strand == -2: # first TSS valid TSS on digest, either '-' or '+'
+            strand = s
+            continue
+        if s != strand: # there was another TSS on a different strand before
+            return 'd'
+    return strand
+
+
 def get_interaction_strand_pair_key(interaction, ref_gene_tss_map):
-    d1_strand = get_digest_strand_tag(interaction.get_first_digest(), ref_gene_tss_map)
-    d2_strand = get_digest_strand_tag(interaction.get_second_digest(), ref_gene_tss_map)
+    d1_strand = get_digest_strand_tag_2(interaction.get_first_digest(), ref_gene_tss_map)
+    d2_strand = get_digest_strand_tag_2(interaction.get_second_digest(), ref_gene_tss_map)
     return str(d1_strand) + "/" + str(d2_strand)
 
 def print_tss_strand_pair_counts_to_file(file_path_name):
@@ -128,7 +149,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
         # set the type of interaction based on P-value ('S', 'T', 'U', 'NA')
         if interaction.get_interaction_type() == "TBD":
-            interaction.set_interaction_type("TBD", 0.05)
+            interaction.set_interaction_type("TBD", p_value_cutoff)
 
         # assign expression level category to digest using max approach
         pair_key = get_interaction_strand_pair_key(interaction, ref_gene_tss_map)
