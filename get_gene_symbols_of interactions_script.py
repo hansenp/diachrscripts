@@ -74,7 +74,7 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
     while line:
 
-        if n_interaction_total%1000000 == 0:
+        if n_interaction_total%10000 == 0:
             print("\t[INFO]", n_interaction_total, "interactions processed ...")
         n_interaction_total += 1
 
@@ -95,7 +95,7 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
         # set the type of interaction based on P-value ('S', 'T', 'U', 'NA')
         if interaction.get_interaction_type() == "TBD":
-            interaction.set_interaction_type("TBD", 0.05)
+            interaction.set_interaction_type("TBD", 0.0035)
 
         # assign expression level category to digest using max approach
         d1_symbols, d2_symbols = get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map)

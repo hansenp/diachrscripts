@@ -107,6 +107,9 @@ def random_numbers_dict(n_dict):
     return random_numbers_dict
 
 
+
+
+
 ####  Input diachromatic file
 #############################
 
@@ -183,26 +186,71 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 print("[INFO] Total number of cis long range interactions: {}".format(n_cis_long_range_interaction  ))
 print("[INFO] Total number of trans short range interactions: {}".format(n_trans_short_range_interaction))
 print("[INFO] Number of nominally significant P-values: {}".format(nsig_o))
+
+# find IDR cutoff
+# Find FDR cutoff
+
+
+
+
 ## Now calculate 10,000 permutations and see if we get more p values by chance
 def count_significant_pvals_in_permutation(n_alpha=NOMINAL_ALPHA):
     n_perm_significant = 0
     random_dict = random_numbers_dict(n_dict)
 
     for chci in chc_interactions:
+        # get permuted counts
         n = chci.n_simple + chci.n_twisted
         n_simple = random_dict[n].pop()
         n_twisted = n - n_simple
+        # calculate P-value
         key = "{}-{}".format(n_simple, n_twisted)
         if key in pval_memo:
             pv = pval_memo[key]
         else:
-            pv = chci.get_binomial_p_value()
+            pv = binomial_p_value(n_simple, n_twisted)
             pval_memo[key] = pv
 
         if pv <= n_alpha:
             n_perm_significant += 1
 
     return n_perm_significant
+
+def get_pvals_permuted_counts():
+    pvals_permuted_counts = []
+    random_dict = random_numbers_dict(n_dict)
+    for chci in chc_interactions:
+        n = chci.n_simple + chci.n_twisted
+        n_simple = random_dict[n].pop()
+        n_twisted = n - n_simple
+        pvals_permuted_counts.append(binomial_p_value(n_simple, n_twisted))
+    return pvals_permuted_counts
+
+# Find FDR cutoff
+def find_p_val_cutoff(fdr_thresh=0.25, pval_c_sta=0.00005, pval_c_end=1.0, step_size=0.00005):
+    file_name = out_prefix + "_fdr_analysis_results.txt"
+    f_output = open(file_name, 'wt')
+    f_output.write("OUT_PREFIX\tFDR\tPC\tNSIG_P\tNSIG_O" + "\n")
+    p_val_p_list = get_pvals_permuted_counts()
+    for pc in np.arange(pval_c_sta, pval_c_end, step_size):
+        nsig_o = (p_val_o_list <= pc).sum()
+        nsig_p = (p_val_p_list <= pc).sum()
+        fdr = nsig_p / nsig_o
+        f_output.write(out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(nsig_p) + "\t" + str(nsig_o) + "\n")
+        print("\t" + out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(nsig_p) + "\t" + str(nsig_o))
+        if fdr < fdr_thresh:
+            fdr_last = fdr
+            nsig_o_last = nsig_o
+            nsig_p_last = nsig_p
+            pc_last = pc
+    f_output.close()
+    print("\tOUT_PREFIX\tFDR\tPC\tNSIG_P\tNSIG_O")
+    print("\t" + out_prefix + "\t" + str(fdr_last) + "\t" + str(pc_last) + "\t" + str(nsig_p_last) + "\t" + str(nsig_o_last))
+
+
+print("[INFO] Determining P-value threshold ...")
+find_p_val_cutoff(fdr_thresh=0.25, pval_c_sta=0.0005, pval_c_end=0.1, step_size=0.0005)
+exit(1)
 
 random_better_than_observed = 0
 nsig_p_list = [] # stores numbers of significant interactions for each iteration
@@ -238,13 +286,21 @@ for nsig_p in nsig_p_list:
 f_output.close()
 
 # Find FDR cutoff
-file_name = out_prefix + "_fdr_analysis_results.txt"
-f_output = open(file_name, 'wt')
-#p_val_o_array = np.array(p_val_o_list)
-for pc in np.arange(0.0015, 0.1, 0.0005):
-    nsig_o = (p_val_o_list <= pc).sum()
-    nsig_p = count_significant_pvals_in_permutation(pc)
-    fdr = nsig_p/nsig_o
-    f_output.write(str(pc) + "\t" + str(fdr) + "\n")
-    print(str(pc) + "\t" + str(fdr) + "\t" + str(nsig_p) + "\t" + str(nsig_o))
-f_output.close()
+def find_p_val_cutoff(fdr_thresh = 0.25, pval_c_sta = 0.00005, pval_c_end = 1.0, step_size = 0.00005):
+    file_name = out_prefix + "_fdr_analysis_results.txt"
+    f_output = open(file_name, 'wt')
+    p_val_p_list = get_pvals_permuted_counts()
+    for pc in np.arange(pval_c_sta, pval_c_end, step_size):
+        nsig_o = (p_val_o_list <= pc).sum()
+        nsig_p = (p_val_p_list <= pc).sum()
+        fdr = nsig_p/nsig_o
+        f_output.write(str(pc) + "\t" + str(fdr) + "\n")
+        print(str(pc) + "\t" + str(fdr) + "\t" + str(nsig_p) + "\t" + str(nsig_o))
+        if fdr < fdr_thresh:
+            fdr_last = fdr
+            nsig_o_last = nsig_o
+            nsig_p_last = nsig_p
+            pc_last = pc
+
+    print(str(fdr_last) + "\t" + str(nsig_o_last) + "\t" + str(nsig_p_last) + "\t" + str(pc_last))
+    f_output.close()

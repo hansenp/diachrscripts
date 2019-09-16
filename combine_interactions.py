@@ -70,25 +70,21 @@ class Interaction:
     def make_key(F):
         return "{}:{}-{}_{}:{}-{}".format(F[0], F[1], F[2], F[4], F[5], F[6])
 
-    def output_summary(self, LR, p, threshold):
-        cstring = ",".join(self.counts_string)
-        twistedsum = sum(self.twisted)
-        simplesum = sum(self.simple)
-        if p >= threshold:
-            status = "U"
-        elif twistedsum > simplesum:
-            status = "T"
-        elif twistedsum < simplesum:
-            status = "S"
-        else:
-            raise TypeError("Should never happen -- significant p value but T == S!")
-        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(self.chrA, self.fromA, self.toA,
-                                                                               self.statusA,
-                                                                               self.chrB, self.fromB, self.toB,
-                                                                               self.statusB,
-                                                                               sum(self.twisted), sum(self.simple),
-                                                                               cstring, LR, p, status)
     def output_summary_2(self):
+        cstring = ",".join(self.counts_string)
+        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}:{}\t{}".format(self.chrA,
+                                                                              self.fromA,
+                                                                              self.toA,
+                                                                              self.statusA,
+                                                                              self.chrB,
+                                                                              self.fromB,
+                                                                              self.toB,
+                                                                              self.statusB,
+                                                                              sum(self.simple),
+                                                                              sum(self.twisted),
+                                                                              cstring)
+
+    def output_summary_verbose(self):
         cstring = ",".join(self.counts_string)
         # calculate individual P-values
         p_vals = []
@@ -141,7 +137,7 @@ def parse_gzip_tsv_file(file, interaction_dict):
             ## counts, otherwise create a new Interaction object
             # ADD SIGNIFICANT INTERACTIONS ONLY
             simple_twisted = F[8].rstrip().split(':')
-            p_val = calculate_binomial_p_value(int(simple_twisted[0]), int(simple_twisted[1]))
+            #p_val = calculate_binomial_p_value(int(simple_twisted[0]), int(simple_twisted[1]))
             #if p_val <= 0.05:
             mykey = Interaction.make_key(F)
             if mykey in interaction_dict:
@@ -184,12 +180,14 @@ d = defaultdict(Interaction)
 n_interactions = []
 gzfiles = get_gzip_tsv_files(interaction_files_path)
 for f in gzfiles:
-    print("[INFO] Extracting interactions from " + f + ".")
+    print("\t[INFO] Extracting interactions from " + f + ".")
     n = parse_gzip_tsv_file(f, d)
     n_interactions.append(n)
 if len(gzfiles) == 0:
     print("[FATAL] Did not find any gzipped files. Note: Need to give path to directory with *.tsv.gz files.")
     exit(1)
+
+print("\t[INFO] The union of all interactions has " + str(len(d)) + " interactions.")
 
 ## When we get here, d has interaction objects for all observed interactions
 ## Some of them have observations for all experiments
@@ -198,28 +196,29 @@ if len(gzfiles) < int(n_experiments):
     print("[FATAL] Not enough replicates. Must be at least " + str(n_experiments) + " But there are only " + str(len(gzfiles)) + " files.")
     exit(1)
 
+
+fname = out_dir + "/" + out_prefix + "_alt_interactions.txt.gz"
+outfh = gzip.open(fname, 'wt')
+print("[INFO] Writing interactions to file ...")
 n_has_all_data = 0
 n_incomplete_data = 0
-
-i = 0
-
-fname = out_dir + "/" + out_prefix + "_interactions.txt" # AtLeastTwoReplicates
-outfh = open(fname, 'w')
-print("[INFO] Calculating P-values for combined interactions...")
 for key, iaction in d.items():
     if not iaction.has_data_for_all_experiments(n_experiments):
         n_incomplete_data += 1
     else:
         n_has_all_data += 1
-        i += 1
         outfh.write(iaction.output_summary_2() + "\n")
 
-    if (n_incomplete_data + n_has_all_data)%100000==0:
+    if (n_incomplete_data + n_has_all_data)%1000000==0:
         print("\t[INFO] " + (str(n_incomplete_data + n_has_all_data)) + " interactions processed ...")
+outfh.close()
 
+fname = out_dir + "/" + out_prefix + "_alt_summary.txt"
+outfh = open(fname, 'wt')
+outfh.write(str(out_prefix) + "\t" + str(n_interactions) + "\t" + str(n_experiments) + "\t" + str(n_has_all_data) + "\t" + str(n_incomplete_data) + "\n")
 outfh.close()
 
 print("Total number of interactions: " + str(n_interactions))
-print("[INFO] Significant interactions with {} data points: {}, lacking significant interactions: {}".format(n_experiments, n_has_all_data, n_incomplete_data))
+print("[INFO] I nteractions with {} data points: {}, lacking interactions: {}".format(n_experiments, n_has_all_data, n_incomplete_data))
 print("[INFO] We wrote all interactions to file: {}".format(fname))
 print("[INFO] ... done.")
