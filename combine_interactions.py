@@ -2,9 +2,31 @@
 import argparse
 import os
 import gzip
-import numpy as np
 from collections import defaultdict
-from scipy.stats import binom
+
+
+### Parse command line
+######################
+
+parser = argparse.ArgumentParser(description='Discard all interactions that are not significant in a given number of replicates.')
+parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
+parser.add_argument('--out-dir', help='Directory for output.', default='.')
+parser.add_argument('--interaction-files-path', help='Path to directory with gt1 gzip files')
+parser.add_argument('--n-experiments', help='Path to directory with gt1 gzip files')
+
+args = parser.parse_args()
+out_prefix = args.out_prefix
+out_dir = args.out_dir
+interaction_files_path = args.interaction_files_path
+n_experiments = int(args.n_experiments)
+
+print("[INFO] " + "Input parameters")
+print("\t[INFO] Analysis for: " + out_prefix)
+print("\t[INFO] Path to gzipped interaction files: " + interaction_files_path)
+
+
+### Define auxiliary classes and methods
+########################################
 
 def get_gzip_tsv_files(dir):
     """
@@ -16,6 +38,7 @@ def get_gzip_tsv_files(dir):
             gzpath = os.path.join(dir, file)
             gzfiles.append(gzpath)
     return gzfiles
+
 
 class Interaction:
     """
@@ -84,41 +107,6 @@ class Interaction:
                                                                               sum(self.twisted),
                                                                               cstring)
 
-    def output_summary_verbose(self):
-        cstring = ",".join(self.counts_string)
-        # calculate individual P-values
-        p_vals = []
-        for simple_twisted_pairs in self.counts_string:
-            simple_twisted = simple_twisted_pairs.rstrip().split(':')
-            p_vals.append(str(calculate_binomial_p_value(int(simple_twisted[0]), int(simple_twisted[1]))))
-        pstring = ",".join(p_vals)
-
-        combined_p_val = calculate_binomial_p_value(sum(self.simple),sum(self.twisted))
-        dist = str(int(self.fromB) -  int(self.toA))
-        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}:{}\t{}\t{}\t{}\t{}".format(self.chrA, self.fromA, self.toA,
-                                                                               self.statusA,
-                                                                               self.chrB, self.fromB, self.toB,
-                                                                               self.statusB,
-                                                                               sum(self.simple), sum(self.twisted),
-                                                                               combined_p_val,
-                                                                               cstring,
-                                                                               pstring,
-                                                                          dist
-                                                                               )
-
-    def set_binomial_p_value(self, p_val):
-        self.p_val = p_val
-
-
-def calculate_binomial_p_value(n_simple, n_twisted):
-    if n_simple < n_twisted:
-        p_value = 1 - binom.cdf(n_twisted-1, n_simple + n_twisted, 0.5)
-        return p_value
-    else:
-        p_value = 1 - binom.cdf(n_simple-1, n_simple + n_twisted, 0.5)
-        return p_value
-
-
 def parse_gzip_tsv_file(file, interaction_dict):
     """
     Parse output of diachromatic interaction file
@@ -133,12 +121,6 @@ def parse_gzip_tsv_file(file, interaction_dict):
             F = line.rstrip().split('\t')
             if len(F) != 9:
                 raise TypeError("Malformed line {}".format(line))
-            ## If we have already seen this interaction, append the
-            ## counts, otherwise create a new Interaction object
-            # ADD SIGNIFICANT INTERACTIONS ONLY
-            simple_twisted = F[8].rstrip().split(':')
-            #p_val = calculate_binomial_p_value(int(simple_twisted[0]), int(simple_twisted[1]))
-            #if p_val <= 0.05:
             mykey = Interaction.make_key(F)
             if mykey in interaction_dict:
                 iaction = interaction_dict[mykey]
@@ -147,27 +129,6 @@ def parse_gzip_tsv_file(file, interaction_dict):
                 interaction_dict[mykey] = Interaction(F)
 
     return n_iteraction
-
-
-
-### Parse command line
-######################
-
-parser = argparse.ArgumentParser(description='Discard all interactions that are not significant in a given number of replicates.')
-parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-parser.add_argument('--out-dir', help='Directory for output.', default='.')
-parser.add_argument('--interaction-files-path', help='Path to directory with gt1 gzip files')
-parser.add_argument('--n-experiments', help='Path to directory with gt1 gzip files')
-
-args = parser.parse_args()
-out_prefix = args.out_prefix
-out_dir = args.out_dir
-interaction_files_path = args.interaction_files_path
-n_experiments = int(args.n_experiments)
-
-print("[INFO] " + "Input parameters")
-print("\t[INFO] Analysis for: " + out_prefix)
-print("\t[INFO] Path to gzipped interaction files: " + interaction_files_path)
 
 
 ### Iterate interactions
@@ -188,9 +149,6 @@ if len(gzfiles) == 0:
     exit(1)
 
 print("\t[INFO] The union of all interactions has " + str(len(d)) + " interactions.")
-
-## When we get here, d has interaction objects for all observed interactions
-## Some of them have observations for all experiments
 
 if len(gzfiles) < int(n_experiments):
     print("[FATAL] Not enough replicates. Must be at least " + str(n_experiments) + " But there are only " + str(len(gzfiles)) + " files.")
