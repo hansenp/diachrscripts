@@ -6,6 +6,9 @@ __pycache__/
 # Numpy arrays saved to disk
 *.npy
 
+# subdirectory with tool for GO analysis
+chc2go/
+
 # C extensions
 *.so
 
