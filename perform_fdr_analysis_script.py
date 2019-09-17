@@ -116,7 +116,6 @@ def get_pvals_permuted_counts(chc_interactions, n_dict):
 print("[INFO] Ingesting diachromatic file at ", diachromatic_interaction_file, " ...")
 n_dict = {} # dictionary that stores the numbers of interactions with n read pairs; is used as input for 'random_numbers_dict()' to generate random count efficiently
 chc_interactions = [] # list of original interactions
-nsig_o = 0 # number of observed significant interactions
 n_cis_long_range_interaction = 0
 n_trans_short_range_interaction = 0
 p_val_o_list = [] # list of P-values for observed interactions
@@ -152,7 +151,6 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
 print("[INFO] Total number of cis long range interactions: {}".format(n_cis_long_range_interaction))
 print("[INFO] Total number of trans short range interactions: {}".format(n_trans_short_range_interaction))
-print("[INFO] Number of nominally significant P-values: {}".format(nsig_o))
 
 
 # Perform FDR anlysis

@@ -23,10 +23,10 @@ if status_pair_flag != "ALL":
 p_value_cutoff = float(args.p_value_cutoff)
 
 print("[INFO] " + "Input parameters")
-print("\t[INFO] Analysis for: " + out_prefix)
-print("\t[INFO] Interaction file: " + diachromatic_interaction_file)
-print("\t[INFO] Status pair flag: " + status_pair_flag)
-print("\t[INFO] P-value cutoff: " + str(p_value_cutoff))
+print("\t[INFO] --out-prefix: " + out_prefix)
+print("\t[INFO] --interaction-file: " + diachromatic_interaction_file)
+print("\t[INFO] --status-pair-flag: " + status_pair_flag)
+print("\t[INFO] --p-value-cutoff: " + str(p_value_cutoff))
 
 # Init arrays for distribution of distances between digests
 distance_array_simple = []
@@ -100,15 +100,15 @@ fp.close()
 
 # Output summary
 print("[INFO] " + "Summary statistics")
+print("\t[INFO] Total number of interactions: " + str(n_interaction_total))
 print("\t[INFO] Number of non " + status_pair_flag + " interactions: " + str(n_non_status_pair_flag_interaction) + " (discarded)")
 print("\t[INFO] Number of trans and short range interactions: " + str(n_trans_short_range_interaction) + " (discarded)")
 print("\t[INFO] Number of simple interactions: " + str(n_simple_interaction))
 print("\t[INFO] Number of twisted interactions: " + str(n_twisted_interaction))
 print("\t[INFO] Number of undirected interactions: " + str(n_undirected_interaction))
 print("\t[INFO] Number of indefinable interactions: " + str(n_indefinable_interaction))
-print("[INFO] " + "Writing numpy arrays with distances to disk ...")
 
-# save numpy arrays to disk so as we can use them in the notebook
+print("[INFO] " + "Writing numpy arrays with distances to disk ...")
 file_path_name = out_prefix + "_distance_array_simple"
 np.save(file_path_name, np.array(distance_array_simple))
 file_path_name = out_prefix + "_distance_array_twisted"
@@ -117,5 +117,27 @@ file_path_name = out_prefix + "_distance_array_undirected"
 np.save(file_path_name, np.array(distance_array_undirected))
 file_path_name = out_prefix + "_distance_array_indefinable"
 np.save(file_path_name , np.array(distance_array_indefinable))
+
+print("[INFO] " + "Writing arrays with distances to files ...")
+file_name = out_prefix + "_digest_distances_simple.txt"
+f_output = open(file_name, 'wt')
+for d in distance_array_simple:
+    f_output.write(str(d) + "\n")
+f_output.close()
+file_name = out_prefix + "_digest_distances_twisted.txt"
+f_output = open(file_name, 'wt')
+for d in distance_array_twisted:
+    f_output.write(str(d) + "\n")
+f_output.close()
+file_name = out_prefix + "_digest_distances_undirected.txt"
+f_output = open(file_name, 'wt')
+for d in distance_array_undirected:
+    f_output.write(str(d) + "\n")
+f_output.close()
+file_name = out_prefix + "_digest_distances_indefinable.txt"
+f_output = open(file_name, 'wt')
+for d in distance_array_indefinable:
+    f_output.write(str(d) + "\n")
+f_output.close()
 
 print("[INFO] " + "... done.")
