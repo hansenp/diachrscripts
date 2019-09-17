@@ -166,7 +166,7 @@ for pc in np.arange(p_val_c_min, p_val_c_max, p_val_step_size):
     nsig_p = (p_val_p_list <= pc).sum()
     fdr = nsig_p / nsig_o
     f_output.write(out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(nsig_p) + "\t" + str(nsig_o) + "\n")
-    print("\t" + out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(nsig_p) + "\t" + str(nsig_o))
+    #print("\t" + out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(nsig_p) + "\t" + str(nsig_o))
     if fdr < fdr_threshold:
         fdr_last = fdr
         nsig_o_last = nsig_o

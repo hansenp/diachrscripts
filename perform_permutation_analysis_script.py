@@ -177,7 +177,7 @@ print("[INFO] Performing permutation analysis with " + str(iter_num) + " iterati
 random_better_than_observed = 0
 nsig_p_list = [] # stores numbers of significant interactions for each iteration
 t = time.process_time()
-for n in range(iter_num):
+for n in range(1, iter_num+1):
     nsig_p = count_significant_pvals_in_permutation(chc_interactions, n_dict, nominal_alpha)
     nsig_p_list.append(nsig_p)
     if nsig_p >= nsig_o:
