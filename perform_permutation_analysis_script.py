@@ -182,7 +182,7 @@ for n in range(1, iter_num+1):
     nsig_p_list.append(nsig_p)
     if nsig_p >= nsig_o:
         random_better_than_observed += 1
-    if n % int(iter_num / 10) == 0 and n>0:
+    if n % int(iter_num / 10) == 0:
         elapsed_time = time.process_time() - t
         print("\t[INFO] " + str(n) + " permutations for " + str(len(chc_interactions)) +  " interactions performed in " + str(elapsed_time) + " sec.")
 
