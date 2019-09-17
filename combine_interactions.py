@@ -10,19 +10,18 @@ from collections import defaultdict
 
 parser = argparse.ArgumentParser(description='Discard all interactions that are not significant in a given number of replicates.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-parser.add_argument('--out-dir', help='Directory for output.', default='.')
 parser.add_argument('--interaction-files-path', help='Path to directory with gt1 gzip files')
-parser.add_argument('--n-experiments', help='Path to directory with gt1 gzip files')
+parser.add_argument('--required-replicates', help='Required number of replicates.')
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
-out_dir = args.out_dir
 interaction_files_path = args.interaction_files_path
-n_experiments = int(args.n_experiments)
+required_replicates = int(args.required_replicates)
 
 print("[INFO] " + "Input parameters")
-print("\t[INFO] Analysis for: " + out_prefix)
-print("\t[INFO] Path to gzipped interaction files: " + interaction_files_path)
+print("\t[INFO] --out-prefix: " + out_prefix)
+print("\t[INFO] --interaction-files-path: " + interaction_files_path)
+print("\t[INFO] --required-replicates: " + str(required_replicates))
 
 
 ### Define auxiliary classes and methods
@@ -107,6 +106,7 @@ class Interaction:
                                                                               sum(self.twisted),
                                                                               cstring)
 
+
 def parse_gzip_tsv_file(file, interaction_dict):
     """
     Parse output of diachromatic interaction file
@@ -137,7 +137,6 @@ def parse_gzip_tsv_file(file, interaction_dict):
 print("[INFO] Will parse all gz files in", interaction_files_path)
 
 d = defaultdict(Interaction)
-
 n_interactions = []
 gzfiles = get_gzip_tsv_files(interaction_files_path)
 for f in gzfiles:
@@ -149,19 +148,19 @@ if len(gzfiles) == 0:
     exit(1)
 
 print("\t[INFO] The union of all interactions has " + str(len(d)) + " interactions.")
+print("[INFO] Total numbers of interactions: " + str(n_interactions))
 
-if len(gzfiles) < int(n_experiments):
-    print("[FATAL] Not enough replicates. Must be at least " + str(n_experiments) + " But there are only " + str(len(gzfiles)) + " files.")
+if len(gzfiles) < int(required_replicates):
+    print("[FATAL] Not enough replicates. Must be at least " + str(required_replicates) + " But there are only " + str(len(gzfiles)) + " files.")
     exit(1)
 
-
-fname = out_dir + "/" + out_prefix + "_alt_interactions.txt.gz"
+fname = out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_interactions.tsv.gz"
 outfh = gzip.open(fname, 'wt')
 print("[INFO] Writing interactions to file ...")
 n_has_all_data = 0
 n_incomplete_data = 0
 for key, iaction in d.items():
-    if not iaction.has_data_for_all_experiments(n_experiments):
+    if not iaction.has_data_for_all_experiments(required_replicates):
         n_incomplete_data += 1
     else:
         n_has_all_data += 1
@@ -170,13 +169,14 @@ for key, iaction in d.items():
     if (n_incomplete_data + n_has_all_data)%1000000==0:
         print("\t[INFO] " + (str(n_incomplete_data + n_has_all_data)) + " interactions processed ...")
 outfh.close()
+print("[INFO] We wrote all interactions to file: {}".format(fname))
 
-fname = out_dir + "/" + out_prefix + "_alt_summary.txt"
+fname = out_prefix + "_at_least_in_" + str(required_replicates) + "_summary.txt"
 outfh = open(fname, 'wt')
-outfh.write(str(out_prefix) + "\t" + str(n_interactions) + "\t" + str(n_experiments) + "\t" + str(n_has_all_data) + "\t" + str(n_incomplete_data) + "\n")
+outfh.write("OUT_PREFIX" + "\t" + "INTERACTIONS_NUMBERS" + "\t" + "REQUIRED_INTERACTIONS" + "\t" + "HAS_ALL_DATA" + "\t" + "INCOMPLETE_DATA" + "\n")
+outfh.write(str(out_prefix) + "\t" + str(n_interactions) + "\t" + str(required_replicates) + "\t" + str(n_has_all_data) + "\t" + str(n_incomplete_data) + "\n")
 outfh.close()
 
-print("Total number of interactions: " + str(n_interactions))
-print("[INFO] I nteractions with {} data points: {}, lacking interactions: {}".format(n_experiments, n_has_all_data, n_incomplete_data))
-print("[INFO] We wrote all interactions to file: {}".format(fname))
+print("[INFO] Interactions with {} data points: {}, lacking interactions: {}".format(required_replicates, n_has_all_data, n_incomplete_data))
+print("[INFO] We wrote summary statistics to file: {}".format(fname))
 print("[INFO] ... done.")
