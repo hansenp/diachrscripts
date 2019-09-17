@@ -178,13 +178,13 @@ random_better_than_observed = 0
 nsig_p_list = [] # stores numbers of significant interactions for each iteration
 t = time.process_time()
 for n in range(iter_num):
-    if n % int(iter_num / 10) == 0:
-        elapsed_time = time.process_time() - t
-        print("\t[INFO] " + str(n) + " permutations for " + str(len(chc_interactions)) +  " interactions performed in " + str(elapsed_time) + " sec.")
     nsig_p = count_significant_pvals_in_permutation(chc_interactions, n_dict, nominal_alpha)
     nsig_p_list.append(nsig_p)
     if nsig_p >= nsig_o:
         random_better_than_observed += 1
+    if n % int(iter_num / 10) == 0 and n>0:
+        elapsed_time = time.process_time() - t
+        print("\t[INFO] " + str(n) + " permutations for " + str(len(chc_interactions)) +  " interactions performed in " + str(elapsed_time) + " sec.")
 
 
 ### Print results
@@ -198,13 +198,13 @@ print("OUT_PREFIX\tITER_NUM\tTOTAL_INTERACTION_NUM\tNSIG_OBSERVED\tMEAN_NSIG_PER
 print(out_prefix + "\t" + str(iter_num) + "\t" + str(len(chc_interactions)) + "\t" + str(nsig_o) + "\t" + str(nsig_p_average) + "\t" + str(percentage_observed) + "\t" + str(percentage_permuted))
 print("{} out of {} permutations had more signficant p values than in the observed data".format(random_better_than_observed, str(iter_num)))
 
-file_name = out_prefix + "_permutation_analysis_results.txt"
+file_name = out_prefix + "_permutation_summary.txt"
 f_output = open(file_name, 'wt')
 f_output.write("OUT_PREFIX\tITER_NUM\tNSIG_OBSERVED\tMEAN_NSIG_PERMUTATATED\tPERCENTAGE_NSIG_OBSERVED\tPERCENTAGE_MEAN_NSIG_PERMUTATATED\n")
 f_output.write(out_prefix + "\t" + str(iter_num) + "\t" + str(nsig_o) + "\t" + str(nsig_p_average) + "\t" + str(percentage_observed) + "\t" + str(percentage_permuted))
 f_output.close()
 
-file_name = out_prefix + "_nsig_permutated_results.txt"
+file_name = out_prefix + "_n_sig_permuted_interactions.txt"
 f_output = open(file_name, 'wt')
 for nsig_p in nsig_p_list:
     f_output.write(str(nsig_p) + "\n")
