@@ -200,8 +200,8 @@ print("{} out of {} permutations had more signficant p values than in the observ
 
 file_name = out_prefix + "_permutation_summary.txt"
 f_output = open(file_name, 'wt')
-f_output.write("OUT_PREFIX\tITER_NUM\tNSIG_OBSERVED\tMEAN_NSIG_PERMUTATATED\tPERCENTAGE_NSIG_OBSERVED\tPERCENTAGE_MEAN_NSIG_PERMUTATATED\n")
-f_output.write(out_prefix + "\t" + str(iter_num) + "\t" + str(nsig_o) + "\t" + str(nsig_p_average) + "\t" + str(percentage_observed) + "\t" + str(percentage_permuted))
+f_output.write("OUT_PREFIX\tN_INTERACTION\tNOMINAL_ALPHA\tITER_NUM\tNSIG_OBSERVED\tMEAN_NSIG_PERMUTATATED\tN_BETTER_THAN_OBSERVED\tPERCENTAGE_NSIG_OBSERVED\tPERCENTAGE_MEAN_NSIG_PERMUTATATED\n")
+f_output.write(out_prefix + "\t" + str(n_cis_long_range_interaction ) + "\t" + str(nominal_alpha) + "\t" + str(iter_num) + "\t" + str(nsig_o) + "\t" + str(nsig_p_average) + "\t" + str(random_better_than_observed) + "\t" + str(percentage_observed) + "\t" + str(percentage_permuted) + "\n")
 f_output.close()
 
 file_name = out_prefix + "_n_sig_permuted_interactions.txt"
