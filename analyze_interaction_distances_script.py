@@ -39,6 +39,11 @@ n_twisted_interaction = 0
 n_undirected_interaction = 0
 n_indefinable_interaction = 0
 
+n_simple_interaction_rp = 0
+n_twisted_interaction_rp = 0
+n_undirected_interaction_rp = 0
+n_indefinable_interaction_rp = 0
+
 n_trans_short_range_interaction = 0
 n_non_status_pair_flag_interaction = 0
 
@@ -75,20 +80,26 @@ with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
         if interaction.get_interaction_type() == "TBD":
             interaction.set_interaction_type("TBD", p_value_cutoff)
 
+        n_read_pair = interaction.n_simple + interaction.n_twisted
+
         if interaction.get_interaction_type() == None:
             raise Exception("[FATAL] Interaction type is 'None'. This should never happen.")
         elif interaction.get_interaction_type() == "NA":
             distance_array_indefinable.append(distance)
             n_indefinable_interaction += 1
+            n_indefinable_interaction_rp = n_indefinable_interaction_rp + n_read_pair
         elif interaction.get_interaction_type() == "U":
             distance_array_undirected.append(distance)
             n_undirected_interaction += 1
+            n_undirected_interaction_rp = n_undirected_interaction_rp + n_read_pair
         elif interaction.get_interaction_type() == "S":
             distance_array_simple.append(distance)
             n_simple_interaction += 1
+            n_simple_interaction_rp = n_simple_interaction_rp + n_read_pair
         elif interaction.get_interaction_type() == "T":
             distance_array_twisted.append(distance)
             n_twisted_interaction += 1
+            n_twisted_interaction_rp = n_twisted_interaction_rp + n_read_pair
         else:
             line = fp.readline()
             print(interaction.get_interaction_type())
@@ -107,6 +118,10 @@ print("\t[INFO] Number of simple interactions: " + str(n_simple_interaction))
 print("\t[INFO] Number of twisted interactions: " + str(n_twisted_interaction))
 print("\t[INFO] Number of undirected interactions: " + str(n_undirected_interaction))
 print("\t[INFO] Number of indefinable interactions: " + str(n_indefinable_interaction))
+print("\t[INFO] Number of read pairs in simple interactions: " + str(n_simple_interaction_rp) + " (" + str(n_simple_interaction_rp/n_simple_interaction) + ")")
+print("\t[INFO] Number of read pairs in twisted interactions: " + str(n_twisted_interaction_rp) + " (" + str(n_twisted_interaction_rp/n_twisted_interaction) + ")")
+print("\t[INFO] Number of read pairs in undirected interactions: " + str(n_undirected_interaction_rp) + " (" + str(n_undirected_interaction_rp/n_undirected_interaction) + ")")
+print("\t[INFO] Number of read pairs in indefinable interactions: " + str(n_indefinable_interaction_rp) + " (" + str(n_indefinable_interaction_rp/n_indefinable_interaction) + ")")
 
 print("[INFO] " + "Writing numpy arrays with distances to disk ...")
 file_path_name = out_prefix + "_distance_array_simple"

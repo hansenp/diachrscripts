@@ -92,6 +92,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
         # parse line representing one interaction
         interaction = dclass.Interaction(line)
+        interaction.set_interaction_type("TBD", 0.003)
 
         # restrict analysis to cis long range interactions
         if not(interaction.is_cis_long_range(10000)):

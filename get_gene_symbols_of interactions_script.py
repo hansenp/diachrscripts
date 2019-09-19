@@ -10,16 +10,19 @@ parser = argparse.ArgumentParser(description='Determine expression category leve
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--ref-gene-file', help='UCSC refGene file (must be gzipped and the same version that was used to create the digest map for Diachromatic).')
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
+parser.add_argument('--p-value-cutoff', help='P-value cutoff used for categorization of interactions.')
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
 ref_gene_file = args.ref_gene_file
 diachromatic_interaction_file = args.interaction_file
+p_value_cutoff = float(args.p_value_cutoff)
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] Analysis for: " + out_prefix)
 print("\t[INFO] Interaction file: " + diachromatic_interaction_file)
 print("\t[INFO] refGene file: " + ref_gene_file)
+print("\t[INFO] --p-value-cutoff: " + str(p_value_cutoff))
 
 
 ### Define auxiliary functions
@@ -95,12 +98,14 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
         # set the type of interaction based on P-value ('S', 'T', 'U', 'NA')
         if interaction.get_interaction_type() == "TBD":
-            interaction.set_interaction_type("TBD", 0.003)
+            interaction.set_interaction_type("TBD", p_value_cutoff)
 
         # assign expression level category to digest using max approach
         d1_symbols, d2_symbols = get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map)
 
         symbols_d12 = ",".join(set(sum(d1_symbols, [] ))) + ";" + ",".join(set(sum(d2_symbols, [] )))
+
+        simple_twisted_counts = str(interaction.n_simple) + ":" + str(interaction.n_twisted)
 
 
         if interaction.get_interaction_type() == None:
@@ -120,7 +125,7 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
         line = line.rstrip()
 
-        f_output_original.write(interaction.get_coord_string() + "\t" + str(interaction.get_digest_distance())  + "\t" + interaction.get_interaction_type() + "\t" + symbols_d12 + "\n")
+        f_output_original.write(interaction.get_coord_string() + "\t" + str(interaction.get_digest_distance())  + "\t" + interaction.get_interaction_type() + "\t" + symbols_d12 + "\t" + simple_twisted_counts + "\n")
 
         line = fp.readline()
 
