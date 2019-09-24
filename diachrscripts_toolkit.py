@@ -91,8 +91,10 @@ class Interaction:
     # Methods
 
     def get_digest_distance(self):
+        if not self.is_cis():
+            raise Exception("[FATAL] Didest distance is not defined for trans interactions.")
         if self.digest_distance == None:
-            self.digest_distance = self.digest_2.get_start() - self.digest_1.get_end() # distance between digest ends
+            self.digest_distance = self.digest_2.get_start() - self.digest_1.get_end()
         return self.digest_distance
 
     def is_cis(self):
@@ -122,7 +124,7 @@ class Interaction:
                 return self.p_value
 
 
-    def set_interaction_type(self, type, p_thresh):
+    def set_interaction_type(self, type, p_thresh, n_indefinable_cutoff):
         """
         This function determines whether this interaction is significantly directed, i.e. simple or twisted, using a
         binomial distribution with p = 0.5 and returns a 'S' for simple and 'T' for twisted.
@@ -137,7 +139,7 @@ class Interaction:
             raise Exception("[FATAL] Invalid interaction type. Should be either 'S', 'T', 'U' or 'TBD' but was " + type + ".")
         else:
             if type == "TBD":
-                if self.n_twisted + self.n_simple < 5:
+                if self.n_twisted + self.n_simple < n_indefinable_cutoff:
                     type = 'NA' # an interaction with less than 5 read pairs cannot be significant with a binomial P-value threshold of 0.05
                 elif self.get_binomial_p_value() <= p_thresh:
                     if self.n_twisted < self.n_simple:
@@ -158,7 +160,12 @@ class Interaction:
         return self.digest_2
 
     def is_cis_long_range(self, d_dist):
-        return self.digest_1.get_chromosome() == self.digest_1.get_chromosome() and 10000 < self.get_digest_distance()
+        if not self.is_cis():
+            return False
+        if self.get_digest_distance() < d_dist:
+            return False
+        return True
+        #return self.digest_1.get_chromosome() == self.digest_2.get_chromosome() and d_dist < self.get_digest_distance()
 
     def get_simulated_copy(self):
 
@@ -563,3 +570,18 @@ def get_x_inter_binomial_log10_p_value(k, n, x):
         return -binom.logsf(k, n, 2*(0.5 ** x))/log(10), 0
     except RuntimeWarning: # underflow
        return -log(sys.float_info.min * sys.float_info.epsilon)/log(10), 2 # return smallest possible float
+
+def calculate_binomial_p_value(n_simple, n_twisted):
+        if n_simple < n_twisted:
+            p_value = 1 - binom.cdf(n_twisted - 1, n_simple + n_twisted, 0.5)
+            return p_value
+        else:
+            p_value = 1 - binom.cdf(n_simple - 1, n_simple + n_twisted, 0.5)
+            return p_value
+
+def find_indefinable_n(p_value_cutoff):
+    print("[INFO] Looking for smallest number of read pairs n that yields a significant P-value with the given threshold of " + str(p_value_cutoff) + ".")
+    for n in range(1, 1000):
+        if calculate_binomial_p_value(n, 0) < p_value_cutoff:
+            print("\t[INFO] Smallest n: " + str(n) + " read pairs")
+            return n

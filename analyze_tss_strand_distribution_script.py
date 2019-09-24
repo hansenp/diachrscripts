@@ -120,6 +120,9 @@ n_twisted_interaction = 0
 n_undirected_interaction = 0
 n_indefinable_interaction = 0
 
+# Given the P-value cutoff, find the smallest n that yields a significant P-value
+n_indefinable_cutoff = dclass.find_indefinable_n(p_value_cutoff)
+
 # iterate interactions
 print("[INFO] Determining pair category for each interaction in " + diachromatic_interaction_file + " ...")
 with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
@@ -149,7 +152,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
         # set the type of interaction based on P-value ('S', 'T', 'U', 'NA')
         if interaction.get_interaction_type() == "TBD":
-            interaction.set_interaction_type("TBD", p_value_cutoff)
+            interaction.set_interaction_type("TBD", p_value_cutoff, n_indefinable_cutoff)
 
         # assign expression level category to digest using max approach
         pair_key = get_interaction_strand_pair_key(interaction, ref_gene_tss_map)

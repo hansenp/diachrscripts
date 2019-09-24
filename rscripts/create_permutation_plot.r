@@ -1,20 +1,29 @@
-PREFIX <- "mifsud_r1"
-PREFIX <- "mifsud_r2"
-PREFIX <- "mifsud_r3"
-PREFIX <- "mifsud_alt"
+PREFIX <- "results_1/mifsud/mifsud_r1"
+PREFIX <- "results_1/mifsud/mifsud_r2"
+PREFIX <- "results_1/mifsud/mifsud_r3"
+#PREFIX <- "mifsud_alt"
 
-PREFIX <- "schoenefelder_r1"
-PREFIX <- "schoenefelder_r2"
-PREFIX <- "schoenefelder_alt"
+PREFIX <- "results_1/schoenefelder/schoenefelder_r1"
+PREFIX <- "results_1/schoenefelder/schoenefelder_r2"
+#PREFIX <- "schoenefelder_alt"
 
-PREFIX <- "chesi_bmp2_r1"
-PREFIX <- "chesi_bmp2_r2"
-PREFIX <- "chesi_bmp2_r3"
-PREFIX <- "chesi_bmp2_alt"
+PREFIX <- "results_1/chesi/bmp2/chesi_bmp2_r1"
+PREFIX <- "results_1/chesi/bmp2/chesi_bmp2_r2"
+PREFIX <- "results_1/chesi/bmp2/chesi_bmp2_r3"
+#PREFIX <- "chesi_bmp2_alt"
 
-PREFIX <- "nora_untreated_r1"
-PREFIX <- "nora_untreated_r2"
-PREFIX <- "nora_untreated_alt"
+PREFIX <- "results_1/chesi/hepg2/chesi_hepg2_r1"
+PREFIX <- "results_1/chesi/hepg2/chesi_hepg2_r2"
+PREFIX <- "results_1/chesi/hepg2/chesi_hepg2_r3"
+
+PREFIX <- "results_1/nora/untreated/nora_untreated_r2"
+#PREFIX <- "nora_untreated_r1"
+#PREFIX <- "nora_untreated_r2"
+#PREFIX <- "nora_untreated_alt"
+
+PREFIX <- "results_1/nora/treated/nora_treated_r2"
+
+PREFIX <- "results_1/nora/washoff/nora_washoff_r2"
 
 
 f_name<-paste(PREFIX, "_permutation_plot.pdf", sep="")

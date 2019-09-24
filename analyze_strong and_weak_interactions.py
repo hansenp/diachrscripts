@@ -73,7 +73,7 @@ def binomial_p_value(n_simple, n_twisted):
 
 print("[INFO] " + "Generating numbers of simple and twisted read pairs ...")
 n_dict = {} # dictionary that stores the numbers of interactions with n read pairs; is used as input for 'random_numbers_dict()' to generate random counts efficiently
-random_n_vec = np.random.randint(n_max+1, size=i_num) # n has a uniform distribution
+random_n_vec = np.random.randint(low = 1, high = n_max+1, size=i_num) # n has a uniform distribution
 for n in random_n_vec:
     if n in n_dict:
         n_dict[n] += 1
@@ -81,6 +81,14 @@ for n in random_n_vec:
         n_dict[n] = 1
 random_numbers_dict = random_numbers_dict(n_dict)
 # 'random_numbers_dict' now contains arrays of random simple read numbers for each n
+
+for N in random_numbers_dict:
+    #print("N: " + str(len(random_numbers_dict[N]))+ "\t" + str(N) + "\t" + str(random_numbers_dict[N]))
+    arr = [0] * (N+1)
+    for n_simple in random_numbers_dict[N]:
+        arr[n_simple] += 1
+
+    print(str(N) + ": " + str(arr))
 
 print("[INFO] " + "Counting significant interactions for each n ...")
 signum_list = [0] * (n_max + 1)
@@ -92,7 +100,6 @@ for N in range(1, n_max + 1):
             p_val = binomial_p_value(n_simple, n_twisted)
             if p_val <= p_value_cutoff:
                 signum_list[N] += 1
-    #print(str(N) + "\t" + str(signum_list[N]))
 
 plt.plot(signum_list)
 plt.grid(True)
