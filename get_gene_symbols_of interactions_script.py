@@ -69,6 +69,14 @@ n_twisted_interaction = 0
 n_undirected_interaction = 0
 n_indefinable_interaction = 0
 
+# Given the P-value cutoff, find the smallest n that yields a significant P-value
+n_indefinable_cutoff = dclass.find_indefinable_n(p_value_cutoff)
+
+# Determine distribution of n for directed interactions
+min_digest_dist = 10000
+status_pair_flag = "AA"
+n_dict = dclass.get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff)
+
 # iterate interactions
 print("[INFO] Determining pair category for each interaction in " + diachromatic_interaction_file + " ...")
 with gzip.open(diachromatic_interaction_file, 'rt') as fp:
@@ -85,20 +93,20 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
         interaction = dclass.Interaction(line)
 
         # restrict analysis to cis long range interactions
-        if not(interaction.is_cis_long_range(10000)):
+        if not(interaction.is_cis_long_range(min_digest_dist)):
             n_trans_short_range_interaction += 1
             line = fp.readline()
             continue
 
         # restrict analysis to interactions between targeted promoters
-        if interaction.get_digest_status_pair_flag() != "AA":
+        if interaction.get_digest_status_pair_flag() != status_pair_flag:
             n_non_promoter_promoter_interaction +=1
             line = fp.readline()
             continue
 
         # set the type of interaction based on P-value ('S', 'T', 'U', 'NA')
         if interaction.get_interaction_type() == "TBD":
-            interaction.set_interaction_type("TBD", p_value_cutoff)
+            interaction.set_interaction_type("TBD", p_value_cutoff, n_indefinable_cutoff)
 
         # assign expression level category to digest using max approach
         d1_symbols, d2_symbols = get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map)
@@ -107,17 +115,26 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
         simple_twisted_counts = str(interaction.n_simple) + ":" + str(interaction.n_twisted)
 
+        n_total = interaction.n_simple + interaction.n_twisted
 
         if interaction.get_interaction_type() == None:
             raise Exception("[FATAL] Interaction type is 'None'. This should never happen.")
         elif interaction.get_interaction_type() == "NA":
             n_indefinable_interaction += 1
+            itype = "NA"
         elif interaction.get_interaction_type() == "U":
             n_undirected_interaction += 1
+            if n_total in n_dict and 0 < n_dict[n_total]:
+                itype = "UR"
+                n_dict[n_total] = n_dict[n_total] - 1
+            else:
+                itype = "U"
         elif interaction.get_interaction_type() == "S":
             n_simple_interaction += 1
+            itype = "S"
         elif interaction.get_interaction_type() == "T":
             n_twisted_interaction += 1
+            itype = "T"
         else:
             line = fp.readline()
             print(interaction.get_interaction_type())
@@ -125,7 +142,7 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
         line = line.rstrip()
 
-        f_output_original.write(interaction.get_coord_string() + "\t" + str(interaction.get_digest_distance())  + "\t" + interaction.get_interaction_type() + "\t" + symbols_d12 + "\t" + simple_twisted_counts + "\n")
+        f_output_original.write(interaction.get_coord_string() + "\t" + str(interaction.get_digest_distance())  + "\t" + itype + "\t" + symbols_d12 + "\t" + simple_twisted_counts + "\n")
 
         line = fp.readline()
 

@@ -171,7 +171,7 @@ for key, iaction in d.items():
 outfh.close()
 print("[INFO] We wrote all interactions to file: {}".format(fname))
 
-fname = out_prefix + "_at_least_in_" + str(required_replicates) + "_summary.txt"
+fname = out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_summary.txt"
 outfh = open(fname, 'wt')
 outfh.write("OUT_PREFIX" + "\t" + "INTERACTIONS_NUMBERS" + "\t" + "REQUIRED_INTERACTIONS" + "\t" + "HAS_ALL_DATA" + "\t" + "INCOMPLETE_DATA" + "\n")
 outfh.write(str(out_prefix) + "\t" + str(n_interactions) + "\t" + str(required_replicates) + "\t" + str(n_has_all_data) + "\t" + str(n_incomplete_data) + "\n")

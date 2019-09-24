@@ -580,8 +580,60 @@ def calculate_binomial_p_value(n_simple, n_twisted):
             return p_value
 
 def find_indefinable_n(p_value_cutoff):
+    """
+    :param p_value_cutoff: Chosen threshold
+    :return: Minimal n that yields a signifcant P-value given the threshold
+    """
     print("[INFO] Looking for smallest number of read pairs n that yields a significant P-value with the given threshold of " + str(p_value_cutoff) + ".")
     for n in range(1, 1000):
         if calculate_binomial_p_value(n, 0) < p_value_cutoff:
             print("\t[INFO] Smallest n: " + str(n) + " read pairs")
             return n
+
+def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff):
+    """
+    :param diachromatic_interaction_file: Interaction file in Diachromatic format
+    :param status_pair_flag: ALL, AA, AI or II
+    :param min_digest_dist: Minimal allowed distance between interacting digests, typically 10,000
+    :return: Dictionary with total read pair numbers (n) as keys and the corresponding numbers interactions with n read pairs
+    """
+
+    n_dict = {}  # dictionary that stores the numbers of interactions with n read pairs
+    print("[INFO] Determining distribution of n in significant interactions in: " + diachromatic_interaction_file + " ...")
+    with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
+        line = fp.readline()
+        n_interaction_total = 0
+        while line:
+
+            n_interaction_total += 1
+
+            # parse line representing one interaction
+            interaction = Interaction(line)
+
+            # restrict analysis to interactions between targeted promoters
+            if status_pair_flag != "ALL" and interaction.get_digest_status_pair_flag() != status_pair_flag:
+                line = fp.readline()
+                continue
+
+            # restrict analysis to cis long range interactions
+            if not (interaction.is_cis_long_range(min_digest_dist)):
+                line = fp.readline()
+                continue
+
+            n_total = interaction.n_simple + interaction.n_twisted
+
+            p_val = interaction.get_binomial_p_value()
+
+            if p_val <= p_value_cutoff:
+                if n_total in n_dict:
+                    n_dict[n_total] += 1
+                else:
+                    n_dict[n_total] = 1
+
+            if n_interaction_total % 100000 == 0:
+                print("\t[INFO]", n_interaction_total, "interactions processed ...")
+
+            line = fp.readline()
+
+    fp.close()
+    return n_dict
