@@ -205,47 +205,6 @@ n_indefinable_cutoff = dclass.find_indefinable_n(p_value_cutoff)
 min_digest_dist = 10000
 n_dict = dclass.get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff)
 
-# n_dict = {}  # dictionary that stores the numbers of interactions with n read pairs
-# print("[INFO] Determining distribution of n in significant interactions in: " + diachromatic_interaction_file + " ...")
-# with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
-#     line = fp.readline()
-#     n_interaction_total = 0
-#     while line:
-#
-#         n_interaction_total += 1
-#
-#         # parse line representing one interaction
-#         interaction = dclass.Interaction(line)
-#
-#         # restrict analysis to interactions between targeted promoters
-#         if status_pair_flag != "ALL" and interaction.get_digest_status_pair_flag() != status_pair_flag:
-#             n_non_status_pair_flag_interaction +=1
-#             line = fp.readline()
-#             continue
-#
-#         # restrict analysis to cis long range interactions
-#         if not(interaction.is_cis_long_range(10000)):
-#             n_trans_short_range_interaction += 1
-#             line = fp.readline()
-#             continue
-#
-#         n_total = interaction.n_simple + interaction.n_twisted
-#
-#         p_val = interaction.get_binomial_p_value()
-#
-#         if p_val <= p_value_cutoff:
-#             if n_total in n_dict:
-#                 n_dict[n_total] += 1
-#             else:
-#                 n_dict[n_total] = 1
-#
-#         if n_interaction_total % 100000 == 0:
-#             print("\t[INFO]", n_interaction_total, "interactions processed in round 1 ...")
-#
-#         line = fp.readline()
-#
-# fp.close()
-
 # Iterate interactions and collect distances
 print("[INFO] Determining distances between digest pairs in " + diachromatic_interaction_file + " ...")
 with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
@@ -308,11 +267,15 @@ with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
             raise Exception("[FATAL] Invalid interaction type. Should be either 'S', 'T', 'U' or 'NA' but was " + interaction.get_interaction_type() + ".")
 
         if n_interaction_total%100000 == 0:
-            print("\t[INFO]", n_interaction_total, "interactions processed in round 2 ...")
+            print("\t[INFO]", n_interaction_total, "interactions processed ...")
 
         line = fp.readline()
 
 fp.close()
+
+for key, value in n_dict.items():
+    if 0 < value:
+        print("[Warning] " + "Could not find corresponding number of undirected reference interactions for n = " + str(key) + ". Missing reference interactions: " + str(value))
 
 # Output summary
 print("[INFO] " + "Summary statistics")

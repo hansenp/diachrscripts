@@ -16,14 +16,13 @@ PREFIX <- "results_1/chesi/hepg2/chesi_hepg2_r1"
 PREFIX <- "results_1/chesi/hepg2/chesi_hepg2_r2"
 PREFIX <- "results_1/chesi/hepg2/chesi_hepg2_r3"
 
-PREFIX <- "results_1/nora/untreated/nora_untreated_r2"
-#PREFIX <- "nora_untreated_r1"
-#PREFIX <- "nora_untreated_r2"
-#PREFIX <- "nora_untreated_alt"
+#PREFIX <- "results_1/nora/untreated/nora_untreated_r1"
+#PREFIX <- "results_1/nora/untreated/nora_untreated_r2"
 
-PREFIX <- "results_1/nora/treated/nora_treated_r2"
+#PREFIX <- "results_1/nora/treated/nora_treated_r1"
+#PREFIX <- "results_1/nora/treated/nora_treated_r2"
 
-PREFIX <- "results_1/nora/washoff/nora_washoff_r2"
+PREFIX <- "results_1/nora/washoff/nora_washoff_r1"
 
 
 f_name<-paste(PREFIX, "_permutation_plot.pdf", sep="")

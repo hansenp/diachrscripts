@@ -11,18 +11,26 @@ parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFI
 parser.add_argument('--ref-gene-file', help='UCSC refGene file (must be gzipped and the same version that was used to create the digest map for Diachromatic).')
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
 parser.add_argument('--p-value-cutoff', help='P-value cutoff used for categorization of interactions.')
+parser.add_argument('--status-pair-flag', help='Pair of \'A\' and \'I\' depending on whether a digest was selected for enrichment (A) or not (I).')
+parser.add_argument('--min-digest-dist', help='All interactions with smaller distances will be discarded.', default=10000)
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
 ref_gene_file = args.ref_gene_file
 diachromatic_interaction_file = args.interaction_file
 p_value_cutoff = float(args.p_value_cutoff)
+status_pair_flag = args.status_pair_flag
+if status_pair_flag != "ALL":
+    status_pair_flag = sorted(status_pair_flag)[0] + sorted(status_pair_flag)[1]
+min_digest_dist = int(args.min_digest_dist)
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] Analysis for: " + out_prefix)
 print("\t[INFO] Interaction file: " + diachromatic_interaction_file)
 print("\t[INFO] refGene file: " + ref_gene_file)
 print("\t[INFO] --p-value-cutoff: " + str(p_value_cutoff))
+print("\t[INFO] --status-pair-flag: " + str(status_pair_flag))
+print("\t[INFO] --min-digest-dist: " + str(min_digest_dist))
 
 
 ### Define auxiliary functions
@@ -73,8 +81,6 @@ n_indefinable_interaction = 0
 n_indefinable_cutoff = dclass.find_indefinable_n(p_value_cutoff)
 
 # Determine distribution of n for directed interactions
-min_digest_dist = 10000
-status_pair_flag = "AA"
 n_dict = dclass.get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff)
 
 # iterate interactions
@@ -85,9 +91,9 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
     while line:
 
+        n_interaction_total += 1
         if n_interaction_total%10000 == 0:
             print("\t[INFO]", n_interaction_total, "interactions processed ...")
-        n_interaction_total += 1
 
         # parse line representing one interaction
         interaction = dclass.Interaction(line)
@@ -99,8 +105,8 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
             continue
 
         # restrict analysis to interactions between targeted promoters
-        if interaction.get_digest_status_pair_flag() != status_pair_flag:
-            n_non_promoter_promoter_interaction +=1
+        if status_pair_flag != "ALL" and interaction.get_digest_status_pair_flag() != status_pair_flag:
+            n_non_promoter_promoter_interaction += 1
             line = fp.readline()
             continue
 
@@ -142,7 +148,7 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
         line = line.rstrip()
 
-        f_output_original.write(interaction.get_coord_string() + "\t" + str(interaction.get_digest_distance())  + "\t" + itype + "\t" + symbols_d12 + "\t" + simple_twisted_counts + "\n")
+        f_output_original.write(interaction.get_coord_string() + "\t" + str(interaction.get_digest_distance())  + "\t" + itype + "\t" + symbols_d12 + "\t" + simple_twisted_counts + "\t" + interaction.get_digest_pair_flag_original_order() + "\n")
 
         line = fp.readline()
 
@@ -150,3 +156,7 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
 fp.close()
 f_output_original.close()
+
+for key, value in n_dict.items():
+    if 0 < value:
+        print("[Warning] " + "Could not find corresponding number of undirected reference interactions for n = " + str(key) + ". Missing reference interactions: " + str(value))

@@ -61,6 +61,7 @@ class Interaction:
     digest_1 = None
     digest_2 = None
     p_value = None
+    digest_pair_flag_original_order = None
 
     def __init__(self, diachromatic_interaction_line):
 
@@ -88,7 +89,12 @@ class Interaction:
         else:
             self.cis = False
 
+        self.digest_pair_flag_original_order = fields[3] + fields[7]
+
     # Methods
+
+    def get_digest_pair_flag_original_order(self):
+        return self.digest_pair_flag_original_order
 
     def get_digest_distance(self):
         if not self.is_cis():
@@ -606,6 +612,8 @@ def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist,
         while line:
 
             n_interaction_total += 1
+            if n_interaction_total % 100000 == 0:
+                print("\t[INFO]", n_interaction_total, "interactions processed ...")
 
             # parse line representing one interaction
             interaction = Interaction(line)
@@ -630,10 +638,9 @@ def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist,
                 else:
                     n_dict[n_total] = 1
 
-            if n_interaction_total % 100000 == 0:
-                print("\t[INFO]", n_interaction_total, "interactions processed ...")
-
             line = fp.readline()
+
+    print("... done.")
 
     fp.close()
     return n_dict
