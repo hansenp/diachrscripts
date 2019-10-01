@@ -1,9 +1,13 @@
 REP_NUM=3
-#PREFIX <- "results_1/chesi/bmp2/chesi_bmp2"
-#PREFIX <- "results_1/chesi/hepg2/chesi_hepg2"
 PREFIX <- "results_1/mifsud/mifsud"
+PREFIX <- "results_1/chesi/bmp2/chesi_bmp2"
+PREFIX <- "results_1/chesi/hepg2/chesi_hepg2"
+
+
 REP_NUM=2
-PREFIX <- "results_1/nora/washoff/nora_washoff"
+PREFIX <- "results_1/nora/untreated/nora_untreated"
+PREFIX <- "results_1/nora/treated/nora_treated"
+#PREFIX <- "results_1/nora/washoff/nora_washoff"
 #PREFIX <- "results_1/schoenefelder/schoenefelder"
 
 f_name<-paste(PREFIX, "_fdr_plot.pdf", sep="")

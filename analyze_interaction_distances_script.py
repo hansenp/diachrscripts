@@ -202,7 +202,7 @@ n_non_status_pair_flag_interaction = 0
 n_indefinable_cutoff = dclass.find_indefinable_n(p_value_cutoff)
 
 # Determine distribution of n for directed interactions
-min_digest_dist = 10000
+min_digest_dist = 20000
 n_dict = dclass.get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff)
 
 # Iterate interactions and collect distances
