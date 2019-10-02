@@ -1,33 +1,34 @@
-PREFIX <- "results_1/mifsud/mifsud_r1"
-PREFIX <- "results_1/mifsud/mifsud_r2"
-PREFIX <- "results_1/mifsud/mifsud_r3"
-PREFIX <- "results_1/mifsud/mifsud_alt"
+# excute from diachscripts/rscripts
+PREFIX <- "../results_1/mifsud/mifsud_r1"
+PREFIX <- "../results_1/mifsud/mifsud_r2"
+PREFIX <- "../results_1/mifsud/mifsud_r3"
+PREFIX <- "../results_1/mifsud/mifsud_alt"
 
-PREFIX <- "results_1/schoenefelder/schoenefelder_r1"
-PREFIX <- "results_1/schoenefelder/schoenefelder_r2"
-PREFIX <- "results_1/schoenefelder/schoenefelder_alt"
+PREFIX <- "../results_1/schoenefelder/schoenefelder_r1"
+PREFIX <- "../results_1/schoenefelder/schoenefelder_r2"
+PREFIX <- "../results_1/schoenefelder/schoenefelder_alt"
 
-PREFIX <- "results_1/chesi/bmp2/chesi_bmp2_r1"
-PREFIX <- "results_1/chesi/bmp2/chesi_bmp2_r2"
-PREFIX <- "results_1/chesi/bmp2/chesi_bmp2_r3"
-PREFIX <- "results_1/chesi/bmp2/chesi_bmp2_alt"
+PREFIX <- "../results_1/chesi/bmp2/chesi_bmp2_r1"
+PREFIX <- "../results_1/chesi/bmp2/chesi_bmp2_r2"
+PREFIX <- "../results_1/chesi/bmp2/chesi_bmp2_r3"
+PREFIX <- "../results_1/chesi/bmp2/chesi_bmp2_alt"
 
-PREFIX <- "results_1/chesi/hepg2/chesi_hepg2_r1"
-PREFIX <- "results_1/chesi/hepg2/chesi_hepg2_r2"
-PREFIX <- "results_1/chesi/hepg2/chesi_hepg2_r3"
-PREFIX <- "results_1/chesi/hepg2/chesi_hepg2_alt"
+PREFIX <- "../results_1/chesi/hepg2/chesi_hepg2_r1"
+PREFIX <- "../results_1/chesi/hepg2/chesi_hepg2_r2"
+PREFIX <- "../results_1/chesi/hepg2/chesi_hepg2_r3"
+PREFIX <- "../results_1/chesi/hepg2/chesi_hepg2_alt"
 
-PREFIX <- "results_1/nora/untreated/nora_untreated_r1"
-PREFIX <- "results_1/nora/untreated/nora_untreated_r2"
-PREFIX <- "results_1/nora/untreated/nora_untreated_alt"
+PREFIX <- "../results_1/nora/untreated/nora_untreated_r1"
+PREFIX <- "../results_1/nora/untreated/nora_untreated_r2"
+PREFIX <- "../results_1/nora/untreated/nora_untreated_alt"
 
-PREFIX <- "results_1/nora/treated/nora_treated_r1"
-PREFIX <- "results_1/nora/treated/nora_treated_r2"
-PREFIX <- "results_1/nora/treated/nora_treated_alt"
+PREFIX <- "../results_1/nora/treated/nora_treated_r1"
+PREFIX <- "../results_1/nora/treated/nora_treated_r2"
+#PREFIX <- "../results_1/nora/treated/nora_treated_alt"
 
-PREFIX <- "results_1/nora/washoff/nora_washoff_r1"
-PREFIX <- "results_1/nora/washoff/nora_washoff_r2"
-#PREFIX <- "results_1/nora/washoff/nora_washoff_alt"
+#PREFIX <- "../results_1/nora/washoff/nora_washoff_r1"
+#PREFIX <- "../results_1/nora/washoff/nora_washoff_r2"
+#PREFIX <- "../results_1/nora/washoff/nora_washoff_alt"
 
 
 f_name<-paste(PREFIX, "_permutation_plot.pdf", sep="")
@@ -56,11 +57,11 @@ p_mean <- mean(t(INTERACTION_NUMBERS))
 p_sd <- sd(t(INTERACTION_NUMBERS))
 z_score <- round((NSIG_OBSERVED-p_mean)/p_sd,2)
 print(PREFIX)
-print(INTERACTION_NUM)
-print(NSIG_OBSERVED)
-print(round(p_mean,0))
-print(round(p_sd,2))
-print(z_score)
+print(paste("INTERACTION_NUM: ", INTERACTION_NUM))
+print(paste("NSIG_OBSERVED: ", NSIG_OBSERVED))
+print(paste("MEAN PERMUTED: ", round(p_mean,0)))
+print(paste("SD PERMUTED: ", round(p_sd,2)))
+print(paste("Z-score: ", z_score))
 
 hist(t(INTERACTION_NUMBERS), xlim=c(min(INTERACTION_NUMBERS),NSIG_OBSERVED+20), main=OUT_PREFIX, xlab="Significant interactions")
 abline(v=NSIG_OBSERVED, lty=2, col="red")
