@@ -12,7 +12,7 @@ parser.add_argument('--ref-gene-file', help='UCSC refGene file (must be gzipped 
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
 parser.add_argument('--p-value-cutoff', help='P-value cutoff used for categorization of interactions.')
 parser.add_argument('--status-pair-flag', help='Pair of \'A\' and \'I\' depending on whether a digest was selected for enrichment (A) or not (I).')
-parser.add_argument('--min-digest-dist', help='All interactions with smaller distances will be discarded.', default=10000)
+parser.add_argument('--min-digest-dist', help='All interactions with smaller distances will be discarded.', default=20000)
 
 args = parser.parse_args()
 out_prefix = args.out_prefix

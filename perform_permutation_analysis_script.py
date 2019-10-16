@@ -32,12 +32,14 @@ parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFI
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
 parser.add_argument('--iter-num', help='Number of iterations.', default=1000)
 parser.add_argument('--nominal-alpha', help='Nominal alpha. P-value threshold used for permutation analysis.', default=0.05)
+parser.add_argument('--min-digest-dist', help='All interactions with smaller distances will be discarded.', default=20000)
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
 diachromatic_interaction_file = args.interaction_file
 iter_num = int(args.iter_num)
 nominal_alpha = float(args.nominal_alpha)
+min_digest_dist = int(args.min_digest_dist)
 
 if diachromatic_interaction_file == None:
     print("--interaction-file option required")
@@ -48,6 +50,7 @@ print("\t[INFO] --out_prefix: " + out_prefix)
 print("\t[INFO] --interaction-file: " + diachromatic_interaction_file)
 print("\t[INFO] --iter-num: " + str(iter_num))
 print("\t[INFO] --nominal-alpha: " + str(nominal_alpha))
+print("\t[INFO] --min-digest-dist: " + str(min_digest_dist))
 
 
 ### Define auxiliary functions
@@ -133,7 +136,7 @@ def count_significant_pvals_in_permutation(chc_interactions, n_dict, n_alpha=nom
 #  Input diachromatic file
 n_dict = {} # dictionary that stores the numbers of interactions with n read pairs; is used as input for 'random_numbers_dict()' to generate random count efficiently
 chc_interactions = [] # list of original interactions
-print("[INFO] Ingesting diachromatic file at ", diachromatic_interaction_file, " ...")
+print("[INFO] Ingesting diachromatic file at", diachromatic_interaction_file, "...")
 nsig_o = 0 # number of observed significant interactions
 n_cis_long_range_interaction = 0
 n_trans_short_range_interaction = 0
@@ -143,7 +146,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         if len(fields) < 9:
             raise TypeError("Malformed diachromatic input line {} (number of fields {})".format(line, len(fields)))
 
-        if fields[0] == fields[4] and int(fields[5])-int(fields[2]) > 10000: # cis long range
+        if fields[0] == fields[4] and int(fields[5])-int(fields[2]) > min_digest_dist: # cis long range
 
             chci = dclass.Interaction(line)
             chc_interactions.append(chci)
@@ -169,7 +172,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
 print("[INFO] Total number of cis long range interactions: {}".format(n_cis_long_range_interaction))
 print("[INFO] Total number of trans short range interactions: {}".format(n_trans_short_range_interaction))
-print("[INFO] Number of nominally significant P-values: {}".format(nsig_o))
+print("[INFO] Number of cis long range interactions with nominally significant P-values: {}".format(nsig_o))
 
 
 # Perform permutation anlysis

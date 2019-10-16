@@ -127,7 +127,7 @@ def parse_gzip_tsv_file(file, interaction_dict):
                 iaction.append_interaction_data(F)
             else:
                 interaction_dict[mykey] = Interaction(F)
-
+    f.close()
     return n_iteraction
 
 
@@ -140,7 +140,7 @@ d = defaultdict(Interaction)
 n_interactions = []
 gzfiles = get_gzip_tsv_files(interaction_files_path)
 for f in gzfiles:
-    print("\t[INFO] Extracting interactions from " + f + ".")
+    print("\t[INFO] Extracting interactions from " + f + " ...")
     n = parse_gzip_tsv_file(f, d)
     n_interactions.append(n)
 if len(gzfiles) == 0:
@@ -180,3 +180,4 @@ outfh.close()
 print("[INFO] Interactions with {} data points: {}, lacking interactions: {}".format(required_replicates, n_has_all_data, n_incomplete_data))
 print("[INFO] We wrote summary statistics to file: {}".format(fname))
 print("[INFO] ... done.")
+exit(0)
