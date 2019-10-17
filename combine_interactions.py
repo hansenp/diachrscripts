@@ -149,7 +149,7 @@ def parse_gzip_tsv_file(file, interaction_dict):
         for line in f:
             n_iteraction += 1
             F = line.rstrip().split('\t')
-            if len(F) != 9:
+            if len(F) < 9:
                 raise TypeError("Malformed line {}".format(line))
             iaction = Interaction(F)
             if iaction in interaction_dict:
