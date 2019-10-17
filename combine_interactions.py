@@ -50,19 +50,39 @@ class Interaction:
         """
         @param F an array with 9 elements that represent an interaction
         """
-        self.chrA = F[0]
+        global chr_id
+        global chr_dict
+
+        # map status flag pair to int
+        if F[3] == 'I' and F[7] == 'I':
+            self.s_flag_int = 0
+        elif F[3] == 'I' and F[7] == 'A':
+            self.s_flag_int = 1
+        elif F[3] == 'A' and F[7] == 'I':
+            self.s_flag_int = 2
+        else: # AA
+            self.s_flag_int = 3
+
+        if F[0] in chr_dict:
+            self.chrA = chr_dict[F[0]]
+        else:
+            self.chrA = chr_id
+            chr_dict[F[0]] = chr_id
+            chr_id += 1
         self.fromA = F[1]
         self.toA = F[2]
-        self.statusA = F[3]
-        self.chrB = F[4]
+        if F[4] in chr_dict:
+            self.chrB = chr_dict[F[4]]
+        else:
+            self.chrB = chr_id
+            chr_dict[F[4]] = chr_id
+            chr_id += 1
         self.fromB = F[5]
         self.toB = F[6]
-        self.statusB = F[7]
-        self.twisted = []
-        self.simple = []
-        self.counts_string = []
-        counts = F[8]  # a string such as "1:3"
-        self._append_twisted_and_simple_counts(counts)
+        self.twisted = 0
+        self.simple = 0
+        self.rep_num = 1
+        self._append_twisted_and_simple_counts(F[8]) # F[8] contains a string such as "1:3"
 
     def append_interaction_data(self, F):
         """
@@ -70,42 +90,52 @@ class Interaction:
         for this interaction. We have thus compared the key already.
         We can just add the interaction counts.
         """
-        counts = F[8]  # a string such as "1:3"
-        self._append_twisted_and_simple_counts(counts)
+        self.rep_num += 1
+        self._append_twisted_and_simple_counts(F[8]) # F[8] contains a string such as "1:3"
 
-    def has_data_for_all_experiments(self, k):
-        return len(self.twisted) == k
+    def has_data_for_required_replicate_num(self, k):
+        return k <= self.rep_num
 
     def _append_twisted_and_simple_counts(self, counts):
         """
         'private' method to add the counts
         """
         cc = counts.split(":")
-
         if len(cc) != 2:
             raise TypeError("Malformed counts string {}".format(cc))
-        self.simple.append(int(cc[0]))
-        self.twisted.append(int(cc[1]))
-        self.counts_string.append(counts)
-
-    @staticmethod
-    def make_key(F):
-        return "{}:{}-{}_{}:{}-{}".format(F[0], F[1], F[2], F[4], F[5], F[6])
+        self.simple = self.simple + int(cc[0])
+        self.twisted = self.twisted + int(cc[1])
 
     def output_summary_2(self):
-        cstring = ",".join(self.counts_string)
-        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}:{}\t{}".format(self.chrA,
+        global inv_chr_dict
+        if self.s_flag_int == 0:
+            statusA = 'I'
+            statusB = 'I'
+        elif self.s_flag_int == 1:
+            statusA = 'I'
+            statusB = 'A'
+        elif self.s_flag_int == 2:
+            statusA = 'A'
+            statusB = 'I'
+        else:
+            statusA = 'A'
+            statusB = 'A'
+        return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}:{}".format(inv_chr_dict[self.chrA],
                                                                               self.fromA,
                                                                               self.toA,
-                                                                              self.statusA,
-                                                                              self.chrB,
+                                                                              statusA,
+                                                                              inv_chr_dict[self.chrB],
                                                                               self.fromB,
                                                                               self.toB,
-                                                                              self.statusB,
-                                                                              sum(self.simple),
-                                                                              sum(self.twisted),
-                                                                              cstring)
+                                                                              statusB,
+                                                                              self.simple,
+                                                                              self.twisted)
 
+    def __hash__(self):
+        return hash((self.chrA, self.fromA, self.chrB, self.fromB))
+
+    def __eq__(self, other):
+        return self.fromA == other.fromA and self.fromB == other.fromB and self.chrA == other.chrA and self.chrB == other.chrB
 
 def parse_gzip_tsv_file(file, interaction_dict):
     """
@@ -121,13 +151,13 @@ def parse_gzip_tsv_file(file, interaction_dict):
             F = line.rstrip().split('\t')
             if len(F) != 9:
                 raise TypeError("Malformed line {}".format(line))
-            mykey = Interaction.make_key(F)
-            if mykey in interaction_dict:
-                iaction = interaction_dict[mykey]
-                iaction.append_interaction_data(F)
+            iaction = Interaction(F)
+            if iaction in interaction_dict:
+                 interaction_dict[iaction].append_interaction_data(F)
             else:
-                interaction_dict[mykey] = Interaction(F)
+                interaction_dict[iaction] = iaction
     f.close()
+
     return n_iteraction
 
 
@@ -135,6 +165,9 @@ def parse_gzip_tsv_file(file, interaction_dict):
 ########################
 
 print("[INFO] Will parse all gz files in", interaction_files_path)
+
+chr_dict = dict() # global dictionary maps chromosome string to integer, e.g. chr1 to 4
+chr_id = 0
 
 d = defaultdict(Interaction)
 n_interactions = []
@@ -157,27 +190,28 @@ if len(gzfiles) < int(required_replicates):
 fname = out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_interactions.tsv.gz"
 outfh = gzip.open(fname, 'wt')
 print("[INFO] Writing interactions to file ...")
-n_has_all_data = 0
+# reverse dictionary with chromosome IDs
+inv_chr_dict = {v: k for k, v in chr_dict.items()}
+n_has_required_data = 0
 n_incomplete_data = 0
 for key, iaction in d.items():
-    if not iaction.has_data_for_all_experiments(required_replicates):
+    if not iaction.has_data_for_required_replicate_num(required_replicates):
         n_incomplete_data += 1
     else:
-        n_has_all_data += 1
+        n_has_required_data += 1
         outfh.write(iaction.output_summary_2() + "\n")
 
-    if (n_incomplete_data + n_has_all_data)%1000000==0:
-        print("\t[INFO] " + (str(n_incomplete_data + n_has_all_data)) + " interactions processed ...")
+    if (n_incomplete_data + n_has_required_data)%1000000==0:
+        print("\t[INFO] " + (str(n_incomplete_data + n_has_required_data)) + " interactions processed ...")
 outfh.close()
 print("[INFO] We wrote all interactions to file: {}".format(fname))
 
 fname = out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_summary.txt"
 outfh = open(fname, 'wt')
 outfh.write("OUT_PREFIX" + "\t" + "INTERACTIONS_NUMBERS" + "\t" + "REQUIRED_INTERACTIONS" + "\t" + "HAS_ALL_DATA" + "\t" + "INCOMPLETE_DATA" + "\n")
-outfh.write(str(out_prefix) + "\t" + str(n_interactions) + "\t" + str(required_replicates) + "\t" + str(n_has_all_data) + "\t" + str(n_incomplete_data) + "\n")
+outfh.write(str(out_prefix) + "\t" + str(n_interactions) + "\t" + str(required_replicates) + "\t" + str(n_has_required_data) + "\t" + str(n_incomplete_data) + "\n")
 outfh.close()
 
-print("[INFO] Interactions with {} data points: {}, lacking interactions: {}".format(required_replicates, n_has_all_data, n_incomplete_data))
+print("[INFO] Interactions with at least {} data points: {}, lacking interactions: {}".format(required_replicates, n_has_required_data, n_incomplete_data))
 print("[INFO] We wrote summary statistics to file: {}".format(fname))
 print("[INFO] ... done.")
-exit(0)
