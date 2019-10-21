@@ -145,6 +145,7 @@ n_trans_short_range_interaction = 0
 n_indefinable_interaction = 0
 n_undirected_interaction = 0
 
+
 with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
     for line in fp:
         n_interaction +=1
