@@ -136,21 +136,37 @@ def count_significant_pvals_in_permutation(chc_interactions, n_dict, n_alpha=nom
 #  Input diachromatic file
 n_dict = {} # dictionary that stores the numbers of interactions with n read pairs; is used as input for 'random_numbers_dict()' to generate random count efficiently
 chc_interactions = [] # list of original interactions
+n_indefinable_cutoff = dclass.find_indefinable_n(nominal_alpha) # minimum number of read pairs required for significance
 print("[INFO] Ingesting diachromatic file at", diachromatic_interaction_file, "...")
 nsig_o = 0 # number of observed significant interactions
+n_interaction = 0
 n_cis_long_range_interaction = 0
 n_trans_short_range_interaction = 0
+n_indefinable_interaction = 0
+n_undirected_interaction = 0
+
 with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
     for line in fp:
+        n_interaction +=1
         fields = line.rstrip('\n').split('\t')
         if len(fields) < 9:
             raise TypeError("Malformed diachromatic input line {} (number of fields {})".format(line, len(fields)))
 
-        if fields[0] == fields[4] and int(fields[5])-int(fields[2]) > min_digest_dist: # cis long range
+        if fields[0] == fields[4] and int(fields[5])-int(fields[2]) >= min_digest_dist: # cis long range
+
+            n_cis_long_range_interaction += 1
+
+            n_simple, n_twisted = fields[8].split(':')
+            n_simple = int(n_simple)
+            n_twisted = int(n_twisted)
+            n = n_simple + n_twisted
+            if n < n_indefinable_cutoff: # skip interactions that cannot be significant due to small number of read pairs
+                n_indefinable_interaction +=1
+                continue
 
             chci = dclass.Interaction(line)
             chc_interactions.append(chci)
-            n_simple, n_twisted = chci.get_counts()
+
             key = "{}-{}".format(n_simple, n_twisted)
             if key in pval_memo:
                 pv = pval_memo[key]
@@ -160,20 +176,22 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
             if pv < nominal_alpha:
                 nsig_o += 1
-            n = n_simple + n_twisted
+            else:
+                n_undirected_interaction += 1
+
             if n in n_dict:
                 n_dict[n] +=1
             else:
                 n_dict[n] = 1
-
-            n_cis_long_range_interaction += 1
         else:
             n_trans_short_range_interaction +=1
 
+print("[INFO] Total number interactions: {}".format(n_interaction))
+print("[INFO] Total number of (discarded) trans short range interactions: {}".format(n_trans_short_range_interaction))
 print("[INFO] Total number of cis long range interactions: {}".format(n_cis_long_range_interaction))
-print("[INFO] Total number of trans short range interactions: {}".format(n_trans_short_range_interaction))
+print("[INFO] Number of indefinable cis long range interactions: {}".format(n_indefinable_interaction))
+print("[INFO] Number of undirected cis long range interactions: {}".format(n_undirected_interaction))
 print("[INFO] Number of cis long range interactions with nominally significant P-values: {}".format(nsig_o))
-
 
 # Perform permutation anlysis
 print("[INFO] Performing permutation analysis with " + str(iter_num) + " iterations ...")
@@ -197,14 +215,65 @@ nsig_p_average = mean(nsig_p_list) # calculate average number of significant per
 percentage_observed = nsig_o/len(chc_interactions)
 percentage_permuted = nsig_p_average/len(chc_interactions)
 
-print("OUT_PREFIX\tITER_NUM\tTOTAL_INTERACTION_NUM\tNSIG_OBSERVED\tMEAN_NSIG_PERMTUATATED\tPERCENTAGE_NSIG_OBSERVED\tPERCENTAGE_MEAN_NSIG_PERMUTATATED")
-print(out_prefix + "\t" + str(iter_num) + "\t" + str(len(chc_interactions)) + "\t" + str(nsig_o) + "\t" + str(nsig_p_average) + "\t" + str(percentage_observed) + "\t" + str(percentage_permuted))
+print("OUT_PREFIX"
+               "\tITER_NUM"
+               "\tNOMINAL_ALPHA"
+               "\tINDEF_RP_CUTOFF"               
+               "\tN_INTERACTION"
+               "\tN_TRANS_SHORT_INTERACTION"
+               "\tN_CIS_LONG_INTERACTION"
+               "\tN_INDEFINABLE_CIS_LONG_INTERACTION"
+               "\tN_UNDIRECTED_CIS_LONG_INTERACTION"
+               "\tN_DIRECTED_CIS_LONG_INTERACTION"
+               "\tMEAN_PERMUTED_DIRECTED_CIS_LONG_INTERACTION"
+               "\tN_PERMUTED_BETTER_THAN_OBSERVED")
+
+print(out_prefix + "\t"
+               + str(iter_num) + "\t"
+               + str(nominal_alpha) + "\t"
+               + str(n_indefinable_cutoff) + "\t"
+               + str(n_interaction) + "\t"
+               + str(n_trans_short_range_interaction) + "\t"
+               + str(n_cis_long_range_interaction) + "\t"
+               + str(n_indefinable_interaction) + "\t"
+               + str(n_undirected_interaction) + "\t"
+               + str(nsig_o) + "\t"
+               + str(nsig_p_average) + "\t"
+               + str(random_better_than_observed) + "\n")
+
+
 print("{} out of {} permutations had more signficant p values than in the observed data".format(random_better_than_observed, str(iter_num)))
 
 file_name = out_prefix + "_permutation_summary.txt"
 f_output = open(file_name, 'wt')
-f_output.write("OUT_PREFIX\tN_INTERACTION\tNOMINAL_ALPHA\tITER_NUM\tNSIG_OBSERVED\tMEAN_NSIG_PERMUTATATED\tN_BETTER_THAN_OBSERVED\tPERCENTAGE_NSIG_OBSERVED\tPERCENTAGE_MEAN_NSIG_PERMUTATATED\n")
-f_output.write(out_prefix + "\t" + str(n_cis_long_range_interaction ) + "\t" + str(nominal_alpha) + "\t" + str(iter_num) + "\t" + str(nsig_o) + "\t" + str(nsig_p_average) + "\t" + str(random_better_than_observed) + "\t" + str(percentage_observed) + "\t" + str(percentage_permuted) + "\n")
+
+f_output.write("OUT_PREFIX"
+               "\tITER_NUM"
+               "\tNOMINAL_ALPHA"
+               "\tINDEF_RP_CUTOFF"               
+               "\tN_INTERACTION"
+               "\tN_TRANS_SHORT_INTERACTION"
+               "\tN_CIS_LONG_INTERACTION"
+               "\tN_INDEFINABLE_CIS_LONG_INTERACTION"
+               "\tN_UNDIRECTED_CIS_LONG_INTERACTION"
+               "\tN_DIRECTED_CIS_LONG_INTERACTION"
+               "\tMEAN_PERMUTED_DIRECTED_CIS_LONG_INTERACTION"
+               "\tN_PERMUTED_BETTER_THAN_OBSERVED\n")
+
+f_output.write(out_prefix + "\t"
+               + str(iter_num) + "\t"
+               + str(nominal_alpha) + "\t"
+               + str(n_indefinable_cutoff) + "\t"
+               + str(n_interaction) + "\t"
+               + str(n_trans_short_range_interaction) + "\t"
+               + str(n_cis_long_range_interaction) + "\t"
+               + str(n_indefinable_interaction) + "\t"
+               + str(n_undirected_interaction) + "\t"
+               + str(nsig_o) + "\t"
+               + str(nsig_p_average) + "\t"
+               + str(random_better_than_observed) + "\n")
+
+
 f_output.close()
 
 file_name = out_prefix + "_n_sig_permuted_interactions.txt"
