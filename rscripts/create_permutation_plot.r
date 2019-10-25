@@ -1,17 +1,17 @@
 # excute from diachscripts/rscripts
-PREFIX <- "../results_2/mifsud/mifsud_r1"
-PREFIX <- "../results_2/mifsud/mifsud_r2"
-PREFIX <- "../results_2/mifsud/mifsud_r3"
-#PREFIX <- "../results_2/mifsud/mifsud_alt"
+#PREFIX <- "../results_2/mifsud/mifsud_r1"
+#PREFIX <- "../results_2/mifsud/mifsud_r2"
+#PREFIX <- "../results_2/mifsud/mifsud_r3"
+PREFIX <- "../results_2/mifsud/mifsud_alt"
 
-PREFIX <- "../results_2/schoenefelder/schoenefelder_r1"
-PREFIX <- "../results_2/schoenefelder/schoenefelder_r2"
-PREFIX <- "../results_2/schoenefelder/schoenefelder_alt"
+#PREFIX <- "../results_2/schoenefelder/schoenefelder_r1"
+#PREFIX <- "../results_2/schoenefelder/schoenefelder_r2"
+#PREFIX <- "../results_2/schoenefelder/schoenefelder_alt"
 
-PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_r1"
-PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_r2"
-PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_r3"
-PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_alt"
+#PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_r1"
+#PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_r2"
+#PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_r3"
+#PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_alt"
 
 #PREFIX <- "../results_2/chesi/hepg2/chesi_hepg2_r1"
 #PREFIX <- "../results_2/chesi/hepg2/chesi_hepg2_r2"
