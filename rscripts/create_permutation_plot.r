@@ -2,7 +2,7 @@
 #PREFIX <- "../results_2/mifsud/mifsud_r1"
 #PREFIX <- "../results_2/mifsud/mifsud_r2"
 #PREFIX <- "../results_2/mifsud/mifsud_r3"
-PREFIX <- "../results_2/mifsud/mifsud_alt"
+#PREFIX <- "../results_2/mifsud/mifsud_alt"
 
 #PREFIX <- "../results_2/schoenefelder/schoenefelder_r1"
 #PREFIX <- "../results_2/schoenefelder/schoenefelder_r2"
@@ -11,7 +11,7 @@ PREFIX <- "../results_2/mifsud/mifsud_alt"
 #PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_r1"
 #PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_r2"
 #PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_r3"
-#PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_alt"
+PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_alt"
 
 #PREFIX <- "../results_2/chesi/hepg2/chesi_hepg2_r1"
 #PREFIX <- "../results_2/chesi/hepg2/chesi_hepg2_r2"
@@ -20,7 +20,7 @@ PREFIX <- "../results_2/mifsud/mifsud_alt"
 
 #PREFIX <- "../results_2/nora/untreated/nora_untreated_r1"
 #PREFIX <- "../results_2/nora/untreated/nora_untreated_r2"
-#PREFIX <- "../results_2/nora/untreated/nora_untreated_alt"
+PREFIX <- "../results_2/nora/untreated/nora_untreated_alt"
 
 #PREFIX <- "../results_2/nora/treated/nora_treated_r1"
 #PREFIX <- "../results_2/nora/treated/nora_treated_r2"
@@ -51,7 +51,7 @@ f_name<-paste(PREFIX, "_n_sig_permuted_interactions.txt", sep="")
 INTERACTION_NUMBERS<-read.table(f_name)
 
 OUT_PREFIX <- SUMMARY[,1]
-INTERACTION_NUM <- SUMMARY[,2]
+INTERACTION_NUM <- SUMMARY[,5]
 if(10000<=INTERACTION_NUM){
   INTERACTION_NUM <- format(as.numeric(INTERACTION_NUM), big.mark=",")
 }
