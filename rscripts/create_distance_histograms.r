@@ -6,11 +6,15 @@ COLOR="orange"
 #PREFIX <- "../results/schoenefelder/digest_distance/digest_distance_analysis_schoenefelder"
 #COLOR="lightblue"
 
-SIMPLE <- read.table(paste(PREFIX, "_at_least_2_digest_distances_simple.txt", sep=""))
-TWISTED <- read.table(paste(PREFIX, "_at_least_2_digest_distances_twisted.txt", sep=""))
-UNDIRECTED_REF <- read.table(paste(PREFIX, "_at_least_2_digest_distances_undirected_reference.txt", sep=""))
-UNDIRECTED_ALL <-read.table(paste(PREFIX, "_at_least_2_digest_distances_undirected.txt", sep=""))
-INDEFINABLE <- read.table(paste(PREFIX, "_at_least_2_digest_distances_indefinable.txt", sep=""))
+PDF_NAME <- "chesi_bmp2_distance_plots_all.pdf"
+PREFIX <- "../results/chesi/digest_distance/digest_distance_analysis_chesi_bmp2"
+COLOR="lightgreen"
+
+SIMPLE <- read.table(paste(PREFIX, "_alt_digest_distances_simple.txt", sep=""))
+TWISTED <- read.table(paste(PREFIX, "_alt_digest_distances_twisted.txt", sep=""))
+UNDIRECTED_REF <- read.table(paste(PREFIX, "_alt_digest_distances_undirected_reference.txt", sep=""))
+UNDIRECTED_ALL <-read.table(paste(PREFIX, "_alt_digest_distances_undirected.txt", sep=""))
+INDEFINABLE <- read.table(paste(PREFIX, "_alt_digest_distances_indefinable.txt", sep=""))
 
 DIRECTED <- c(t(SIMPLE), t(TWISTED))
 print(nrow(UNDIRECTED_REF))

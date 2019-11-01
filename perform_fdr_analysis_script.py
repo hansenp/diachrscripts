@@ -22,9 +22,11 @@ parser = argparse.ArgumentParser(description='Determine a P-value threshold that
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
 parser.add_argument('--fdr-threshold', help='Use this switch to estimate a P-value cutoff that corresponds to a given FDR threshold.', default=0.25)
-parser.add_argument('--p-val-c-min', help='Smallest P-value cutoff.', default=0.0005)
+parser.add_argument('--p-val-c-min', help='Smallest P-value cutoff.', default=0.00025)
 parser.add_argument('--p-val-c-max', help='Largest P-value cutoff.', default=0.05)
-parser.add_argument('--p-val-step-size', help='P-value step size.', default=0.0005)
+parser.add_argument('--p-val-step-size', help='P-value step size.', default=0.00025)
+parser.add_argument('--min-digest-dist', help='All interactions with smaller distances will be discarded.', default=20000)
+
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -33,6 +35,7 @@ fdr_threshold = float(args.fdr_threshold)
 p_val_c_min = float(args.p_val_c_min)
 p_val_c_max = float(args.p_val_c_max)
 p_val_step_size = float(args.p_val_step_size)
+min_digest_dist = int(args.min_digest_dist)
 
 if diachromatic_interaction_file == None:
     print("--interaction-file option required")
@@ -45,6 +48,7 @@ print("\t[INFO] --fdr-threshold: " + str(fdr_threshold))
 print("\t[INFO] --p-val-c-min: " + str(p_val_c_min))
 print("\t[INFO] --p-val-c-max: " + str(p_val_c_max))
 print("\t[INFO] --p-val-step-size: " + str(p_val_step_size))
+print("\t[INFO] --min-digest-dist: " + str(min_digest_dist))
 
 
 ### Define auxiliary functions
@@ -125,7 +129,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         if len(fields) < 9:
             raise TypeError("Malformed diachromatic input line {} (number of fields {})".format(line, len(fields)))
 
-        if fields[0] == fields[4] and int(fields[5])-int(fields[2]) > 10000: # cis long range
+        if fields[0] == fields[4] and int(fields[5])-int(fields[2]) >= min_digest_dist: # cis long range
 
             chci = dclass.Interaction(line)
             chc_interactions.append(chci)
@@ -147,6 +151,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
             n_cis_long_range_interaction += 1
         else:
+            print(line)
             n_trans_short_range_interaction +=1
 
 print("[INFO] Total number of cis long range interactions: {}".format(n_cis_long_range_interaction))
