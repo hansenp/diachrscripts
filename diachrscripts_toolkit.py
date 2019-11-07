@@ -604,6 +604,7 @@ def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist,
     :return: Dictionary with total read pair numbers (n) as keys and the corresponding numbers interactions with n read pairs
     """
 
+    p_val_dict = {} # dictionary that stores previously calculated P-values (saves time)
     n_dict = {}  # dictionary that stores the numbers of interactions with n read pairs
     print("[INFO] Determining distribution of n in significant interactions in: " + diachromatic_interaction_file + " ...")
     with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
@@ -612,7 +613,7 @@ def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist,
         while line:
 
             n_interaction_total += 1
-            if n_interaction_total % 100000 == 0:
+            if n_interaction_total % 1000000 == 0:
                 print("\t[INFO]", n_interaction_total, "interactions processed ...")
 
             # parse line representing one interaction
@@ -630,7 +631,13 @@ def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist,
 
             n_total = interaction.n_simple + interaction.n_twisted
 
-            p_val = interaction.get_binomial_p_value()
+            key = ":".join((str(interaction.n_simple),str(interaction.n_twisted)))
+            if key in p_val_dict:
+                p_val = p_val_dict[key]
+            else:
+                p_val = interaction.get_binomial_p_value()
+                p_val_dict[key] = p_val
+
 
             if p_val <= p_value_cutoff:
                 if n_total in n_dict:
@@ -644,3 +651,11 @@ def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist,
 
     fp.close()
     return n_dict
+
+def get_binomial_p_value(n_simple, n_twisted):
+    if n_simple < n_twisted:
+        p_value = 1 - binom.cdf(n_twisted - 1, n_simple + n_twisted, 0.5)
+        return p_value
+    else:
+        p_value = 1 - binom.cdf(n_simple - 1, n_simple + n_twisted, 0.5)
+        return p_value

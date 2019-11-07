@@ -1,10 +1,6 @@
 import argparse
 import gzip
-
-from scipy import stats
-
 import diachrscripts_toolkit as dclass
-import pylab
 import numpy as np
 
 ### Parse command line

@@ -1,10 +1,19 @@
 #!/usr/bin/env python
 from collections import defaultdict
-
 import argparse
 from scipy.stats import uniform, binom
 import numpy as np
 import matplotlib.pyplot as plt
+
+"""
+This script is to investigate the relationship between signal strength, measured as the total number of read pairs,
+and the directionality of interactions. For this purpose, a specified number of interactions is simulated,
+whereby the the total numbers of read pairs are drawn from a uniform distribution.
+For individual interarctions with n read pairs, the number of simple read pairs is drawn from a binomial distribution
+according our null model and the number of twisted read pairs is set to n minus the number of simple read pairs.
+Subsequently, the simulated interactions are evaluated for statistical significance at a specified significance
+threshold using our null model. Finally, the number of significant interactions for each n is plotted.
+"""
 
 ### Parse command line
 ######################

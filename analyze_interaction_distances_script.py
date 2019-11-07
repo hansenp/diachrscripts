@@ -183,6 +183,12 @@ distance_array_undirected = []
 distance_array_undirected_reference = []
 distance_array_indefinable = []
 
+read_pair_num_array_simple = []
+read_pair_num_array_twisted = []
+read_pair_num_array_undirected = []
+read_pair_num_array_undirected_reference = []
+read_pair_num_array_indefinable = []
+
 n_simple_interaction = 0
 n_twisted_interaction = 0
 n_undirected_interaction = 0
@@ -242,23 +248,30 @@ with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
             raise Exception("[FATAL] Interaction type is 'None'. This should never happen.")
         elif interaction.get_interaction_type() == "NA":
             distance_array_indefinable.append(distance)
+            read_pair_num_array_indefinable.append(n_total)
             n_indefinable_interaction += 1
             n_indefinable_interaction_rp = n_indefinable_interaction_rp + n_total
         elif interaction.get_interaction_type() == "U":
             distance_array_undirected.append(distance)
+            read_pair_num_array_undirected.append(n_total)
             n_undirected_interaction += 1
             n_undirected_interaction_rp = n_undirected_interaction_rp + n_total
             if n_total in n_dict and 0 < n_dict[n_total]:
                 distance_array_undirected_reference.append(distance)
+                read_pair_num_array_undirected_reference.append(n_total)
                 n_undirected_interaction_reference += 1
                 n_undirected_interaction_reference_rp = n_undirected_interaction_reference_rp + n_total
                 n_dict[n_total] = n_dict[n_total] - 1
+                if n_dict[n_total]==0:
+                    print("Warning: No reference interaction with " + str(n_total) + " read pairs.")
         elif interaction.get_interaction_type() == "S":
             distance_array_simple.append(distance)
+            read_pair_num_array_simple.append(n_total)
             n_simple_interaction += 1
             n_simple_interaction_rp = n_simple_interaction_rp + n_total
         elif interaction.get_interaction_type() == "T":
             distance_array_twisted.append(distance)
+            read_pair_num_array_twisted.append(n_total)
             n_twisted_interaction += 1
             n_twisted_interaction_rp = n_twisted_interaction_rp + n_total
         else:
@@ -308,30 +321,40 @@ file_path_name = out_prefix + "_distance_array_indefinable"
 np.save(file_path_name , np.array(distance_array_indefinable))
 
 print("[INFO] " + "Writing arrays with distances to files ...")
+
 file_name = out_prefix + "_digest_distances_simple.txt"
 f_output = open(file_name, 'wt')
-for d in distance_array_simple:
-    f_output.write(str(d) + "\n")
+for i in range(len(distance_array_simple)):
+   f_output.write(str(distance_array_simple[i]) + "\t")
+   f_output.write(str(read_pair_num_array_simple[i]) + "\n")
 f_output.close()
+
 file_name = out_prefix + "_digest_distances_twisted.txt"
 f_output = open(file_name, 'wt')
-for d in distance_array_twisted:
-    f_output.write(str(d) + "\n")
+for i in range(len(distance_array_twisted)):
+   f_output.write(str(distance_array_twisted[i]) + "\t")
+   f_output.write(str(read_pair_num_array_twisted[i]) + "\n")
 f_output.close()
+
 file_name = out_prefix + "_digest_distances_undirected.txt"
 f_output = open(file_name, 'wt')
-for d in distance_array_undirected:
-    f_output.write(str(d) + "\n")
+for i in range(len(distance_array_undirected)):
+   f_output.write(str(distance_array_undirected[i]) + "\t")
+   f_output.write(str(read_pair_num_array_undirected[i]) + "\n")
 f_output.close()
+
 file_name = out_prefix + "_digest_distances_undirected_reference.txt"
 f_output = open(file_name, 'wt')
-for d in distance_array_undirected_reference:
-    f_output.write(str(d) + "\n")
+for i in range(len(distance_array_undirected_reference)):
+   f_output.write(str(distance_array_undirected_reference[i]) + "\t")
+   f_output.write(str(read_pair_num_array_undirected_reference[i]) + "\n")
 f_output.close()
+
 file_name = out_prefix + "_digest_distances_indefinable.txt"
 f_output = open(file_name, 'wt')
-for d in distance_array_indefinable:
-    f_output.write(str(d) + "\n")
+for i in range(len(distance_array_indefinable)):
+   f_output.write(str(distance_array_indefinable[i]) + "\t")
+   f_output.write(str(read_pair_num_array_indefinable[i]) + "\n")
 f_output.close()
 
 print("[INFO] " + "... done.")
