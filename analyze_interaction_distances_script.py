@@ -262,8 +262,6 @@ with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
                 n_undirected_interaction_reference += 1
                 n_undirected_interaction_reference_rp = n_undirected_interaction_reference_rp + n_total
                 n_dict[n_total] = n_dict[n_total] - 1
-                if n_dict[n_total]==0:
-                    print("Warning: No reference interaction with " + str(n_total) + " read pairs.")
         elif interaction.get_interaction_type() == "S":
             distance_array_simple.append(distance)
             read_pair_num_array_simple.append(n_total)
@@ -308,17 +306,17 @@ print("\t[INFO] Number of read pairs in undirected interactions: " + str(n_undir
 print("\t[INFO] Number of read pairs in undirected interactions reference: " + str(n_undirected_interaction_reference_rp) + " (" + str(n_undirected_interaction_reference_rp/n_undirected_interaction_reference) + ")")
 print("\t[INFO] Number of read pairs in indefinable interactions: " + str(n_indefinable_interaction_rp) + " (" + str(n_indefinable_interaction_rp/n_indefinable_interaction) + ")")
 print("\t------------------------------------------------------------------")
-print("[INFO] " + "Writing numpy arrays with distances to disk ...")
-file_path_name = out_prefix + "_distance_array_simple"
-np.save(file_path_name, np.array(distance_array_simple))
-file_path_name = out_prefix + "_distance_array_twisted"
-np.save(file_path_name, np.array(distance_array_twisted))
-file_path_name = out_prefix + "_distance_array_undirected"
-np.save(file_path_name, np.array(distance_array_undirected))
-file_path_name = out_prefix + "_distance_array_undirected_reference"
-np.save(file_path_name, np.array(distance_array_undirected_reference))
-file_path_name = out_prefix + "_distance_array_indefinable"
-np.save(file_path_name , np.array(distance_array_indefinable))
+# print("[INFO] " + "Writing numpy arrays with distances to disk ...")
+# file_path_name = out_prefix + "_distance_array_simple"
+# np.save(file_path_name, np.array(distance_array_simple))
+# file_path_name = out_prefix + "_distance_array_twisted"
+# np.save(file_path_name, np.array(distance_array_twisted))
+# file_path_name = out_prefix + "_distance_array_undirected"
+# np.save(file_path_name, np.array(distance_array_undirected))
+# file_path_name = out_prefix + "_distance_array_undirected_reference"
+# np.save(file_path_name, np.array(distance_array_undirected_reference))
+# file_path_name = out_prefix + "_distance_array_indefinable"
+# np.save(file_path_name , np.array(distance_array_indefinable))
 
 print("[INFO] " + "Writing arrays with distances to files ...")
 
