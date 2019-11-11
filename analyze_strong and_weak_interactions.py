@@ -92,18 +92,16 @@ random_numbers_dict = random_numbers_dict(n_dict)
 # 'random_numbers_dict' now contains arrays of random simple read numbers for each n
 
 for N in random_numbers_dict:
-    #print("N: " + str(len(random_numbers_dict[N]))+ "\t" + str(N) + "\t" + str(random_numbers_dict[N]))
     arr = [0] * (N+1)
     for n_simple in random_numbers_dict[N]:
         arr[n_simple] += 1
 
-    print(str(N) + ": " + str(arr))
-
 print("[INFO] " + "Counting significant interactions for each n ...")
 signum_list = [0] * (n_max + 1)
 for N in range(1, n_max + 1):
-    print(N)
     if N in random_numbers_dict:
+        if N%10 == 0:
+            print(str(N))
         for n_simple in random_numbers_dict[N]:
             n_twisted = N - n_simple
             p_val = binomial_p_value(n_simple, n_twisted)
@@ -118,3 +116,11 @@ sub_title = "#Interactions: " + str(i_num) + " | Max n: " + str(n_max) + " | P-v
 plt.suptitle(sub_title)
 figure_name = out_prefix + "_uniform_n_sig_interaction_dist.pdf"
 plt.savefig(figure_name, format = "pdf")
+
+print("[INFO] " + "Printing numbers of significant interactions to text file ...")
+file_name = out_prefix + "_num_of_sig_for_each_n.tab"
+f_output = open(file_name, 'wt')
+for N in range(1, n_max + 1):
+    f_output.write(str(N) + "\t" + str(signum_list[N]) + "\n")
+
+f_output.close()
