@@ -210,6 +210,8 @@ n_indefinable_cutoff = dclass.find_indefinable_n(p_value_cutoff)
 # Determine distribution of n for directed interactions
 min_digest_dist = 20000
 n_dict = dclass.get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff)
+n_dict_dir = n_dict.copy()
+n_dict_ref = {}
 
 # Iterate interactions and collect distances
 print("[INFO] Determining distances between digest pairs in " + diachromatic_interaction_file + " ...")
@@ -262,6 +264,10 @@ with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
                 n_undirected_interaction_reference += 1
                 n_undirected_interaction_reference_rp = n_undirected_interaction_reference_rp + n_total
                 n_dict[n_total] = n_dict[n_total] - 1
+                if n_total in n_dict_ref:
+                    n_dict_ref[n_total] += 1
+                else:
+                    n_dict_ref[n_total] = 1
         elif interaction.get_interaction_type() == "S":
             distance_array_simple.append(distance)
             read_pair_num_array_simple.append(n_total)
@@ -287,6 +293,28 @@ fp.close()
 for key, value in n_dict.items():
     if 0 < value:
         print("[Warning] " + "Could not find corresponding number of undirected reference interactions for n = " + str(key) + ". Missing reference interactions: " + str(value))
+
+# find largest n with significant interaction
+n_max = -1
+for i in n_dict:
+    if n_max < i:
+        n_max = i
+print("Largest n with significant interaction: " + str(n_max))
+
+print("[INFO] " + "Printing numbers of significant interactions with n read pairs to text file ...")
+file_name = out_prefix + "_significant_and_reference_interactions.tab"
+f_output = open(file_name, 'wt')
+for n in range(0, n_max+1, 1):
+    if n in n_dict:
+        if n in n_dict_ref:
+            print("n: " + str(n) + "\t" + str(n_dict_dir[n]) + "\t" + str(n_dict_ref[n]))
+            file_name.write(str(n) + "\t" + str(n_dict_dir[n]) + "\t" + str(n_dict_ref[n]) + "\n")
+        else:
+            print("n: " + str(n) + "\t" + str(n_dict_dir[n]) + "\t" + "0")
+            file_name.write(str(n) + "\t" + str(n_dict_dir[n]) + "\t" + "0")
+    else:
+        print("n: " + str(n) + "\t0\t0")
+        file_name.write(str(n) + "\t0\t0")
 
 # Output summary
 print("[INFO] " + "Summary statistics")

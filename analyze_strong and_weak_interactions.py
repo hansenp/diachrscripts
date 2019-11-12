@@ -82,12 +82,16 @@ def binomial_p_value(n_simple, n_twisted):
 
 print("[INFO] " + "Generating numbers of simple and twisted read pairs ...")
 n_dict = {} # dictionary that stores the numbers of interactions with n read pairs; is used as input for 'random_numbers_dict()' to generate random counts efficiently
-random_n_vec = np.random.randint(low = 1, high = n_max+1, size=i_num) # n has a uniform distribution
+random_n_vec = np.random.randint(low = 1, high = n_max+1, size = i_num) # n has a uniform distribution
 for n in random_n_vec:
     if n in n_dict:
         n_dict[n] += 1
     else:
         n_dict[n] = 1
+
+for i in range(1,n_max):
+    pass
+    #print("n=" + str(i) + "\t" + str(n_dict[i]))
 random_numbers_dict = random_numbers_dict(n_dict)
 # 'random_numbers_dict' now contains arrays of random simple read numbers for each n
 
@@ -98,6 +102,9 @@ for N in random_numbers_dict:
 
 print("[INFO] " + "Counting significant interactions for each n ...")
 signum_list = [0] * (n_max + 1)
+signum_list_simple = [0] * (n_max + 1)
+signum_list_twisted = [0] * (n_max + 1)
+n_list = [0] * (n_max + 1)
 for N in range(1, n_max + 1):
     if N in random_numbers_dict:
         if N%10 == 0:
@@ -107,6 +114,10 @@ for N in range(1, n_max + 1):
             p_val = binomial_p_value(n_simple, n_twisted)
             if p_val <= p_value_cutoff:
                 signum_list[N] += 1
+                if n_simple < n_twisted:
+                    signum_list_simple[N] += 1
+                else:
+                    signum_list_twisted[N] += 1
 
 plt.plot(signum_list)
 plt.grid(True)
@@ -121,6 +132,6 @@ print("[INFO] " + "Printing numbers of significant interactions to text file ...
 file_name = out_prefix + "_num_of_sig_for_each_n.tab"
 f_output = open(file_name, 'wt')
 for N in range(1, n_max + 1):
-    f_output.write(str(N) + "\t" + str(signum_list[N]) + "\n")
+    f_output.write(str(N) + "\t" + str(signum_list[N]) + "\t" + str(signum_list_simple[N]) + "\t" + str(signum_list_twisted[N]) + "\t" + str(n_dict[N]) + "\n")
 
 f_output.close()
