@@ -308,13 +308,15 @@ for n in range(0, n_max+1, 1):
     if n in n_dict:
         if n in n_dict_ref:
             print("n: " + str(n) + "\t" + str(n_dict_dir[n]) + "\t" + str(n_dict_ref[n]))
-            file_name.write(str(n) + "\t" + str(n_dict_dir[n]) + "\t" + str(n_dict_ref[n]) + "\n")
+            f_output.write(str(n) + "\t" + str(n_dict_dir[n]) + "\t" + str(n_dict_ref[n]) + "\n")
         else:
             print("n: " + str(n) + "\t" + str(n_dict_dir[n]) + "\t" + "0")
-            file_name.write(str(n) + "\t" + str(n_dict_dir[n]) + "\t" + "0")
+            f_output.write(str(n) + "\t" + str(n_dict_dir[n]) + "\t" + "0")
     else:
         print("n: " + str(n) + "\t0\t0")
-        file_name.write(str(n) + "\t0\t0")
+        f_output.write(str(n) + "\t0\t0")
+
+f_output.close()
 
 # Output summary
 print("[INFO] " + "Summary statistics")
