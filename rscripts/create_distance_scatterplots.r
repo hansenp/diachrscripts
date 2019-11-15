@@ -23,8 +23,8 @@ get_fitted_line <- function(DATA,XMAX){
 
 ########################################################################################################################
 
-MIFSUD=F
-SCHOENEFELDER=T
+MIFSUD=T
+SCHOENEFELDER=F
 CHESI_BMP2=F
 CHESI_HEPG2=F
 
@@ -34,7 +34,7 @@ if(MIFSUD) {
   TWISTED<-read.table("../mifsud_alt_digest_distances_twisted.txt")
   DIRECTED<-rbind(SIMPLE,TWISTED)
   UNDIRECTED_REF<-read.table("../mifsud_alt_digest_distances_undirected_reference.txt")
-  #UNDIRECTED<-read.table("../mifsud_alt_digest_distances_undirected.txt")
+  UNDIRECTED<-read.table("../mifsud_alt_digest_distances_undirected.txt")
   #INDEFINABLE<-read.table("../mifsud_alt_digest_distances_indefinable.txt")
   print("... done.")
 }
@@ -76,17 +76,16 @@ cairo_pdf("foo.pdf", width=5, height=7.5)
 par(mfrow=c(3,2), las=1)
 
 XMIN <- 0
-XMAX <- 1000000#max(SIMPLE[,1], TWISTED[,1], UNDIRECTED_REF[,1], UNDIRECTED[,1])
+XMAX <- 6000000#max(SIMPLE[,1], TWISTED[,1], UNDIRECTED_REF[,1], UNDIRECTED[,1])
 XLAB <- "Digest distance"
 
 YMIN <- 0#min(SIMPLE[,2], TWISTED[,2], UNDIRECTED_REF[,2], UNDIRECTED[,2])
-YMAX <- 50#max(SIMPLE[,2], TWISTED[,2], UNDIRECTED_REF[,2], UNDIRECTED[,2])
+YMAX <- max(SIMPLE[,2], TWISTED[,2], UNDIRECTED_REF[,2], UNDIRECTED[,2])
 YLAB <- "Number of read pairs"
 
 SPAN <- 0.75
 NBIN <- c(100,1500)
 SHOW_OUTLIERS <- 50
-
 
 print("Creating scatterplot for simple interactions ...")
 smoothScatter(SIMPLE, main="Simple", xlim=c(XMIN,XMAX), ylim=c(YMIN,YMAX), xlab=XLAB, ylab=YLAB, nbin=NBIN, nrpoints=SHOW_OUTLIERS)
@@ -116,7 +115,7 @@ print("Creating plot with fitted lines for direcred and undirected reference int
 YMAX<-max(L_d$y,L_ur$y)
 XMAX<-max(L_d$x,L_ur$x)
 plot(L_d$x, L_d$y, col = "black", type="l", xlim=c(XMIN,XMAX), ylim=c(YMIN,YMAX), xlab="Digest distance", ylab="Read pairs")
-lines(L_ur$x, L_ur$y,, col = "blue")
+lines(L_ur$x, L_ur$y, col = "blue")
 print("... done.")
 
 #smoothScatter(UNDIRECTED, main="Undirected", xlim=c(XMIN,XMAX), ylim=c(YMIN,YMAX), xlab=XLAB, ylab=YLAB, nrpoints=0, nbin=NBIN)
