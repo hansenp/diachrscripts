@@ -6,13 +6,13 @@ PDF_NAME <- "schoenefelder_distance_plots_all.pdf"
 PREFIX <- "../results_2/schoenefelder/schoenefelder_alt"
 COLOR="lightblue"
 
-PDF_NAME <- "chesi_bmp2_distance_plots_all.pdf"
-PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_alt"
-COLOR="lightgreen"
+#PDF_NAME <- "chesi_bmp2_distance_plots_all.pdf"
+#PREFIX <- "../results_2/chesi/bmp2/chesi_bmp2_alt"
+#COLOR="lightgreen"
 
-PDF_NAME <- "chesi_hepg2_distance_plots_all.pdf"
-PREFIX <- "../results_2/chesi/bmp2/chesi_hepg2_alt"
-COLOR="brown"
+#PDF_NAME <- "chesi_hepg2_distance_plots_all.pdf"
+#PREFIX <- "../results_2/chesi/bmp2/chesi_hepg2_alt"
+#COLOR="brown"
 
 SIMPLE <- read.table(paste(PREFIX, "_digest_distances_simple.txt", sep=""))
 SIMPLE <- SIMPLE[,1]

@@ -59,7 +59,7 @@ labels <- c(
 )
 
 cairo_pdf(PDF_NAME, width=6, height=5.5)
-#par(oma=c(0,0,0,0))
+par(oma=c(0,0,0,0), mar=c(5,5,5,1))
 m<-quantile(M_INDEFINABLE)
 s<-quantile(S_INDEFINABLE)
 
@@ -81,16 +81,31 @@ boxplot(
     "lightblue",
     "lightblue",
     "lightblue"
-  )
+  ),
+  outline=FALSE,
+  yaxt = "n", ylab = ""
 )
 
+y <- seq(0, YMAX, 500000)
+axis(2, at=y, labels = formatC(y, big.mark = ",", format = "d"), las = 2)
 
 #text(1:10, par("usr")[3] - 0.25, srt = 45, adj = 1, labels = labels, xpd = TRUE)
 end_point = 1 + length(labels) + length(labels)-1
 
 text(seq(1, end_point*0.5,by=1), par("usr")[3]-3, 
      srt = 45, adj= 1, xpd = TRUE,
-     labels = labels, cex=1)
+     labels = labels, cex=0.85)
 
 
 dev.off()
+
+cat("Mifsud:\n")
+M_s<-wilcox.test(M_UNDIRECTED_REF, M_SIMPLE, alternative = "two.sided", log=T, paired=F)
+print(paste("P-value simple: ", M_s$p.value))
+M_t<-wilcox.test(M_UNDIRECTED_REF, M_TWISTED, alternative = "two.sided", log=T, paired=F)
+print(paste("P-value twisted: ", M_t$p.value))
+cat("Schönefelder:\n")
+S_s<-wilcox.test(S_UNDIRECTED_REF, S_SIMPLE, alternative = "two.sided", log=T, paired=F)
+print(paste("P-value simple: ", S_s$p.value))
+S_t<-wilcox.test(S_UNDIRECTED_REF, S_TWISTED, alternative = "two.sided", log=T, paired=F)
+print(paste("P-value twisted: ", S_t$p.value))
