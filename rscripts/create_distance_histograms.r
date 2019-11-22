@@ -69,9 +69,9 @@ hist(t(INDEFINABLE), breaks=BREAKS,BIN_NUM, xlim=XLIM, xlab=XLAB, main="Indefina
 YMIN <- min(H_DIRECTED$counts-H_UNDIRECTED_REF$counts)
 YMAX <- max(H_DIRECTED$counts-H_UNDIRECTED_REF$counts)
 YLIM=c(YMIN,YMAX)
-plot(BREAKS, c(H_DIRECTED$counts-H_UNDIRECTED_REF$counts,0), xlim=c(0,1000000), ylim=YLIM, xlab=XLAB, ylab="Difference of bin counts", main="Directed minus undirected reference", col=COLOR, pch=16)
+plot(BREAKS, c(H_DIRECTED$counts-H_UNDIRECTED_REF$counts,0), xlim=c(0,1000000), ylim=YLIM, xlab=XLAB, ylab="Difference between bin counts", main="Directed minus undirected reference", col=COLOR, pch=16, las=1)
 abline(h=0, lty=2)
-plot(BREAKS, c(H_UNDIRECTED_REF$counts-H_UNDIRECTED_ALL_SAMPLE$counts,0), xlim=c(0,1000000), ylim=YLIM, xlab=XLAB, ylab="Difference of bin counts", main="Undirected ref. minus sampled undirected", col=COLOR, pch=16)
+plot(BREAKS, c(H_UNDIRECTED_REF$counts-H_UNDIRECTED_ALL_SAMPLE$counts,0), xlim=c(0,1000000), ylim=YLIM, xlab=XLAB, ylab="Difference between bin counts", main="Undirected ref. minus sampled undirected", col=COLOR, pch=16, las=1)
 abline(h=0, lty=2)
 
 dev.off()

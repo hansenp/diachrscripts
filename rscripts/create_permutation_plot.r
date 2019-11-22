@@ -2,7 +2,7 @@
 #PREFIX <- "../results_2/mifsud/mifsud_r1"
 #PREFIX <- "../results_2/mifsud/mifsud_r2"
 #PREFIX <- "../results_2/mifsud/mifsud_r3"
-#PREFIX <- "../results_2/mifsud/mifsud_alt"
+PREFIX <- "../results_2/mifsud/mifsud_alt"
 
 #PREFIX <- "../results_2/schoenefelder/schoenefelder_r1"
 #PREFIX <- "../results_2/schoenefelder/schoenefelder_r2"
@@ -76,8 +76,13 @@ print(paste("MEAN PERMUTED: ", round(p_mean,0)))
 print(paste("SD PERMUTED: ", round(p_sd,2)))
 print(paste("Z-score: ", z_score))
 
-hist(t(INTERACTION_NUMBERS), xlim=c(min(INTERACTION_NUMBERS),NSIG_OBSERVED+20), main=OUT_PREFIX, xlab="Significant interactions")
+#par(oma=c(0,0,0,0),mar=c(5,5,5,5))
+hist(t(INTERACTION_NUMBERS), xlim=c(min(INTERACTION_NUMBERS),NSIG_OBSERVED+20), main=OUT_PREFIX, xlab="Significant interactions", las=1, xaxt="n")
 abline(v=NSIG_OBSERVED, lty=2, col="red")
+
+
+axis(side=1, at=axTicks(1), 
+     labels=formatC(axTicks(1), format="d", big.mark=','))
 
 LEGEND_1 <- paste("Permuted interactions:", INTERACTION_NUM)
 LEGEND_2 <- paste("Nominal alpha:", NOMINAL_ALPHA)

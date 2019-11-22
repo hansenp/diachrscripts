@@ -6,6 +6,7 @@ M_SIMPLE <- read.table(paste(PREFIX, "_digest_distances_simple.txt", sep=""))
 M_SIMPLE <- M_SIMPLE[,1]
 M_TWISTED <- read.table(paste(PREFIX, "_digest_distances_twisted.txt", sep=""))
 M_TWISTED <- M_TWISTED[,1]
+M_DIRECTED <- c(M_SIMPLE,M_TWISTED)
 M_UNDIRECTED_REF <- read.table(paste(PREFIX, "_digest_distances_undirected_reference.txt", sep=""))
 M_UNDIRECTED_REF <- M_UNDIRECTED_REF[,1]
 M_UNDIRECTED_ALL <-read.table(paste(PREFIX, "_digest_distances_undirected.txt", sep=""))
@@ -21,6 +22,7 @@ S_SIMPLE <- read.table(paste(PREFIX, "_digest_distances_simple.txt", sep=""))
 S_SIMPLE <- S_SIMPLE[,1]
 S_TWISTED <- read.table(paste(PREFIX, "_digest_distances_twisted.txt", sep=""))
 S_TWISTED <- S_TWISTED[,1]
+S_DIRECTED <- c(S_SIMPLE,S_TWISTED)
 S_UNDIRECTED_REF <- read.table(paste(PREFIX, "_digest_distances_undirected_reference.txt", sep=""))
 S_UNDIRECTED_REF <- S_UNDIRECTED_REF[,1]
 S_UNDIRECTED_ALL <-read.table(paste(PREFIX, "_digest_distances_undirected.txt", sep=""))
@@ -83,7 +85,7 @@ boxplot(
     "lightblue"
   ),
   outline=FALSE,
-  yaxt = "n", ylab = ""
+  yaxt = "n", ylab = "x"
 )
 
 y <- seq(0, YMAX, 500000)
@@ -100,12 +102,23 @@ text(seq(1, end_point*0.5,by=1), par("usr")[3]-3,
 dev.off()
 
 cat("Mifsud:\n")
+
 M_s<-wilcox.test(M_UNDIRECTED_REF, M_SIMPLE, alternative = "two.sided", log=T, paired=F)
 print(paste("P-value simple: ", M_s$p.value))
+
 M_t<-wilcox.test(M_UNDIRECTED_REF, M_TWISTED, alternative = "two.sided", log=T, paired=F)
 print(paste("P-value twisted: ", M_t$p.value))
+
+M_d<-wilcox.test(M_UNDIRECTED_REF, M_DIRECTED, alternative = "two.sided", log=T, paired=F)
+print(paste("P-value directed: ", M_d$p.value))
+
 cat("Schönefelder:\n")
+
 S_s<-wilcox.test(S_UNDIRECTED_REF, S_SIMPLE, alternative = "two.sided", log=T, paired=F)
 print(paste("P-value simple: ", S_s$p.value))
+
 S_t<-wilcox.test(S_UNDIRECTED_REF, S_TWISTED, alternative = "two.sided", log=T, paired=F)
 print(paste("P-value twisted: ", S_t$p.value))
+
+S_d<-wilcox.test(S_UNDIRECTED_REF, S_DIRECTED, alternative = "two.sided", log=T, paired=F)
+print(paste("P-value directed: ", S_d$p.value))
