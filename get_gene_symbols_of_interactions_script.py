@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import argparse
 import gzip
 import diachrscripts_toolkit as dclass
