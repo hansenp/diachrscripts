@@ -1,4 +1,6 @@
 import gzip
+
+import numpy
 from scipy.stats import binom, poisson
 import numpy as np
 from decimal import *
@@ -127,6 +129,18 @@ class Interaction:
                 return self.p_value
             else:
                 self.p_value = 1 - binom.cdf(self.n_simple-1, self.n_simple + self.n_twisted, 0.5)
+                return self.p_value
+
+    def set_logsf_binomial_p_value(self): # natural logarithm
+        numpy.seterr(divide='ignore')
+        if self.p_value != None:
+            return self.p_value
+        else:
+            if self.n_simple < self.n_twisted:
+                self.p_value = binom.logsf(self.n_twisted - 1, self.n_simple + self.n_twisted, 0.5)
+                return self.p_value
+            else:
+                self.p_value = binom.logsf(self.n_simple - 1, self.n_simple + self.n_twisted, 0.5)
                 return self.p_value
 
 

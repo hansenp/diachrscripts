@@ -2,6 +2,8 @@
 
 import argparse
 import gzip
+import math
+
 import diachrscripts_toolkit as dclass
 
 
@@ -112,9 +114,11 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
             line = fp.readline()
             continue
 
+        interaction.set_logsf_binomial_p_value()
+
         # set the type of interaction based on P-value ('S', 'T', 'U', 'NA')
         if interaction.get_interaction_type() == "TBD":
-            interaction.set_interaction_type("TBD", p_value_cutoff, n_indefinable_cutoff)
+            interaction.set_interaction_type("TBD", math.log(p_value_cutoff), n_indefinable_cutoff)
 
         # assign expression level category to digest using max approach
         d1_symbols, d2_symbols = get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map)
@@ -150,7 +154,7 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
         line = line.rstrip()
 
-        f_output_original.write(interaction.get_coord_string() + "\t" + str(interaction.get_digest_distance())  + "\t" + itype + "\t" + symbols_d12 + "\t" + simple_twisted_counts + "\t" + interaction.get_digest_pair_flag_original_order() + "\n")
+        f_output_original.write(interaction.get_coord_string() + "\t" + str(interaction.get_digest_distance())  + "\t" + itype + "\t" + symbols_d12 + "\t" + simple_twisted_counts + "\t" + interaction.get_digest_pair_flag_original_order() + "\t" + str("{:.2f}".format(-interaction.get_binomial_p_value())) + "\n")
 
         line = fp.readline()
 
