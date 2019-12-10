@@ -91,6 +91,12 @@ n_indefinable_cutoff = dclass.find_indefinable_n(p_value_cutoff)
 # Determine distribution of n for directed interactions
 n_dict = dclass.get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff)
 
+# create separate dictionaries for 'AA', 'AI' and 'II'
+nested_n_dict = { 'AA': dclass.get_n_dict(diachromatic_interaction_file, 'AA', min_digest_dist, p_value_cutoff),
+                  'AI': dclass.get_n_dict(diachromatic_interaction_file, 'AI', min_digest_dist, p_value_cutoff),
+                  'II': dclass.get_n_dict(diachromatic_interaction_file, 'II', min_digest_dist, p_value_cutoff)
+                  }
+
 # iterate interactions
 print("[INFO] Determining pair category for each interaction in " + diachromatic_interaction_file + " ...")
 with gzip.open(diachromatic_interaction_file, 'rt') as fp:
@@ -159,11 +165,25 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
         elif interaction.get_interaction_type() == "NA":
             n_indefinable_interaction += 1
             itype = "NA"
-        elif interaction.get_interaction_type() == "U":
+        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'II':
             n_undirected_interaction += 1
-            if n_total in n_dict and 0 < n_dict[n_total]:
-                itype = "UR"
-                n_dict[n_total] = n_dict[n_total] - 1
+            if n_total in nested_n_dict['II'] and 0 < nested_n_dict['II'][n_total]:
+                itype = "URII"
+                nested_n_dict['II'][n_total] = nested_n_dict['II'][n_total] - 1
+            else:
+                itype = "U"
+        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'AI':
+            n_undirected_interaction += 1
+            if n_total in nested_n_dict['AI'] and 0 < nested_n_dict['AI'][n_total]:
+                itype = "URAI"
+                nested_n_dict['AI'][n_total] = nested_n_dict['AI'][n_total] - 1
+            else:
+                itype = "U"
+        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'AA':
+            n_undirected_interaction += 1
+            if n_total in nested_n_dict['AA'] and 0 < nested_n_dict['AA'][n_total]:
+                itype = "URAA"
+                nested_n_dict['AA'][n_total] = nested_n_dict['AA'][n_total] - 1
             else:
                 itype = "U"
         elif interaction.get_interaction_type() == "S":
@@ -188,6 +208,15 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 fp.close()
 f_output_original.close()
 
-for key, value in n_dict.items():
+
+for key, value in nested_n_dict['AA'].items():
     if 0 < value:
-        print("[Warning] " + "Could not find corresponding number of undirected reference interactions for n = " + str(key) + ". Missing reference interactions: " + str(value))
+        print("[Warning] " + "Could not find corresponding number of undirected reference interactions for n = " + str(key) + " and 'AA'. Missing reference interactions: " + str(value))
+
+for key, value in nested_n_dict['AI'].items():
+    if 0 < value:
+        print("[Warning] " + "Could not find corresponding number of undirected reference interactions for n = " + str(key) + " and 'AI'. Missing reference interactions: " + str(value))
+
+for key, value in nested_n_dict['II'].items():
+    if 0 < value:
+        print("[Warning] " + "Could not find corresponding number of undirected reference interactions for n = " + str(key) + " and 'II'. Missing reference interactions: " + str(value))
