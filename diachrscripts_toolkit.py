@@ -620,6 +620,7 @@ def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist,
 
     p_val_dict = {} # dictionary that stores previously calculated P-values (saves time)
     n_dict = {}  # dictionary that stores the numbers of interactions with n read pairs
+    digest_distances = []
     print("[INFO] Determining distribution of n in significant interactions in: " + diachromatic_interaction_file + " ...")
     with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
         line = fp.readline()
@@ -654,12 +655,17 @@ def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist,
 
 
             if p_val <= p_value_cutoff:
+                digest_distances.append(interaction.get_digest_distance())
                 if n_total in n_dict:
                     n_dict[n_total] += 1
                 else:
                     n_dict[n_total] = 1
 
             line = fp.readline()
+
+    if(0<len(digest_distances)):
+        n_dict[-1] = np.quantile(digest_distances, .25)
+        n_dict[-3] = np.quantile(digest_distances, .75)
 
     print("... done.")
 

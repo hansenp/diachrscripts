@@ -89,13 +89,25 @@ n_indefinable_interaction = 0
 n_indefinable_cutoff = dclass.find_indefinable_n(p_value_cutoff)
 
 # Determine distribution of n for directed interactions
-n_dict = dclass.get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff)
+#n_dict = dclass.get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff)
 
 # create separate dictionaries for 'AA', 'AI' and 'II'
 nested_n_dict = { 'AA': dclass.get_n_dict(diachromatic_interaction_file, 'AA', min_digest_dist, p_value_cutoff),
                   'AI': dclass.get_n_dict(diachromatic_interaction_file, 'AI', min_digest_dist, p_value_cutoff),
                   'II': dclass.get_n_dict(diachromatic_interaction_file, 'II', min_digest_dist, p_value_cutoff)
                   }
+
+if(-1 in nested_n_dict['AA'] and -3 in nested_n_dict['AA']):
+    min_digest_distance_range_aa = nested_n_dict['AA'][-1]
+    max_digest_distance_range_aa = nested_n_dict['AA'][-3]
+
+if(-1 in nested_n_dict['AI'] and -3 in nested_n_dict['AI']):
+    min_digest_distance_range_ai = nested_n_dict['AI'][-1]
+    max_digest_distance_range_ai = nested_n_dict['AI'][-3]
+
+if(-1 in nested_n_dict['II'] and -3 in nested_n_dict['II']):
+    min_digest_distance_range_ii = nested_n_dict['II'][-1]
+    max_digest_distance_range_ii = nested_n_dict['II'][-3]
 
 # iterate interactions
 print("[INFO] Determining pair category for each interaction in " + diachromatic_interaction_file + " ...")
@@ -165,27 +177,29 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
         elif interaction.get_interaction_type() == "NA":
             n_indefinable_interaction += 1
             itype = "NA"
-        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'II':
+        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'II' and min_digest_distance_range_ii <= interaction.get_digest_distance() and interaction.get_digest_distance() <= max_digest_distance_range_ii:
             n_undirected_interaction += 1
             if n_total in nested_n_dict['II'] and 0 < nested_n_dict['II'][n_total]:
                 itype = "URII"
                 nested_n_dict['II'][n_total] = nested_n_dict['II'][n_total] - 1
             else:
                 itype = "U"
-        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'AI':
+        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'AI' and min_digest_distance_range_ai <= interaction.get_digest_distance() and interaction.get_digest_distance() <= max_digest_distance_range_ai:
             n_undirected_interaction += 1
             if n_total in nested_n_dict['AI'] and 0 < nested_n_dict['AI'][n_total]:
                 itype = "URAI"
                 nested_n_dict['AI'][n_total] = nested_n_dict['AI'][n_total] - 1
             else:
                 itype = "U"
-        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'AA':
+        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'AA' and min_digest_distance_range_aa <= interaction.get_digest_distance() and interaction.get_digest_distance() <= max_digest_distance_range_aa:
             n_undirected_interaction += 1
             if n_total in nested_n_dict['AA'] and 0 < nested_n_dict['AA'][n_total]:
                 itype = "URAA"
                 nested_n_dict['AA'][n_total] = nested_n_dict['AA'][n_total] - 1
             else:
                 itype = "U"
+        elif interaction.get_interaction_type() == "U":
+            itype = "U"
         elif interaction.get_interaction_type() == "S":
             n_simple_interaction += 1
             itype = "S"
@@ -210,13 +224,19 @@ f_output_original.close()
 
 
 for key, value in nested_n_dict['AA'].items():
+    if key == -1 or key == -3:
+        continue
     if 0 < value:
         print("[Warning] " + "Could not find corresponding number of undirected reference interactions for n = " + str(key) + " and 'AA'. Missing reference interactions: " + str(value))
 
 for key, value in nested_n_dict['AI'].items():
+    if key == -1 or key == -3:
+        continue
     if 0 < value:
         print("[Warning] " + "Could not find corresponding number of undirected reference interactions for n = " + str(key) + " and 'AI'. Missing reference interactions: " + str(value))
 
 for key, value in nested_n_dict['II'].items():
+    if key == -1 or key == -3:
+        continue
     if 0 < value:
         print("[Warning] " + "Could not find corresponding number of undirected reference interactions for n = " + str(key) + " and 'II'. Missing reference interactions: " + str(value))
