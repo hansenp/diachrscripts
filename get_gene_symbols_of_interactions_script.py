@@ -44,6 +44,7 @@ def get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map):
 
     gene_symbols_d1 = []
     gene_strands_d1 = []
+    tss_list_d1 = []
     d1 = interaction.get_first_digest()
     for i in range(d1.get_start(), d1.get_end()):  # iterate digest from left to right
         key = d1.get_chromosome() + ":" + str(i)
@@ -52,9 +53,11 @@ def get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map):
         else:
             gene_symbols_d1.append(ref_gene_tss_map.get_coord_symbols(key))
             gene_strands_d1.append(list(ref_gene_tss_map.get_coord_strand(key)))
+            tss_list_d1.append(key)
 
     gene_symbols_d2 = []
     gene_strands_d2 = []
+    tss_list_d2 = []
     d2 = interaction.get_second_digest()
     for i in range(d2.get_start(), d2.get_end()):  # iterate digest from left to right
         key = d2.get_chromosome() + ":" + str(i)
@@ -63,8 +66,9 @@ def get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map):
         else:
             gene_symbols_d2.append(ref_gene_tss_map.get_coord_symbols(key))
             gene_strands_d2.append(list(ref_gene_tss_map.get_coord_strand(key)))
+            tss_list_d2.append(key)
 
-    return gene_symbols_d1, gene_symbols_d2, gene_strands_d1, gene_strands_d2
+    return gene_symbols_d1, gene_symbols_d2, gene_strands_d1, gene_strands_d2, tss_list_d1, tss_list_d2
 
 
 ### Start execution
@@ -143,10 +147,14 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
             interaction.set_interaction_type("TBD", math.log(p_value_cutoff), n_indefinable_cutoff)
 
         # assign expression level category to digest using max approach
-        d1_symbols, d2_symbols, d1_strands, d2_strands = get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map)
+        d1_symbols, d2_symbols, d1_strands, d2_strands, tss_list_d1, tss_list_d2 = get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map)
+
+        #print(tss_list_d1)
+        #print(tss_list_d2)
 
         symbols_d12 = ",".join(set(sum(d1_symbols, [] ))) + ";" + ",".join(set(sum(d2_symbols, [] )))
         strands_d12 = ",".join(set(sum(d1_strands, []))) + ";" + ",".join(set(sum(d2_strands, [])))
+        tss_d12 =  ",".join(set(tss_list_d1)) + ";" + ",".join(set(tss_list_d2))
 
         sd1='-1'
         if ['d'] in d1_strands:
@@ -213,7 +221,7 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
         line = line.rstrip()
 
-        f_output_original.write(interaction.get_coord_string() + "\t" + str(interaction.get_digest_distance())  + "\t" + itype + "\t" + symbols_d12 + "\t" + simple_twisted_counts + "\t" + interaction.get_digest_pair_flag_original_order() + "\t" + str("{:.2f}".format(-interaction.get_binomial_p_value())) + "\t" + sd1 + "/" + sd2 + "\n")
+        f_output_original.write(interaction.get_coord_string() + "\t" + str(interaction.get_digest_distance())  + "\t" + itype + "\t" + symbols_d12 + "\t" + simple_twisted_counts + "\t" + interaction.get_digest_pair_flag_original_order() + "\t" + str("{:.2f}".format(-interaction.get_binomial_p_value())) + "\t" + sd1 + "/" + sd2 + "\t" + tss_d12 + "\n")
 
         line = fp.readline()
 
