@@ -57,8 +57,8 @@ undirected_plus_output_bed = open(file_name_undirected_plus, 'wt')
 ref_gene_tss_map = dclass.TSSCoordinateMap(ref_gene_file, "refGene") # parse refGene file with TSS
 ref_gene_tss_map.analyze_coordinates_and_print_report() # collect counts and print report
 
-directed_gene_symbols = set()
-undirected_gene_symbols = set()
+directed_gene_symbols = {}
+undirected_gene_symbols = {}
 
 ### Iterate interaction file with gene symbols
 ##############################################
@@ -96,11 +96,11 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             symbols_a = field[3].split(";")[0].split(",")
             for sym_a in symbols_a:
                 if sym_a != "":
-                    directed_gene_symbols.add(sym_a)
+                    directed_gene_symbols[sym_a] = field[0]
             symbols_b = field[3].split(";")[1].split(",")
             for sym_b in symbols_b:
                 if sym_b != "":
-                    directed_gene_symbols.add(sym_b)
+                    directed_gene_symbols[sym_b] = field[0]
 
             # print digest regions to BED file for directed interactions
             directed_digests_output_bed.write(chr_a + "\t" + sta_a + "\t" + end_a + "\n")
@@ -112,11 +112,11 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             symbols_a = field[3].split(";")[0].split(",")
             for sym_a in symbols_a:
                 if sym_a != "":
-                    undirected_gene_symbols.add(sym_a)
+                    undirected_gene_symbols[sym_a] = field[0]
             symbols_b = field[3].split(";")[1].split(",")
             for sym_b in symbols_b:
                 if sym_b != "":
-                    undirected_gene_symbols.add(sym_b)
+                    undirected_gene_symbols[sym_b] = field[0]
 
             # print digest regions to BED file for directed interactions
             undirected_digests_output_bed.write(chr_a + "\t" + sta_a + "\t" + end_a + "\n")

@@ -122,7 +122,7 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
     while line:
 
         n_interaction_total += 1
-        if n_interaction_total%10000 == 0:
+        if n_interaction_total%100000 == 0:
             print("\t[INFO]", n_interaction_total, "interactions processed ...")
 
         # parse line representing one interaction
