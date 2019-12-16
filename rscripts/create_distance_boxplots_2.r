@@ -1,12 +1,34 @@
-# x<-read.table("JAV_ERY_RALT_0.0018_interactions_with_genesymbols.tsv", na.strings="", colClasses=c("NULL","integer", "character", "NULL", "NULL", "character", "NULL"))
+#x<-read.table("JAV_ERY_RALT_0.0018_interactions_with_genesymbols.tsv", na.strings="", colClasses=c("NULL","integer", "character", "NULL", "NULL", "character", "NULL"))
+#PDF_NAME <- paste("distance_boxplots_ERY",".pdf", sep="")
 
-PDF_NAME <- paste("distance_boxplots_new",".pdf", sep="")
+#x<-read.table("JAV_MK_RALT_0.0019_interactions_with_genesymbols.tsv", na.strings="", colClasses=c("NULL","integer", "character", "NULL", "NULL", "character", "NULL"))
+#PDF_NAME <- paste("distance_boxplots_MK",".pdf", sep="")
+
+#x<-read.table("JAV_ACD4_RALT_0.0019_interactions_with_genesymbols.tsv", na.strings="", colClasses=c("NULL","integer", "character", "NULL", "NULL", "character", "NULL"))
+#PDF_NAME <- paste("distance_boxplots_ACD4",".pdf", sep="")
+
+#x<-read.table("JAV_EP_RALT_0.0017_interactions_with_genesymbols.tsv", na.strings="", colClasses=c("NULL","integer", "character", "NULL", "NULL", "character", "NULL"))
+#PDF_NAME <- paste("distance_boxplots_EP",".pdf", sep="")
+
+#x<-read.table("JAV_MAC_M0_RALT_0.0019_interactions_with_genesymbols.tsv", na.strings="", colClasses=c("NULL","integer", "character", "NULL", "NULL", "character", "NULL"))
+#PDF_NAME <- paste("distance_boxplots_MAC_M0",".pdf", sep="")
+
+#x<-read.table("JAV_MAC_M1_RALT_0.0019_interactions_with_genesymbols.tsv", na.strings="", colClasses=c("NULL","integer", "character", "NULL", "NULL", "character", "NULL"))
+#PDF_NAME <- paste("distance_boxplots_MAC_M1",".pdf", sep="")
+
+#x<-read.table("JAV_MK_RALT_0.0019_interactions_with_genesymbols.dc.tsv", na.strings="", colClasses=c("NULL","integer", "character", "NULL", "NULL", "character", "NULL"))
+#PDF_NAME <- paste("distance_boxplots_MK_DC",".pdf", sep="")
+
+x<-read.table("JAV_ERY_RALT_0.0018_interactions_with_genesymbols.dc.tsv", na.strings="", colClasses=c("NULL","integer", "character", "NULL", "NULL", "character", "NULL"))
+PDF_NAME <- paste("distance_boxplots_ERY_DC",".pdf", sep="")
+
+
 
 cat("------------\n")
 
 INDEFINABLE_ALL <- x[which(x[,2]=="NA"),1]
 UNDIRECTED_ALL_ALL <- x[which(x[,2]=="U"),1]
-UNDIRECTED_REF_ALL <- x[which(x[,2]=="UR"),1]
+UNDIRECTED_REF_ALL <- x[which(x[,2]=="URAA" | x[,2]=="URAI" | x[,2]=="URII"),1]
 SIMPLE_ALL <- x[which(x[,2]=="S"),1]
 TWISTED_ALL <- x[which(x[,2]=="T"),1]
 DIRECTED_ALL <- c(SIMPLE_ALL,TWISTED_ALL)
@@ -30,7 +52,7 @@ cat("------------\n")
 ENRICHMENT_FLAG <- "II"
 INDEFINABLE_II <- x[which(x[,2]=="NA" & x[,3]==ENRICHMENT_FLAG),1]
 UNDIRECTED_ALL_II <- x[which(x[,2]=="U" & x[,3]==ENRICHMENT_FLAG),1]
-UNDIRECTED_REF_II <- x[which(x[,2]=="UR" & x[,3]==ENRICHMENT_FLAG),1]
+UNDIRECTED_REF_II <- x[which((x[,2]=="URAA" | x[,2]=="URAI" | x[,2]=="URII") & x[,3]==ENRICHMENT_FLAG),1]
 SIMPLE_II <- x[which(x[,2]=="S" & x[,3]==ENRICHMENT_FLAG),1]
 TWISTED_II <- x[which(x[,2]=="T" & x[,3]==ENRICHMENT_FLAG),1]
 DIRECTED_II <- c(SIMPLE_II,TWISTED_II)
@@ -54,7 +76,7 @@ cat("------------\n")
 ENRICHMENT_FLAG <- "AI"
 INDEFINABLE_AI <- x[which(x[,2]=="NA" & x[,3]==ENRICHMENT_FLAG),1]
 UNDIRECTED_ALL_AI <- x[which(x[,2]=="U" & x[,3]==ENRICHMENT_FLAG),1]
-UNDIRECTED_REF_AI <- x[which(x[,2]=="UR" & x[,3]==ENRICHMENT_FLAG),1]
+UNDIRECTED_REF_AI <- x[which((x[,2]=="URAA" | x[,2]=="URAI" | x[,2]=="URII") & x[,3]==ENRICHMENT_FLAG),1]
 SIMPLE_AI <- x[which(x[,2]=="S" & x[,3]==ENRICHMENT_FLAG),1]
 TWISTED_AI <- x[which(x[,2]=="T" & x[,3]==ENRICHMENT_FLAG),1]
 DIRECTED_AI <- c(SIMPLE_AI,TWISTED_AI)
@@ -78,7 +100,7 @@ cat("------------\n")
 ENRICHMENT_FLAG <- "AA"
 INDEFINABLE_AA <- x[which(x[,2]=="NA" & x[,3]==ENRICHMENT_FLAG),1]
 UNDIRECTED_ALL_AA <- x[which(x[,2]=="U" & x[,3]==ENRICHMENT_FLAG),1]
-UNDIRECTED_REF_AA <- x[which(x[,2]=="UR" & x[,3]==ENRICHMENT_FLAG),1]
+UNDIRECTED_REF_AA <- x[which((x[,2]=="URAA" | x[,2]=="URAI" | x[,2]=="URII") & x[,3]==ENRICHMENT_FLAG),1]
 SIMPLE_AA <- x[which(x[,2]=="S" & x[,3]==ENRICHMENT_FLAG),1]
 TWISTED_AA <- x[which(x[,2]=="T" & x[,3]==ENRICHMENT_FLAG),1]
 DIRECTED_AA <- c(SIMPLE_AA,TWISTED_AA)
