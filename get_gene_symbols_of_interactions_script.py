@@ -53,7 +53,7 @@ def get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map):
         else:
             gene_symbols_d1.append(ref_gene_tss_map.get_coord_symbols(key))
             gene_strands_d1.append(list(ref_gene_tss_map.get_coord_strand(key)))
-            tss_list_d1.append(key)
+            tss_list_d1.append(key + ":" + ref_gene_tss_map.get_coord_strand(key))
 
     gene_symbols_d2 = []
     gene_strands_d2 = []
@@ -66,7 +66,7 @@ def get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map):
         else:
             gene_symbols_d2.append(ref_gene_tss_map.get_coord_symbols(key))
             gene_strands_d2.append(list(ref_gene_tss_map.get_coord_strand(key)))
-            tss_list_d2.append(key)
+            tss_list_d2.append(key + ":" + ref_gene_tss_map.get_coord_strand(key))
 
     return gene_symbols_d1, gene_symbols_d2, gene_strands_d1, gene_strands_d2, tss_list_d1, tss_list_d2
 
@@ -151,6 +151,9 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
         #print(tss_list_d1)
         #print(tss_list_d2)
+        #print(d1_symbols)
+        #print(d2_symbols)
+        #print()
 
         symbols_d12 = ",".join(set(sum(d1_symbols, [] ))) + ";" + ",".join(set(sum(d2_symbols, [] )))
         strands_d12 = ",".join(set(sum(d1_strands, []))) + ";" + ",".join(set(sum(d2_strands, [])))

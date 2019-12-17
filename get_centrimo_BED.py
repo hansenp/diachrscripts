@@ -9,6 +9,7 @@ import gzip
 parser = argparse.ArgumentParser(description='Determine expression category levels for interacting digest pairs.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--interaction-gs-file', help='Interaction file with gene symbols created with \'get_gene_symbols_of_interactions_script.py\'.')
+parser.add_argument('--chrom-info-file', help='File with chromosome sizes.')
 parser.add_argument('--ref-gene-file', help='UCSC refGene file (must be gzipped and the same version that was used to create the digest map for Diachromatic).')
 parser.add_argument('--up-dist', help='Number of bases upstream of TSS.', default=1000)
 parser.add_argument('--down-dist', help='Number of bases upstream of TSS.', default=1000)
@@ -16,6 +17,7 @@ parser.add_argument('--down-dist', help='Number of bases upstream of TSS.', defa
 args = parser.parse_args()
 out_prefix = args.out_prefix
 interaction_gs_file = args.interaction_gs_file
+chrom_info_file = args.chrom_info_file
 ref_gene_file = args.ref_gene_file
 up_dist = int(args.up_dist)
 down_dist = int(args.down_dist)
@@ -60,6 +62,20 @@ ref_gene_tss_map.analyze_coordinates_and_print_report() # collect counts and pri
 directed_gene_symbols = {}
 undirected_gene_symbols = {}
 
+chrom_sizes = {}
+with open(chrom_info_file, 'rt') as fp:
+    line = fp.readline()
+    while line:
+        chr_name = line.split("\t")[0]
+        chr_size = line.split("\t")[1]
+        chrom_sizes[chr_name] = int(chr_size)
+        line = fp.readline()
+
+directed_minus_tss = set()
+directed_plus_tss = set()
+undirected_minus_tss = set()
+undirected_plus_tss = set()
+
 ### Iterate interaction file with gene symbols
 ##############################################
 
@@ -70,6 +86,8 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
     line = fp.readline()
 
     while line:
+
+        line = line.rstrip()
 
         n_interaction_total += 1
         if n_interaction_total % 10000 == 0:
@@ -82,15 +100,48 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
         coord_b = coords[1]
         chr_a = coord_a.split(":")[0]
         chr_b = coord_b.split(":")[0]
-        sta_a = coord_a.split(":")[1].split("-")[0]
-        sta_b = coord_b.split(":")[1].split("-")[0]
-        end_a = coord_a.split(":")[1].split("-")[1]
-        end_b = coord_b.split(":")[1].split("-")[1]
+        sta_a = int(coord_a.split(":")[1].split("-")[0])
+        sta_b = int(coord_b.split(":")[1].split("-")[0])
+        end_a = int(coord_a.split(":")[1].split("-")[1])
+        end_b = int(coord_b.split(":")[1].split("-")[1])
 
         # get category of interacting digest
         interaction_category = field[2]
 
         if interaction_category == "S" or interaction_category == "T":
+
+            print(line)
+
+            # get TSS associated with interacting digests
+            tss_d1 = field[8].split(";")[0].split(",")
+            for tss in tss_d1:
+                chromosome = tss.split(":")[0]
+                sta = int(tss.split(":")[1]) - up_dist
+                strand = tss.split(":")[2]
+                if sta < 0:
+                    continue
+                end = int(tss.split(":")[1]) + down_dist
+                if chrom_sizes[chromosome] < end:
+                    continue
+                print(chromosome +"\t" + str(sta) + "\t" + str(end) + "\t" + strand)
+
+            tss_d2 = field[8].split(";")[1].split(",")
+            for tss in tss_d2:
+                chromosome = tss.split(":")[0]
+                sta = int(tss.split(":")[1]) - up_dist
+                strand = tss.split(":")[2]
+                if sta < 0:
+                    continue
+                end = int(tss.split(":")[1]) + down_dist
+                if chrom_sizes[chromosome] < end:
+                    continue
+
+                if strand == "-":
+                    directed_minus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + strand)
+                elif strand == "+":
+                    directed_plus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + strand)
+                else:
+                    print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!")
 
             # add gene symbols to set for directed interactions
             symbols_a = field[3].split(";")[0].split(",")
@@ -103,10 +154,12 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                     directed_gene_symbols[sym_b] = field[0]
 
             # print digest regions to BED file for directed interactions
-            directed_digests_output_bed.write(chr_a + "\t" + sta_a + "\t" + end_a + "\n")
-            directed_digests_output_bed.write(chr_b + "\t" + sta_b + "\t" + end_b + "\n")
+            directed_digests_output_bed.write(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\n")
+            directed_digests_output_bed.write(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\n")
 
         elif interaction_category == "URAA":
+
+            print(line)
 
             # add gene symbols to set for directed interactions
             symbols_a = field[3].split(";")[0].split(",")
@@ -119,12 +172,22 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                     undirected_gene_symbols[sym_b] = field[0]
 
             # print digest regions to BED file for directed interactions
-            undirected_digests_output_bed.write(chr_a + "\t" + sta_a + "\t" + end_a + "\n")
-            undirected_digests_output_bed.write(chr_b + "\t" + sta_b + "\t" + end_b + "\n")
+            undirected_digests_output_bed.write(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\n")
+            undirected_digests_output_bed.write(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\n")
 
+        print("")
         line = fp.readline()
 
+directed_digests_output_bed.close()
+undirected_digests_output_bed.close()
 
+directed_minus_tss_output_bed.close()
+directed_plus_tss_output_bed.close()
+
+undirected_minus_output_bed.close()
+undirected_plus_output_bed.close()
+
+exit(0)
 ### Iterate TSS
 ###############
 
