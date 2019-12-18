@@ -142,7 +142,7 @@ undirected_plus_tss = set()
 
 ### Iterate interaction file with gene symbols
 ##############################################
-
+cnt=0
 print("[INFO] Iterating interaction file with gene symbols " + interaction_gs_file + " ...")
 with gzip.open(interaction_gs_file, 'rt') as fp:
 
@@ -182,7 +182,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
         interaction_category = field[2]
 
         if interaction_category in allowed_interaction_categories_directed:
-
+            cnt += 1
             # get TSS associated with interacting digests
             tss_d1 = field[8].split(";")[0].split(",")
             for tss in tss_d1:
@@ -221,11 +221,12 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                     print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!")
 
             # print digest regions to BED file for directed interactions
-            directed_digests_output_bed.write(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\n")
-            directed_digests_output_bed.write(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\n")
+            directed_digests_output_bed.write(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\t" + str(cnt) + "\n")
+            cnt += 1
+            directed_digests_output_bed.write(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\t" + str(cnt) + "\n")
 
         elif interaction_category in allowed_interaction_categories_undirected:
-
+            cnt += 1
             # get TSS associated with the first interacting digest
             tss_d1 = field[8].split(";")[0].split(",")
             for tss in tss_d1:
@@ -265,8 +266,9 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                     print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!")
 
             # write digest regions to BED file for undirected interactions
-            undirected_digests_output_bed.write(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\n")
-            undirected_digests_output_bed.write(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\n")
+            undirected_digests_output_bed.write(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\t" + str(cnt) + "\n")
+            cnt += 1
+            undirected_digests_output_bed.write(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\t" + str(cnt) + "\n")
 
         line = fp.readline()
 
