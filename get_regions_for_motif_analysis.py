@@ -61,9 +61,10 @@ parser.add_argument('--chrom-info-file', help='File with chromosome sizes <CHROM
 parser.add_argument('--up-dist', help='Number of bases upstream of TSS.', default=1000)
 parser.add_argument('--down-dist', help='Number of bases upstream of TSS.', default=1000)
 parser.add_argument('--allowed-enrichment-pair-tags', help='Set of allowed enrichment pair tags for digests (\'AA\', \'AI\',\'IA\',\'II\', ...) separated by \';\'.', default="AA")
-parser.add_argument('--allowed-strand-pair-tags', help='Set of allowed strand pair tags for digests (\'-/-\', \'+/+\', \'+/-\',\'-/+\',\'-/d\', ...) separated by \';\'.', default="-/-;+/+")
+parser.add_argument('--allowed-strand-pair-tags', help='Set of allowed strand pair tags for digests (\'-/-\', \'+/+\', \'+/-\',\'-/+\',\'-/d\', ...) separated by \';\'.', default="-/-;+/+;-/+;+/-")
 parser.add_argument('--allowed-interaction-categories-directed', help='Set categories of directed interactions (\'S\' and \'T\') separated by \';\'.', default="S;T")
 parser.add_argument('--allowed-interaction-categories-undirected', help='Set categories of directed interactions (\'NA\', \'U\', \'URAA\', \'URAI\' and \'URII\') separated by \';\'.', default="URAA")
+parser.add_argument('--max-num-of_tss-per-digest', help='Only use interactions for which both digests have at most this number of TSS.', default=1)
 
 
 args = parser.parse_args()
@@ -95,7 +96,7 @@ print("\t[INFO] --allowed-interaction-categories-undirected: " + allowed_interac
 
 # convert aallowed pair tag strings into lists
 allowed_strand_pair_tags = str(allowed_strand_pair_tags).split(";")
-#print(allowed_strand_pair_tags)
+print(allowed_strand_pair_tags)
 allowed_enrichment_pair_tags = str(allowed_enrichment_pair_tags).split(";")
 #print(allowed_enrichment_pair_tags)
 allowed_interaction_categories_directed = str(allowed_interaction_categories_directed).split(";")
@@ -167,6 +168,14 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             line = fp.readline()
             continue
 
+        tss_num_d1 = len(field[8].split(";")[0].split(","))
+        tss_num_d2 = len(field[8].split(";")[1].split(","))
+        if 1 < tss_num_d1 or 1 < tss_num_d2:
+            line = fp.readline()
+            continue
+        #else:
+            #print(line + "\t" + str(tss_num_d1) + "\t" + str(tss_num_d2) + "\t" + str(field[8].split(";")[0].split(",")) + "\t" + str(field[8].split(";")[1].split(",")))
+
         # get coordinates of interacting digests
         coords = field[0].split(";")
         coord_a = coords[0]
@@ -196,9 +205,11 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                     continue
 
                 if strand == "-":
-                    directed_minus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + strand)
+                    directed_minus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt) + ":" + strand)
+                    cnt += 1
                 elif strand == "+":
-                    directed_plus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + strand)
+                    directed_plus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt) + ":" + strand)
+                    cnt += 1
                 else:
                     print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!")
 
@@ -214,9 +225,11 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                     continue
 
                 if strand == "-":
-                    directed_minus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + strand)
+                    directed_minus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt) + ":" + strand)
+                    cnt += 1
                 elif strand == "+":
-                    directed_plus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + strand)
+                    directed_plus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt) + ":" + strand)
+                    cnt += 1
                 else:
                     print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!")
 
@@ -240,9 +253,11 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                     continue
 
                 if strand == "-":
-                    undirected_minus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + strand)
+                    undirected_minus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt) + ":" + strand)
+                    cnt += 1
                 elif strand == "+":
-                    undirected_plus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + strand)
+                    undirected_plus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt) + ":" + strand)
+                    cnt += 1
                 else:
                     print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!")
 
@@ -259,9 +274,11 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                     continue
 
                 if strand == "-":
-                    undirected_minus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + strand)
+                    undirected_minus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt) + ":" + strand)
+                    cnt += 1
                 elif strand == "+":
-                    undirected_plus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + strand)
+                    undirected_plus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt) + ":" + strand)
+                    cnt += 1
                 else:
                     print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!")
 

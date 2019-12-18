@@ -5,6 +5,7 @@ OUT_PREFIX="MK_RALT_0.0019"
 
 #GENE_SYMBOL_FILE="/Users/hansep/PycharmProjects/diachrscripts/rscripts/JAV_ERY_RALT_0.0018_interactions_with_genesymbols.dc.tsv"
 #OUT_PREFIX="ERY_RALT_0.0018"
+#/home/peter/storage_1/VPV_data/hg38/hg38.fa
 
 # MEME - ERY_RALT_0.0018 - STAA vs. URAA - same strand - repeats masked
 # MEME - ERY_RALT_0.0018 - STAA vs. URAA - same strand
