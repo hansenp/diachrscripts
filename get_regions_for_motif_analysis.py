@@ -61,7 +61,10 @@ parser.add_argument('--chrom-info-file', help='File with chromosome sizes <CHROM
 parser.add_argument('--up-dist', help='Number of bases upstream of TSS.', default=1000)
 parser.add_argument('--down-dist', help='Number of bases upstream of TSS.', default=1000)
 parser.add_argument('--allowed-enrichment-pair-tags', help='Set of allowed enrichment pair tags for digests (\'AA\', \'AI\',\'IA\',\'II\', ...) separated by \';\'.', default="AA")
-parser.add_argument('--allowed-strand-pair-tags', help='Set of allowed strand pair tags for digests (\'-/-\', \'+/-\',\'-/+\',\'-/d\', ...) separated by \';\'.', default="-/-;+/+")
+parser.add_argument('--allowed-strand-pair-tags', help='Set of allowed strand pair tags for digests (\'-/-\', \'+/+\', \'+/-\',\'-/+\',\'-/d\', ...) separated by \';\'.', default="-/-;+/+")
+parser.add_argument('--allowed-interaction-categories-directed', help='Set categories of directed interactions (\'S\' and \'T\') separated by \';\'.', default="S;T")
+parser.add_argument('--allowed-interaction-categories-undirected', help='Set categories of directed interactions (\'NA\', \'U\', \'URAA\', \'URAI\' and \'URII\') separated by \';\'.', default="URAA")
+
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -71,15 +74,20 @@ up_dist = int(args.up_dist) # used to determine start coordinates of promoter re
 down_dist = int(args.down_dist) # used to determine end coordinates of promoter regions
 allowed_enrichment_pair_tags = args.allowed_enrichment_pair_tags # only interactions with these enrichment pair tags will be used
 allowed_strand_pair_tags = args.allowed_strand_pair_tags # only interactions with these strand pair tags will be used
+allowed_interaction_categories_directed = args.allowed_interaction_categories_directed # only directed interactions with these categories will be used
+allowed_interaction_categories_undirected = args.allowed_interaction_categories_undirected # only undirected with these categories will be used
+
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] Analysis for: " + out_prefix)
 print("\t[INFO] --interaction-gs-file: " + interaction_gs_file)
-print("\t[INFO] --chrom-info-file: " + chrom_info_file) #
+print("\t[INFO] --chrom-info-file: " + chrom_info_file)
 print("\t[INFO] --up-dist: " + str(up_dist))
 print("\t[INFO] --down-dist: " + str(down_dist))
 print("\t[INFO] --enrichment-strand-pair-tags: " + allowed_enrichment_pair_tags)
 print("\t[INFO] --allowed-strand-pair-tags: " + allowed_strand_pair_tags)
+print("\t[INFO] --allowed-interaction-categories-directed: " + allowed_interaction_categories_directed)
+print("\t[INFO] --allowed-interaction-categories-undirected: " + allowed_interaction_categories_undirected)
 
 
 ### Prepare output files
@@ -90,6 +98,10 @@ allowed_strand_pair_tags = str(allowed_strand_pair_tags).split(";")
 #print(allowed_strand_pair_tags)
 allowed_enrichment_pair_tags = str(allowed_enrichment_pair_tags).split(";")
 #print(allowed_enrichment_pair_tags)
+allowed_interaction_categories_directed = str(allowed_interaction_categories_directed).split(";")
+print(allowed_interaction_categories_directed)
+allowed_interaction_categories_undirected = str(allowed_interaction_categories_undirected).split(";")
+print(allowed_interaction_categories_undirected)
 
 # create two BED files for regions of directed interactions
 file_name_directed_digests = out_prefix + "_directed_digests.bed"
@@ -169,7 +181,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
         # get category of interacting digest
         interaction_category = field[2]
 
-        if interaction_category == "S" or interaction_category == "T":
+        if interaction_category in allowed_interaction_categories_directed:
 
             # get TSS associated with interacting digests
             tss_d1 = field[8].split(";")[0].split(",")
@@ -212,7 +224,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             directed_digests_output_bed.write(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\n")
             directed_digests_output_bed.write(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\n")
 
-        elif interaction_category == "URAA":
+        elif interaction_category in allowed_interaction_categories_undirected:
 
             # get TSS associated with the first interacting digest
             tss_d1 = field[8].split(";")[0].split(",")
