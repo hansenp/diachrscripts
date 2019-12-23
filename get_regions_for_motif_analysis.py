@@ -366,7 +366,7 @@ undirected_minus_tss_output_bed.close()
 undirected_plus_tss_output_bed.close()
 
 ### Create FASTA files
-######################
+#####################
 
 file_name_directed_digests_base = str(file_name_directed_digests).split(".b")[0]
 sys_cmd = 'bedtools getfasta -name -fi /Users/hansep/data/hg38/hg38.fa -bed  ' + file_name_directed_digests + ' > ' +  file_name_directed_digests_base + '.fasta'
