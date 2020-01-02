@@ -42,9 +42,12 @@ gzip the test file and use this file as input for this script.
 Digest and promoter will be extracted only for the first two lines (directed interactions) and the third line (undirected reference interaction).
 
 The BED files with digest regions are used for motif discovery using DREME.
-The BED files with promoter regions are used the analysis of motif occurrences relative to TSS using Centrimo.
+The BED files with promoter regions are used the analysis of motif occurrences relative to TSS using CentriMo.
 
 We use 'bedtools getfasta' for sequence extraction and gsub for repeat masking.
+
+We use 'gsub(/a|c|g|t/,"N",$1)' for repeat masking.
+
 """
 
 import argparse
@@ -65,11 +68,9 @@ parser.add_argument('--allowed-enrichment-pair-tags', help='Set of allowed enric
 parser.add_argument('--allowed-strand-pair-tags', help='Set of allowed strand pair tags for digests (\'-/-\', \'+/+\', \'+/-\',\'-/+\',\'-/d\', ...) separated by \';\'.', default="-/-;+/+")
 parser.add_argument('--allowed-interaction-categories-directed', help='Set categories of directed interactions (\'S\' and \'T\') separated by \';\'.', default="S;T")
 parser.add_argument('--allowed-interaction-categories-undirected', help='Set categories of directed interactions (\'NA\', \'U\', \'URAA\', \'URAI\' and \'URII\') separated by \';\'.', default="URAA")
-parser.add_argument('--max-num-of-tss-per-digest', help='Use interactions for which both digests have at most this number of TSS only.', default=1)
+parser.add_argument('--max-num-of-tss-per-digest', help='Use interactions for which both digests have at most this number of TSS only.', default=-1)
 parser.add_argument('--bedtools-path', help='Path to bedtools executable.', default="bedtools")
 parser.add_argument('--genome-fasta-path', help='Path to genome FASTA file.', default="/Users/hansep/data/hg38/hg38.fa")
-
-
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -81,7 +82,6 @@ allowed_enrichment_pair_tags = args.allowed_enrichment_pair_tags # only interact
 allowed_strand_pair_tags = args.allowed_strand_pair_tags # only interactions with these strand pair tags will be used
 allowed_interaction_categories_directed = args.allowed_interaction_categories_directed # only directed interactions with these categories will be used
 allowed_interaction_categories_undirected = args.allowed_interaction_categories_undirected # only undirected with these categories will be used
-max_num_of_tss_per_digest = int(args.max_num_of_tss_per_digest) # only TSS from digests with at most this number of TSS will be used for Centrimo analysis
 bedtools_path = args.bedtools_path
 genome_fasta_path = args.genome_fasta_path
 
@@ -95,7 +95,6 @@ print("\t[INFO] --enrichment-strand-pair-tags: " + allowed_enrichment_pair_tags)
 print("\t[INFO] --allowed-strand-pair-tags: " + allowed_strand_pair_tags)
 print("\t[INFO] --allowed-interaction-categories-directed: " + allowed_interaction_categories_directed)
 print("\t[INFO] --allowed-interaction-categories-undirected: " + allowed_interaction_categories_undirected)
-print("\t[INFO] --max-num-of-tss-per-digest: " + str(max_num_of_tss_per_digest))
 print("\t[INFO] --bedtools-path: " + bedtools_path)
 print("\t[INFO] --genome-fasta-path: " + genome_fasta_path)
 
@@ -107,37 +106,29 @@ print("\t[INFO] --genome-fasta-path: " + genome_fasta_path)
 allowed_strand_pair_tags = allowed_strand_pair_tags.split(";")
 print(allowed_strand_pair_tags)
 allowed_enrichment_pair_tags = str(allowed_enrichment_pair_tags).split(";")
-#print(allowed_enrichment_pair_tags)
+print(allowed_enrichment_pair_tags)
 allowed_interaction_categories_directed = str(allowed_interaction_categories_directed).split(";")
 print(allowed_interaction_categories_directed)
 allowed_interaction_categories_undirected = str(allowed_interaction_categories_undirected).split(";")
 print(allowed_interaction_categories_undirected)
 
-# create two BED files for regions of directed interactions
+# create two BED files for regions of directed and undirected interactions
 file_name_directed_digests = out_prefix + "_directed_digests.bed"
 directed_digests_output_bed = open(file_name_directed_digests, 'wt')
 file_name_undirected_digests = out_prefix + "_undirected_digests.bed"
 undirected_digests_output_bed = open(file_name_undirected_digests, 'wt')
 
 # create two BED files for promoters on digests of directed iteractions, one for TSS on the plus and another one for TSS on the minus strand
-file_name_directed_minus_tss = out_prefix + "_directed_minus_tss_singleton_digests.bed"
+file_name_directed_minus_tss = out_prefix + "_directed_minus_tss.bed"
 directed_minus_tss_output_bed = open(file_name_directed_minus_tss, 'wt')
-file_name_directed_plus_tss = out_prefix + "_directed_plus_tss_singleton_digests.bed"
+file_name_directed_plus_tss = out_prefix + "_directed_plus_tss.bed"
 directed_plus_tss_output_bed = open(file_name_directed_plus_tss, 'wt')
 
 # create two BED files for promoters on digests of undirected iteractions, one for TSS on the plus and another one for TSS on the minus strand
-file_name_undirected_minus_tss = out_prefix + "_undirected_minus_tss_singleton_digests.bed"
+file_name_undirected_minus_tss = out_prefix + "_undirected_minus_tss.bed"
 undirected_minus_tss_output_bed = open(file_name_undirected_minus_tss, 'wt')
-file_name_undirected_plus_tss = out_prefix + "_undirected_plus_tss_singleton_digests.bed"
+file_name_undirected_plus_tss = out_prefix + "_undirected_plus_tss.bed"
 undirected_plus_tss_output_bed = open(file_name_undirected_plus_tss, 'wt')
-
-# create two BED files for promoters on digests of directed iteractions for motif analysis (needs to merged subsequently)
-file_name_directed_tss = out_prefix + "_directed_tss_to_be_merged.bed"
-directed_tss_output_bed = open(file_name_directed_tss, 'wt')
-
-# create two BED files for promoters on digests of undirected iteractions for motif analysis (needs to merged subsequently)
-file_name_undirected_tss = out_prefix + "_undirected_tss_to_be_merged.bed"
-undirected_tss_output_bed = open(file_name_undirected_tss, 'wt')
 
 
 ### Prepare variables and data structures
@@ -157,9 +148,9 @@ directed_plus_tss = set()
 undirected_minus_tss = set()
 undirected_plus_tss = set()
 
-directed_digets = []
-directed_digets_num = 0
-undirected_digets = []
+directed_digests = []
+directed_digests_num = 0
+undirected_digests = []
 
 cnt_first_digest_without_tss = 0
 cnt_second_digest_without_tss = 0
@@ -167,6 +158,7 @@ cnt_second_digest_without_tss = 0
 
 ### Iterate interaction file with gene symbols
 ##############################################
+
 cnt=0
 print("[INFO] Iterating interaction file with gene symbols " + interaction_gs_file + " ...")
 with gzip.open(interaction_gs_file, 'rt') as fp:
@@ -184,25 +176,23 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
 
         field = line.split("\t")
 
-        if field[5] not in allowed_enrichment_pair_tags: # use only interactions with specified digest enrichment pair tags
+        if field[5] not in allowed_enrichment_pair_tags: # use only interactions with specified digest enrichment pair tags (II, AI, AA)
             line = fp.readline()
             continue
 
-        if field[7] not in allowed_strand_pair_tags and 'All' not in allowed_strand_pair_tags: # use only interactions with specified digest strand pair tags
+        if field[7] not in allowed_strand_pair_tags and 'All' not in allowed_strand_pair_tags: # use only interactions with specified digest strand pair tags (-/-, +/+, -/+, +/-, -/d, ...) or 'All'
             line = fp.readline()
             continue
 
         if field[8].split(";")[0] == '':
             print("Warning: No TSS for first digest!")
             cnt_first_digest_without_tss += 1
-            print(line)
             line = fp.readline()
             continue
 
         if field[8].split(";")[1] == '':
             print("Warning: No TSS for second digest!")
             cnt_second_digest_without_tss += 1
-            print(line)
             line = fp.readline()
             continue
 
@@ -220,14 +210,24 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
         syms_a = syms[0]
         syms_b = syms[1]
 
-        #print(line)
         base_name = field[0] + "|" + field[1] + "|" + field[2] + "|" + field[3] + "|" + field[4]+ "|" + field[5] + "|" + field[6] + "|" + field[7]
-        #print(base_name)
 
         # get category of interacting digest
         interaction_category = field[2]
 
-        # get TSS associated with interacting digests
+        # add digest regions to array for directed interactions
+        if interaction_category in allowed_interaction_categories_directed:
+            directed_digests.append(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\tD1|" + str(cnt) + "\n")
+            directed_digests.append(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\tD2|" + str(cnt) + "\n")
+            cnt += 1
+
+        # add digest regions to array for undirected interactions
+        if interaction_category in allowed_interaction_categories_undirected:
+            undirected_digests.append(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\tD1|" + str(cnt) + "\n")
+            undirected_digests.append(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\tD2|" + str(cnt) + "\n")
+            cnt += 1
+
+        # get TSS associated with the first interacting digest
         tss_d1 = field[8].split(";")[0].split(",")
         tss_d1_num = len(tss_d1)
 
@@ -247,7 +247,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                 elif strand == "+":
                     directed_plus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\tD1|" + str(tss_d1_num) + "|" + base_name)
                 else:
-                    print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!")
+                    print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!") # should never happen
 
             if interaction_category in allowed_interaction_categories_undirected:
                 if strand == "-":
@@ -255,11 +255,11 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                 elif strand == "+":
                     undirected_plus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\tD1|" + str(tss_d1_num) + "|" + base_name)
                 else:
-                    print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!")
+                    print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!") # should never happen
 
+        # get TSS associated with the second interacting digest
         tss_d2 = field[8].split(";")[1].split(",")
         tss_d2_num = len(tss_d2)
-
 
         for tss in tss_d2:
             chromosome = tss.split(":")[0]
@@ -277,7 +277,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                 elif strand == "+":
                     directed_plus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\tD2|" + str(tss_d2_num) + "|" + base_name)
                 else:
-                    print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!")
+                    print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!") # should never happen
 
             if interaction_category in allowed_interaction_categories_undirected:
                 if strand == "-":
@@ -285,118 +285,79 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                 elif strand == "+":
                     undirected_plus_tss.add(chromosome + "\t" + str(sta) + "\t" + str(end) + "\tD2|" + str(tss_d2_num) + "|" + base_name)
                 else:
-                    print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!")
-
-        # print digest regions to BED file for directed interactions
-        if interaction_category in allowed_interaction_categories_directed:
-            #directed_digests_output_bed.write(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\tD1|" + str(cnt) + "|" + base_name + "\n")
-            #directed_digests_output_bed.write(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\tD2|" + str(cnt) + "|" + base_name + "\n")
-            directed_digets.append(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\tD1|" + str(cnt) + "\n")
-            directed_digets.append(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\tD2|" + str(cnt) + "\n")
-            cnt += 1
-        if interaction_category in allowed_interaction_categories_undirected:
-            #undirected_digests_output_bed.write(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\tD1|" + str(cnt) + "|" + base_name + "\n")
-            #undirected_digests_output_bed.write(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\tD2|" + str(cnt) + "|" + base_name + "\n")
-            undirected_digets.append(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\tD1|" + str(cnt) + "\n")
-            undirected_digets.append(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\tD2|" + str(cnt) + "\n")
-            cnt += 1
+                    print("Warning: Strand symbol of TSS was neither \'-\' not \'+\'!") # should never happen
 
         line = fp.readline()
 
+# report interactions with no TSS on one or both digests (may happen because of imperfect enrichment annotation)
 if 0 < cnt_first_digest_without_tss:
     print("WARNING: There were " + str(cnt_first_digest_without_tss) + " interactions without TSS on the first digest!")
 if 0 < cnt_second_digest_without_tss:
     print("WARNING: There were " + str(cnt_second_digest_without_tss) + " interactions without TSS on the second digest!")
 
-### Write promoter sets to file
-###############################
+
+### write BED files for DREME analysis
+#########################################
 
 # write BED file with digest regions for motif analysis of directed interactions
-directed_digets_num = 0
-for digest in directed_digets:
+directed_digests_num = 0
+for digest in directed_digests:
     directed_digests_output_bed.write(digest)
-    directed_digets_num += 1
-cnt = 0
-for digest in undirected_digets:
-    if cnt <= directed_digets_num:
+    directed_digests_num += 1
+undirected_digests_num = 0
+for digest in undirected_digests:
+    if undirected_digests_num <= directed_digests_num:
         undirected_digests_output_bed.write(digest)
-        cnt += 1
+        undirected_digests_num += 1
 
-# write BED file with promoter regions for motif analysis of directed interactions
+
+### write BED files for CentriMo analysis
+#########################################
+
 total_number_of_directed_promoters_minus = 0
 for promoter in directed_minus_tss:
-    directed_tss_output_bed.write(promoter + "|" + str(total_number_of_directed_promoters_minus) + "\n")
+    field = promoter.split("\t")
+    directed_minus_tss_output_bed.write(promoter + "|" + str(total_number_of_directed_promoters_minus) + "\n")
     total_number_of_directed_promoters_minus += 1
 total_number_of_directed_promoters_plus = 0
 for promoter in directed_plus_tss:
-    directed_tss_output_bed.write(promoter + "|" + str(total_number_of_directed_promoters_plus) + "\n")
+    field = promoter.split("\t")
+    directed_plus_tss_output_bed.write(promoter + "|" + str(total_number_of_directed_promoters_plus) + "\n")
     total_number_of_directed_promoters_plus += 1
 
-# write BED file with promoter regions for motif analysis of undirected interactions
-cnt = 0
-for promoter in undirected_minus_tss:
-    undirected_tss_output_bed.write(promoter + "|" + str(cnt) + "\n")
-    cnt += 1
-    if total_number_of_directed_promoters_minus <= cnt:
-        break
-cnt = 0
-for promoter in undirected_plus_tss:
-    undirected_tss_output_bed.write(promoter + "|" + str(cnt) + "\n")
-    cnt += 1
-    if total_number_of_directed_promoters_plus <= cnt:
-        break
-
-# write BED files for Centrimo analysis of directed interactions
-total_number_of_directed_promoters_minus = 0
-for promoter in directed_minus_tss:
-    field = promoter.split("\t")
-    if 0 < field[3].count("D1|1") or field[3].count("D2|1"):
-        directed_minus_tss_output_bed.write(promoter + "|" + str(total_number_of_directed_promoters_minus) + "\n")
-        total_number_of_directed_promoters_minus += 1
-cnt_plus = 0
-for promoter in directed_plus_tss:
-    field = promoter.split("\t")
-    if 0 < field[3].count("D1|1") or field[3].count("D2|1"):
-        directed_plus_tss_output_bed.write(promoter + "|" + str(cnt) + "\n")
-        cnt_plus += 1
-total_number_of_directed_promoters_plus = cnt_plus
-
-# write BED files for Centrimo analysis of undirected interactions
-cnt = 0
+total_number_of_undirected_promoters_minus = 0
 for promoter in undirected_minus_tss:
     field = promoter.split("\t")
-    if 0 < field[3].count("D1|1") or field[3].count("D2|1"):
-        undirected_minus_tss_output_bed.write(promoter + "|" + str(cnt) + "\n")
-        cnt += 1
-    if total_number_of_directed_promoters_minus <= cnt:
+    undirected_minus_tss_output_bed.write(promoter + "|" + str(total_number_of_undirected_promoters_minus) + "\n")
+    total_number_of_undirected_promoters_minus += 1
+    if total_number_of_directed_promoters_minus <= total_number_of_undirected_promoters_minus:
         break
-cnt = 0
+total_number_of_undirected_promoters_plus = 0
 for promoter in undirected_plus_tss:
     field = promoter.split("\t")
-    if 0 < field[3].count("D1|1") or field[3].count("D2|1"):
-        undirected_plus_tss_output_bed.write(promoter + "|" + str(cnt) + "\n")
-        cnt += 1
-    if total_number_of_directed_promoters_plus <= cnt:
+    undirected_plus_tss_output_bed.write(promoter + "|" + str(total_number_of_undirected_promoters_plus) + "\n")
+    total_number_of_undirected_promoters_plus += 1
+    if total_number_of_directed_promoters_plus <= total_number_of_undirected_promoters_plus:
         break
+
 
 ### Close output BED files
 ##########################
 
-directed_digests_output_bed.close() # for motif discovery
-undirected_digests_output_bed.close() # for motif discovery
+directed_digests_output_bed.close() # for motif discovery with DREME
+undirected_digests_output_bed.close() # for motif discovery with DREME
 
-directed_tss_output_bed.close() # for motif discovery, needs to be merged
-directed_tss_output_bed.close() # for motif discovery, needs to be merged
+directed_minus_tss_output_bed.close() # for motif enrichment analysis with CentriMo
+directed_plus_tss_output_bed.close() # for motif enrichment analysis with CentriMo
 
-directed_minus_tss_output_bed.close()
-directed_plus_tss_output_bed.close()
+undirected_minus_tss_output_bed.close() # for motif enrichment analysis with CentriMo
+undirected_plus_tss_output_bed.close() # for motif enrichment analysis with CentriMo
 
-undirected_minus_tss_output_bed.close()
-undirected_plus_tss_output_bed.close()
 
 ### Create FASTA files
 ######################
 
+# get FASTA files with digest sequences of directed interactions
 file_name_directed_digests_base = str(file_name_directed_digests).split(".b")[0]
 sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_directed_digests + ' > ' +  file_name_directed_digests_base + '.fasta'
 print(sys_cmd)
@@ -405,6 +366,7 @@ sys_cmd = 'awk \'{if($1 !~ /^>/){gsub(/a|c|g|t/,"N",$1)};print}\' ' + file_name_
 print(sys_cmd)
 os.system(sys_cmd)
 
+# get FASTA files with digest sequences of undirected interactions
 file_name_undirected_digests_base = str(file_name_undirected_digests).split(".b")[0]
 sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_undirected_digests + ' > ' +  file_name_undirected_digests_base + '.fasta'
 print(sys_cmd)
@@ -413,12 +375,26 @@ sys_cmd = 'awk \'{if($1 !~ /^>/){gsub(/a|c|g|t/,"N",$1)};print}\' ' + file_name_
 print(sys_cmd)
 os.system(sys_cmd)
 
+# get FASTA files with sequences around TSS on '+' strand that are associated with directed interactions
 file_name_directed_digests_base = str(file_name_directed_plus_tss).split(".b")[0]
 sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_directed_plus_tss + ' > ' + file_name_directed_digests_base + '.fasta'
 print(sys_cmd)
 os.system(sys_cmd)
 
+# get FASTA files with sequences around TSS on '+' strand that are associated with undirected interactions
 file_name_undirected_digests_base = str(file_name_undirected_plus_tss).split(".b")[0]
 sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_undirected_plus_tss + ' > ' + file_name_undirected_digests_base + '.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+
+# get FASTA files with sequences around TSS on '-' strand that are associated with directed interactions
+file_name_directed_digests_base = str(file_name_directed_minus_tss).split(".b")[0]
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_directed_minus_tss + ' > ' + file_name_directed_digests_base + '.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+
+# get FASTA files with sequences around TSS on '-' strand that are associated with undirected interactions
+file_name_undirected_digests_base = str(file_name_undirected_minus_tss).split(".b")[0]
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_undirected_minus_tss + ' > ' + file_name_undirected_digests_base + '.fasta'
 print(sys_cmd)
 os.system(sys_cmd)
