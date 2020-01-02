@@ -153,6 +153,8 @@ directed_digets = []
 directed_digets_num = 0
 undirected_digets = []
 
+cnt_first_digest_without_tss = 0
+cnt_second_digest_without_tss = 0
 
 
 ### Iterate interaction file with gene symbols
@@ -178,7 +180,19 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             line = fp.readline()
             continue
 
-        if field[7] not in allowed_strand_pair_tags: # use only interactions with specified digest strand pair tags
+        if field[7] not in allowed_strand_pair_tags and 'All' not in allowed_strand_pair_tags: # use only interactions with specified digest strand pair tags
+            line = fp.readline()
+            continue
+
+        if field[8].split(";")[0] == '':
+            print("Warning: No TSS for first digest!")
+            cnt_first_digest_without_tss += 1
+            line = fp.readline()
+            continue
+
+        if field[8].split(";")[1] == '':
+            print("Warning: No TSS for second digest!")
+            cnt_second_digest_without_tss += 1
             line = fp.readline()
             continue
 
@@ -236,6 +250,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
         tss_d2 = field[8].split(";")[1].split(",")
         tss_d2_num = len(tss_d2)
 
+
         for tss in tss_d2:
             chromosome = tss.split(":")[0]
             sta = int(tss.split(":")[1]) - up_dist
@@ -278,6 +293,10 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
 
         line = fp.readline()
 
+if 0 < cnt_first_digest_without_tss:
+    print("WARNING: There were " + str(cnt_first_digest_without_tss) + " interactions without TSS on the first digest!")
+if 0 < cnt_second_digest_without_tss:
+    print("WARNING: There were " + str(cnt_second_digest_without_tss) + " interactions without TSS on the second digest!")
 
 ### Write promoter sets to file
 ###############################
@@ -366,7 +385,7 @@ undirected_minus_tss_output_bed.close()
 undirected_plus_tss_output_bed.close()
 
 ### Create FASTA files
-#####################
+######################
 
 file_name_directed_digests_base = str(file_name_directed_digests).split(".b")[0]
 sys_cmd = 'bedtools getfasta -name -fi /Users/hansep/data/hg38/hg38.fa -bed  ' + file_name_directed_digests + ' > ' +  file_name_directed_digests_base + '.fasta'
