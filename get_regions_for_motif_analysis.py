@@ -66,6 +66,10 @@ parser.add_argument('--allowed-strand-pair-tags', help='Set of allowed strand pa
 parser.add_argument('--allowed-interaction-categories-directed', help='Set categories of directed interactions (\'S\' and \'T\') separated by \';\'.', default="S;T")
 parser.add_argument('--allowed-interaction-categories-undirected', help='Set categories of directed interactions (\'NA\', \'U\', \'URAA\', \'URAI\' and \'URII\') separated by \';\'.', default="URAA")
 parser.add_argument('--max-num-of-tss-per-digest', help='Use interactions for which both digests have at most this number of TSS only.', default=1)
+parser.add_argument('--bedtools-path', help='Path to bedtools executable.', default="bedtools")
+parser.add_argument('--genome-fasta-path', help='Path to genome FASTA file.', default="/Users/hansep/data/hg38/hg38.fa")
+
+
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -78,6 +82,8 @@ allowed_strand_pair_tags = args.allowed_strand_pair_tags # only interactions wit
 allowed_interaction_categories_directed = args.allowed_interaction_categories_directed # only directed interactions with these categories will be used
 allowed_interaction_categories_undirected = args.allowed_interaction_categories_undirected # only undirected with these categories will be used
 max_num_of_tss_per_digest = int(args.max_num_of_tss_per_digest) # only TSS from digests with at most this number of TSS will be used for Centrimo analysis
+bedtools_path = args.bedtools_path
+genome_fasta_path = args.genome_fasta_path
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] Analysis for: " + out_prefix)
@@ -90,6 +96,8 @@ print("\t[INFO] --allowed-strand-pair-tags: " + allowed_strand_pair_tags)
 print("\t[INFO] --allowed-interaction-categories-directed: " + allowed_interaction_categories_directed)
 print("\t[INFO] --allowed-interaction-categories-undirected: " + allowed_interaction_categories_undirected)
 print("\t[INFO] --max-num-of-tss-per-digest: " + str(max_num_of_tss_per_digest))
+print("\t[INFO] --bedtools-path: " + bedtools_path)
+print("\t[INFO] --genome-fasta-path: " + genome_fasta_path)
 
 
 ### Prepare output files
@@ -187,12 +195,14 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
         if field[8].split(";")[0] == '':
             print("Warning: No TSS for first digest!")
             cnt_first_digest_without_tss += 1
+            print(line)
             line = fp.readline()
             continue
 
         if field[8].split(";")[1] == '':
             print("Warning: No TSS for second digest!")
             cnt_second_digest_without_tss += 1
+            print(line)
             line = fp.readline()
             continue
 
@@ -388,7 +398,7 @@ undirected_plus_tss_output_bed.close()
 ######################
 
 file_name_directed_digests_base = str(file_name_directed_digests).split(".b")[0]
-sys_cmd = 'bedtools getfasta -name -fi /Users/hansep/data/hg38/hg38.fa -bed  ' + file_name_directed_digests + ' > ' +  file_name_directed_digests_base + '.fasta'
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_directed_digests + ' > ' +  file_name_directed_digests_base + '.fasta'
 print(sys_cmd)
 os.system(sys_cmd)
 sys_cmd = 'awk \'{if($1 !~ /^>/){gsub(/a|c|g|t/,"N",$1)};print}\' ' + file_name_directed_digests_base + '.fasta' + ' > ' + file_name_directed_digests_base + '_masked.fasta'
@@ -396,7 +406,7 @@ print(sys_cmd)
 os.system(sys_cmd)
 
 file_name_undirected_digests_base = str(file_name_undirected_digests).split(".b")[0]
-sys_cmd = 'bedtools getfasta -name -fi /Users/hansep/data/hg38/hg38.fa -bed  ' + file_name_undirected_digests + ' > ' +  file_name_undirected_digests_base + '.fasta'
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_undirected_digests + ' > ' +  file_name_undirected_digests_base + '.fasta'
 print(sys_cmd)
 os.system(sys_cmd)
 sys_cmd = 'awk \'{if($1 !~ /^>/){gsub(/a|c|g|t/,"N",$1)};print}\' ' + file_name_undirected_digests_base + '.fasta' + ' > ' + file_name_undirected_digests_base + '_masked.fasta'
@@ -404,11 +414,11 @@ print(sys_cmd)
 os.system(sys_cmd)
 
 file_name_directed_digests_base = str(file_name_directed_plus_tss).split(".b")[0]
-sys_cmd = 'bedtools getfasta -name -fi /Users/hansep/data/hg38/hg38.fa -bed  ' + file_name_directed_plus_tss + ' > ' + file_name_directed_digests_base + '.fasta'
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_directed_plus_tss + ' > ' + file_name_directed_digests_base + '.fasta'
 print(sys_cmd)
 os.system(sys_cmd)
 
 file_name_undirected_digests_base = str(file_name_undirected_plus_tss).split(".b")[0]
-sys_cmd = 'bedtools getfasta -name -fi /Users/hansep/data/hg38/hg38.fa -bed  ' + file_name_undirected_plus_tss + ' > ' + file_name_undirected_digests_base + '.fasta'
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_undirected_plus_tss + ' > ' + file_name_undirected_digests_base + '.fasta'
 print(sys_cmd)
 os.system(sys_cmd)

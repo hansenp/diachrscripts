@@ -46,7 +46,7 @@ def get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map):
     gene_strands_d1 = []
     tss_list_d1 = []
     d1 = interaction.get_first_digest()
-    for i in range(d1.get_start(), d1.get_end()):  # iterate digest from left to right
+    for i in range(d1.get_start(), d1.get_end() + 1):  # iterate digest from left to right
         key = d1.get_chromosome() + ":" + str(i)
         if ref_gene_tss_map.get_coord_symbols(key) == -1:  # no TSS at this position
             continue
@@ -59,7 +59,7 @@ def get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map):
     gene_strands_d2 = []
     tss_list_d2 = []
     d2 = interaction.get_second_digest()
-    for i in range(d2.get_start(), d2.get_end()):  # iterate digest from left to right
+    for i in range(d2.get_start(), d2.get_end() + 1):  # iterate digest from left to right
         key = d2.get_chromosome() + ":" + str(i)
         if ref_gene_tss_map.get_coord_symbols(key) == -1:  # no TSS at this position
             continue
