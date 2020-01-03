@@ -118,6 +118,14 @@ directed_digests_output_bed = open(file_name_directed_digests, 'wt')
 file_name_undirected_digests = out_prefix + "_undirected_digests.bed"
 undirected_digests_output_bed = open(file_name_undirected_digests, 'wt')
 
+# create three BED files for regions of segmented directed and undirected interactions
+file_name_directed_digests_exc = out_prefix + "_directed_digests_exc.bed"
+directed_digests_output_bed_exc = open(file_name_directed_digests_exc, 'wt')
+file_name_undirected_digests_exc = out_prefix + "_undirected_digests_exc.bed"
+undirected_digests_output_bed_exc = open(file_name_undirected_digests_exc, 'wt')
+file_name_directed_undirected_digests_inter = out_prefix + "_directed_undirected_digests_inter.bed"
+directed_undirected_digests_inter = open(file_name_directed_undirected_digests_inter, 'wt')
+
 # create two BED files for promoters on digests of directed iteractions, one for TSS on the plus and another one for TSS on the minus strand
 file_name_directed_minus_tss = out_prefix + "_directed_minus_tss.bed"
 directed_minus_tss_output_bed = open(file_name_directed_minus_tss, 'wt')
@@ -154,6 +162,12 @@ undirected_digests = []
 
 cnt_first_digest_without_tss = 0
 cnt_second_digest_without_tss = 0
+
+directed_digests_set = set() # digest coordinates
+undirected_digests_set = set() # digest coordinates
+
+directed_interaction_num = 0
+undirected_interaction_num = 0
 
 
 ### Iterate interaction file with gene symbols
@@ -220,12 +234,18 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             directed_digests.append(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\tD1|" + str(cnt) + "\n")
             directed_digests.append(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\tD2|" + str(cnt) + "\n")
             cnt += 1
+            directed_digests_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+            directed_digests_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
+            directed_interaction_num += 1
 
         # add digest regions to array for undirected interactions
         if interaction_category in allowed_interaction_categories_undirected:
             undirected_digests.append(chr_a + "\t" + str(sta_a) + "\t" + str(end_a) + "\tD1|" + str(cnt) + "\n")
             undirected_digests.append(chr_b + "\t" + str(sta_b) + "\t" + str(end_b) + "\tD2|" + str(cnt) + "\n")
             cnt += 1
+            undirected_digests_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+            undirected_digests_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
+            undirected_interaction_num += 1
 
         # get TSS associated with the first interacting digest
         tss_d1 = field[8].split(";")[0].split(",")
@@ -295,9 +315,407 @@ if 0 <= cnt_first_digest_without_tss:
 if 0 <= cnt_second_digest_without_tss:
     print("WARNING: There were " + str(cnt_second_digest_without_tss) + " interactions without TSS on the second digest!")
 
+fp.close()
 
-### write BED files for DREME analysis
-#########################################
+
+### Segment digests
+###################
+
+directed_wo_undirected_digests_set = directed_digests_set.difference(undirected_digests_set)
+undirected_wo_directed_digests_set = undirected_digests_set.difference(directed_digests_set)
+directed_intersect_undirected_digests_set = directed_digests_set.intersection(undirected_digests_set)
+directed_union_directed_digests_set = directed_digests_set.union(undirected_digests_set)
+
+print("")
+print("Digest set statistics")
+print("=====================")
+print("Number of directed interactions: " + str(directed_interaction_num))
+print("Number of undirected interactions: " + str(undirected_interaction_num))
+print("Number of all unique directed digests: " + str(len(directed_digests_set)))
+print("Number of all unique undirected digests: " + str(len(undirected_digests_set)))
+print("Number of directed digests that are not undirected: " + str(len(directed_wo_undirected_digests_set)))
+print("Number of undirected digests that are not directed: " + str(len(undirected_wo_directed_digests_set)))
+print("Number of intersecting digests: " + str(len(directed_intersect_undirected_digests_set)))
+print("Size of the union of directed and undirected digests: " + str(len(directed_union_directed_digests_set)))
+
+connectivity_factor_directed = 1-len(directed_digests_set)/(directed_interaction_num*2) # zero, if no digest belongs to more than one interaction
+print("Connectivity factor of directed digests: " + str("{:.2f}".format(connectivity_factor_directed)))
+
+connectivity_factor_undirected = 1-len(undirected_digests_set)/(undirected_interaction_num*2)
+print("Connectivity factor of undirected digests: " + str("{:.2f}".format(connectivity_factor_undirected)))
+
+# Jaccard index
+jaccard_index = len(directed_intersect_undirected_digests_set) / len(directed_union_directed_digests_set)
+print("Jaccard index: " + str("{:.2f}".format(jaccard_index)))
+
+# Szymkiewicz–Simpson coefficient
+szymkiewicz_Simpson_coefficient = len(directed_intersect_undirected_digests_set) / (min(len(directed_digests_set), len(undirected_digests_set)))
+print("Szymkiewicz–Simpson coefficient: " + str("{:.2f}".format(szymkiewicz_Simpson_coefficient)))
+
+# determine average digest length
+total_digest_length =0
+for digest in directed_wo_undirected_digests_set:
+    A = digest.split("\t")
+    total_digest_length = total_digest_length + (int(A[2])-int(A[1]))
+print("Average length of directed digests: " + str(int(total_digest_length/len(directed_wo_undirected_digests_set))) + " bp")
+
+total_digest_length =0
+for digest in undirected_wo_directed_digests_set:
+    A = digest.split("\t")
+    total_digest_length = total_digest_length + (int(A[2])-int(A[1]))
+print("Average length of undirected digests: " + str(int(total_digest_length/len(undirected_wo_directed_digests_set))) + " bp")
+
+total_digest_length =0
+for digest in directed_intersect_undirected_digests_set:
+    A = digest.split("\t")
+    total_digest_length = total_digest_length + (int(A[2])-int(A[1]))
+print("Average length of digests in intersect of directed and undirected digests: " + str(int(total_digest_length/len(directed_intersect_undirected_digests_set))) + " bp")
+
+print("")
+
+### write BED files with digest coordinates for DREME analysis
+##############################################################
+
+cnt = 1
+for digest in directed_wo_undirected_digests_set:
+    directed_digests_output_bed_exc.write(digest + "\t" + str(cnt) + "\n")
+    cnt += 1
+
+cnt = 1
+for digest in undirected_wo_directed_digests_set:
+    undirected_digests_output_bed_exc.write(digest + "\t" + str(cnt) + "\n")
+    cnt += 1
+
+directed_digests_output_bed_exc.close()
+undirected_digests_output_bed_exc.close()
+directed_undirected_digests_inter.close()
+
+### Create FASTA files
+######################
+
+# get FASTA files with digest sequences of directed interactions
+file_name_directed_digests_exc_base = str(file_name_directed_digests_exc).split(".b")[0]
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_directed_digests_exc + ' > ' +  file_name_directed_digests_exc_base + '.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+sys_cmd = 'awk \'{if($1 !~ /^>/){gsub(/a|c|g|t/,"N",$1)};print}\' ' + file_name_directed_digests_exc_base + '.fasta' + ' > ' + file_name_directed_digests_exc_base + '_masked.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+
+# get FASTA files with digest sequences of undirected interactions
+file_name_undirected_digests_exc_base = str(file_name_undirected_digests_exc).split(".b")[0]
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_undirected_digests_exc + ' > ' +  file_name_undirected_digests_exc_base + '.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+sys_cmd = 'awk \'{if($1 !~ /^>/){gsub(/a|c|g|t/,"N",$1)};print}\' ' + file_name_undirected_digests_exc_base + '.fasta' + ' > ' + file_name_undirected_digests_exc_base + '_masked.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+
+
+print("")
+print("Digest sequence statistics")
+print("==========================")
+print("")
+print("GC content of directed digests before repeat masking:")
+a_occ_total = 0
+c_occ_total = 0
+g_occ_total = 0
+t_occ_total = 0
+with open(file_name_directed_digests_exc_base + '.fasta', 'rt') as fp:
+    line = fp.readline()
+    while line:
+        if line.count('>') == 0:
+            line = line.rstrip().upper()
+            a_occ_total = a_occ_total + line.count('A')
+            c_occ_total = c_occ_total + line.count('C')
+            g_occ_total = g_occ_total + line.count('G')
+            t_occ_total = t_occ_total + line.count('T')
+        line = fp.readline()
+
+acgt_occ_total = a_occ_total + c_occ_total + g_occ_total + t_occ_total
+print("   A: " + str(a_occ_total) + " (" + str(100*round(a_occ_total / acgt_occ_total,4)) + ")")
+print("   C: " + str(c_occ_total) + " (" + str(100*round(c_occ_total / acgt_occ_total,4)) + ")")
+print("   G: " + str(g_occ_total) + " (" + str(100*round(g_occ_total / acgt_occ_total,4)) + ")")
+print("   T: " + str(t_occ_total) + " (" + str(100*round(t_occ_total / acgt_occ_total,4)) + ")")
+print("--------------------------------------------------------------------------")
+at_occ_total = a_occ_total + t_occ_total
+print("   AT: " + str(at_occ_total) + " (" + str(100*round(at_occ_total / acgt_occ_total,4)) + ")")
+gc_occ_total = g_occ_total + c_occ_total
+print("   GC: " + str(gc_occ_total) + " (" + str(100*round(gc_occ_total / acgt_occ_total,4)) + ")")
+fp.close()
+
+print("")
+print("GC content of directed digests after repeat masking:")
+a_occ_total = 0
+c_occ_total = 0
+g_occ_total = 0
+t_occ_total = 0
+with open(file_name_directed_digests_exc_base + '_masked.fasta', 'rt') as fp:
+    line = fp.readline()
+    while line:
+        if line.count('>') == 0:
+            line = line.rstrip().upper()
+            a_occ_total = a_occ_total + line.count('A')
+            c_occ_total = c_occ_total + line.count('C')
+            g_occ_total = g_occ_total + line.count('G')
+            t_occ_total = t_occ_total + line.count('T')
+        line = fp.readline()
+
+acgt_occ_total = a_occ_total + c_occ_total + g_occ_total + t_occ_total
+print("   A: " + str(a_occ_total) + " (" + str(100*round(a_occ_total / acgt_occ_total,4)) + ")")
+print("   C: " + str(c_occ_total) + " (" + str(100*round(c_occ_total / acgt_occ_total,4)) + ")")
+print("   G: " + str(g_occ_total) + " (" + str(100*round(g_occ_total / acgt_occ_total,4)) + ")")
+print("   T: " + str(t_occ_total) + " (" + str(100*round(t_occ_total / acgt_occ_total,4)) + ")")
+print("--------------------------------------------------------------------------")
+at_occ_total = a_occ_total + t_occ_total
+print("   AT: " + str(at_occ_total) + " (" + str(100*round(at_occ_total / acgt_occ_total,4)) + ")")
+gc_occ_total = g_occ_total + c_occ_total
+print("   GC: " + str(gc_occ_total) + " (" + str(100*round(gc_occ_total / acgt_occ_total,4)) + ")")
+fp.close()
+
+print("")
+print("GC content of undirected digests before repeat masking:")
+a_occ_total = 0
+c_occ_total = 0
+g_occ_total = 0
+t_occ_total = 0
+with open(file_name_undirected_digests_exc_base + '.fasta', 'rt') as fp:
+    line = fp.readline()
+    while line:
+        if line.count('>') == 0:
+            line = line.rstrip().upper()
+            a_occ_total = a_occ_total + line.count('A')
+            c_occ_total = c_occ_total + line.count('C')
+            g_occ_total = g_occ_total + line.count('G')
+            t_occ_total = t_occ_total + line.count('T')
+        line = fp.readline()
+
+acgt_occ_total = a_occ_total + c_occ_total + g_occ_total + t_occ_total
+print("   A: " + str(a_occ_total) + " (" + str(100*round(a_occ_total / acgt_occ_total,4)) + ")")
+print("   C: " + str(c_occ_total) + " (" + str(100*round(c_occ_total / acgt_occ_total,4)) + ")")
+print("   G: " + str(g_occ_total) + " (" + str(100*round(g_occ_total / acgt_occ_total,4)) + ")")
+print("   T: " + str(t_occ_total) + " (" + str(100*round(t_occ_total / acgt_occ_total,4)) + ")")
+print("--------------------------------------------------------------------------")
+at_occ_total = a_occ_total + t_occ_total
+print("   AT: " + str(at_occ_total) + " (" + str(100*round(at_occ_total / acgt_occ_total,4)) + ")")
+gc_occ_total = g_occ_total + c_occ_total
+print("   GC: " + str(gc_occ_total) + " (" + str(100*round(gc_occ_total / acgt_occ_total,4)) + ")")
+fp.close()
+
+print("")
+print("GC content of undirected digests after repeat masking:")
+a_occ_total = 0
+c_occ_total = 0
+g_occ_total = 0
+t_occ_total = 0
+with open(file_name_undirected_digests_exc_base + '_masked.fasta', 'rt') as fp:
+    line = fp.readline()
+    while line:
+        if line.count('>') == 0:
+            line = line.rstrip().upper()
+            a_occ_total = a_occ_total + line.count('A')
+            c_occ_total = c_occ_total + line.count('C')
+            g_occ_total = g_occ_total + line.count('G')
+            t_occ_total = t_occ_total + line.count('T')
+        line = fp.readline()
+
+acgt_occ_total = a_occ_total + c_occ_total + g_occ_total + t_occ_total
+print("   A: " + str(a_occ_total) + " (" + str(100*round(a_occ_total / acgt_occ_total,4)) + ")")
+print("   C: " + str(c_occ_total) + " (" + str(100*round(c_occ_total / acgt_occ_total,4)) + ")")
+print("   G: " + str(g_occ_total) + " (" + str(100*round(g_occ_total / acgt_occ_total,4)) + ")")
+print("   T: " + str(t_occ_total) + " (" + str(100*round(t_occ_total / acgt_occ_total,4)) + ")")
+print("--------------------------------------------------------------------------")
+at_occ_total = a_occ_total + t_occ_total
+print("   AT: " + str(at_occ_total) + " (" + str(100*round(at_occ_total / acgt_occ_total,4)) + ")")
+gc_occ_total = g_occ_total + c_occ_total
+print("   GC: " + str(gc_occ_total) + " (" + str(100*round(gc_occ_total / acgt_occ_total,4)) + ")")
+fp.close()
+
+print("")
+print("Repeat content of directed digests:")
+n_occ_total = 0
+acgtn_occ_total = 0
+with open(file_name_directed_digests_exc_base + '_masked.fasta', 'rt') as fp:
+    line = fp.readline()
+    while line:
+        if line.count('>') == 0:
+            line = line.rstrip()
+            n_occ_total = n_occ_total + line.count('N')
+            acgtn_occ_total = acgtn_occ_total + len(line)
+        line = fp.readline()
+
+print(100*round(n_occ_total/acgtn_occ_total,4))
+fp.close()
+print("")
+print("Repeat content of undirected digests:")
+n_occ_total = 0
+acgtn_occ_total = 0
+with open(file_name_undirected_digests_exc_base + '_masked.fasta', 'rt') as fp:
+    line = fp.readline()
+    while line:
+        if line.count('>') == 0:
+            line = line.rstrip()
+            n_occ_total = n_occ_total + line.count('N')
+            acgtn_occ_total = acgtn_occ_total + len(line)
+        line = fp.readline()
+
+print(100*round(n_occ_total/acgtn_occ_total,4))
+fp.close()
+
+### get TSS associated with digests
+###################################
+
+directed_wo_undirected_digests_tss_set = set()
+undirected_wo_directed_digests_tss_set = set()
+
+cnt=0
+print("[INFO] Iterating interaction file with gene symbols " + interaction_gs_file + " ...")
+with gzip.open(interaction_gs_file, 'rt') as fp:
+
+    n_interaction_total = 0 # counter to track progress
+    line = fp.readline()
+    cnt = 0
+    while line:
+        line = line.rstrip()
+
+        n_interaction_total += 1
+        if n_interaction_total % 100000 == 0:
+            print("\t[INFO]", n_interaction_total, "interactions processed ...")
+
+        field = line.split("\t")
+
+        if field[5] not in allowed_enrichment_pair_tags: # use only interactions with specified digest enrichment pair tags (II, AI, AA)
+            line = fp.readline()
+            continue
+
+        if field[7] not in allowed_strand_pair_tags and 'All' not in allowed_strand_pair_tags: # use only interactions with specified digest strand pair tags (-/-, +/+, -/+, +/-, -/d, ...) or 'All'
+            line = fp.readline()
+            continue
+
+        if field[8].split(";")[0] == '':
+            print("Warning: No TSS for first digest!")
+            cnt_first_digest_without_tss += 1
+            line = fp.readline()
+            continue
+
+        if field[8].split(";")[1] == '':
+            print("Warning: No TSS for second digest!")
+            cnt_second_digest_without_tss += 1
+            line = fp.readline()
+            continue
+
+        # get coordinates of interacting digests
+        coords = field[0].split(";")
+        coord_a = coords[0]
+        coord_b = coords[1]
+        chr_a = coord_a.split(":")[0]
+        chr_b = coord_b.split(":")[0]
+        sta_a = int(coord_a.split(":")[1].split("-")[0])
+        sta_b = int(coord_b.split(":")[1].split("-")[0])
+        end_a = int(coord_a.split(":")[1].split("-")[1])
+        end_b = int(coord_b.split(":")[1].split("-")[1])
+        syms = field[3].split(";")
+        syms_a = syms[0]
+        syms_b = syms[1]
+        tsss = field[8].split(";")
+        tsss_a = tsss[0]
+        tsss_b = tsss[1]
+
+        base_name = field[0] + "|" + field[1] + "|" + field[2] + "|" + field[3] + "|" + field[4]+ "|" + field[5] + "|" + field[6] + "|" + field[7]
+
+        d1_coord = str(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+        if d1_coord in directed_wo_undirected_digests_set:
+            for tss_a in tsss_a.split(','):
+                directed_wo_undirected_digests_tss_set.add(tss_a)
+        if d1_coord in undirected_wo_directed_digests_set:
+            for tss_a in tsss_a.split(','):
+                undirected_wo_directed_digests_tss_set.add(tss_a)
+
+        d2_coord = str(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
+        if d2_coord in directed_wo_undirected_digests_set:
+            for tss_b in tsss_b.split(','):
+                directed_wo_undirected_digests_tss_set.add(tss_b)
+        if d2_coord in undirected_wo_directed_digests_set:
+            for tss_b in tsss_b.split(','):
+                undirected_wo_directed_digests_tss_set.add(tss_b)
+
+        line = fp.readline()
+
+cnt_minus = 1
+cnt_plus = 1
+for tss in directed_wo_undirected_digests_tss_set:
+    A = tss.split(':')
+    chr = A[0]
+    sta = int(A[1]) - up_dist
+    if sta < 0:
+        sta = 0
+    end = int(A[1]) + down_dist
+    if chrom_sizes[chr] < end:
+        end = chrom_sizes[chr] - 1
+    strand = A[2]
+    if strand == '-':
+        directed_minus_tss_output_bed.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt_minus) + "\n")
+        cnt_minus += 1
+    elif strand == '+':
+        directed_plus_tss_output_bed.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt_plus) + "\n")
+        cnt_plus += 1
+    else:
+        print("Warning: Strand of TSS was neither \'-\' nor \'+\'!")
+
+cnt_minus = 1
+cnt_plus = 1
+for tss in undirected_wo_directed_digests_tss_set:
+    A = tss.split(':')
+    chr = A[0]
+    sta = int(A[1]) - up_dist
+    if sta < 0:
+        sta = 0
+    end = int(A[1]) + down_dist
+    if chrom_sizes[chr] < end:
+        end = chrom_sizes[chr] - 1
+    strand = A[2]
+    if strand == '-':
+        undirected_minus_tss_output_bed.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt_minus) + "\n")
+        cnt_minus += 1
+    elif strand == '+':
+        undirected_plus_tss_output_bed.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt_plus) + "\n")
+        cnt_plus += 1
+    else:
+        print("Warning: Strand of TSS was neither \'-\' nor \'+\'!")
+
+directed_minus_tss_output_bed.close()
+undirected_minus_tss_output_bed
+undirected_minus_tss_output_bed.close()
+undirected_plus_tss_output_bed.close()
+
+# convert BED to FASTA
+# get FASTA files with sequences around TSS on '+' strand that are associated with directed interactions
+file_name_directed_digests_base = str(file_name_directed_plus_tss).split(".b")[0]
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_directed_plus_tss + ' > ' + file_name_directed_digests_base + '.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+
+# get FASTA files with sequences around TSS on '+' strand that are associated with undirected interactions
+file_name_undirected_digests_base = str(file_name_undirected_plus_tss).split(".b")[0]
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_undirected_plus_tss + ' > ' + file_name_undirected_digests_base + '.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+
+# get FASTA files with sequences around TSS on '-' strand that are associated with directed interactions
+file_name_directed_digests_base = str(file_name_directed_minus_tss).split(".b")[0]
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_directed_minus_tss + ' > ' + file_name_directed_digests_base + '.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+
+# get FASTA files with sequences around TSS on '-' strand that are associated with undirected interactions
+file_name_undirected_digests_base = str(file_name_undirected_minus_tss).split(".b")[0]
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_undirected_minus_tss + ' > ' + file_name_undirected_digests_base + '.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+
+exit(0)
+
+# END# END# END# END# END# END# END# END# END# END# END# END# END# END# END# END
 
 # write BED file with digest regions for motif analysis of directed interactions
 directed_digests_num = 0
