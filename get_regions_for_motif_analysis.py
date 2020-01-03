@@ -290,9 +290,9 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
         line = fp.readline()
 
 # report interactions with no TSS on one or both digests (may happen because of imperfect enrichment annotation)
-if 0 < cnt_first_digest_without_tss:
+if 0 <= cnt_first_digest_without_tss:
     print("WARNING: There were " + str(cnt_first_digest_without_tss) + " interactions without TSS on the first digest!")
-if 0 < cnt_second_digest_without_tss:
+if 0 <= cnt_second_digest_without_tss:
     print("WARNING: There were " + str(cnt_second_digest_without_tss) + " interactions without TSS on the second digest!")
 
 
