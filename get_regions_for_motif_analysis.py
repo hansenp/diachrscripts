@@ -163,6 +163,9 @@ digest_size_dist_undirected = []
 interaction_partners_per_digest_directed = {}
 interaction_partners_per_digest_undirected = {}
 
+directed_digests_symbols = set()
+undirected_digests_symbols = set()
+
 ### Iterate interaction file with gene symbols
 ##############################################
 
@@ -227,6 +230,10 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             directed_digests_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
             directed_digests_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
             directed_interaction_num += 1
+            for symbol in syms_a.split(","):
+                directed_digests_symbols.add(symbol)
+            for symbol in syms_b.split(","):
+                directed_digests_symbols.add(symbol)
 
             if chr_a + "\t" + str(sta_a) + "\t" + str(end_a) in interaction_partners_per_digest_directed.keys():
                 interaction_partners_per_digest_directed[chr_a + "\t" + str(sta_a) + "\t" + str(end_a)] += 1
@@ -243,6 +250,10 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             undirected_digests_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
             undirected_digests_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
             undirected_interaction_num += 1
+            for symbol in syms_a.split(","):
+                undirected_digests_symbols.add(symbol)
+            for symbol in syms_b.split(","):
+                undirected_digests_symbols.add(symbol)
 
             if chr_a + "\t" + str(sta_a) + "\t" + str(end_a) in interaction_partners_per_digest_undirected.keys():
                 interaction_partners_per_digest_undirected[chr_a + "\t" + str(sta_a) + "\t" + str(end_a)] += 1
@@ -318,6 +329,24 @@ for inter_partner_num in interaction_partners_per_digest_undirected.values():
 interaction_partner_per_digest_distribution_directed_tab.close()
 interaction_partner_per_digest_distribution_undirected_tab.close()
 
+### Segement and print digest symbols
+#####################################
+
+directed_wo_undirected_symbols = directed_digests_symbols.difference(undirected_digests_symbols)
+file_name_directed_symbols = out_prefix + "_directed_symbols.tab"
+file_name_directed_symbols_tab = open(file_name_directed_symbols, 'wt')
+for symbol in directed_wo_undirected_symbols:
+    file_name_directed_symbols_tab.write(symbol + "\n")
+
+undirected_wo_directed_symbols = undirected_digests_symbols.difference(directed_digests_symbols)
+file_name_undirected_symbols = out_prefix + "_undirected_symbols.tab"
+file_name_undirected_symbols_tab = open(file_name_undirected_symbols, 'wt')
+for symbol in undirected_wo_directed_symbols:
+    file_name_undirected_symbols_tab.write(symbol + "\n")
+
+file_name_directed_symbols_tab.close()
+file_name_undirected_symbols_tab.close()
+
 ### Segment digests
 ###################
 
@@ -383,10 +412,11 @@ for digest in directed_wo_undirected_digests_set:
     end = int(digest.split("\t")[2])
     length = int(digest.split("\t")[2]) - int(digest.split("\t")[1])
     center = sta + int(2/(end - sta))
-    sta = center - 1500
-    end = center + 1500
-    if 2*1500 < length and 0 < sta and end < chrom_sizes[chr]:
-        directed_digests_output_bed_exc.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt) + "\n")
+    sta = center - 2000
+    end = center + 2000
+    if 10000000 > length:# and 0 < sta and end < chrom_sizes[chr]:
+        #directed_digests_output_bed_exc.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt) + "\n")
+        directed_digests_output_bed_exc.write(digest + "\t" + str(cnt) + "\n")
         cnt += 1
 
 cnt = 1
@@ -396,10 +426,11 @@ for digest in undirected_wo_directed_digests_set:
     end = int(digest.split("\t")[2])
     length = int(digest.split("\t")[2]) - int(digest.split("\t")[1])
     center = sta + int(2/(end - sta))
-    sta = center - 1500
-    end = center + 1500
-    if 2*1500 < length and 0 < sta and end < chrom_sizes[chr]:
-        undirected_digests_output_bed_exc.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt) + "\n")
+    sta = center - 2000
+    end = center + 2000
+    if 10000000 > length:# and 0 < sta and end < chrom_sizes[chr]:
+        #undirected_digests_output_bed_exc.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt) + "\n")
+        undirected_digests_output_bed_exc.write(digest + "\t" + str(cnt) + "\n")
         cnt += 1
 
 directed_digests_output_bed_exc.close()
