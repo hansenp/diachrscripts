@@ -732,31 +732,44 @@ for tss in undirected_wo_directed_digests_tss_set:
         print("Warning: Strand of TSS was neither \'-\' nor \'+\'!")
 
 directed_minus_tss_output_bed.close()
-undirected_minus_tss_output_bed
+directed_plus_tss_output_bed.close()
 undirected_minus_tss_output_bed.close()
 undirected_plus_tss_output_bed.close()
 
 # convert BED to FASTA
 # get FASTA files with sequences around TSS on '+' strand that are associated with directed interactions
 file_name_directed_digests_base = str(file_name_directed_plus_tss).split(".b")[0]
-sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_directed_plus_tss + ' > ' + file_name_directed_digests_base + '.fasta'
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed ' + file_name_directed_plus_tss + ' > ' + file_name_directed_digests_base + '.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+sys_cmd = 'awk \'{if($1 !~ /^>/){gsub(/a|c|g|t/,"N",$1)};print}\' ' + file_name_directed_digests_base + '.fasta' + ' > ' + file_name_directed_digests_base + '_masked.fasta'
 print(sys_cmd)
 os.system(sys_cmd)
 
+
 # get FASTA files with sequences around TSS on '+' strand that are associated with undirected interactions
 file_name_undirected_digests_base = str(file_name_undirected_plus_tss).split(".b")[0]
-sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_undirected_plus_tss + ' > ' + file_name_undirected_digests_base + '.fasta'
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed ' + file_name_undirected_plus_tss + ' > ' + file_name_undirected_digests_base + '.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+sys_cmd = 'awk \'{if($1 !~ /^>/){gsub(/a|c|g|t/,"N",$1)};print}\' ' + file_name_undirected_digests_base + '.fasta' + ' > ' + file_name_undirected_digests_base + '_masked.fasta'
 print(sys_cmd)
 os.system(sys_cmd)
 
 # get FASTA files with sequences around TSS on '-' strand that are associated with directed interactions
 file_name_directed_digests_base = str(file_name_directed_minus_tss).split(".b")[0]
-sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_directed_minus_tss + ' > ' + file_name_directed_digests_base + '.fasta'
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed ' + file_name_directed_minus_tss + ' > ' + file_name_directed_digests_base + '.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+sys_cmd = 'awk \'{if($1 !~ /^>/){gsub(/a|c|g|t/,"N",$1)};print}\' ' + file_name_directed_digests_base + '.fasta' + ' > ' + file_name_directed_digests_base + '_masked.fasta'
 print(sys_cmd)
 os.system(sys_cmd)
 
 # get FASTA files with sequences around TSS on '-' strand that are associated with undirected interactions
 file_name_undirected_digests_base = str(file_name_undirected_minus_tss).split(".b")[0]
-sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + file_name_undirected_minus_tss + ' > ' + file_name_undirected_digests_base + '.fasta'
+sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed ' + file_name_undirected_minus_tss + ' > ' + file_name_undirected_digests_base + '.fasta'
+print(sys_cmd)
+os.system(sys_cmd)
+sys_cmd = 'awk \'{if($1 !~ /^>/){gsub(/a|c|g|t/,"N",$1)};print}\' ' + file_name_undirected_digests_base + '.fasta' + ' > ' + file_name_undirected_digests_base + '_masked.fasta'
 print(sys_cmd)
 os.system(sys_cmd)
