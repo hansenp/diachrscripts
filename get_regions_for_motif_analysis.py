@@ -260,7 +260,7 @@ interaction_partners_per_digest_undirected_dict = {}
 ### Iterate interaction file with gene symbols
 ##############################################
 
-print("[INFO] Iterating interaction file with gene symbols " + interaction_gs_file + " ...")
+print("[INFO] First pass: Determining unique exclusive digests ...")
 with gzip.open(interaction_gs_file, 'rt') as fp:
 
     n_interaction_total = 0 # counter to track progress
@@ -380,7 +380,7 @@ print("[INFO] ... done.")
 ### Segment digests and print coordinates for sequence analysis
 ###############################################################
 
-print("[INFO] Segmenting digests and printing coordinates for sequence analysis ...")
+print("[INFO] Segmenting digests and writing coordinates for sequence analysis ...")
 
 directed_wo_undirected_digests_set = directed_digests_set.difference(undirected_digests_set)
 undirected_wo_directed_digests_set = undirected_digests_set.difference(directed_digests_set)
@@ -388,12 +388,12 @@ directed_intersect_undirected_digests_set = directed_digests_set.intersection(un
 directed_union_directed_digests_set = directed_digests_set.union(undirected_digests_set)
 
 cnt = 1
-print("\t[INFO] Printing to file: " + bed_file_name_directed_digests)
+print("\t[INFO] Writing to file: " + bed_file_name_directed_digests)
 for digest in directed_wo_undirected_digests_set:
     bed_stream_name_directed_digests.write(digest + "\t" + str(cnt) + "\n")
     cnt += 1
 cnt = 1
-print("\t[INFO] Printing to file: " + bed_file_name_undirected_digests)
+print("\t[INFO] Writing to file: " + bed_file_name_undirected_digests)
 for digest in undirected_wo_directed_digests_set:
     bed_stream_name_undirected_digests.write(digest + "\t" + str(cnt) + "\n")
     cnt += 1
@@ -406,12 +406,12 @@ print("[INFO] ... done.")
 ### Segement and print gene symbols for GO analysis
 ###################################################
 
-print("[INFO] Segmenting and printing genes symbols for GO analysis ...")
+print("[INFO] Segmenting and writing genes symbols for GO analysis ...")
 
 directed_wo_undirected_digests_symbols_set = directed_digests_symbols_set.difference(undirected_digests_symbols_set)
 tab_file_name_directed_digest_symbols = out_prefix + "_directed_digest_symbols.tab"
 tab_stream_name_directed_digest_symbols = open(tab_file_name_directed_digest_symbols, 'wt')
-print("\t[INFO] Printing to file: " + tab_file_name_directed_digest_symbols)
+print("\t[INFO] Writing to file: " + tab_file_name_directed_digest_symbols)
 for symbol in directed_wo_undirected_digests_symbols_set:
     tab_stream_name_directed_digest_symbols.write(symbol + "\n")
 tab_stream_name_directed_digest_symbols.close()
@@ -419,65 +419,23 @@ tab_stream_name_directed_digest_symbols.close()
 undirected_wo_directed_digests_symbols_set = undirected_digests_symbols_set.difference(directed_digests_symbols_set)
 tab_file_name_undirected_digest_symbols = out_prefix + "_undirected_digest_symbols.tab"
 tab_stream_name_undirected_digest_symbols = open(tab_file_name_undirected_digest_symbols, 'wt')
-print("\t[INFO] Printing to file: " + tab_file_name_undirected_digest_symbols)
+print("\t[INFO] Writing to file: " + tab_file_name_undirected_digest_symbols)
 for symbol in undirected_wo_directed_digests_symbols_set:
     tab_stream_name_undirected_digest_symbols.write(symbol + "\n")
 tab_stream_name_undirected_digest_symbols.close()
 
 print("[INFO] ... done.")
 
-### Determine and print digest sizes
-####################################
 
-print("[INFO] Determining and printing digest sizes ...")
+### Determine number of interaction partners per digest
+#######################################################
 
-print("\t[INFO] Directed digests ...")
-tab_file_name_directed_digests_size_distribution = out_prefix + "_directed_digests_size_distribution.tab"
-tab_stream_name_directed_digests_size_distribution = open(tab_file_name_directed_digests_size_distribution, 'wt')
-print("\t\t[INFO] Printing to file: " + tab_file_name_directed_digests_size_distribution)
-directed_digest_size_array = []
-for d_coord in directed_wo_undirected_digests_set:
-    sta = d_coord.split("\t")[1]
-    end = d_coord.split("\t")[2]
-    size = int(end) - int(sta)
-    directed_digest_size_array.append(size)
-    tab_stream_name_directed_digests_size_distribution.write(str(size) + "\n")
-
-print("\t\t[INFO] Q1: " + str(int(numpy.quantile(directed_digest_size_array, 0.25))) + " bp")
-print("\t\t[INFO] Q2: " + str(int(numpy.quantile(directed_digest_size_array, 0.5))) + " bp (Median)")
-print("\t\t[INFO] Q3: " + str(int(numpy.quantile(directed_digest_size_array, 0.75))) + " bp")
-print("\t\t[INFO] Mean: " + str(int(numpy.mean(directed_digest_size_array))) + " bp")
-tab_stream_name_directed_digests_size_distribution.close()
-
-print("\t[INFO] Undirected digests ...")
-tab_file_name_undirected_digests_size_distribution = out_prefix + "_undirected_digests_size_distribution.tab"
-tab_stream_name_undirected_digests_size_distribution = open(tab_file_name_undirected_digests_size_distribution, 'wt')
-print("\t\t[INFO] Printing to file: " + tab_file_name_undirected_digests_size_distribution)
-undirected_digest_size_array = []
-for d_coord in undirected_wo_directed_digests_set:
-    sta = d_coord.split("\t")[1]
-    end = d_coord.split("\t")[2]
-    size = int(end) - int(sta)
-    undirected_digest_size_array.append(size)
-    tab_stream_name_undirected_digests_size_distribution.write(str(size) + "\n")
-
-print("\t\t[INFO] Q1: " + str(int(numpy.quantile(undirected_digest_size_array, 0.25))) + " bp")
-print("\t\t[INFO] Q2: " + str(int(numpy.quantile(undirected_digest_size_array, 0.5))) + " bp (Median)")
-print("\t\t[INFO] Q3: " + str(int(numpy.quantile(undirected_digest_size_array, 0.75))) + " bp")
-print("\t\t[INFO] Mean: " + str(int(numpy.mean(undirected_digest_size_array))) + " bp")
-tab_stream_name_undirected_digests_size_distribution.close()
-
-print("[INFO] ... done.")
-
-### Create file with numbers of interaction partners per digest
-###############################################################
-
-print("[INFO] Creating file with numbers of interaction partners per digest ...")
+print("[INFO] Determining number of interaction partners per digest ...") # factor out
 
 print("\t[INFO] Directed digests ...")
 tab_file_name_directed_digests_interaction_partner_per_digest_distribution = out_prefix + "_directed_digests_interaction_partner_per_digest_distribution.tab"
 tab_stream_name_directed_digests_interaction_partner_per_digest_distribution = open(tab_file_name_directed_digests_interaction_partner_per_digest_distribution, 'wt')
-print("\t\t[INFO] Printing to file: " + tab_file_name_directed_digests_interaction_partner_per_digest_distribution)
+print("\t\t[INFO] Writing to file: " + tab_file_name_directed_digests_interaction_partner_per_digest_distribution)
 directed_inter_partner_num_array = []
 for inter_partner_num in interaction_partners_per_digest_directed_dict.values():
     tab_stream_name_directed_digests_interaction_partner_per_digest_distribution.write(str(inter_partner_num) + "\n")
@@ -488,7 +446,7 @@ tab_stream_name_directed_digests_interaction_partner_per_digest_distribution.clo
 print("\t[INFO] Undirected digests ...")
 tab_file_name_undirected_digests_interaction_partner_per_digest_distribution = out_prefix + "_undirected_digests_interaction_partner_per_digest_distribution.tab"
 tab_stream_name_undirected_digests_interaction_partner_per_digest_distribution = open(tab_file_name_undirected_digests_interaction_partner_per_digest_distribution, 'wt')
-print("\t\t[INFO] Printing to file: " + tab_file_name_undirected_digests_interaction_partner_per_digest_distribution)
+print("\t\t[INFO] Writing to file: " + tab_file_name_undirected_digests_interaction_partner_per_digest_distribution)
 undirected_inter_partner_num_array = []
 for inter_partner_num in interaction_partners_per_digest_undirected_dict.values():
     tab_stream_name_undirected_digests_interaction_partner_per_digest_distribution.write(str(inter_partner_num) + "\n")
@@ -509,7 +467,7 @@ directed_wo_undirected_digests_tss_set = set()
 undirected_wo_directed_digests_tss_set = set()
 
 cnt=0
-print("[INFO] Iterating interaction file with gene symbols " + interaction_gs_file + " ...")
+print("[INFO] Second pass: Determining unique promoters on unique exclusive digests ...")
 with gzip.open(interaction_gs_file, 'rt') as fp:
 
     n_interaction_total = 0 # counter to track progress
@@ -629,6 +587,53 @@ bed_stream_name_undirected_digests_tss_minus.close()
 bed_stream_name_undirected_digests_tss_plus.close()
 
 
+### Determine and write digest sizes to file
+############################################
+
+print("[INFO] Determining and writing digest sizes ...")
+
+print("\t[INFO] Directed digests ...") # factor out
+tab_file_name_directed_digests_size_distribution = out_prefix + "_directed_digests_size_distribution.tab"
+tab_stream_name_directed_digests_size_distribution = open(tab_file_name_directed_digests_size_distribution, 'wt')
+print("\t\t[INFO] Writing to file: " + tab_file_name_directed_digests_size_distribution)
+directed_digest_size_array = []
+for d_coord in directed_wo_undirected_digests_set:
+    sta = d_coord.split("\t")[1]
+    end = d_coord.split("\t")[2]
+    size = int(end) - int(sta)
+    directed_digest_size_array.append(size)
+    tab_stream_name_directed_digests_size_distribution.write(str(size) + "\n")
+
+tab_stream_name_directed_digests_size_distribution.close()
+
+directed_digest_q1 = int(numpy.quantile(directed_digest_size_array, 0.25))
+directed_digest_q2 = int(numpy.quantile(directed_digest_size_array, 0.5))
+directed_digest_q3 = int(numpy.quantile(directed_digest_size_array, 0.75))
+directed_digest_mean = int(numpy.mean(directed_digest_size_array))
+
+
+print("\t[INFO] Undirected digests ...") # factor out
+tab_file_name_undirected_digests_size_distribution = out_prefix + "_undirected_digests_size_distribution.tab"
+tab_stream_name_undirected_digests_size_distribution = open(tab_file_name_undirected_digests_size_distribution, 'wt')
+print("\t\t[INFO] Writing to file: " + tab_file_name_undirected_digests_size_distribution)
+undirected_digest_size_array = []
+for d_coord in undirected_wo_directed_digests_set:
+    sta = d_coord.split("\t")[1]
+    end = d_coord.split("\t")[2]
+    size = int(end) - int(sta)
+    undirected_digest_size_array.append(size)
+    tab_stream_name_undirected_digests_size_distribution.write(str(size) + "\n")
+
+tab_stream_name_undirected_digests_size_distribution.close()
+
+undirected_digest_q1 = int(numpy.quantile(undirected_digest_size_array, 0.25))
+undirected_digest_q2 = int(numpy.quantile(undirected_digest_size_array, 0.5))
+undirected_digest_q3 = int(numpy.quantile(undirected_digest_size_array, 0.75))
+undirected_digest_mean = int(numpy.mean(undirected_digest_size_array))
+
+print("[INFO] ... done.")
+
+
 ### Create FASTA files with digest and promoter sequences
 #########################################################
 
@@ -636,38 +641,47 @@ print("[INFO] Converting BED to FASTA ...")
 
 # get FASTA files with DIGEST sequences of directed interactions
 fasta_file_name_directed_digests = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests)
+print("\t[INFO] Wrote to file: " + fasta_file_name_directed_digests)
 fasta_file_name_directed_digests_masked = mask_repeats(fasta_file_name_directed_digests)
+print("\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_masked)
 
 # get FASTA files with DIGEST sequences of undirected interactions
 fasta_file_name_undirected_digests = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests)
+print("\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests)
 fasta_file_name_undirected_digests_masked = mask_repeats(fasta_file_name_undirected_digests)
+print("\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_masked)
 
 # get FASTA files with sequences around TSS on '-' strand that are associated with directed interactions for CentriMo analysis
 fasta_file_name_directed_digests_tss_minus = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_minus)
+print("\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_minus)
 
 # get FASTA files with sequences around TSS on '+' strand that are associated with directed interactions for CentriMo analysis
 fasta_file_name_directed_digests_tss_plus = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_plus)
+print("\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_plus)
 
 # concat FASTA files for plus and minus strand for calculation of sequence statistics and motif discovery
 fasta_file_name_directed_digests_tss = fasta_file_name_directed_digests_tss_minus.split("_minus")[0] + '.fasta'
 sys_cmd = 'cat ' + fasta_file_name_directed_digests_tss_minus + ' ' + fasta_file_name_directed_digests_tss_plus + ' > ' + fasta_file_name_directed_digests_tss
-print("Will execute: " + sys_cmd)
 os.system(sys_cmd)
+print("\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss)
 fasta_file_name_directed_digests_tss_masked = mask_repeats(fasta_file_name_directed_digests_tss)
+print("\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_masked)
 
 # get FASTA files with sequences around TSS on '-' strand that are associated with undirected interactions for CentriMo analysis
 fasta_file_name_undirected_digests_tss_minus = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_minus)
+print("\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_minus)
 
 # get FASTA files with sequences around TSS on '+' strand that are associated with undirected interactions for CentriMo analysis
 fasta_file_name_undirected_digests_tss_plus = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_plus)
+print("\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_plus)
 
 # concat FASTA files for plus and minus strand for calculation of sequence statistics and motif discovery
 fasta_file_name_undirected_digests_tss = fasta_file_name_undirected_digests_tss_minus.split("_minus")[0] + '.fasta'
 sys_cmd = 'cat ' + fasta_file_name_undirected_digests_tss_minus + ' ' + fasta_file_name_undirected_digests_tss_plus + ' > ' + fasta_file_name_undirected_digests_tss
-print("Will execute: " + sys_cmd)
 os.system(sys_cmd)
+print("\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss)
 fasta_file_name_undirected_digests_tss_masked = mask_repeats(fasta_file_name_undirected_digests_tss)
-
+print("\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_masked)
 
 print("[INFO] ... done.")
 
@@ -766,6 +780,18 @@ print("\t[INFO] Total GC content of directed digests: " + str(gc_content_total_d
 print("\t[INFO] Total GC content of undirected digests: " + str(gc_content_total_undirected_digests))
 print("\t[INFO] Total GC content of promoters on directed digests: " + str(gc_content_total_directed_digests_tss))
 print("\t[INFO] Total GC content of promoters on undirected digests: " + str(gc_content_total_undirected_digests_tss))
+
+print("\t[INFO] Size distribution of directed digests")
+print("\t\t[INFO] Directed digests")
+print("\t\t\t[INFO] Q1: " + str(directed_digest_q1) + " bp")
+print("\t\t\t[INFO] Q2: " + str(directed_digest_q2) + " bp (Median)")
+print("\t\t\t[INFO] Q3: " + str(directed_digest_q3) + " bp")
+print("\t\t\t[INFO] Mean: " + str(directed_digest_mean) + " bp")
+print("\t\t[INFO] Undirected digests")
+print("\t\t\t[INFO] Q1: " + str(undirected_digest_q1) + " bp")
+print("\t\t\t[INFO] Q2: " + str(undirected_digest_q2) + " bp (Median)")
+print("\t\t\t[INFO] Q3: " + str(undirected_digest_q3) + " bp")
+print("\t\t\t[INFO] Mean: " + str(undirected_digest_mean) + " bp")
 
 tab_file_name_interaction_and_digest_statistics = out_prefix + "_interaction_and_digest_statistics.tab"
 tab_file_stream_interaction_and_digest_statistics = open(tab_file_name_interaction_and_digest_statistics, 'wt')
