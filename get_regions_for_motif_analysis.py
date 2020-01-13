@@ -115,16 +115,16 @@ allowed_interaction_categories_undirected = str(allowed_interaction_categories_u
 def convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name):
     bed_file_name_base = str(bed_file_name).split(".b")[0]
     sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + bed_file_name + ' > ' + bed_file_name_base + '.fasta'
-    #print("Will execute: " + sys_cmd)
     os.system(sys_cmd)
     return bed_file_name_base + '.fasta'
+
 
 def mask_repeats(fasta_file_name):
     fasta_file_name_base = str(fasta_file_name).split(".f")[0]
     sys_cmd = 'awk \'{if($1 !~ /^>/){gsub(/a|c|g|t/,"N",$1)};print}\' ' + fasta_file_name + ' > ' + fasta_file_name_base + '_masked.fasta'
-    #print("Will execute: " + sys_cmd)
     os.system(sys_cmd)
     return fasta_file_name_base + '_masked.fasta'
+
 
 def get_base_frequencies(fasta_file_name):
     a_abs = 0
@@ -208,6 +208,101 @@ def get_base_frequencies(fasta_file_name):
     return header_line, value_line, repeat_content, gc_content_repeat, gc_content_non_repeat, gc_content_total
 
 
+def determine_digest_sizes_and_write_to_file(tab_file_name_digests_size_distribution, digest_set):
+    tab_stream_name_digests_size_distribution = open(tab_file_name_digests_size_distribution, 'wt')
+    digest_size_array = []
+    for d_coord in digest_set:
+        sta = d_coord.split("\t")[1]
+        end = d_coord.split("\t")[2]
+        size = int(end) - int(sta)
+        digest_size_array.append(size)
+        tab_stream_name_digests_size_distribution.write(str(size) + "\n")
+
+    tab_stream_name_digests_size_distribution.close()
+
+    q1 = int(numpy.quantile(digest_size_array, 0.25))
+    q2 = int(numpy.quantile(digest_size_array, 0.5))
+    q3 = int(numpy.quantile(digest_size_array, 0.75))
+    mean = int(numpy.mean(digest_size_array))
+
+    return q1, q2, q3, mean
+
+def write_number_of_interaction_partners_per_digest(tab_file_name_digests_interaction_partner_per_digest_distribution, interaction_partners_per_digest_dict):
+    tab_stream_name_digests_interaction_partner_per_digest_distribution = open(tab_file_name_digests_interaction_partner_per_digest_distribution, 'wt')
+    interaction_partner_number_array = []
+    for inter_partner_num in interaction_partners_per_digest_dict.values():
+        tab_stream_name_digests_interaction_partner_per_digest_distribution.write(str(inter_partner_num) + "\n")
+        interaction_partner_number_array.append(inter_partner_num)
+    tab_stream_name_digests_interaction_partner_per_digest_distribution.close()
+
+    mean_number_of_interaction_partners = "{:.2f}".format(numpy.mean(interaction_partner_number_array))
+    return mean_number_of_interaction_partners
+
+
+def get_unique_exclusive_gene_symbols_and_write_to_file(digests_symbols_set_a, digests_symbols_set_b, tab_file_name_unique_exclusive_digest_symbols, symbol_search_pattern):
+    """
+    This function takes two sets of gene symbols A and B and determines the set A\B, which is written to a text file
+    that contains one gene symbol in each line.
+
+    In addition the number of gene symbols in A\B that contain the substring 'symbol_search_pattern' is determined.
+
+    :param tab_file_name_unique_exclusive_digest_symbols: Write gene symbols in A\B to this file.
+    :param digests_symbols_set_a: Set of gene symbols A.
+    :param digests_symbols_set_b: Another set of gene symbols B.
+    :param symbol_search_pattern: Count gene symbols that contain this substring.
+
+    :return: Number of gene symbols in A\B, absolute number of gene symbols in A\B containing the substring
+    'symbol_search_pattern' and fraction of gene symbols in A\B containing substring 'symbol_search_pattern'.
+    """
+    a_wo_b_digests_symbols_set = digests_symbols_set_a.difference(digests_symbols_set_b)
+    symbols_abs = 0
+    znf_abs = 0
+    tab_stream_name_unique_exclusive_digest_symbols = open(tab_file_name_unique_exclusive_digest_symbols, 'wt')
+    for symbol in a_wo_b_digests_symbols_set:
+        symbols_abs += 1
+        tab_stream_name_unique_exclusive_digest_symbols.write(symbol + "\n")
+        if symbol_search_pattern in symbol:
+            znf_abs += 1
+    tab_stream_name_unique_exclusive_digest_symbols.close()
+    znf_rel = "{:.2f}".format(100 * znf_abs / symbols_abs)
+
+    return symbols_abs, znf_abs, znf_rel
+
+
+def parse_interaction_line_with_gene_symbols(interaction_line_with_gene_symbols):
+
+    field = interaction_line_with_gene_symbols.split("\t")
+
+    coordinate_pair = field[0].split(";")
+    coordinate_a = coordinate_pair[0]
+    coordinate_b = coordinate_pair[1]
+
+    chr_a = coordinate_a.split(":")[0]
+    chr_b = coordinate_b.split(":")[0]
+
+    sta_a = int(coordinate_a.split(":")[1].split("-")[0])
+    sta_b = int(coordinate_b.split(":")[1].split("-")[0])
+
+    end_a = int(coordinate_a.split(":")[1].split("-")[1])
+    end_b = int(coordinate_b.split(":")[1].split("-")[1])
+
+    symbols_pair = field[3].split(";")
+    syms_a = symbols_pair[0]
+    syms_b = symbols_pair[1]
+
+    tsss_pair = field[8].split(";")
+    tsss_a = tsss_pair[0]
+    tsss_b = tsss_pair[1]
+
+    enrichment_pair_tag = field[5] ## AA, AI, II
+
+    strand_pair_tag = field[7] # -/-, +/+, -/+, +/-, -/d, ...
+
+    interaction_category = field[2] # S, T, URAA, URAI, ...
+
+    return chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category
+
+
 ### Prepare output files
 ########################
 
@@ -217,17 +312,18 @@ bed_stream_name_directed_digests = open(bed_file_name_directed_digests, 'wt')
 bed_file_name_undirected_digests = out_prefix + "_undirected_digests.bed"
 bed_stream_name_undirected_digests = open(bed_file_name_undirected_digests, 'wt')
 
-# create two BED files for promoters on digests of directed iteractions, one for TSS on the plus and another one for TSS on the minus strand
+# create two BED files for promoters on digests of directed iteractions, one for promoters on the plus and another one for promoters on the minus strand
 bed_file_name_directed_digests_tss_minus = out_prefix + "_directed_digests_tss_minus.bed"
 bed_stream_name_directed_digests_tss_minus = open(bed_file_name_directed_digests_tss_minus, 'wt')
 bed_file_name_directed_digests_tss_plus = out_prefix + "_directed_digests_tss_plus.bed"
 bed_stream_name_directed_digests_tss_plus = open(bed_file_name_directed_digests_tss_plus, 'wt')
 
-# create two BED files for promoters on digests of undirected iteractions, one for TSS on the plus and another one for TSS on the minus strand
+# create two BED files for promoters on digests of undirected iteractions, one for promoters on the plus and another one for promoters on the minus strand
 bed_file_name_undirected_digests_tss_minus = out_prefix + "_undirected_digests_tss_minus.bed"
 bed_stream_name_undirected_digests_tss_minus = open(bed_file_name_undirected_digests_tss_minus, 'wt')
 bed_file_name_undirected_digests_tss_plus = out_prefix + "_undirected_digests_tss_plus.bed"
 bed_stream_name_undirected_digests_tss_plus = open(bed_file_name_undirected_digests_tss_plus, 'wt')
+
 
 ### Prepare variables and data structures
 #########################################
@@ -257,63 +353,45 @@ interaction_partners_per_digest_directed_dict = {}
 interaction_partners_per_digest_undirected_dict = {}
 
 
-### Iterate interaction file with gene symbols
-##############################################
+### First pass: Determine unique exclusive digests
+##################################################
 
 print("[INFO] First pass: Determining unique exclusive digests ...")
+
+print("\t[INFO] Iterating interactions with gene symbols ...")
+
 with gzip.open(interaction_gs_file, 'rt') as fp:
 
     n_interaction_total = 0 # counter to track progress
     line = fp.readline()
-    cnt = 0
     while line:
-
-        line = line.rstrip()
 
         n_interaction_total += 1
         if n_interaction_total % 1000000 == 0:
-            print("\t[INFO]", n_interaction_total, "interactions processed ...")
+            print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
 
-        field = line.split("\t")
+        chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category = \
+            parse_interaction_line_with_gene_symbols(line.rstrip())
 
-        if field[5] not in allowed_enrichment_pair_tags: # use only interactions with specified digest enrichment pair tags (II, AI, AA)
+        if enrichment_pair_tag not in allowed_enrichment_pair_tags: # use only interactions with specified digest enrichment pair tags (II, AI, AA)
             line = fp.readline()
             continue
 
-        if field[7] not in allowed_strand_pair_tags and 'All' not in allowed_strand_pair_tags: # use only interactions with specified digest strand pair tags (-/-, +/+, -/+, +/-, -/d, ...) or 'All'
+        if strand_pair_tag not in allowed_strand_pair_tags and 'All' not in allowed_strand_pair_tags: # use only interactions with specified digest strand pair tags (-/-, +/+, -/+, +/-, -/d, ...) or 'All'
             line = fp.readline()
             continue
 
-        if field[8].split(";")[0] == '':
+        if tsss_a == '':
             print("Warning: No TSS for first digest!")
             first_digest_without_tss_num += 1
             line = fp.readline()
             continue
 
-        if field[8].split(";")[1] == '':
+        if tsss_b == '':
             print("Warning: No TSS for second digest!")
             second_digest_without_tss_num += 1
             line = fp.readline()
             continue
-
-        # parse interaction info ToDo: write parsing function (saves 20 lines)
-        coords = field[0].split(";")
-        coord_a = coords[0]
-        coord_b = coords[1]
-        chr_a = coord_a.split(":")[0]
-        chr_b = coord_b.split(":")[0]
-        sta_a = int(coord_a.split(":")[1].split("-")[0])
-        sta_b = int(coord_b.split(":")[1].split("-")[0])
-        end_a = int(coord_a.split(":")[1].split("-")[1])
-        end_b = int(coord_b.split(":")[1].split("-")[1])
-        syms = field[3].split(";")
-        syms_a = syms[0]
-        syms_b = syms[1]
-
-        base_name = field[0] + "|" + field[1] + "|" + field[2] + "|" + field[3] + "|" + field[4]+ "|" + field[5] + "|" + field[6] + "|" + field[7]
-
-        # get category of interacting digest
-        interaction_category = field[2]
 
         if interaction_category in allowed_interaction_categories_directed:
 
@@ -367,20 +445,21 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
 
         line = fp.readline()
 
-# report interactions with no TSS on one or both digests (should not happen)
+# report interactions with no promoters on one or both digests (should not happen)
 if 0 < first_digest_without_tss_num:
-    print("\t[WARNING] There were " + str(first_digest_without_tss_num) + " interactions without TSS on the first digest!")
+    print("\t[WARNING] There were " + str(first_digest_without_tss_num) + " interactions without promoters on the first digest!")
 if 0 < second_digest_without_tss_num:
-    print("\t[WARNING] There were " + str(second_digest_without_tss_num) + " interactions without TSS on the second digest!")
+    print("\t[WARNING] There were " + str(second_digest_without_tss_num) + " interactions without promoters on the second digest!")
 
 fp.close()
 
-print("[INFO] ... done.")
+print("\t[INFO] ... done.")
 
-### Segment digests and print coordinates for sequence analysis
-###############################################################
 
-print("[INFO] Segmenting digests and writing coordinates for sequence analysis ...")
+### Get exclusive digests and write coordinates for sequence analysis to BED files
+##################################################################################
+
+print("\t[INFO] Getting exclusive digests and writing coordinates for sequence analysis ...")
 
 directed_wo_undirected_digests_set = directed_digests_set.difference(undirected_digests_set)
 undirected_wo_directed_digests_set = undirected_digests_set.difference(directed_digests_set)
@@ -388,12 +467,12 @@ directed_intersect_undirected_digests_set = directed_digests_set.intersection(un
 directed_union_directed_digests_set = directed_digests_set.union(undirected_digests_set)
 
 cnt = 1
-print("\t[INFO] Writing to file: " + bed_file_name_directed_digests)
+print("\t\t[INFO] Writing to file: " + bed_file_name_directed_digests)
 for digest in directed_wo_undirected_digests_set:
     bed_stream_name_directed_digests.write(digest + "\t" + str(cnt) + "\n")
     cnt += 1
 cnt = 1
-print("\t[INFO] Writing to file: " + bed_file_name_undirected_digests)
+print("\t\t[INFO] Writing to file: " + bed_file_name_undirected_digests)
 for digest in undirected_wo_directed_digests_set:
     bed_stream_name_undirected_digests.write(digest + "\t" + str(cnt) + "\n")
     cnt += 1
@@ -401,125 +480,63 @@ for digest in undirected_wo_directed_digests_set:
 bed_stream_name_directed_digests.close()
 bed_stream_name_undirected_digests.close()
 
-print("[INFO] ... done.")
+print("\t[INFO] ... done.")
 
-### Segement and print gene symbols for GO analysis
-###################################################
-
-print("[INFO] Segmenting and writing genes symbols for GO analysis ...")
-
-directed_wo_undirected_digests_symbols_set = directed_digests_symbols_set.difference(undirected_digests_symbols_set)
-tab_file_name_directed_digest_symbols = out_prefix + "_directed_digest_symbols.tab"
-tab_stream_name_directed_digest_symbols = open(tab_file_name_directed_digest_symbols, 'wt')
-print("\t[INFO] Writing to file: " + tab_file_name_directed_digest_symbols)
-for symbol in directed_wo_undirected_digests_symbols_set:
-    tab_stream_name_directed_digest_symbols.write(symbol + "\n")
-tab_stream_name_directed_digest_symbols.close()
-
-undirected_wo_directed_digests_symbols_set = undirected_digests_symbols_set.difference(directed_digests_symbols_set)
-tab_file_name_undirected_digest_symbols = out_prefix + "_undirected_digest_symbols.tab"
-tab_stream_name_undirected_digest_symbols = open(tab_file_name_undirected_digest_symbols, 'wt')
-print("\t[INFO] Writing to file: " + tab_file_name_undirected_digest_symbols)
-for symbol in undirected_wo_directed_digests_symbols_set:
-    tab_stream_name_undirected_digest_symbols.write(symbol + "\n")
-tab_stream_name_undirected_digest_symbols.close()
-
-print("[INFO] ... done.")
+print("[INFO] ... done with first pass.")
 
 
-### Determine number of interaction partners per digest
-#######################################################
+########################################################################################################################
+########################################################################################################################
 
-print("[INFO] Determining number of interaction partners per digest ...") # factor out
-
-print("\t[INFO] Directed digests ...")
-tab_file_name_directed_digests_interaction_partner_per_digest_distribution = out_prefix + "_directed_digests_interaction_partner_per_digest_distribution.tab"
-tab_stream_name_directed_digests_interaction_partner_per_digest_distribution = open(tab_file_name_directed_digests_interaction_partner_per_digest_distribution, 'wt')
-print("\t\t[INFO] Writing to file: " + tab_file_name_directed_digests_interaction_partner_per_digest_distribution)
-directed_inter_partner_num_array = []
-for inter_partner_num in interaction_partners_per_digest_directed_dict.values():
-    tab_stream_name_directed_digests_interaction_partner_per_digest_distribution.write(str(inter_partner_num) + "\n")
-    directed_inter_partner_num_array.append(inter_partner_num)
-print("\t\t[INFO] Mean number of partners: " + "{:.2f}".format((numpy.mean(directed_inter_partner_num_array))))
-tab_stream_name_directed_digests_interaction_partner_per_digest_distribution.close()
-
-print("\t[INFO] Undirected digests ...")
-tab_file_name_undirected_digests_interaction_partner_per_digest_distribution = out_prefix + "_undirected_digests_interaction_partner_per_digest_distribution.tab"
-tab_stream_name_undirected_digests_interaction_partner_per_digest_distribution = open(tab_file_name_undirected_digests_interaction_partner_per_digest_distribution, 'wt')
-print("\t\t[INFO] Writing to file: " + tab_file_name_undirected_digests_interaction_partner_per_digest_distribution)
-undirected_inter_partner_num_array = []
-for inter_partner_num in interaction_partners_per_digest_undirected_dict.values():
-    tab_stream_name_undirected_digests_interaction_partner_per_digest_distribution.write(str(inter_partner_num) + "\n")
-    undirected_inter_partner_num_array.append(inter_partner_num)
-print("\t\t[INFO] Mean number of partners: " + "{:.2f}".format((numpy.mean(undirected_inter_partner_num_array))))
-tab_stream_name_undirected_digests_interaction_partner_per_digest_distribution.close()
-
-print("[INFO] ... done.")
-
-#######################################################################################################################################
-
-
-
-### get TSS associated with digests
-###################################
+### Get unique TSS associated with unique exclusive digests
+###########################################################
 
 directed_wo_undirected_digests_tss_set = set()
 undirected_wo_directed_digests_tss_set = set()
 
-cnt=0
-print("[INFO] Second pass: Determining unique promoters on unique exclusive digests ...")
+interaction_sizes_directed_digests = []
+interaction_sizes_undirected_digests = []
+
+print("[INFO] Second pass: Determining promoters on unique exclusive digests ...")
+
+print("\t[INFO] Iterating interactions with gene symbols ...")
+
 with gzip.open(interaction_gs_file, 'rt') as fp:
 
     n_interaction_total = 0 # counter to track progress
-    line = fp.readline()
-    cnt = 0
+    line = fp.readline().rstrip()
     while line:
-        line = line.rstrip()
 
         n_interaction_total += 1
         if n_interaction_total % 1000000 == 0:
-            print("\t[INFO]", n_interaction_total, "interactions processed ...")
+            print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
+
+        chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category = \
+            parse_interaction_line_with_gene_symbols(line.rstrip())
 
         field = line.split("\t")
 
-        if field[5] not in allowed_enrichment_pair_tags: # use only interactions with specified digest enrichment pair tags (II, AI, AA)
+
+
+        if enrichment_pair_tag not in allowed_enrichment_pair_tags: # use only interactions with specified digest enrichment pair tags (II, AI, AA)
             line = fp.readline()
             continue
 
-        if field[7] not in allowed_strand_pair_tags and 'All' not in allowed_strand_pair_tags: # use only interactions with specified digest strand pair tags (-/-, +/+, -/+, +/-, -/d, ...) or 'All'
+        if strand_pair_tag not in allowed_strand_pair_tags and 'All' not in allowed_strand_pair_tags: # use only interactions with specified digest strand pair tags (-/-, +/+, -/+, +/-, -/d, ...) or 'All'
             line = fp.readline()
             continue
 
-        if field[8].split(";")[0] == '':
+        if tsss_a == '':
             print("Warning: No TSS for first digest!")
             first_digest_without_tss_num += 1
             line = fp.readline()
             continue
 
-        if field[8].split(";")[1] == '':
+        if tsss_b == '':
             print("Warning: No TSS for second digest!")
             second_digest_without_tss_num += 1
             line = fp.readline()
             continue
-
-        # get coordinates of interacting digests
-        coords = field[0].split(";")
-        coord_a = coords[0]
-        coord_b = coords[1]
-        chr_a = coord_a.split(":")[0]
-        chr_b = coord_b.split(":")[0]
-        sta_a = int(coord_a.split(":")[1].split("-")[0])
-        sta_b = int(coord_b.split(":")[1].split("-")[0])
-        end_a = int(coord_a.split(":")[1].split("-")[1])
-        end_b = int(coord_b.split(":")[1].split("-")[1])
-        syms = field[3].split(";")
-        syms_a = syms[0]
-        syms_b = syms[1]
-        tsss = field[8].split(";")
-        tsss_a = tsss[0]
-        tsss_b = tsss[1]
-
-        base_name = field[0] + "|" + field[1] + "|" + field[2] + "|" + field[3] + "|" + field[4]+ "|" + field[5] + "|" + field[6] + "|" + field[7]
 
         d1_coord = str(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
         if d1_coord in directed_wo_undirected_digests_set:
@@ -537,7 +554,31 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             for tss_b in tsss_b.split(','):
                 undirected_wo_directed_digests_tss_set.add(tss_b)
 
+        # get distance between exclusive directed interacting digests
+        if interaction_category in allowed_interaction_categories_directed and d1_coord in directed_wo_undirected_digests_set and d2_coord in directed_wo_undirected_digests_set:
+            interaction_sizes_directed_digests.append(sta_b - end_a)
+            #print(line)
+
+        if interaction_category in allowed_interaction_categories_undirected and d1_coord in undirected_wo_directed_digests_set and d2_coord in undirected_wo_directed_digests_set:
+            interaction_sizes_undirected_digests.append(sta_b - end_a)
+            #print(line)
+
         line = fp.readline()
+
+print("\t[INFO] ... done.")
+
+print(len(interaction_sizes_directed_digests))
+print(numpy.mean(interaction_sizes_directed_digests))
+print(len(interaction_sizes_undirected_digests))
+print(numpy.mean(interaction_sizes_undirected_digests))
+
+### Write promoter coordinates to BED files for sequence analysis
+#################################################################
+
+print("\t[INFO] Writing promoter coordinates to BED files for sequence analysis ...")
+
+print("\t\t[INFO] Writing to file: " + bed_file_name_directed_digests_tss_minus)
+print("\t\t[INFO] Writing to file: " + bed_file_name_directed_digests_tss_plus)
 
 cnt_minus = 1
 cnt_plus = 1
@@ -558,7 +599,11 @@ for tss in directed_wo_undirected_digests_tss_set:
         bed_stream_name_directed_digests_tss_plus.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt_plus) + "\n")
         cnt_plus += 1
     else:
-        print("Warning: Strand of TSS was neither \'-\' nor \'+\'!")
+        print("[Warning] Strand of TSS was neither \'-\' nor \'+\'!") # should never happen
+
+
+print("\t\t[INFO] Writing to file: " + bed_file_name_undirected_digests_tss_minus)
+print("\t\t[INFO] Writing to file: " + bed_file_name_undirected_digests_tss_plus)
 
 cnt_minus = 1
 cnt_plus = 1
@@ -579,157 +624,163 @@ for tss in undirected_wo_directed_digests_tss_set:
         bed_stream_name_undirected_digests_tss_plus.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt_plus) + "\n")
         cnt_plus += 1
     else:
-        print("Warning: Strand of TSS was neither \'-\' nor \'+\'!")
+        print("[Warning] Strand of TSS was neither \'-\' nor \'+\'!") # should never happen
 
 bed_stream_name_directed_digests_tss_minus.close()
 bed_stream_name_directed_digests_tss_plus.close()
 bed_stream_name_undirected_digests_tss_minus.close()
 bed_stream_name_undirected_digests_tss_plus.close()
 
+print("\t[INFO] ... done.")
+
+print("[INFO] ... done with second pass.")
+
+
+########################################################################################################################
+########################################################################################################################
+
+### Calculate statistics on unique exclusive digests and associated promoters
+#############################################################################
+
+print("[INFO] Calculating statistics on unique exclusive digests and associated promoters ...")
 
 ### Determine and write digest sizes to file
 ############################################
 
-print("[INFO] Determining and writing digest sizes ...")
+print("\t[INFO] Determining and writing digest sizes ...")
 
-print("\t[INFO] Directed digests ...") # factor out
 tab_file_name_directed_digests_size_distribution = out_prefix + "_directed_digests_size_distribution.tab"
-tab_stream_name_directed_digests_size_distribution = open(tab_file_name_directed_digests_size_distribution, 'wt')
 print("\t\t[INFO] Writing to file: " + tab_file_name_directed_digests_size_distribution)
-directed_digest_size_array = []
-for d_coord in directed_wo_undirected_digests_set:
-    sta = d_coord.split("\t")[1]
-    end = d_coord.split("\t")[2]
-    size = int(end) - int(sta)
-    directed_digest_size_array.append(size)
-    tab_stream_name_directed_digests_size_distribution.write(str(size) + "\n")
+directed_digest_q1, directed_digest_q2, directed_digest_q3, directed_digest_mean = determine_digest_sizes_and_write_to_file(tab_file_name_directed_digests_size_distribution, directed_wo_undirected_digests_set)
 
-tab_stream_name_directed_digests_size_distribution.close()
-
-directed_digest_q1 = int(numpy.quantile(directed_digest_size_array, 0.25))
-directed_digest_q2 = int(numpy.quantile(directed_digest_size_array, 0.5))
-directed_digest_q3 = int(numpy.quantile(directed_digest_size_array, 0.75))
-directed_digest_mean = int(numpy.mean(directed_digest_size_array))
-
-
-print("\t[INFO] Undirected digests ...") # factor out
 tab_file_name_undirected_digests_size_distribution = out_prefix + "_undirected_digests_size_distribution.tab"
-tab_stream_name_undirected_digests_size_distribution = open(tab_file_name_undirected_digests_size_distribution, 'wt')
 print("\t\t[INFO] Writing to file: " + tab_file_name_undirected_digests_size_distribution)
-undirected_digest_size_array = []
-for d_coord in undirected_wo_directed_digests_set:
-    sta = d_coord.split("\t")[1]
-    end = d_coord.split("\t")[2]
-    size = int(end) - int(sta)
-    undirected_digest_size_array.append(size)
-    tab_stream_name_undirected_digests_size_distribution.write(str(size) + "\n")
-
-tab_stream_name_undirected_digests_size_distribution.close()
-
-undirected_digest_q1 = int(numpy.quantile(undirected_digest_size_array, 0.25))
-undirected_digest_q2 = int(numpy.quantile(undirected_digest_size_array, 0.5))
-undirected_digest_q3 = int(numpy.quantile(undirected_digest_size_array, 0.75))
-undirected_digest_mean = int(numpy.mean(undirected_digest_size_array))
-
-print("[INFO] ... done.")
+undirected_digest_q1, undirected_digest_q2, undirected_digest_q3, undirected_digest_mean = determine_digest_sizes_and_write_to_file(tab_file_name_undirected_digests_size_distribution, undirected_wo_directed_digests_set)
+print("\t[INFO] ... done.")
 
 
-### Create FASTA files with digest and promoter sequences
-#########################################################
+### Write number of interaction partners per digest
+###################################################
 
-print("[INFO] Converting BED to FASTA ...")
+print("\t[INFO] Writing number of interaction partners per digest ...")
+
+tab_file_name_directed_digests_interaction_partner_per_digest_distribution = out_prefix + "_directed_digests_interaction_partner_per_digest_distribution.tab"
+print("\t\t[INFO] Writing to file: " + tab_file_name_directed_digests_interaction_partner_per_digest_distribution)
+mean_number_of_interaction_partners_directed = write_number_of_interaction_partners_per_digest(tab_file_name_directed_digests_interaction_partner_per_digest_distribution, interaction_partners_per_digest_directed_dict)
+
+tab_file_name_undirected_digests_interaction_partner_per_digest_distribution = out_prefix + "_undirected_digests_interaction_partner_per_digest_distribution.tab"
+print("\t\t[INFO] Writing to file: " + tab_file_name_undirected_digests_interaction_partner_per_digest_distribution)
+mean_number_of_interaction_partners_undirected = write_number_of_interaction_partners_per_digest(tab_file_name_undirected_digests_interaction_partner_per_digest_distribution, interaction_partners_per_digest_undirected_dict)
+
+print("\t[INFO] ... done.")
+
+
+### Get unique exclusive genes symbols for GO analysis
+######################################################
+
+print("\t[INFO] Getting unique exclusive genes symbols for GO analysis ...")
+
+tab_file_name_directed_digest_symbols = out_prefix + "_directed_digest_symbols.tab"
+print("\t\t[INFO] Writing to file: " + tab_file_name_directed_digest_symbols)
+symbols_abs_directed, symbols_znf_abs_directed, symbols_znf_rel_directed = \
+    get_unique_exclusive_gene_symbols_and_write_to_file(directed_digests_symbols_set, undirected_digests_symbols_set, tab_file_name_directed_digest_symbols, "ZNF")
+
+tab_file_name_undirected_digest_symbols = out_prefix + "_undirected_digest_symbols.tab"
+print("\t\t[INFO] Writing to file: " + tab_file_name_undirected_digest_symbols)
+symbols_abs_undirected, symbols_znf_abs_undirected, symbols_znf_rel_undirected = \
+    get_unique_exclusive_gene_symbols_and_write_to_file(undirected_digests_symbols_set, directed_digests_symbols_set, tab_file_name_undirected_digest_symbols, "ZNF")
+
+print("\t[INFO] ... done.")
+
+
+### Convert BED with unique exclusive digests to FASTA
+######################################################
+
+print("\t[INFO] Converting BED with unique exclusive digests to FASTA ...")
 
 # get FASTA files with DIGEST sequences of directed interactions
 fasta_file_name_directed_digests = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests)
-print("\t[INFO] Wrote to file: " + fasta_file_name_directed_digests)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests)
 fasta_file_name_directed_digests_masked = mask_repeats(fasta_file_name_directed_digests)
-print("\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_masked)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_masked)
 
 # get FASTA files with DIGEST sequences of undirected interactions
 fasta_file_name_undirected_digests = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests)
-print("\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests)
 fasta_file_name_undirected_digests_masked = mask_repeats(fasta_file_name_undirected_digests)
-print("\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_masked)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_masked)
 
-# get FASTA files with sequences around TSS on '-' strand that are associated with directed interactions for CentriMo analysis
+# get FASTA files with sequences around promoters on '-' strand that are associated with directed interactions for CentriMo analysis
 fasta_file_name_directed_digests_tss_minus = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_minus)
-print("\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_minus)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_minus)
 
-# get FASTA files with sequences around TSS on '+' strand that are associated with directed interactions for CentriMo analysis
+# get FASTA files with sequences around promoters on '+' strand that are associated with directed interactions for CentriMo analysis
 fasta_file_name_directed_digests_tss_plus = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_plus)
-print("\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_plus)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_plus)
 
 # concat FASTA files for plus and minus strand for calculation of sequence statistics and motif discovery
 fasta_file_name_directed_digests_tss = fasta_file_name_directed_digests_tss_minus.split("_minus")[0] + '.fasta'
 sys_cmd = 'cat ' + fasta_file_name_directed_digests_tss_minus + ' ' + fasta_file_name_directed_digests_tss_plus + ' > ' + fasta_file_name_directed_digests_tss
 os.system(sys_cmd)
-print("\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss)
 fasta_file_name_directed_digests_tss_masked = mask_repeats(fasta_file_name_directed_digests_tss)
-print("\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_masked)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_masked)
 
-# get FASTA files with sequences around TSS on '-' strand that are associated with undirected interactions for CentriMo analysis
+# get FASTA files with sequences around promoters on '-' strand that are associated with undirected interactions for CentriMo analysis
 fasta_file_name_undirected_digests_tss_minus = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_minus)
-print("\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_minus)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_minus)
 
-# get FASTA files with sequences around TSS on '+' strand that are associated with undirected interactions for CentriMo analysis
+# get FASTA files with sequences around promoters on '+' strand that are associated with undirected interactions for CentriMo analysis
 fasta_file_name_undirected_digests_tss_plus = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_plus)
-print("\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_plus)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_plus)
 
 # concat FASTA files for plus and minus strand for calculation of sequence statistics and motif discovery
 fasta_file_name_undirected_digests_tss = fasta_file_name_undirected_digests_tss_minus.split("_minus")[0] + '.fasta'
 sys_cmd = 'cat ' + fasta_file_name_undirected_digests_tss_minus + ' ' + fasta_file_name_undirected_digests_tss_plus + ' > ' + fasta_file_name_undirected_digests_tss
 os.system(sys_cmd)
-print("\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss)
 fasta_file_name_undirected_digests_tss_masked = mask_repeats(fasta_file_name_undirected_digests_tss)
-print("\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_masked)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_masked)
 
-print("[INFO] ... done.")
+print("\t[INFO] ... done.")
 
 
 ### Determine base frequencies and write to file
 ################################################
 
-print("[INFO] Determining base frequencies and write to file ...")
+print("\t[INFO] Determining base frequencies and writing to file ...")
 
 tab_file_name_base_frequencies = out_prefix + "_base_frequencies.tab"
+print("\t\t[INFO] Writing to file: " + tab_file_name_base_frequencies)
 tab_stream_name_base_frequencies = open(tab_file_name_base_frequencies, 'wt')
 
 # directed digests
-header_line, value_line, repeat_content, gc_content_repeat, gc_content_non_repeat, gc_content_total = get_base_frequencies(fasta_file_name_directed_digests)
+header_line, value_line, repeat_content_directed_digests, gc_content_repeat_directed_digests, gc_content_non_repeat_directed_digests, gc_content_total_directed_digests = \
+    get_base_frequencies(fasta_file_name_directed_digests)
 tab_stream_name_base_frequencies.write(header_line + "\n")
 tab_stream_name_base_frequencies.write(value_line + "\n")
-repeat_content_directed_digests = repeat_content
-gc_content_repeat_directed_digests = gc_content_repeat
-gc_content_non_repeat_directed_digests = gc_content_non_repeat
-gc_content_total_directed_digests = gc_content_total
 
 # undirected digests
-header_line, value_line, repeat_content, gc_content_repeat, gc_content_non_repeat, gc_content_total = get_base_frequencies(fasta_file_name_undirected_digests)
+header_line, value_line, repeat_content_undirected_digests, gc_content_repeat_undirected_digests, gc_content_non_repeat_undirected_digests, gc_content_total_undirected_digests = \
+    get_base_frequencies(fasta_file_name_undirected_digests)
 tab_stream_name_base_frequencies.write(value_line + "\n")
-repeat_content_undirected_digests = repeat_content
-gc_content_repeat_undirected_digests = gc_content_repeat
-gc_content_non_repeat_undirected_digests = gc_content_non_repeat
-gc_content_total_undirected_digests = gc_content_total
 
-# TSS on directed digests
-header_line, value_line, repeat_content, gc_content_repeat, gc_content_non_repeat, gc_content_total = get_base_frequencies(fasta_file_name_directed_digests_tss)
+# promoters on directed digests
+header_line, value_line, repeat_content_directed_digests_tss, gc_content_repeat_directed_digests_tss, gc_content_non_repeat_directed_digests_tss, gc_content_total_directed_digests_tss = \
+    get_base_frequencies(fasta_file_name_directed_digests_tss)
 tab_stream_name_base_frequencies.write(value_line + "\n")
-repeat_content_directed_digests_tss = repeat_content
-gc_content_repeat_directed_digests_tss = gc_content_repeat
-gc_content_non_repeat_directed_digests_tss = gc_content_non_repeat
-gc_content_total_directed_digests_tss = gc_content_total
 
-# TSS on undirected digests
-header_line, value_line, repeat_content, gc_content_repeat, gc_content_non_repeat, gc_content_total = get_base_frequencies(fasta_file_name_undirected_digests_tss)
+# promoters on undirected digests
+header_line, value_line, repeat_content_undirected_digests_tss, gc_content_repeat_undirected_digests_tss, gc_content_non_repeat_undirected_digests_tss, gc_content_total_undirected_digests_tss = \
+    get_base_frequencies(fasta_file_name_undirected_digests_tss)
 tab_stream_name_base_frequencies.write(value_line + "\n")
-repeat_content_undirected_digests_tss = repeat_content
-gc_content_repeat_undirected_digests_tss = gc_content_repeat
-gc_content_non_repeat_undirected_digests_tss = gc_content_non_repeat
-gc_content_total_undirected_digests_tss = gc_content_total
 
 tab_stream_name_base_frequencies.close()
 
-print("[INFO] ... done.")
+print("\t[INFO] ... done.")
+
+print("[INFO] ... done with calculation of statistics on unique exclusive digests and associated promoters.")
+
 
 ### Create file with interaction and digest statistics
 ######################################################
@@ -763,8 +814,8 @@ print("\t[INFO] Szymkiewicz–Simpson coefficient: " + str("{:.2f}".format(szymk
 
 print("\t[INFO] Repeat content of directed digests: " + str(repeat_content_directed_digests))
 print("\t[INFO] Repeat content of undirected digests: " + str(repeat_content_undirected_digests))
-print("\t[INFO] Repeat content of TSS on directed digests: " + str(repeat_content_directed_digests_tss))
-print("\t[INFO] Repeat content of TSS on undirected digests: " + str(repeat_content_undirected_digests_tss))
+print("\t[INFO] Repeat content of promoters on directed digests: " + str(repeat_content_directed_digests_tss))
+print("\t[INFO] Repeat content of promoters on undirected digests: " + str(repeat_content_undirected_digests_tss))
 
 print("\t[INFO] GC content within repeat regions of directed digests: " + str(gc_content_repeat_directed_digests))
 print("\t[INFO] GC content within repeat regions of undirected digests: " + str(gc_content_repeat_undirected_digests))
@@ -792,6 +843,18 @@ print("\t\t\t[INFO] Q1: " + str(undirected_digest_q1) + " bp")
 print("\t\t\t[INFO] Q2: " + str(undirected_digest_q2) + " bp (Median)")
 print("\t\t\t[INFO] Q3: " + str(undirected_digest_q3) + " bp")
 print("\t\t\t[INFO] Mean: " + str(undirected_digest_mean) + " bp")
+print("\t[INFO] Mean number of interaction partners of directed digests: " + mean_number_of_interaction_partners_directed)
+print("\t[INFO] Mean number of interaction partners of undirected digests: " + mean_number_of_interaction_partners_undirected)
+
+print("\t[INFO] Unique exclusive gene symbols")
+print("\t\t[INFO] Directed digests")
+print("\t\t\t[INFO] Total number exclusive unique gene symbols for directed interactions: " + str(symbols_abs_directed))
+print("\t\t\t[INFO] Number exclusive unique gene symbols with \'ZNF\' substring for directed interactions: " + str(symbols_znf_abs_directed))
+print("\t\t\t[INFO] Fraction exclusive unique gene symbols with \'ZNF\' substring for directed interactions: " + str(symbols_znf_rel_directed))
+print("\t\t[INFO] Undirected digests")
+print("\t\t\t[INFO] Total number exclusive unique gene symbols for undirected interactions: " + str(symbols_abs_undirected))
+print("\t\t\t[INFO] Number exclusive unique gene symbols with \'ZNF\' substring for undirected interactions: " + str(symbols_znf_abs_undirected))
+print("\t\t\t[INFO] Fraction exclusive unique gene symbols with \'ZNF\' substring for undirected interactions: " + str(symbols_znf_rel_undirected))
 
 tab_file_name_interaction_and_digest_statistics = out_prefix + "_interaction_and_digest_statistics.tab"
 tab_file_stream_interaction_and_digest_statistics = open(tab_file_name_interaction_and_digest_statistics, 'wt')
@@ -835,8 +898,21 @@ tab_file_stream_interaction_and_digest_statistics.write(
     "gc_content_total_directed_digests" + "\t" +
     "gc_content_total_undirected_digests" + "\t" +
     "gc_content_total_directed_digests_tss" + "\t" +
-    "gc_content_non_repeat_undirected_digests_tss" +
+    "gc_content_non_repeat_undirected_digests_tss" + "\t" +
+
+    "mean_number_of_interaction_partners_directed" + "\t" +
+    "mean_number_of_interaction_partners_undirected" + "\t" +
+
+    "symbols_abs_directed" + "\t" +
+    "symbols_znf_abs_directed" + "\t" +
+    "symbols_znf_rel_directed" + "\t" +
+
+    "symbols_abs_undirected" + "\t" +
+    "symbols_znf_abs_undirected" + "\t" +
+    "symbols_znf_rel_undirected" +
+
     "\n")
+
 tab_file_stream_interaction_and_digest_statistics.write(
     out_prefix + "\t" +
     str(directed_interaction_num) + "\t" +
@@ -870,7 +946,21 @@ tab_file_stream_interaction_and_digest_statistics.write(
     str(gc_content_total_directed_digests) + "\t" +
     str(gc_content_total_undirected_digests) + "\t" +
     str(gc_content_total_directed_digests_tss) + "\t" +
-    str(gc_content_total_undirected_digests_tss         ) +
+    str(gc_content_total_undirected_digests_tss) + "\t" +
+
+    str(mean_number_of_interaction_partners_directed) + "\t" +
+    str(mean_number_of_interaction_partners_undirected) + "\t" +
+
+    str(symbols_abs_directed) + "\t" +
+    str(symbols_znf_abs_directed) + "\t" +
+    str(symbols_znf_rel_directed) + "\t" +
+
+    str(symbols_abs_undirected) + "\t" +
+    str(symbols_znf_abs_undirected) + "\t" +
+    str(symbols_znf_rel_undirected) +
+
     "\n")
 
 tab_file_stream_interaction_and_digest_statistics.close()
+
+print("[INFO] ... done.")
