@@ -1,4 +1,27 @@
 """
+This script performs a number of comparisons between digests and promoters of direct und undirected reference
+promoter-promoter interactions. The input file was prepared using the python script 'get_gene_symbols.py' and contains
+detailed information about one interaction in each line. This is one line as an example:
+
+chr2:112534779-112543248;chr2:112577153-112587985	33905	S	LOC105373562,POLR1B;CHCHD5	221:130	AA	14.20	d/+	chr2:112541915:+,chr2:112542212:-,chr2:112542036:+;chr2:112584437:+,chr2:112584609:+,chr2:112584854:+
+
+Field 1: 'chr2:112534779-112543248;chr2:112577153-112587985' - Coordinates of the interacting digests separated
+separated by a semicolon. The first comes before the second digest in sequential order.
+
+Field 2: '33905' - Distance between interactiong digests measured as the end position of the first an start position
+of the second digest.
+
+Field 3: 'S' - Tag for interaction category. 'S' means directed simple interactions. Beyond that, there are
+'T' for directed twisted, 'U' undirected, 'NA' for indefinable and the undirected reference interactions
+'URII', 'URAI' and 'URAA' for interacions with no, one or two enriched digests. The categorization is done by
+the script 'get_gene_symbols.py' based on a P-value threshold defined using the empirical FDR procedure. For this
+script, we use typically 'S', 'T' and 'URAA' because we are dealing with promoter-promoter interactions.
+
+Field 3: 'LOC105373562,POLR1B;CHCHD5' - Two comma separated lists of gene symbols separated by semicolon. The symbols
+before and after the semicolon correspond to the TSS on the first and second digest of the interaction.
+
+Field 4:
+
 This script is to prepare BED files containing interacting digests and promoter regions used for motif analysis.
 It iterates a file with interactions, gene symbols,
 strand and TSS information, etc. created with the script 'get_gene_symbols_of_interactions_script.py'.
