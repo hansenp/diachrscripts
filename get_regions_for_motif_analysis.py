@@ -101,18 +101,24 @@ print("\t[INFO] --genome-fasta-path: " + genome_fasta_path)
 
 # convert allowed pair tag strings into lists
 allowed_strand_pair_tags = allowed_strand_pair_tags.split(";")
-#print(allowed_strand_pair_tags)
 allowed_enrichment_pair_tags = str(allowed_enrichment_pair_tags).split(";")
-#print(allowed_enrichment_pair_tags)
 allowed_interaction_categories_directed = str(allowed_interaction_categories_directed).split(";")
-#print(allowed_interaction_categories_directed)
 allowed_interaction_categories_undirected = str(allowed_interaction_categories_undirected).split(";")
-#print(allowed_interaction_categories_undirected)
+
 
 ### Define auxiliary functions
 ##############################
 
 def convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name):
+    """
+    This function uses the external tool 'bedtools' in order to extract sequences whose coordinates are provided in
+    BED formatted file.
+
+    :param bedtools_path: Path to external command line tool 'bedtools'
+    :param genome_fasta_path: Path to genome FASTA file containing one sequence for eaach chromosome
+    :param bed_file_name: BED file with coordinates of the sequences that are going to be extracted
+    :return: Filename of the created FASTA file
+    """
     bed_file_name_base = str(bed_file_name).split(".b")[0]
     sys_cmd = bedtools_path + ' getfasta -name -fi ' + genome_fasta_path + ' -bed  ' + bed_file_name + ' > ' + bed_file_name_base + '.fasta'
     os.system(sys_cmd)
@@ -120,6 +126,12 @@ def convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name):
 
 
 def mask_repeats(fasta_file_name):
+    """
+    This function takes a FASTA file and replaces all occurrences of small letters (a,c,g and t) with N.
+
+    :param fasta_file_name: FASTA formatted file
+    :return: Filename of the created repeat masked FASTA file with suffix '_masked.fasta'
+    """
     fasta_file_name_base = str(fasta_file_name).split(".f")[0]
     sys_cmd = 'awk \'{if($1 !~ /^>/){gsub(/a|c|g|t/,"N",$1)};print}\' ' + fasta_file_name + ' > ' + fasta_file_name_base + '_masked.fasta'
     os.system(sys_cmd)
@@ -127,6 +139,21 @@ def mask_repeats(fasta_file_name):
 
 
 def get_base_frequencies(fasta_file_name):
+    """
+    This function takes a FASTA file and counts the overall number of occurrences of a, c, g, t, A, C, G, T and N.
+    It calculates the repeat content as measured by the fraction of small letters (soft masked repeats).
+    Furthermore, it calculates the GC content within repeat regions, outside repeat regions and the overall GC content.
+
+    :param fasta_file_name: FASTA file with soft masked repeats
+    :return: header_line: header line for a table that contains all results including absolute counts
+             value_line: values that correspond to the header line
+             repeat_content: Overall proportion of small letters (N regions included)
+             gc_content_repeat: Proportion of g and c within repeat regions
+             gc_content_non_repeat: Proportion of G and C outside repeat regions
+             gc_content_total: Overall proportion of g, c, G and C (N regions excluded)
+    """
+
+    # Iterate FASTA file and count letter occurrences
     a_abs = 0
     c_abs = 0
     g_abs = 0
@@ -153,28 +180,29 @@ def get_base_frequencies(fasta_file_name):
             line = fp.readline()
     fp.close()
 
-    # calculate repeat content (fraction of lower case)
+    # Calculate repeat content (fraction of lower case)
     acgt_abs = a_abs + c_abs + g_abs + t_abs
     acgtACGTN_abs = a_abs + c_abs + g_abs + t_abs + A_abs + C_abs + G_abs + T_abs + N_abs
     repeat_content = "{:.2f}".format(100*acgt_abs/acgtACGTN_abs)
 
-    # determine GC content within repeat regions
+    # Determine GC content within repeat regions
     cg_abs = c_abs + g_abs
     if 0 < acgt_abs:
         gc_content_repeat = "{:.2f}".format(100 * cg_abs / acgt_abs)
     else:
         gc_content_repeat = "{:.2f}".format(0.0)
 
-    # determine GC content for non repeat regions
+    # Determine GC content for non repeat regions
     CG_abs = C_abs + G_abs
     ACGT_abs = A_abs + C_abs + G_abs + T_abs
     gc_content_non_repeat = "{:.2f}".format(100 * CG_abs / ACGT_abs)
 
-    # determine overall GC content
+    # Determine overall GC content
     cgCG_abs = cg_abs + CG_abs
     acgtACGT_abs = a_abs + c_abs + g_abs + t_abs + A_abs + C_abs + G_abs + T_abs
     gc_content_total = "{:.2f}".format(100 * cgCG_abs / acgtACGT_abs)
 
+    # Prepare header line
     header_line = "fasta_file_name" + "\t" + \
                   "a_occ_abs" + "\t" + \
                   "c_occ_abs" + "\t" + \
@@ -190,6 +218,7 @@ def get_base_frequencies(fasta_file_name):
                   "gc_content_non_repeat" + "\t" + \
                   "gc_content_total"
 
+    # Prepare corresponding line with values
     value_line = fasta_file_name + "\t" + \
                  str(a_abs) + "\t" + \
                  str(c_abs) + "\t" + \
@@ -209,7 +238,22 @@ def get_base_frequencies(fasta_file_name):
 
 
 def determine_digest_sizes_and_write_to_file(tab_file_name_digests_size_distribution, digest_set):
+    """
+    This function takes a file name and a set of digest coordinates and writes all digest sizes to a file.
+    Furthermore it calculates and returns quantiles (Q1, Q2 and Q3) and mean digest sizes.
+
+    :param tab_file_name_digests_size_distribution: File name for a text file that will contain one digest size per line
+    :param digest_set: Set of digest coordinates given as tab separated string
+    :return: q1: 0.25 quantile of size distribution
+             q2: 0.50 quantile of size distribution (median)
+             q3: 0.75 quantile of size distribution
+             mean: Average digest size
+    """
+
+    # Open stream for output file
     tab_stream_name_digests_size_distribution = open(tab_file_name_digests_size_distribution, 'wt')
+
+    # Iterate digest set, add sizes to array and write sizes to file
     digest_size_array = []
     for d_coord in digest_set:
         sta = d_coord.split("\t")[1]
@@ -218,8 +262,10 @@ def determine_digest_sizes_and_write_to_file(tab_file_name_digests_size_distribu
         digest_size_array.append(size)
         tab_stream_name_digests_size_distribution.write(str(size) + "\n")
 
+    # Close stream for output file
     tab_stream_name_digests_size_distribution.close()
 
+    # Calculate quantiles and mean
     q1 = int(numpy.quantile(digest_size_array, 0.25))
     q2 = int(numpy.quantile(digest_size_array, 0.5))
     q3 = int(numpy.quantile(digest_size_array, 0.75))
@@ -227,56 +273,102 @@ def determine_digest_sizes_and_write_to_file(tab_file_name_digests_size_distribu
 
     return q1, q2, q3, mean
 
+
 def write_number_of_interaction_partners_per_digest(tab_file_name_digests_interaction_partner_per_digest_distribution, interaction_partners_per_digest_dict):
+    """
+    This function takes a dictionary that contains the number of interaction partners of digests and prints one number
+    per line to a file.
+
+    :param tab_file_name_digests_interaction_partner_per_digest_distribution: Name of the file that is going to be created
+    :param interaction_partners_per_digest_dict: Dictionary with digest coordinates as keys and number of interaction partners as values
+    :return: mean_number_of_interaction_partners
+    """
+
+    # Open stream for output file
     tab_stream_name_digests_interaction_partner_per_digest_distribution = open(tab_file_name_digests_interaction_partner_per_digest_distribution, 'wt')
+
+    # Create array with all numbers of interaction partners
     interaction_partner_number_array = []
+
+    # Iterate dictionary
     for inter_partner_num in interaction_partners_per_digest_dict.values():
         tab_stream_name_digests_interaction_partner_per_digest_distribution.write(str(inter_partner_num) + "\n")
         interaction_partner_number_array.append(inter_partner_num)
+
+    # Close stream for output file
     tab_stream_name_digests_interaction_partner_per_digest_distribution.close()
 
+    # Calculate average number of interaction partner per digest
     mean_number_of_interaction_partners = "{:.2f}".format(numpy.mean(interaction_partner_number_array))
+
     return mean_number_of_interaction_partners
 
 
 def get_unique_exclusive_gene_symbols_and_write_to_file(digests_symbols_set_a, digests_symbols_set_b, tab_file_name_unique_exclusive_digest_symbols, symbol_search_pattern):
     """
     This function takes two sets of gene symbols A and B and determines the set A\B, which is written to a text file
-    that contains one gene symbol in each line.
+    that contains one gene symbol in each line. In addition, the number of gene symbols in A\B that contain the
+    substring 'symbol_search_pattern' is determined.
 
-    In addition the number of gene symbols in A\B that contain the substring 'symbol_search_pattern' is determined.
-
-    :param tab_file_name_unique_exclusive_digest_symbols: Write gene symbols in A\B to this file.
-    :param digests_symbols_set_a: Set of gene symbols A.
-    :param digests_symbols_set_b: Another set of gene symbols B.
-    :param symbol_search_pattern: Count gene symbols that contain this substring.
-
-    :return: Number of gene symbols in A\B, absolute number of gene symbols in A\B containing the substring
-    'symbol_search_pattern' and fraction of gene symbols in A\B containing substring 'symbol_search_pattern'.
+    :param tab_file_name_unique_exclusive_digest_symbols: Name for the file with gene symbols that is going to be created
+    :param digests_symbols_set_a: Set of gene symbols A
+    :param digests_symbols_set_b: Another set of gene symbols B
+    :param symbol_search_pattern: Count gene symbols containing this substring (We typically use 'ZNF')
+    :return: symbols_abs: Absolute number of symbols in A\B
+             symbols_search_pattern_abs: Absolute number of symbols in A\B containing the search pattern 'symbol_search_pattern'
+             symbols_search_patter_rel: Relative number of symbols in A\B containing the search pattern 'symbol_search_pattern'
     """
+
+    # Remove symbols from A that are also in B
     a_wo_b_digests_symbols_set = digests_symbols_set_a.difference(digests_symbols_set_b)
-    symbols_abs = 0
-    znf_abs = 0
+
+    # Open stream for output file
     tab_stream_name_unique_exclusive_digest_symbols = open(tab_file_name_unique_exclusive_digest_symbols, 'wt')
+
+    # Iterate and count remaining symbols in A and write to file
+    symbols_abs = 0
+    symbols_search_pattern_abs = 0
     for symbol in a_wo_b_digests_symbols_set:
         symbols_abs += 1
         tab_stream_name_unique_exclusive_digest_symbols.write(symbol + "\n")
         if symbol_search_pattern in symbol:
-            znf_abs += 1
-    tab_stream_name_unique_exclusive_digest_symbols.close()
-    znf_rel = "{:.2f}".format(100 * znf_abs / symbols_abs)
+            symbols_search_pattern_abs += 1
 
-    return symbols_abs, znf_abs, znf_rel
+    # Close stream for output file
+    tab_stream_name_unique_exclusive_digest_symbols.close()
+
+    # Calculate proportion of gene symbols containing the search pattern
+    symbols_search_patter_rel = "{:.2f}".format(100 * symbols_search_pattern_abs / symbols_abs)
+
+    return symbols_abs, symbols_search_pattern_abs, symbols_search_patter_rel
 
 
 def parse_interaction_line_with_gene_symbols(interaction_line_with_gene_symbols):
+    """
+    This function takes a tab separated line with coordinates and gene symbols that correspond to an interaction and
+    parses it into individual fields that are relevant for the analyses performed in this script.
 
+    :param interaction_line_with_gene_symbols: Line from a file that was created using the script 'get_gene_symbols_interactions'.
+    :return: chr_a: Chromosome of the first digest of the interaction (e.g. chr1)
+             sta_a: Start coordinate of the first digest of the interaction (e.g. 123456)
+             end_a: End coordinate of the first digest of the interaction (e.g. 234567)
+             syms_a: Comma separated list of gene symbols associated with TSS on the first digest (e.g. HIST1H1E,HIST1H2BD)
+             tsss_a: Comma separated list of TSS coordinates on the first digest (e.g. chr6:26158121:+,chr6:26156331:+)
+             chr_b, sta_b, end_b, syms_b, tsss_b: Same as for the first digest but for the second digest
+             enrichment_pair_tag: Two letter tag indicating the enrichment status of the two digests (e.g.  AA, AI, II)
+             strand_pair_tag: Two symbol tag separated by '/' indicating the strands of TSS on first and second digest (e.g. -/-, +/+, -/+, +/-, -/d, ...)
+             interaction_category: Interaction category with respect to directionality (S, T, URAA, URAI, ...)
+    """
+
+    # Split line into individual fields
     field = interaction_line_with_gene_symbols.split("\t")
 
+    # Split string for digest pair associated with the interaction
     coordinate_pair = field[0].split(";")
     coordinate_a = coordinate_pair[0]
     coordinate_b = coordinate_pair[1]
 
+    # Extract digest coordinates
     chr_a = coordinate_a.split(":")[0]
     chr_b = coordinate_b.split(":")[0]
 
@@ -286,27 +378,64 @@ def parse_interaction_line_with_gene_symbols(interaction_line_with_gene_symbols)
     end_a = int(coordinate_a.split(":")[1].split("-")[1])
     end_b = int(coordinate_b.split(":")[1].split("-")[1])
 
+    # Split string for pair of comma separated lists of gene symbols
     symbols_pair = field[3].split(";")
     syms_a = symbols_pair[0]
     syms_b = symbols_pair[1]
 
+    # Split string for pair of comma separated lists of TSS
     tsss_pair = field[8].split(";")
     tsss_a = tsss_pair[0]
     tsss_b = tsss_pair[1]
 
-    enrichment_pair_tag = field[5] ## AA, AI, II
+    # Extract letter pair tag for enrichment status of digests
+    enrichment_pair_tag = field[5]
 
-    strand_pair_tag = field[7] # -/-, +/+, -/+, +/-, -/d, ...
+    # Extract symbol pair tag for TSS orientations on associated digests
+    strand_pair_tag = field[7]
 
-    interaction_category = field[2] # S, T, URAA, URAI, ...
+    # Extract category of interaction with respect to directionality
+    interaction_category = field[2]
 
     return chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category
 
 
-### Prepare output files
-########################
+def write_interaction_sizes_to_file(interaction_sizes_array, tab_file_name_interaction_size_distribution):
+    """
+    This function takes an array with distances between interacting digests and prints them to file, on distance per
+    line. Furthermore, it calculates and returns quantiles and mean.
 
-# create two BED files for regions of segmented directed and undirected interactions
+    :param interaction_sizes_array: Array containing interaction sizes
+    :param tab_file_name_interaction_size_distribution: Name of the file that is going to be created containing one interaction size per line
+    :return: q1: 0.25 quantile of size distribution
+             q2: 0.50 quantile of size distribution (median)
+             q3: 0.75 quantile of size distribution
+             mean: Average interaction size
+    """
+
+    # Open stream for output file
+    tab_file_stream_interaction_size_distribution = open(tab_file_name_interaction_size_distribution, 'wt')
+
+    # Iterate array with sizes and write to file
+    for size in interaction_sizes_array:
+        tab_file_stream_interaction_size_distribution.write(str(size) + "\n")
+
+    # Close stream for output file
+    tab_file_stream_interaction_size_distribution.close()
+
+    # Calculate quantiles and mean
+    q1_interaction_sizes = int(numpy.quantile(interaction_sizes_array, 0.25))
+    q2_interaction_sizes = int(numpy.quantile(interaction_sizes_array, 0.5))
+    q3_interaction_sizes = int(numpy.quantile(interaction_sizes_array, 0.75))
+    mean_interaction_sizes = int(numpy.mean(interaction_sizes_array))
+
+    return q1_interaction_sizes, q2_interaction_sizes, q3_interaction_sizes, mean_interaction_sizes
+
+
+### Prepare output BED files with coordinates of digests and associated promoters
+#################################################################################
+
+# create two BED files for regions of directed and undirected interactions
 bed_file_name_directed_digests = out_prefix + "_directed_digests.bed"
 bed_stream_name_directed_digests = open(bed_file_name_directed_digests, 'wt')
 bed_file_name_undirected_digests = out_prefix + "_undirected_digests.bed"
@@ -328,7 +457,8 @@ bed_stream_name_undirected_digests_tss_plus = open(bed_file_name_undirected_dige
 ### Prepare variables and data structures
 #########################################
 
-chrom_sizes_dict = {} # read chromosome sizes to hash
+# Read chromosome sizes from file to hash that can be used to avoid promoter coordinates outside chromosomes
+chrom_sizes_dict = {}
 with open(chrom_info_file, 'rt') as fp:
     line = fp.readline()
     while line:
@@ -337,24 +467,30 @@ with open(chrom_info_file, 'rt') as fp:
         chrom_sizes_dict[chr_name] = int(chr_size)
         line = fp.readline()
 
+
+# Sets that will store tab separated digest coordinates
 directed_digests_set = set()
 undirected_digests_set = set()
 
+# Variables to count interactions
 directed_interaction_num = 0
 undirected_interaction_num = 0
 
+# Variable to count digests that have no TSS (should never happen, if interactions are filtered for 'AA')
 first_digest_without_tss_num = 0
 second_digest_without_tss_num = 0
 
+# Set that will store gene symbols
 directed_digests_symbols_set = set()
 undirected_digests_symbols_set = set()
 
+# Dictionaries that will be used to count the number of interaction partners per digest
 interaction_partners_per_digest_directed_dict = {}
 interaction_partners_per_digest_undirected_dict = {}
 
 
-### First pass: Determine unique exclusive digests
-##################################################
+### First pass: Determine unique digests that do not interact with digests from the other interaction set
+#########################################################################################################
 
 print("[INFO] First pass: Determining unique exclusive digests ...")
 
@@ -362,52 +498,60 @@ print("\t[INFO] Iterating interactions with gene symbols ...")
 
 with gzip.open(interaction_gs_file, 'rt') as fp:
 
-    n_interaction_total = 0 # counter to track progress
+    n_interaction_total = 0
     line = fp.readline()
     while line:
 
+        # Report progress
         n_interaction_total += 1
         if n_interaction_total % 1000000 == 0:
             print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
 
+        # Parse line from interaction file with gene symbols
         chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category = \
             parse_interaction_line_with_gene_symbols(line.rstrip())
 
-        if enrichment_pair_tag not in allowed_enrichment_pair_tags: # use only interactions with specified digest enrichment pair tags (II, AI, AA)
+        # Skip lines/interactions with the wrong enrichment pair tag (typically we use only AA)
+        if enrichment_pair_tag not in allowed_enrichment_pair_tags:
             line = fp.readline()
             continue
 
-        if strand_pair_tag not in allowed_strand_pair_tags and 'All' not in allowed_strand_pair_tags: # use only interactions with specified digest strand pair tags (-/-, +/+, -/+, +/-, -/d, ...) or 'All'
+        # Skrip line with wrong strand symbol pair tag (typically we use no restriction, i.e. 'All')
+        if strand_pair_tag not in allowed_strand_pair_tags and 'All' not in allowed_strand_pair_tags:
             line = fp.readline()
             continue
 
+        # Sanity check: Should never be entered, if analysis is restricted to AA interactions
         if tsss_a == '':
-            print("Warning: No TSS for first digest!")
+            print("\t\t[Warning] No TSS for first digest!")
             first_digest_without_tss_num += 1
             line = fp.readline()
             continue
 
+        # Sanity check: Should never be entered, if analysis is restricted to AA interactions
         if tsss_b == '':
-            print("Warning: No TSS for second digest!")
+            print("\t\t[Warning] No TSS for second digest!")
             second_digest_without_tss_num += 1
             line = fp.readline()
             continue
 
+        # Restrict analysis to specified set of categories for directed interactions (typicall we use both, i.e. 'S' and 'T')
         if interaction_category in allowed_interaction_categories_directed:
 
+            # Increment conter for directed interactions
             directed_interaction_num += 1
 
-            # add digest regions to set for directed interactions
+            # Add digest regions to set for directed interactions
             directed_digests_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
             directed_digests_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
 
-            # add associated gene symbols to set for directed interactions
+            # Add associated gene symbols to set for directed interactions
             for symbol in syms_a.split(","):
                 directed_digests_symbols_set.add(symbol)
             for symbol in syms_b.split(","):
                 directed_digests_symbols_set.add(symbol)
 
-            # count interaction partners for each directed digest
+            # Count interaction partners within directed interactions for each digest
             if chr_a + "\t" + str(sta_a) + "\t" + str(end_a) in interaction_partners_per_digest_directed_dict.keys():
                 interaction_partners_per_digest_directed_dict[chr_a + "\t" + str(sta_a) + "\t" + str(end_a)] += 1
             else:
@@ -418,21 +562,23 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             else:
                 interaction_partners_per_digest_directed_dict[chr_b + "\t" + str(sta_b) + "\t" + str(end_b)] = 1
 
+        # Restrict analysis to specified set of categories for undirected interactions (typicall we use 'URAA' only)
         if interaction_category in allowed_interaction_categories_undirected:
 
+            # Increment conter for undirected interactions
             undirected_interaction_num += 1
 
-            # add digest regions to set for undirected interactions
+            # Add digest regions to set for undirected interactions
             undirected_digests_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
             undirected_digests_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
 
-            # add associated gene symbols to set for undirected interactions
+            # Add associated gene symbols to set for directed interactions
             for symbol in syms_a.split(","):
                 undirected_digests_symbols_set.add(symbol)
             for symbol in syms_b.split(","):
                 undirected_digests_symbols_set.add(symbol)
 
-            # count interaction partners for each undirected digest
+            # Count interaction partners within undirected reference interactions (typically 'URAA') for each digest
             if chr_a + "\t" + str(sta_a) + "\t" + str(end_a) in interaction_partners_per_digest_undirected_dict.keys():
                 interaction_partners_per_digest_undirected_dict[chr_a + "\t" + str(sta_a) + "\t" + str(end_a)] += 1
             else:
@@ -445,7 +591,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
 
         line = fp.readline()
 
-# report interactions with no promoters on one or both digests (should not happen)
+# Sanity check: Report interactions with no TSS on one or both digests (should never happen, if analysis is restricted to AA interactions)
 if 0 < first_digest_without_tss_num:
     print("\t[WARNING] There were " + str(first_digest_without_tss_num) + " interactions without promoters on the first digest!")
 if 0 < second_digest_without_tss_num:
@@ -456,8 +602,8 @@ fp.close()
 print("\t[INFO] ... done.")
 
 
-### Get exclusive digests and write coordinates for sequence analysis to BED files
-##################################################################################
+### Get exclusive digests (D\U and U\D) and write coordinates for sequence analysis to BED files
+################################################################################################
 
 print("\t[INFO] Getting exclusive digests and writing coordinates for sequence analysis ...")
 
@@ -466,7 +612,7 @@ undirected_wo_directed_digests_set = undirected_digests_set.difference(directed_
 directed_intersect_undirected_digests_set = directed_digests_set.intersection(undirected_digests_set)
 directed_union_directed_digests_set = directed_digests_set.union(undirected_digests_set)
 
-cnt = 1
+cnt = 1 # use consecutive numbers as unique IDs
 print("\t\t[INFO] Writing to file: " + bed_file_name_directed_digests)
 for digest in directed_wo_undirected_digests_set:
     bed_stream_name_directed_digests.write(digest + "\t" + str(cnt) + "\n")
@@ -488,14 +634,16 @@ print("[INFO] ... done with first pass.")
 ########################################################################################################################
 ########################################################################################################################
 
-### Get unique TSS associated with unique exclusive digests
-###########################################################
+### Get unique TSS associated with unique exclusive digests (D\U and U\D)
+#########################################################################
 
+# Sets that will store coordinates and strands of TSS on digests
 directed_wo_undirected_digests_tss_set = set()
 undirected_wo_directed_digests_tss_set = set()
 
-interaction_sizes_directed_digests = []
-interaction_sizes_undirected_digests = []
+# Arrays that will store interaction sizes
+interaction_sizes_directed_digests_array = []
+interaction_sizes_undirected_digests_array = []
 
 print("[INFO] Second pass: Determining promoters on unique exclusive digests ...")
 
@@ -503,95 +651,106 @@ print("\t[INFO] Iterating interactions with gene symbols ...")
 
 with gzip.open(interaction_gs_file, 'rt') as fp:
 
-    n_interaction_total = 0 # counter to track progress
+    n_interaction_total = 0
     line = fp.readline().rstrip()
     while line:
 
+        # Report progress
         n_interaction_total += 1
         if n_interaction_total % 1000000 == 0:
             print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
 
+        # Parse line from interaction file with gene symbols
         chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category = \
             parse_interaction_line_with_gene_symbols(line.rstrip())
 
-        field = line.split("\t")
-
-
-
+        # Skip lines/interactions with the wrong enrichment pair tag (typically we use only AA)
         if enrichment_pair_tag not in allowed_enrichment_pair_tags: # use only interactions with specified digest enrichment pair tags (II, AI, AA)
             line = fp.readline()
             continue
 
+        # Skrip line with wrong strand symbol pair tag (typically we use no restriction, i.e. 'All')
         if strand_pair_tag not in allowed_strand_pair_tags and 'All' not in allowed_strand_pair_tags: # use only interactions with specified digest strand pair tags (-/-, +/+, -/+, +/-, -/d, ...) or 'All'
             line = fp.readline()
             continue
 
+        # Sanity check: Should never be entered, if analysis is restricted to AA interactions
         if tsss_a == '':
-            print("Warning: No TSS for first digest!")
+            print("\t\t[Warning] No TSS for first digest!")
             first_digest_without_tss_num += 1
             line = fp.readline()
             continue
 
+        # Sanity check: Should never be entered, if analysis is restricted to AA interactions
         if tsss_b == '':
-            print("Warning: No TSS for second digest!")
+            print("\t\t[Warning] No TSS for first digest!")
             second_digest_without_tss_num += 1
             line = fp.readline()
             continue
 
+        # Get coordinates of the first digest from interaction line
         d1_coord = str(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+
+        # Check if the first digest belongs to a directed interaction and does not additionally interact with a digest from the undirected reference interaction set
         if d1_coord in directed_wo_undirected_digests_set:
-            for tss_a in tsss_a.split(','):
+            # Add all TSS positions on this digest to a set of TSS
+            for tss_a in tsss_a.split(','): # ToDo: If we do want to avoid overlapping promoters, we could do it here
                 directed_wo_undirected_digests_tss_set.add(tss_a)
+        # Check if the first digest belongs to a undirected reference interaction and does not additionally interact with a digest from the directed interaction set
         if d1_coord in undirected_wo_directed_digests_set:
-            for tss_a in tsss_a.split(','):
+            # Add all TSS positions on this digest to a set of TSS
+            for tss_a in tsss_a.split(','): # ToDo: If we do want to avoid overlapping promoters, we could do it here
                 undirected_wo_directed_digests_tss_set.add(tss_a)
 
+        # Get coordinates of the second digest from interaction line
         d2_coord = str(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
+
+        # Do the same as for the first digest
         if d2_coord in directed_wo_undirected_digests_set:
-            for tss_b in tsss_b.split(','):
+            for tss_b in tsss_b.split(','): # ToDo: If we do want to avoid overlapping promoters, we could do it here
                 directed_wo_undirected_digests_tss_set.add(tss_b)
         if d2_coord in undirected_wo_directed_digests_set:
-            for tss_b in tsss_b.split(','):
+            for tss_b in tsss_b.split(','): # ToDo: If we do want to avoid overlapping promoters, we could do it here
                 undirected_wo_directed_digests_tss_set.add(tss_b)
 
-        # get distance between exclusive directed interacting digests
+        # Get distance between directed interacting digests, if both digests digest do not interact with a digests of the set of undirected reference interactions
         if interaction_category in allowed_interaction_categories_directed and d1_coord in directed_wo_undirected_digests_set and d2_coord in directed_wo_undirected_digests_set:
-            interaction_sizes_directed_digests.append(sta_b - end_a)
-            #print(line)
+            interaction_sizes_directed_digests_array.append(sta_b - end_a)
 
+        # Get distance between undirected interacting digests, if both digests digest do not interact with a digests of the set of directed interactions
         if interaction_category in allowed_interaction_categories_undirected and d1_coord in undirected_wo_directed_digests_set and d2_coord in undirected_wo_directed_digests_set:
-            interaction_sizes_undirected_digests.append(sta_b - end_a)
-            #print(line)
+            interaction_sizes_undirected_digests_array.append(sta_b - end_a)
 
         line = fp.readline()
 
 print("\t[INFO] ... done.")
 
-print(len(interaction_sizes_directed_digests))
-print(numpy.mean(interaction_sizes_directed_digests))
-print(len(interaction_sizes_undirected_digests))
-print(numpy.mean(interaction_sizes_undirected_digests))
 
 ### Write promoter coordinates to BED files for sequence analysis
 #################################################################
 
 print("\t[INFO] Writing promoter coordinates to BED files for sequence analysis ...")
 
+# Report names of files that are going to be created for TSS on directed digests
 print("\t\t[INFO] Writing to file: " + bed_file_name_directed_digests_tss_minus)
 print("\t\t[INFO] Writing to file: " + bed_file_name_directed_digests_tss_plus)
 
-cnt_minus = 1
+cnt_minus = 1 # use consecutive numbers as unique IDs
 cnt_plus = 1
 for tss in directed_wo_undirected_digests_tss_set:
+
+    # Split string with TSS coordinate and strand and add specified number of bases in up and downstream direction
     A = tss.split(':')
     chr = A[0]
     sta = int(A[1]) - up_dist
-    if sta < 0:
+    if sta < 0: # avoid coordinates smaller than 0
         sta = 0
     end = int(A[1]) + down_dist
-    if chrom_sizes_dict[chr] < end:
+    if chrom_sizes_dict[chr] < end: # avoid coordinates greater than chromosome size
         end = chrom_sizes_dict[chr] - 1
     strand = A[2]
+
+    # Write promoter coordinates to separate files for each strand
     if strand == '-':
         bed_stream_name_directed_digests_tss_minus.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(cnt_minus) + "\n")
         cnt_minus += 1
@@ -601,7 +760,11 @@ for tss in directed_wo_undirected_digests_tss_set:
     else:
         print("[Warning] Strand of TSS was neither \'-\' nor \'+\'!") # should never happen
 
+# Close output streams
+bed_stream_name_directed_digests_tss_minus.close()
+bed_stream_name_directed_digests_tss_plus.close()
 
+# Report names of files that are going to be created for TSS on undirected digests
 print("\t\t[INFO] Writing to file: " + bed_file_name_undirected_digests_tss_minus)
 print("\t\t[INFO] Writing to file: " + bed_file_name_undirected_digests_tss_plus)
 
@@ -626,8 +789,7 @@ for tss in undirected_wo_directed_digests_tss_set:
     else:
         print("[Warning] Strand of TSS was neither \'-\' nor \'+\'!") # should never happen
 
-bed_stream_name_directed_digests_tss_minus.close()
-bed_stream_name_directed_digests_tss_plus.close()
+# Close output streams
 bed_stream_name_undirected_digests_tss_minus.close()
 bed_stream_name_undirected_digests_tss_plus.close()
 
@@ -656,6 +818,24 @@ directed_digest_q1, directed_digest_q2, directed_digest_q3, directed_digest_mean
 tab_file_name_undirected_digests_size_distribution = out_prefix + "_undirected_digests_size_distribution.tab"
 print("\t\t[INFO] Writing to file: " + tab_file_name_undirected_digests_size_distribution)
 undirected_digest_q1, undirected_digest_q2, undirected_digest_q3, undirected_digest_mean = determine_digest_sizes_and_write_to_file(tab_file_name_undirected_digests_size_distribution, undirected_wo_directed_digests_set)
+print("\t[INFO] ... done.")
+
+
+### Write interaction sizes to file
+###################################
+
+print("\t[INFO] Writing interaction sizes to file ...")
+
+tab_file_name_directed_interaction_size_distribution = out_prefix + "_directed_interaction_size_distribution.tab"
+print("\t\t[INFO] Writing to file: " + tab_file_name_directed_interaction_size_distribution)
+q1_interaction_sizes_directed_digests, q2_interaction_sizes_directed_digests, q3_interaction_sizes_directed_digests, mean_interaction_sizes_directed_digests = \
+    write_interaction_sizes_to_file(interaction_sizes_directed_digests_array, tab_file_name_directed_interaction_size_distribution)
+
+tab_file_name_undirected_interaction_size_distribution = out_prefix + "_undirected_interaction_size_distribution.tab"
+print("\t\t[INFO] Writing to file: " + tab_file_name_undirected_interaction_size_distribution)
+q1_interaction_sizes_undirected_digests, q2_interaction_sizes_undirected_digests, q3_interaction_sizes_undirected_digests, mean_interaction_sizes_undirected_digests = \
+    write_interaction_sizes_to_file(interaction_sizes_undirected_digests_array, tab_file_name_undirected_interaction_size_distribution)
+
 print("\t[INFO] ... done.")
 
 
@@ -754,23 +934,23 @@ tab_file_name_base_frequencies = out_prefix + "_base_frequencies.tab"
 print("\t\t[INFO] Writing to file: " + tab_file_name_base_frequencies)
 tab_stream_name_base_frequencies = open(tab_file_name_base_frequencies, 'wt')
 
-# directed digests
+# Directed digests
 header_line, value_line, repeat_content_directed_digests, gc_content_repeat_directed_digests, gc_content_non_repeat_directed_digests, gc_content_total_directed_digests = \
     get_base_frequencies(fasta_file_name_directed_digests)
 tab_stream_name_base_frequencies.write(header_line + "\n")
 tab_stream_name_base_frequencies.write(value_line + "\n")
 
-# undirected digests
+# Undirected digests
 header_line, value_line, repeat_content_undirected_digests, gc_content_repeat_undirected_digests, gc_content_non_repeat_undirected_digests, gc_content_total_undirected_digests = \
     get_base_frequencies(fasta_file_name_undirected_digests)
 tab_stream_name_base_frequencies.write(value_line + "\n")
 
-# promoters on directed digests
+# Promoters on directed digests
 header_line, value_line, repeat_content_directed_digests_tss, gc_content_repeat_directed_digests_tss, gc_content_non_repeat_directed_digests_tss, gc_content_total_directed_digests_tss = \
     get_base_frequencies(fasta_file_name_directed_digests_tss)
 tab_stream_name_base_frequencies.write(value_line + "\n")
 
-# promoters on undirected digests
+# Promoters on undirected digests
 header_line, value_line, repeat_content_undirected_digests_tss, gc_content_repeat_undirected_digests_tss, gc_content_non_repeat_undirected_digests_tss, gc_content_total_undirected_digests_tss = \
     get_base_frequencies(fasta_file_name_undirected_digests_tss)
 tab_stream_name_base_frequencies.write(value_line + "\n")
@@ -855,6 +1035,19 @@ print("\t\t[INFO] Undirected digests")
 print("\t\t\t[INFO] Total number exclusive unique gene symbols for undirected interactions: " + str(symbols_abs_undirected))
 print("\t\t\t[INFO] Number exclusive unique gene symbols with \'ZNF\' substring for undirected interactions: " + str(symbols_znf_abs_undirected))
 print("\t\t\t[INFO] Fraction exclusive unique gene symbols with \'ZNF\' substring for undirected interactions: " + str(symbols_znf_rel_undirected))
+print("\t[INFO] Interaction sizes")
+print("\t\t[INFO] Directed digests")
+
+print("\t\t\t[INFO] Q1: " + str(q1_interaction_sizes_directed_digests))
+print("\t\t\t[INFO] Q2: " + str(q2_interaction_sizes_directed_digests))
+print("\t\t\t[INFO] Q3: " + str(q3_interaction_sizes_directed_digests))
+print("\t\t\t[INFO] Mean: " + str(mean_interaction_sizes_directed_digests))
+print("\t\t[INFO] Undirected digests")
+print("\t\t\t[INFO] Q1: " + str(q1_interaction_sizes_undirected_digests))
+print("\t\t\t[INFO] Q2: " + str(q2_interaction_sizes_undirected_digests))
+print("\t\t\t[INFO] Q3: " + str(q3_interaction_sizes_undirected_digests))
+print("\t\t\t[INFO] Mean: " + str(mean_interaction_sizes_undirected_digests))
+
 
 tab_file_name_interaction_and_digest_statistics = out_prefix + "_interaction_and_digest_statistics.tab"
 tab_file_stream_interaction_and_digest_statistics = open(tab_file_name_interaction_and_digest_statistics, 'wt')
@@ -900,6 +1093,16 @@ tab_file_stream_interaction_and_digest_statistics.write(
     "gc_content_total_directed_digests_tss" + "\t" +
     "gc_content_non_repeat_undirected_digests_tss" + "\t" +
 
+    "directed_digest_q1" + "\t" +
+    "directed_digest_q2" + "\t" +
+    "directed_digest_q3" + "\t" +
+    "directed_digest_mean" + "\t" +
+
+    "undirected_digest_q1" + "\t" +
+    "undirected_digest_q2" + "\t" +
+    "undirected_digest_q3" + "\t" +
+    "undirected_digest_mean" + "\t" +
+
     "mean_number_of_interaction_partners_directed" + "\t" +
     "mean_number_of_interaction_partners_undirected" + "\t" +
 
@@ -909,44 +1112,76 @@ tab_file_stream_interaction_and_digest_statistics.write(
 
     "symbols_abs_undirected" + "\t" +
     "symbols_znf_abs_undirected" + "\t" +
-    "symbols_znf_rel_undirected" +
+    "symbols_znf_rel_undirected" + "\t" +
+
+    "q1_interaction_sizes_directed_digests" + "\t" +
+    "q2_interaction_sizes_directed_digests" + "\t" +
+    "q3_interaction_sizes_directed_digests" + "\t" +
+    "mean_interaction_sizes_directed_digests" + "\t" +
+
+    "q1_interaction_sizes_undirected_digests" + "\t" +
+    "q2_interaction_sizes_undirected_digests" + "\t" +
+    "q3_interaction_sizes_undirected_digests" + "\t" +
+    "mean_interaction_sizes_undirected_digests" +
 
     "\n")
 
+# Write line with corresponding values
 tab_file_stream_interaction_and_digest_statistics.write(
+
     out_prefix + "\t" +
+
     str(directed_interaction_num) + "\t" +
     str(undirected_interaction_num) + "\t" +
+
     str(len(directed_digests_set)) + "\t" +
     str(len(undirected_digests_set)) + "\t" +
+
     str(len(directed_wo_undirected_digests_set)) + "\t" +
     str(len(undirected_wo_directed_digests_set)) + "\t" +
+
     str(len(directed_intersect_undirected_digests_set)) + "\t" +
     str(len(directed_union_directed_digests_set)) + "\t" +
+
     str("{:.2f}".format(connectivity_factor_directed)) + "\t" +
     str("{:.2f}".format(connectivity_factor_undirected)) + "\t" +
+
     str("{:.2f}".format(jaccard_index)) + "\t" +
     str("{:.2f}".format(szymkiewicz_simpson_coefficient)) + "\t" +
 
     str(repeat_content_directed_digests) + "\t" +
     str(repeat_content_undirected_digests) + "\t" +
+
     str(repeat_content_directed_digests_tss) + "\t" +
     str(repeat_content_undirected_digests_tss) + "\t" +
 
     str(gc_content_repeat_directed_digests) + "\t" +
     str(gc_content_repeat_undirected_digests) + "\t" +
+
     str(gc_content_repeat_directed_digests_tss) + "\t" +
     str(gc_content_repeat_undirected_digests_tss) + "\t" +
 
     str(gc_content_non_repeat_directed_digests) + "\t" +
     str(gc_content_non_repeat_undirected_digests) + "\t" +
+
     str(gc_content_non_repeat_directed_digests_tss) + "\t" +
     str(gc_content_non_repeat_undirected_digests_tss) + "\t" +
 
     str(gc_content_total_directed_digests) + "\t" +
     str(gc_content_total_undirected_digests) + "\t" +
+
     str(gc_content_total_directed_digests_tss) + "\t" +
     str(gc_content_total_undirected_digests_tss) + "\t" +
+
+    str(directed_digest_q1) + "\t" +
+    str(directed_digest_q2) + "\t" +
+    str(directed_digest_q3) + "\t" +
+    str(directed_digest_mean) + "\t" +
+
+    str(undirected_digest_q1) + "\t" +
+    str(undirected_digest_q2) + "\t" +
+    str(undirected_digest_q3) + "\t" +
+    str(undirected_digest_mean) + "\t" +
 
     str(mean_number_of_interaction_partners_directed) + "\t" +
     str(mean_number_of_interaction_partners_undirected) + "\t" +
@@ -957,7 +1192,17 @@ tab_file_stream_interaction_and_digest_statistics.write(
 
     str(symbols_abs_undirected) + "\t" +
     str(symbols_znf_abs_undirected) + "\t" +
-    str(symbols_znf_rel_undirected) +
+    str(symbols_znf_rel_undirected) + "\t" +
+
+    str(q1_interaction_sizes_directed_digests) + "\t" +
+    str(q2_interaction_sizes_directed_digests) + "\t" +
+    str(q3_interaction_sizes_directed_digests) + "\t" +
+    str(mean_interaction_sizes_directed_digests) + "\t" +
+
+    str(q1_interaction_sizes_undirected_digests) + "\t" +
+    str(q2_interaction_sizes_undirected_digests) + "\t" +
+    str(q3_interaction_sizes_undirected_digests) + "\t" +
+    str(mean_interaction_sizes_undirected_digests) +
 
     "\n")
 
