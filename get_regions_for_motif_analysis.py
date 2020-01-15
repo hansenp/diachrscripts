@@ -46,8 +46,14 @@ Essentially, the script follows a two pass approach:
 
    2. Pass through all interactions a second time in order to identify TSS that are on unique exclusive digests.
 
+In the course of that a variety of digest and promoter features is determined that are listed below:
 
+1. Connectivity factor: One digest can be involved in more than one interaction. During the first path we use a set to
+store the coordinates of digests from directed interactions and undirected reference interactions. In order to
+calculate the connectivity factor for directed and undirected references interactions, we divide the cardinalites of the
+corresponding sets by twice the number of corresponding interactions and subtract this number from 1.
 
+2.
 
 
 This script is to prepare BED files containing interacting digests and promoter regions used for motif analysis.
@@ -539,6 +545,9 @@ undirected_digests_symbols_set = set()
 interaction_partners_per_digest_directed_dict = {}
 interaction_partners_per_digest_undirected_dict = {}
 
+# Dictionaries to count the occurences of strand pair tags ('-/-', '-/+', '+/-', ...)
+strand_pair_tag_directed_dict = {}
+strand_pair_tag_undirected_dict = {}
 
 ### First pass: Determine unique digests that do not interact with digests from the other interaction set
 #########################################################################################################
@@ -602,17 +611,6 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             for symbol in syms_b.split(","):
                 directed_digests_symbols_set.add(symbol)
 
-            # Count interaction partners within directed interactions for each digest
-            if chr_a + "\t" + str(sta_a) + "\t" + str(end_a) in interaction_partners_per_digest_directed_dict.keys():
-                interaction_partners_per_digest_directed_dict[chr_a + "\t" + str(sta_a) + "\t" + str(end_a)] += 1
-            else:
-                interaction_partners_per_digest_directed_dict[chr_a + "\t" + str(sta_a) + "\t" + str(end_a)] = 1
-
-            if chr_b + "\t" + str(sta_b) + "\t" + str(end_b) in interaction_partners_per_digest_directed_dict.keys():
-                interaction_partners_per_digest_directed_dict[chr_b + "\t" + str(sta_b) + "\t" + str(end_b)] += 1
-            else:
-                interaction_partners_per_digest_directed_dict[chr_b + "\t" + str(sta_b) + "\t" + str(end_b)] = 1
-
         # Restrict analysis to specified set of categories for undirected interactions (typicall we use 'URAA' only)
         if interaction_category in allowed_interaction_categories_undirected:
 
@@ -628,17 +626,6 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                 undirected_digests_symbols_set.add(symbol)
             for symbol in syms_b.split(","):
                 undirected_digests_symbols_set.add(symbol)
-
-            # Count interaction partners within undirected reference interactions (typically 'URAA') for each digest
-            if chr_a + "\t" + str(sta_a) + "\t" + str(end_a) in interaction_partners_per_digest_undirected_dict.keys():
-                interaction_partners_per_digest_undirected_dict[chr_a + "\t" + str(sta_a) + "\t" + str(end_a)] += 1
-            else:
-                interaction_partners_per_digest_undirected_dict[chr_a + "\t" + str(sta_a) + "\t" + str(end_a)] = 1
-
-            if chr_b + "\t" + str(sta_b) + "\t" + str(end_b) in interaction_partners_per_digest_undirected_dict.keys():
-                interaction_partners_per_digest_undirected_dict[chr_b + "\t" + str(sta_b) + "\t" + str(end_b)] += 1
-            else:
-                interaction_partners_per_digest_undirected_dict[chr_b + "\t" + str(sta_b) + "\t" + str(end_b)] = 1
 
         line = fp.readline()
 
@@ -764,13 +751,51 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             for tss_b in tsss_b.split(','): # ToDo: If we do want to avoid overlapping promoters, we could do it here
                 undirected_wo_directed_digests_tss_set.add(tss_b)
 
-        # Get distance between directed interacting digests, if both digests digest do not interact with a digests of the set of undirected reference interactions
+        # Get distance between directed interacting digests and strand pair tags, if both digests digest do not interact with a digests of the set of undirected reference interactions
         if interaction_category in allowed_interaction_categories_directed and d1_coord in directed_wo_undirected_digests_set and d2_coord in directed_wo_undirected_digests_set:
+
+            # Collect distance between interacting digests
             interaction_sizes_directed_digests_array.append(sta_b - end_a)
 
-        # Get distance between undirected interacting digests, if both digests digest do not interact with a digests of the set of directed interactions
+            # Collect strand pair tag
+            if strand_pair_tag in strand_pair_tag_directed_dict:
+                strand_pair_tag_directed_dict[strand_pair_tag] += 1
+            else:
+                strand_pair_tag_directed_dict[strand_pair_tag] = 1
+
+            # Count interaction partners within directed interactions for each digest
+            if chr_a + "\t" + str(sta_a) + "\t" + str(end_a) in interaction_partners_per_digest_directed_dict.keys():
+                interaction_partners_per_digest_directed_dict[chr_a + "\t" + str(sta_a) + "\t" + str(end_a)] += 1
+            else:
+                interaction_partners_per_digest_directed_dict[chr_a + "\t" + str(sta_a) + "\t" + str(end_a)] = 1
+
+            if chr_b + "\t" + str(sta_b) + "\t" + str(end_b) in interaction_partners_per_digest_directed_dict.keys():
+                interaction_partners_per_digest_directed_dict[chr_b + "\t" + str(sta_b) + "\t" + str(end_b)] += 1
+            else:
+                interaction_partners_per_digest_directed_dict[chr_b + "\t" + str(sta_b) + "\t" + str(end_b)] = 1
+
+        # Get distance between undirected interacting digests and strand pair tags, if both digests digest do not interact with a digests of the set of directed interactions
         if interaction_category in allowed_interaction_categories_undirected and d1_coord in undirected_wo_directed_digests_set and d2_coord in undirected_wo_directed_digests_set:
+
+            # Collect distance between interacting digests
             interaction_sizes_undirected_digests_array.append(sta_b - end_a)
+
+            # Collect strand pair tag
+            if strand_pair_tag in strand_pair_tag_undirected_dict:
+                strand_pair_tag_undirected_dict[strand_pair_tag] += 1
+            else:
+                strand_pair_tag_undirected_dict[strand_pair_tag] = 1
+
+            # Count interaction partners within undirected reference interactions (typically 'URAA') for each digest
+            if chr_a + "\t" + str(sta_a) + "\t" + str(end_a) in interaction_partners_per_digest_undirected_dict.keys():
+                interaction_partners_per_digest_undirected_dict[chr_a + "\t" + str(sta_a) + "\t" + str(end_a)] += 1
+            else:
+                interaction_partners_per_digest_undirected_dict[chr_a + "\t" + str(sta_a) + "\t" + str(end_a)] = 1
+
+            if chr_b + "\t" + str(sta_b) + "\t" + str(end_b) in interaction_partners_per_digest_undirected_dict.keys():
+                interaction_partners_per_digest_undirected_dict[chr_b + "\t" + str(sta_b) + "\t" + str(end_b)] += 1
+            else:
+                interaction_partners_per_digest_undirected_dict[chr_b + "\t" + str(sta_b) + "\t" + str(end_b)] = 1
 
         line = fp.readline()
 
@@ -1260,3 +1285,19 @@ tab_file_stream_interaction_and_digest_statistics.write(
 tab_file_stream_interaction_and_digest_statistics.close()
 
 print("[INFO] ... done.")
+
+strand_pair_tag_list = ["-/-", "+/+", "-/+", "+/-", "-/d", "d/-", "+/d", "d/+", "d/d"]
+
+print("Strand pair tags:")
+strand_pair_tag_directed_num = 0
+strand_pair_tag_undirected_num = 0
+for key in strand_pair_tag_list:
+    strand_pair_tag_directed_num = strand_pair_tag_directed_num + strand_pair_tag_directed_dict[key]
+    strand_pair_tag_undirected_num = strand_pair_tag_undirected_num + strand_pair_tag_undirected_dict[key]
+print("strand_pair_tag\tfrac_directed\tfrac_undirected\tabs_directed\tabs_undirected")
+for key in strand_pair_tag_list:
+    print('\'' + key + '\'' + "\t" +
+          "{:.2f}".format(100 * strand_pair_tag_directed_dict[key] / strand_pair_tag_directed_num) + "\t" + "{:.2f}".format(100 * strand_pair_tag_undirected_dict[key] / strand_pair_tag_undirected_num) + "\t" +
+          str(strand_pair_tag_directed_dict[key]) + "\t" + str(strand_pair_tag_undirected_dict[key])
+          )
+
