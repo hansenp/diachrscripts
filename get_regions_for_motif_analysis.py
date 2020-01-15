@@ -17,10 +17,38 @@ Field 3: 'S' - Tag for interaction category. 'S' means directed simple interacti
 the script 'get_gene_symbols.py' based on a P-value threshold defined using the empirical FDR procedure. For this
 script, we use typically 'S', 'T' and 'URAA' because we are dealing with promoter-promoter interactions.
 
-Field 3: 'LOC105373562,POLR1B;CHCHD5' - Two comma separated lists of gene symbols separated by semicolon. The symbols
+Field 4: 'LOC105373562,POLR1B;CHCHD5' - Two comma separated lists of gene symbols separated by a semicolon. The symbols
 before and after the semicolon correspond to the TSS on the first and second digest of the interaction.
 
-Field 4:
+Field 5: '221:130' - Number of simple and twisted read pair counts separated by a colon.
+
+Field 6: 'AA' - Enrichment pair tag. Indicates which digest of the interaction was selected for target enrichment,
+whereby 'A' means 'active' (enriched) and 'I' 'inactive' (not enriched). There are four possible tags:
+'AA' (both digests selected), 'AI' (first digests selected), 'IA' (second digests selected), 'II' (no digests selected).
+
+Field 7: '14.20' - Negative decadic logarithm of the binomial P-value for orientation of interactions.
+
+Field 8: 'd/+' - Strand pair tag. There are three tags for the individual strands: '-', '+' and 'd' separted by a
+forward slash. The first tag corresponds to the first and the second tag to the second digest of the interactions.
+A digest is assigned a '-' tag, if it has one or more TSS on the reverse strand and no TSS on the forward strand.
+The same applies to digest that are assigned a '+'. Digests wit TSS on the forward and reverse strand are assigned an
+'d' (stands for discordant).
+
+Field 9: 'chr2:112541915:+,chr2:112542212:-,chr2:112542036:+;chr2:112584437:+,chr2:112584609:+,chr2:112584854:+' - Two
+comma separated lists of TSS (chromosome:coordinate:strand) separated by a semicolon.
+
+Essentially, the script follows a two pass approach:
+
+   1. Pass through all interactions in order to identify unique exclusive digests that two not interact with digests
+   from the other group, i.e. remove digests from directed interactions, if they additionally interact with a digest
+   from an undirected reference interaction, and remove digests from undirected reference interactions, if they
+   additionally interact with a digest from a directed interaction.
+
+   2. Pass through all interactions a second time in order to identify TSS that are on unique exclusive digests.
+
+
+
+
 
 This script is to prepare BED files containing interacting digests and promoter regions used for motif analysis.
 It iterates a file with interactions, gene symbols,
