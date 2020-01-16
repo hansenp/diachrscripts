@@ -546,6 +546,7 @@ interaction_partners_per_digest_directed_dict = {}
 interaction_partners_per_digest_undirected_dict = {}
 
 # Dictionaries to count the occurences of strand pair tags ('-/-', '-/+', '+/-', ...)
+strand_pair_tag_list = ["-/-", "+/+", "-/+", "+/-", "-/d", "d/-", "+/d", "d/+", "d/d"]
 strand_pair_tag_directed_dict = {}
 strand_pair_tag_undirected_dict = {}
 
@@ -1286,14 +1287,16 @@ tab_file_stream_interaction_and_digest_statistics.close()
 
 print("[INFO] ... done.")
 
-strand_pair_tag_list = ["-/-", "+/+", "-/+", "+/-", "-/d", "d/-", "+/d", "d/+", "d/d"]
 
-print("Strand pair tags:")
+
+print("\t[INFO] Strand pair tags")
 strand_pair_tag_directed_num = 0
 strand_pair_tag_undirected_num = 0
+# Get total numbers of strand pair tags
 for key in strand_pair_tag_list:
     strand_pair_tag_directed_num = strand_pair_tag_directed_num + strand_pair_tag_directed_dict[key]
     strand_pair_tag_undirected_num = strand_pair_tag_undirected_num + strand_pair_tag_undirected_dict[key]
+# Print small table to screen
 print("strand_pair_tag\tfrac_directed\tfrac_undirected\tabs_directed\tabs_undirected")
 for key in strand_pair_tag_list:
     print('\'' + key + '\'' + "\t" +
