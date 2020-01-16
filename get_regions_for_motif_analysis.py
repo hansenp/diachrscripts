@@ -1036,6 +1036,34 @@ tab_stream_name_base_frequencies.close()
 
 print("\t[INFO] ... done.")
 
+### Determine base frequencies and write to file
+################################################
+
+print("\t[INFO] Determining frequencies of strand pair tags and writing to file ...")
+
+tab_file_name_strand_pair_tag_frequencies = out_prefix + "_strand_pair_tag_frequencies.tab"
+print("\t\t[INFO] Writing to file: " + tab_file_name_strand_pair_tag_frequencies)
+tab_stream_name_strand_pair_tag_frequencies = open(tab_file_name_strand_pair_tag_frequencies, 'wt')
+
+# Get total numbers of strand pair tags
+strand_pair_tag_directed_num = 0
+strand_pair_tag_undirected_num = 0
+for key in strand_pair_tag_list:
+    strand_pair_tag_directed_num = strand_pair_tag_directed_num + strand_pair_tag_directed_dict[key]
+    strand_pair_tag_undirected_num = strand_pair_tag_undirected_num + strand_pair_tag_undirected_dict[key]
+
+# Write frequencies to file
+for key in strand_pair_tag_list:
+    tab_stream_name_strand_pair_tag_frequencies.write('\'' + key + '\'' + "\t" +
+                                                      "{:.2f}".format(100 * strand_pair_tag_directed_dict[key] / strand_pair_tag_directed_num) + "\t" +
+                                                      "{:.2f}".format(100 * strand_pair_tag_undirected_dict[key] / strand_pair_tag_undirected_num) + "\t" +
+                                                      str(strand_pair_tag_directed_dict[key]) + "\t" +
+                                                      str(strand_pair_tag_undirected_dict[key]) +
+                                                      "\n")
+tab_stream_name_strand_pair_tag_frequencies.close()
+
+print("\t[INFO] ... done.")
+
 print("[INFO] ... done with calculation of statistics on unique exclusive digests and associated promoters.")
 
 
@@ -1124,8 +1152,13 @@ print("\t\t\t[INFO] Q1: " + str(q1_interaction_sizes_undirected_digests))
 print("\t\t\t[INFO] Q2: " + str(q2_interaction_sizes_undirected_digests))
 print("\t\t\t[INFO] Q3: " + str(q3_interaction_sizes_undirected_digests))
 print("\t\t\t[INFO] Mean: " + str(mean_interaction_sizes_undirected_digests))
-
-
+print("\t[INFO] Strand pair tags")
+print("\t\tstrand_pair_tag\tfrac_directed\tfrac_undirected\tabs_directed\tabs_undirected")
+for key in strand_pair_tag_list:
+    print("\t\t" + '\'' + key + '\'' + "\t" +
+          "{:.2f}".format(100 * strand_pair_tag_directed_dict[key] / strand_pair_tag_directed_num) + "\t" + "{:.2f}".format(100 * strand_pair_tag_undirected_dict[key] / strand_pair_tag_undirected_num) + "\t" +
+          str(strand_pair_tag_directed_dict[key]) + "\t" + str(strand_pair_tag_undirected_dict[key])
+          )
 tab_file_name_interaction_and_digest_statistics = out_prefix + "_interaction_and_digest_statistics.tab"
 tab_file_stream_interaction_and_digest_statistics = open(tab_file_name_interaction_and_digest_statistics, 'wt')
 
@@ -1289,18 +1322,5 @@ print("[INFO] ... done.")
 
 
 
-print("\t[INFO] Strand pair tags")
-strand_pair_tag_directed_num = 0
-strand_pair_tag_undirected_num = 0
-# Get total numbers of strand pair tags
-for key in strand_pair_tag_list:
-    strand_pair_tag_directed_num = strand_pair_tag_directed_num + strand_pair_tag_directed_dict[key]
-    strand_pair_tag_undirected_num = strand_pair_tag_undirected_num + strand_pair_tag_undirected_dict[key]
-# Print small table to screen
-print("strand_pair_tag\tfrac_directed\tfrac_undirected\tabs_directed\tabs_undirected")
-for key in strand_pair_tag_list:
-    print('\'' + key + '\'' + "\t" +
-          "{:.2f}".format(100 * strand_pair_tag_directed_dict[key] / strand_pair_tag_directed_num) + "\t" + "{:.2f}".format(100 * strand_pair_tag_undirected_dict[key] / strand_pair_tag_undirected_num) + "\t" +
-          str(strand_pair_tag_directed_dict[key]) + "\t" + str(strand_pair_tag_undirected_dict[key])
-          )
+
 
