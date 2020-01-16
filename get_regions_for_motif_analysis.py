@@ -39,21 +39,22 @@ comma separated lists of TSS (chromosome:coordinate:strand) separated by a semic
 
 Essentially, the script follows a two pass approach:
 
-   1. Pass through all interactions in order to identify unique exclusive digests that two not interact with digests
+   1. Pass through all interactions in order to identify unique exclusive digests that do not interact with digests
    from the other group, i.e. remove digests from directed interactions, if they additionally interact with a digest
    from an undirected reference interaction, and remove digests from undirected reference interactions, if they
    additionally interact with a digest from a directed interaction.
 
    2. Pass through all interactions a second time in order to identify TSS that are on unique exclusive digests.
 
-In the course of that a variety of digest and promoter features is determined that are listed below:
+In the course of that, a variety of digest and promoter features is determined that are listed below:
 
-1. Connectivity factor: One digest can be involved in more than one interaction. During the first path we use a set to
+1. Connectivity factor: One digest can be involved in more than one interaction. During the first pass we use a set to
 store the coordinates of digests from directed interactions and undirected reference interactions. In order to
-calculate the connectivity factor for directed and undirected references interactions, we divide the cardinalites of the
+calculate the connectivity factor for directed and undirected references interactions, we divide the cardinalities of the
 corresponding sets by twice the number of corresponding interactions and subtract this number from 1.
 
-2.
+2. Mean number of interaction partners of unique exclusive digests. These numbers are determined during the second
+pass.
 
 
 This script is to prepare BED files containing interacting digests and promoter regions used for motif analysis.
