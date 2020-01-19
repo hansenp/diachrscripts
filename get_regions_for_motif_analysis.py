@@ -183,6 +183,24 @@ def convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name):
     return bed_file_name_base + '.fasta'
 
 
+def merge_bed(bedtools_path, bed_file_name):
+    """
+    This function uses the external tool 'bedtools' in order to merge the regions of a BED file.
+
+    :param bedtools_path: Path to external command line tool 'bedtools'
+    :param bed_file_name: BED file to be merged
+    :return: Filename of merged BED file
+    """
+    bed_file_name_base = str(bed_file_name).split(".b")[0]
+    sys_cmd = bedtools_path + ' sort -i ' + bed_file_name + ' > ' + bed_file_name_base + '_sorted.bed'
+    os.system(sys_cmd)
+    sys_cmd = bedtools_path + ' merge -i ' + bed_file_name_base + '_sorted.bed' + ' > ' + bed_file_name_base + '_merged.bed'
+    os.system(sys_cmd)
+    sys_cmd = 'rm ' + bed_file_name_base + '_sorted.bed'
+    os.system(sys_cmd)
+    return bed_file_name_base + '_merged.bed'
+
+
 def mask_repeats(fasta_file_name):
     """
     This function takes a FASTA file and replaces all occurrences of small letters (a,c,g and t) with N.
@@ -510,6 +528,9 @@ bed_file_name_undirected_digests_tss_minus = out_prefix + "_undirected_digests_t
 bed_stream_name_undirected_digests_tss_minus = open(bed_file_name_undirected_digests_tss_minus, 'wt')
 bed_file_name_undirected_digests_tss_plus = out_prefix + "_undirected_digests_tss_plus.bed"
 bed_stream_name_undirected_digests_tss_plus = open(bed_file_name_undirected_digests_tss_plus, 'wt')
+
+bed_file_name_directed_digests_tss = out_prefix + "_directed_digests_tss.bed"
+bed_file_name_undirected_digests_tss = out_prefix + "_undirected_digests_tss.bed"
 
 
 ### Prepare variables and data structures
@@ -999,6 +1020,49 @@ os.system(sys_cmd)
 print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss)
 fasta_file_name_undirected_digests_tss_masked = mask_repeats(fasta_file_name_undirected_digests_tss)
 print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_masked)
+
+# concat BED files with promoter sequences for plus and minus strand
+sys_cmd = 'cat ' + bed_file_name_directed_digests_tss_minus + ' ' + bed_file_name_directed_digests_tss_plus + ' > ' + bed_file_name_directed_digests_tss
+os.system(sys_cmd)
+# merge promoter regions
+bed_file_name_directed_digests_tss_merged = merge_bed(bedtools_path, bed_file_name_directed_digests_tss)
+print("\t\t[INFO] Wrote to file: " + bed_file_name_directed_digests_tss_merged)
+# convert to FASTA
+fasta_file_name_directed_digests_tss_merged = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_merged)
+fasta_file_name_directed_digests_tss_merged_masked = mask_repeats(fasta_file_name_directed_digests_tss_merged)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_merged_masked)
+
+# concat BED files with promoter sequences for plus and minus strand
+sys_cmd = 'cat ' + bed_file_name_undirected_digests_tss_minus + ' ' + bed_file_name_undirected_digests_tss_plus + ' > ' + bed_file_name_undirected_digests_tss
+os.system(sys_cmd)
+# merge promoter regions
+bed_file_name_undirected_digests_tss_merged = merge_bed(bedtools_path, bed_file_name_undirected_digests_tss)
+print("\t\t[INFO] Wrote to file: " + bed_file_name_undirected_digests_tss_merged)
+# convert to FASTA
+fasta_file_name_undirected_digests_tss_merged = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_merged)
+fasta_file_name_undirected_digests_tss_merged_masked = mask_repeats(fasta_file_name_undirected_digests_tss_merged)
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_merged_masked)
+
+# determine base frequencies for merged promoters
+header_line, value_line, repeat_content_directed_digests_tss_merged, gc_content_repeat_directed_digests_tss_merged, gc_content_non_repeat_directed_digests_tss_merged, gc_content_total_directed_digests_tss_merged = \
+    get_base_frequencies(fasta_file_name_directed_digests_tss_merged)
+
+header_line, value_line, repeat_content_undirected_digests_tss_merged, gc_content_repeat_undirected_digests_tss_merged, gc_content_non_repeat_undirected_digests_tss_merged, gc_content_total_undirected_digests_tss_merged = \
+    get_base_frequencies(fasta_file_name_undirected_digests_tss_merged)
+
+print("")
+print(repeat_content_directed_digests_tss_merged)
+print(repeat_content_undirected_digests_tss_merged)
+print("")
+print(gc_content_repeat_directed_digests_tss_merged)
+print(gc_content_repeat_undirected_digests_tss_merged)
+print("")
+print(gc_content_non_repeat_directed_digests_tss_merged)
+print(gc_content_non_repeat_undirected_digests_tss_merged)
+print("")
+print(gc_content_total_directed_digests_tss_merged)
+print(gc_content_total_undirected_digests_tss_merged)
+print("")
 
 print("\t[INFO] ... done.")
 
