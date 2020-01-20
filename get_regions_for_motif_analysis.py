@@ -668,7 +668,7 @@ print("\t[INFO] ... done.")
 
 print("\t[INFO] Getting exclusive digests and writing coordinates for sequence analysis ...")
 
-directed_wo_undirected_digests_set = directed_digests_set.difference(undirected_digests_set)
+directed_wo_undirected_digests_set = directed_digests_set#.difference(undirected_digests_set)
 undirected_wo_directed_digests_set = undirected_digests_set.difference(directed_digests_set)
 directed_intersect_undirected_digests_set = directed_digests_set.intersection(undirected_digests_set)
 directed_union_directed_digests_set = directed_digests_set.union(undirected_digests_set)
@@ -961,8 +961,9 @@ print("\t[INFO] Getting unique exclusive genes symbols for GO analysis ...")
 
 tab_file_name_directed_digest_symbols = out_prefix + "_directed_digest_symbols.tab"
 print("\t\t[INFO] Writing to file: " + tab_file_name_directed_digest_symbols)
+empty_set = set() # do not subtract anything from directed digests
 symbols_abs_directed, symbols_znf_abs_directed, symbols_znf_rel_directed = \
-    get_unique_exclusive_gene_symbols_and_write_to_file(directed_digests_symbols_set, undirected_digests_symbols_set, tab_file_name_directed_digest_symbols, "ZNF")
+    get_unique_exclusive_gene_symbols_and_write_to_file(directed_digests_symbols_set, empty_set, tab_file_name_directed_digest_symbols, "ZNF")
 
 tab_file_name_undirected_digest_symbols = out_prefix + "_undirected_digest_symbols.tab"
 print("\t\t[INFO] Writing to file: " + tab_file_name_undirected_digest_symbols)
@@ -1043,27 +1044,6 @@ fasta_file_name_undirected_digests_tss_merged = convert_bed_to_fasta(bedtools_pa
 fasta_file_name_undirected_digests_tss_merged_masked = mask_repeats(fasta_file_name_undirected_digests_tss_merged)
 print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_merged_masked)
 
-# determine base frequencies for merged promoters
-header_line, value_line, repeat_content_directed_digests_tss_merged, gc_content_repeat_directed_digests_tss_merged, gc_content_non_repeat_directed_digests_tss_merged, gc_content_total_directed_digests_tss_merged = \
-    get_base_frequencies(fasta_file_name_directed_digests_tss_merged)
-
-header_line, value_line, repeat_content_undirected_digests_tss_merged, gc_content_repeat_undirected_digests_tss_merged, gc_content_non_repeat_undirected_digests_tss_merged, gc_content_total_undirected_digests_tss_merged = \
-    get_base_frequencies(fasta_file_name_undirected_digests_tss_merged)
-
-print("")
-print(repeat_content_directed_digests_tss_merged)
-print(repeat_content_undirected_digests_tss_merged)
-print("")
-print(gc_content_repeat_directed_digests_tss_merged)
-print(gc_content_repeat_undirected_digests_tss_merged)
-print("")
-print(gc_content_non_repeat_directed_digests_tss_merged)
-print(gc_content_non_repeat_undirected_digests_tss_merged)
-print("")
-print(gc_content_total_directed_digests_tss_merged)
-print(gc_content_total_undirected_digests_tss_merged)
-print("")
-
 print("\t[INFO] ... done.")
 
 
@@ -1088,13 +1068,13 @@ header_line, value_line, repeat_content_undirected_digests, gc_content_repeat_un
 tab_stream_name_base_frequencies.write(value_line + "\n")
 
 # Promoters on directed digests
-header_line, value_line, repeat_content_directed_digests_tss, gc_content_repeat_directed_digests_tss, gc_content_non_repeat_directed_digests_tss, gc_content_total_directed_digests_tss = \
-    get_base_frequencies(fasta_file_name_directed_digests_tss)
+header_line, value_line, repeat_content_directed_digests_tss_merged, gc_content_repeat_directed_digests_tss_merged, gc_content_non_repeat_directed_digests_tss_merged, gc_content_total_directed_digests_tss_merged = \
+    get_base_frequencies(fasta_file_name_directed_digests_tss_merged)
 tab_stream_name_base_frequencies.write(value_line + "\n")
 
 # Promoters on undirected digests
-header_line, value_line, repeat_content_undirected_digests_tss, gc_content_repeat_undirected_digests_tss, gc_content_non_repeat_undirected_digests_tss, gc_content_total_undirected_digests_tss = \
-    get_base_frequencies(fasta_file_name_undirected_digests_tss)
+header_line, value_line, repeat_content_undirected_digests_tss_merged, gc_content_repeat_undirected_digests_tss_merged, gc_content_non_repeat_undirected_digests_tss_merged, gc_content_total_undirected_digests_tss_merged = \
+    get_base_frequencies(fasta_file_name_undirected_digests_tss_merged)
 tab_stream_name_base_frequencies.write(value_line + "\n")
 
 tab_stream_name_base_frequencies.close()
@@ -1164,23 +1144,23 @@ print("\t[INFO] Szymkiewicz–Simpson coefficient: " + str("{:.2f}".format(szymk
 
 print("\t[INFO] Repeat content of directed digests: " + str(repeat_content_directed_digests))
 print("\t[INFO] Repeat content of undirected digests: " + str(repeat_content_undirected_digests))
-print("\t[INFO] Repeat content of promoters on directed digests: " + str(repeat_content_directed_digests_tss))
-print("\t[INFO] Repeat content of promoters on undirected digests: " + str(repeat_content_undirected_digests_tss))
+print("\t[INFO] Repeat content of promoters on directed digests (merged): " + str(repeat_content_directed_digests_tss_merged))
+print("\t[INFO] Repeat content of promoters on undirected digests (merged): " + str(repeat_content_undirected_digests_tss_merged))
 
 print("\t[INFO] GC content within repeat regions of directed digests: " + str(gc_content_repeat_directed_digests))
 print("\t[INFO] GC content within repeat regions of undirected digests: " + str(gc_content_repeat_undirected_digests))
-print("\t[INFO] GC content within repeat regions of promoters on directed digests: " + str(gc_content_repeat_directed_digests_tss))
-print("\t[INFO] GC content within repeat regions of promoters on undirected digests: " + str(gc_content_repeat_undirected_digests_tss))
+print("\t[INFO] GC content within repeat regions of promoters on directed digests (merged): " + str(gc_content_repeat_directed_digests_tss_merged))
+print("\t[INFO] GC content within repeat regions of promoters on undirected digests (merged): " + str(gc_content_repeat_undirected_digests_tss_merged))
 
 print("\t[INFO] GC content within non repeat regions of directed digests: " + str(gc_content_non_repeat_directed_digests))
 print("\t[INFO] GC content within non repeat regions of undirected digests: " + str(gc_content_non_repeat_undirected_digests))
-print("\t[INFO] GC content within non repeat regions of promoters on directed digests: " + str(gc_content_non_repeat_directed_digests_tss))
-print("\t[INFO] GC content within non repeat regions of promoters on undirected digests: " + str(gc_content_non_repeat_undirected_digests_tss))
+print("\t[INFO] GC content within non repeat regions of promoters on directed digests (merged): " + str(gc_content_non_repeat_directed_digests_tss_merged))
+print("\t[INFO] GC content within non repeat regions of promoters on undirected digests (merged): " + str(gc_content_non_repeat_undirected_digests_tss_merged))
 
 print("\t[INFO] Total GC content of directed digests: " + str(gc_content_total_directed_digests))
 print("\t[INFO] Total GC content of undirected digests: " + str(gc_content_total_undirected_digests))
-print("\t[INFO] Total GC content of promoters on directed digests: " + str(gc_content_total_directed_digests_tss))
-print("\t[INFO] Total GC content of promoters on undirected digests: " + str(gc_content_total_undirected_digests_tss))
+print("\t[INFO] Total GC content of promoters on directed digests (merged): " + str(gc_content_total_directed_digests_tss_merged))
+print("\t[INFO] Total GC content of promoters on undirected digests (merged): " + str(gc_content_total_undirected_digests_tss_merged))
 
 print("\t[INFO] Size distribution of directed digests")
 print("\t\t[INFO] Directed digests")
@@ -1207,7 +1187,6 @@ print("\t\t\t[INFO] Number exclusive unique gene symbols with \'ZNF\' substring 
 print("\t\t\t[INFO] Fraction exclusive unique gene symbols with \'ZNF\' substring for undirected interactions: " + str(symbols_znf_rel_undirected))
 print("\t[INFO] Interaction sizes")
 print("\t\t[INFO] Directed digests")
-
 print("\t\t\t[INFO] Q1: " + str(q1_interaction_sizes_directed_digests))
 print("\t\t\t[INFO] Q2: " + str(q2_interaction_sizes_directed_digests))
 print("\t\t\t[INFO] Q3: " + str(q3_interaction_sizes_directed_digests))
@@ -1250,23 +1229,23 @@ tab_file_stream_interaction_and_digest_statistics.write(
 
     "repeat_content_directed_digests" + "\t" +
     "repeat_content_undirected_digests" + "\t" +
-    "repeat_content_directed_digests_tss" + "\t" +
-    "repeat_content_undirected_digests_tss" + "\t" +
+    "repeat_content_directed_digests_tss_merged" + "\t" +
+    "repeat_content_undirected_digests_tss_merged" + "\t" +
 
     "gc_content_repeat_directed_digests" + "\t" +
     "gc_content_repeat_undirected_digests" + "\t" +
-    "gc_content_repeat_directed_digests_tss" + "\t" +
-    "gc_content_repeat_undirected_digests_tss" + "\t" +
+    "gc_content_repeat_directed_digests_tss_merged" + "\t" +
+    "gc_content_repeat_undirected_digests_tss_merged" + "\t" +
 
     "gc_content_non_repeat_directed_digests" + "\t" +
     "gc_content_non_repeat_undirected_digests" + "\t" +
-    "gc_content_non_repeat_directed_digests_tss" + "\t" +
-    "gc_content_non_repeat_undirected_digests_tss" + "\t" +
+    "gc_content_non_repeat_directed_digests_tss_merged" + "\t" +
+    "gc_content_non_repeat_undirected_digests_tss_merged" + "\t" +
 
     "gc_content_total_directed_digests" + "\t" +
     "gc_content_total_undirected_digests" + "\t" +
-    "gc_content_total_directed_digests_tss" + "\t" +
-    "gc_content_non_repeat_undirected_digests_tss" + "\t" +
+    "gc_content_total_directed_digests_tss_merged" + "\t" +
+    "gc_content_non_repeat_undirected_digests_tss_merged" + "\t" +
 
     "directed_digest_q1" + "\t" +
     "directed_digest_q2" + "\t" +
@@ -1327,26 +1306,26 @@ tab_file_stream_interaction_and_digest_statistics.write(
     str(repeat_content_directed_digests) + "\t" +
     str(repeat_content_undirected_digests) + "\t" +
 
-    str(repeat_content_directed_digests_tss) + "\t" +
-    str(repeat_content_undirected_digests_tss) + "\t" +
+    str(repeat_content_directed_digests_tss_merged) + "\t" +
+    str(repeat_content_undirected_digests_tss_merged) + "\t" +
 
     str(gc_content_repeat_directed_digests) + "\t" +
     str(gc_content_repeat_undirected_digests) + "\t" +
 
-    str(gc_content_repeat_directed_digests_tss) + "\t" +
-    str(gc_content_repeat_undirected_digests_tss) + "\t" +
+    str(gc_content_repeat_directed_digests_tss_merged) + "\t" +
+    str(gc_content_repeat_undirected_digests_tss_merged) + "\t" +
 
     str(gc_content_non_repeat_directed_digests) + "\t" +
     str(gc_content_non_repeat_undirected_digests) + "\t" +
 
-    str(gc_content_non_repeat_directed_digests_tss) + "\t" +
-    str(gc_content_non_repeat_undirected_digests_tss) + "\t" +
+    str(gc_content_non_repeat_directed_digests_tss_merged) + "\t" +
+    str(gc_content_non_repeat_undirected_digests_tss_merged) + "\t" +
 
     str(gc_content_total_directed_digests) + "\t" +
     str(gc_content_total_undirected_digests) + "\t" +
 
-    str(gc_content_total_directed_digests_tss) + "\t" +
-    str(gc_content_total_undirected_digests_tss) + "\t" +
+    str(gc_content_total_directed_digests_tss_merged) + "\t" +
+    str(gc_content_total_undirected_digests_tss_merged) + "\t" +
 
     str(directed_digest_q1) + "\t" +
     str(directed_digest_q2) + "\t" +
