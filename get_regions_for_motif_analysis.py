@@ -127,7 +127,7 @@ parser.add_argument('--allowed-enrichment-pair-tags', help='Set of allowed enric
 parser.add_argument('--allowed-strand-pair-tags', help='Set of allowed strand pair tags for digests (\'-/-\', \'+/+\', \'+/-\',\'-/+\',\'-/d\', ...) separated by \';\'.', default="-/-;+/+")
 parser.add_argument('--allowed-interaction-categories-directed', help='Set categories of directed interactions (\'S\' and \'T\') separated by \';\'.', default="S;T")
 parser.add_argument('--allowed-interaction-categories-undirected', help='Set categories of directed interactions (\'NA\', \'U\', \'URAA\', \'URAI\' and \'URII\') separated by \';\'.', default="URAA")
-parser.add_argument('--max-num-of-tss-per-digest', help='Use interactions for which both digests have at most this number of TSS only.', default=-1)
+parser.add_argument('--comparative-sets', help='Sets of digests/interactions that will be compared. Two options directed vs. undirected without directed (D-VS-UWOD) or directed without undirected vs. undirected without directed (DWOU-VS-UWOD).', default="D-VS-UWOD")
 parser.add_argument('--bedtools-path', help='Path to bedtools executable.', default="bedtools")
 parser.add_argument('--genome-fasta-path', help='Path to genome FASTA file.', default="/Users/hansep/data/hg38/hg38.fa")
 
@@ -141,6 +141,7 @@ allowed_enrichment_pair_tags = args.allowed_enrichment_pair_tags # only interact
 allowed_strand_pair_tags = args.allowed_strand_pair_tags # only interactions with these strand pair tags will be used
 allowed_interaction_categories_directed = args.allowed_interaction_categories_directed # only directed interactions with these categories will be used
 allowed_interaction_categories_undirected = args.allowed_interaction_categories_undirected # only undirected with these categories will be used
+comparative_sets = args.comparative_sets
 bedtools_path = args.bedtools_path
 genome_fasta_path = args.genome_fasta_path
 
@@ -154,6 +155,7 @@ print("\t[INFO] --enrichment-strand-pair-tags: " + allowed_enrichment_pair_tags)
 print("\t[INFO] --allowed-strand-pair-tags: " + allowed_strand_pair_tags)
 print("\t[INFO] --allowed-interaction-categories-directed: " + allowed_interaction_categories_directed)
 print("\t[INFO] --allowed-interaction-categories-undirected: " + allowed_interaction_categories_undirected)
+print("\t[INFO] --comparative-sets: " + comparative_sets)
 print("\t[INFO] --bedtools-path: " + bedtools_path)
 print("\t[INFO] --genome-fasta-path: " + genome_fasta_path)
 
@@ -199,6 +201,60 @@ def merge_bed(bedtools_path, bed_file_name):
     sys_cmd = 'rm ' + bed_file_name_base + '_sorted.bed'
     os.system(sys_cmd)
     return bed_file_name_base + '_merged.bed'
+
+
+def center_trim_bed(bed_file_name, up_size, down_size):
+    """
+    Takes a BED file and trims regions that are longer than 'up_size + down_size' coordinates of the trimmed regions
+    are 'region_center - up_size' and 'region_center - down_size'.
+    If a region is shorter that 'up_size + down_size', a warning will be thrown.
+
+    :param bed_file_name: BED file that is going to be trimmed
+    :param up_size: Distance from the center in upstream direction
+    :param down_size: Distance from the center in downstream direction
+    :return:
+        Total number of regions in input BED file,
+        number of regions that are longer than 'up_size + down_size',
+        size of largest region in input BED file and
+        name of the created BED file with trimmed regions
+    """
+    bed_file_name_base = str(bed_file_name).split(".b")[0]
+    bed_file_name_center_trimmed = bed_file_name_base + '_center_trimmed.bed'
+    bed_file_stream_center_trimmed = open(bed_file_name_center_trimmed, 'wt')
+
+    total_num = 0   # total number of regions in input BED file
+    long_num = 0    # number of regions that are longer than 'up_size + down_size'
+    max_size = 0    # size of largest region in input BED file
+
+    with open(bed_file_name, 'rt') as fp:
+        line = fp.readline()
+        while line:
+            total_num += 1
+
+            chr = line.split("\t")[0]
+            sta = int(line.split("\t")[1])
+            end = int(line.split("\t")[2])
+            size = end - sta
+
+            if max_size < size:
+                max_size = size
+
+            if up_size + down_size < size: # trim
+                long_num += 1
+                center = sta + int(size / 2)
+                sta = center - up_size
+                end = center + down_size
+
+            bed_file_stream_center_trimmed.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(total_num) + "\n")
+
+            if up_size + down_size > size:
+                print("[WARNING] Region is smaller than \'up_dist + down_dist\'!")
+
+            line = fp.readline()
+
+    bed_file_stream_center_trimmed.close()
+
+    return total_num, long_num, max_size, bed_file_name_center_trimmed
 
 
 def mask_repeats(fasta_file_name):
@@ -668,19 +724,26 @@ print("\t[INFO] ... done.")
 
 print("\t[INFO] Getting exclusive digests and writing coordinates for sequence analysis ...")
 
-directed_wo_undirected_digests_set = directed_digests_set#.difference(undirected_digests_set)
-undirected_wo_directed_digests_set = undirected_digests_set.difference(directed_digests_set)
+if comparative_sets == "D-VS-UWOD":
+    directed_digests_comparative_set = directed_digests_set
+elif comparative_sets == "DWOU-VS-UWOD":
+    directed_digests_comparative_set = directed_digests_set.difference(undirected_digests_set)
+else:
+    print("\t\t[ERROR] Comparative sets should be either X or Y. Abort!")
+    exit(1)
+
+undirected_digests_comparative_set = undirected_digests_set.difference(directed_digests_set)
 directed_intersect_undirected_digests_set = directed_digests_set.intersection(undirected_digests_set)
 directed_union_directed_digests_set = directed_digests_set.union(undirected_digests_set)
 
 cnt = 1 # use consecutive numbers as unique IDs
 print("\t\t[INFO] Writing to file: " + bed_file_name_directed_digests)
-for digest in directed_wo_undirected_digests_set:
+for digest in directed_digests_comparative_set:
     bed_stream_name_directed_digests.write(digest + "\t" + str(cnt) + "\n")
     cnt += 1
 cnt = 1
 print("\t\t[INFO] Writing to file: " + bed_file_name_undirected_digests)
-for digest in undirected_wo_directed_digests_set:
+for digest in undirected_digests_comparative_set:
     bed_stream_name_undirected_digests.write(digest + "\t" + str(cnt) + "\n")
     cnt += 1
 
@@ -699,8 +762,8 @@ print("[INFO] ... done with first pass.")
 #########################################################################
 
 # Sets that will store coordinates and strands of TSS on digests
-directed_wo_undirected_digests_tss_set = set()
-undirected_wo_directed_digests_tss_set = set()
+directed_digests_tss_comparative_set = set()
+undirected_digests_tss_comparative_set = set()
 
 # Arrays that will store interaction sizes
 interaction_sizes_directed_digests_array = []
@@ -753,29 +816,29 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
         d1_coord = str(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
 
         # Check if the first digest belongs to a directed interaction and does not additionally interact with a digest from the undirected reference interaction set
-        if d1_coord in directed_wo_undirected_digests_set:
+        if d1_coord in directed_digests_comparative_set:
             # Add all TSS positions on this digest to a set of TSS
             for tss_a in tsss_a.split(','): # ToDo: If we do want to avoid overlapping promoters, we could do it here
-                directed_wo_undirected_digests_tss_set.add(tss_a)
+                directed_digests_tss_comparative_set.add(tss_a)
         # Check if the first digest belongs to a undirected reference interaction and does not additionally interact with a digest from the directed interaction set
-        if d1_coord in undirected_wo_directed_digests_set:
+        if d1_coord in undirected_digests_comparative_set:
             # Add all TSS positions on this digest to a set of TSS
             for tss_a in tsss_a.split(','): # ToDo: If we do want to avoid overlapping promoters, we could do it here
-                undirected_wo_directed_digests_tss_set.add(tss_a)
+                undirected_digests_tss_comparative_set.add(tss_a)
 
         # Get coordinates of the second digest from interaction line
         d2_coord = str(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
 
         # Do the same as for the first digest
-        if d2_coord in directed_wo_undirected_digests_set:
+        if d2_coord in directed_digests_comparative_set:
             for tss_b in tsss_b.split(','): # ToDo: If we do want to avoid overlapping promoters, we could do it here
-                directed_wo_undirected_digests_tss_set.add(tss_b)
-        if d2_coord in undirected_wo_directed_digests_set:
+                directed_digests_tss_comparative_set.add(tss_b)
+        if d2_coord in undirected_digests_comparative_set:
             for tss_b in tsss_b.split(','): # ToDo: If we do want to avoid overlapping promoters, we could do it here
-                undirected_wo_directed_digests_tss_set.add(tss_b)
+                undirected_digests_tss_comparative_set.add(tss_b)
 
         # Get distance between directed interacting digests and strand pair tags, if both digests digest do not interact with a digests of the set of undirected reference interactions
-        if interaction_category in allowed_interaction_categories_directed and d1_coord in directed_wo_undirected_digests_set and d2_coord in directed_wo_undirected_digests_set:
+        if interaction_category in allowed_interaction_categories_directed and d1_coord in directed_digests_comparative_set and d2_coord in directed_digests_comparative_set:
 
             # Collect distance between interacting digests
             interaction_sizes_directed_digests_array.append(sta_b - end_a)
@@ -798,7 +861,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
                 interaction_partners_per_digest_directed_dict[chr_b + "\t" + str(sta_b) + "\t" + str(end_b)] = 1
 
         # Get distance between undirected interacting digests and strand pair tags, if both digests digest do not interact with a digests of the set of directed interactions
-        if interaction_category in allowed_interaction_categories_undirected and d1_coord in undirected_wo_directed_digests_set and d2_coord in undirected_wo_directed_digests_set:
+        if interaction_category in allowed_interaction_categories_undirected and d1_coord in undirected_digests_comparative_set and d2_coord in undirected_digests_comparative_set:
 
             # Collect distance between interacting digests
             interaction_sizes_undirected_digests_array.append(sta_b - end_a)
@@ -836,7 +899,7 @@ print("\t\t[INFO] Writing to file: " + bed_file_name_directed_digests_tss_plus)
 
 cnt_minus = 1 # use consecutive numbers as unique IDs
 cnt_plus = 1
-for tss in directed_wo_undirected_digests_tss_set:
+for tss in directed_digests_tss_comparative_set:
 
     # Split string with TSS coordinate and strand and add specified number of bases in up and downstream direction
     A = tss.split(':')
@@ -869,7 +932,7 @@ print("\t\t[INFO] Writing to file: " + bed_file_name_undirected_digests_tss_plus
 
 cnt_minus = 1
 cnt_plus = 1
-for tss in undirected_wo_directed_digests_tss_set:
+for tss in undirected_digests_tss_comparative_set:
     A = tss.split(':')
     chr = A[0]
     sta = int(A[1]) - up_dist
@@ -912,11 +975,11 @@ print("\t[INFO] Determining and writing digest sizes ...")
 
 tab_file_name_directed_digests_size_distribution = out_prefix + "_directed_digests_size_distribution.tab"
 print("\t\t[INFO] Writing to file: " + tab_file_name_directed_digests_size_distribution)
-directed_digest_q1, directed_digest_q2, directed_digest_q3, directed_digest_mean = determine_digest_sizes_and_write_to_file(tab_file_name_directed_digests_size_distribution, directed_wo_undirected_digests_set)
+directed_digest_q1, directed_digest_q2, directed_digest_q3, directed_digest_mean = determine_digest_sizes_and_write_to_file(tab_file_name_directed_digests_size_distribution, directed_digests_comparative_set)
 
 tab_file_name_undirected_digests_size_distribution = out_prefix + "_undirected_digests_size_distribution.tab"
 print("\t\t[INFO] Writing to file: " + tab_file_name_undirected_digests_size_distribution)
-undirected_digest_q1, undirected_digest_q2, undirected_digest_q3, undirected_digest_mean = determine_digest_sizes_and_write_to_file(tab_file_name_undirected_digests_size_distribution, undirected_wo_directed_digests_set)
+undirected_digest_q1, undirected_digest_q2, undirected_digest_q3, undirected_digest_mean = determine_digest_sizes_and_write_to_file(tab_file_name_undirected_digests_size_distribution, undirected_digests_comparative_set)
 print("\t[INFO] ... done.")
 
 
@@ -961,9 +1024,17 @@ print("\t[INFO] Getting unique exclusive genes symbols for GO analysis ...")
 
 tab_file_name_directed_digest_symbols = out_prefix + "_directed_digest_symbols.tab"
 print("\t\t[INFO] Writing to file: " + tab_file_name_directed_digest_symbols)
-empty_set = set() # do not subtract anything from directed digests
-symbols_abs_directed, symbols_znf_abs_directed, symbols_znf_rel_directed = \
-    get_unique_exclusive_gene_symbols_and_write_to_file(directed_digests_symbols_set, empty_set, tab_file_name_directed_digest_symbols, "ZNF")
+
+if comparative_sets == "D-VS-UWOD":
+    empty_set = set() # do not subtract anything from directed digests
+    symbols_abs_directed, symbols_znf_abs_directed, symbols_znf_rel_directed = \
+        get_unique_exclusive_gene_symbols_and_write_to_file(directed_digests_symbols_set, empty_set, tab_file_name_directed_digest_symbols, "ZNF")
+elif comparative_sets == "DWOU-VS-UWOD":
+    symbols_abs_directed, symbols_znf_abs_directed, symbols_znf_rel_directed = \
+        get_unique_exclusive_gene_symbols_and_write_to_file(directed_digests_symbols_set, undirected_digests_symbols_set, tab_file_name_directed_digest_symbols, "ZNF")
+else:
+    print("\t\t[ERROR] Comparative sets should be either D-VS-UWOD or DWOU-VS-UWOD. Abort!")
+    exit(1)
 
 tab_file_name_undirected_digest_symbols = out_prefix + "_undirected_digest_symbols.tab"
 print("\t\t[INFO] Writing to file: " + tab_file_name_undirected_digest_symbols)
@@ -978,17 +1049,14 @@ print("\t[INFO] ... done.")
 
 print("\t[INFO] Converting BED with unique exclusive digests to FASTA ...")
 
-# get FASTA files with DIGEST sequences of directed interactions
+# get FASTA files with DIGEST sequences of directed interactions for calculation of sequence statistics
 fasta_file_name_directed_digests = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests)
 print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests)
-fasta_file_name_directed_digests_masked = mask_repeats(fasta_file_name_directed_digests)
-print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_masked)
 
-# get FASTA files with DIGEST sequences of undirected interactions
+# get FASTA files with DIGEST sequences of undirected interactions for calculation of sequence statistics
 fasta_file_name_undirected_digests = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests)
 print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests)
-fasta_file_name_undirected_digests_masked = mask_repeats(fasta_file_name_undirected_digests)
-print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_masked)
+
 
 # get FASTA files with sequences around promoters on '-' strand that are associated with directed interactions for CentriMo analysis
 fasta_file_name_directed_digests_tss_minus = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_minus)
@@ -998,14 +1066,6 @@ print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_minus)
 fasta_file_name_directed_digests_tss_plus = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_plus)
 print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_plus)
 
-# concat FASTA files for plus and minus strand for calculation of sequence statistics and motif discovery
-fasta_file_name_directed_digests_tss = fasta_file_name_directed_digests_tss_minus.split("_minus")[0] + '.fasta'
-sys_cmd = 'cat ' + fasta_file_name_directed_digests_tss_minus + ' ' + fasta_file_name_directed_digests_tss_plus + ' > ' + fasta_file_name_directed_digests_tss
-os.system(sys_cmd)
-print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss)
-fasta_file_name_directed_digests_tss_masked = mask_repeats(fasta_file_name_directed_digests_tss)
-print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_masked)
-
 # get FASTA files with sequences around promoters on '-' strand that are associated with undirected interactions for CentriMo analysis
 fasta_file_name_undirected_digests_tss_minus = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_minus)
 print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_minus)
@@ -1014,35 +1074,59 @@ print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_minu
 fasta_file_name_undirected_digests_tss_plus = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_plus)
 print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_plus)
 
-# concat FASTA files for plus and minus strand for calculation of sequence statistics and motif discovery
-fasta_file_name_undirected_digests_tss = fasta_file_name_undirected_digests_tss_minus.split("_minus")[0] + '.fasta'
-sys_cmd = 'cat ' + fasta_file_name_undirected_digests_tss_minus + ' ' + fasta_file_name_undirected_digests_tss_plus + ' > ' + fasta_file_name_undirected_digests_tss
-os.system(sys_cmd)
-print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss)
-fasta_file_name_undirected_digests_tss_masked = mask_repeats(fasta_file_name_undirected_digests_tss)
-print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_masked)
 
-# concat BED files with promoter sequences for plus and minus strand
+# concat BED files with promoter regions for plus and minus strand
 sys_cmd = 'cat ' + bed_file_name_directed_digests_tss_minus + ' ' + bed_file_name_directed_digests_tss_plus + ' > ' + bed_file_name_directed_digests_tss
 os.system(sys_cmd)
+
 # merge promoter regions
 bed_file_name_directed_digests_tss_merged = merge_bed(bedtools_path, bed_file_name_directed_digests_tss)
 print("\t\t[INFO] Wrote to file: " + bed_file_name_directed_digests_tss_merged)
-# convert to FASTA
-fasta_file_name_directed_digests_tss_merged = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_merged)
-fasta_file_name_directed_digests_tss_merged_masked = mask_repeats(fasta_file_name_directed_digests_tss_merged)
-print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_merged_masked)
 
-# concat BED files with promoter sequences for plus and minus strand
+# get FASTA with merged promoter sequences for calculation of sequence statistics
+fasta_file_name_directed_digests_tss_merged = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_merged) # used for sequence statistics of promoters
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_merged)
+
+
+# concat BED files with promoter regions for plus and minus strand
 sys_cmd = 'cat ' + bed_file_name_undirected_digests_tss_minus + ' ' + bed_file_name_undirected_digests_tss_plus + ' > ' + bed_file_name_undirected_digests_tss
 os.system(sys_cmd)
+
 # merge promoter regions
 bed_file_name_undirected_digests_tss_merged = merge_bed(bedtools_path, bed_file_name_undirected_digests_tss)
 print("\t\t[INFO] Wrote to file: " + bed_file_name_undirected_digests_tss_merged)
-# convert to FASTA
-fasta_file_name_undirected_digests_tss_merged = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_merged)
-fasta_file_name_undirected_digests_tss_merged_masked = mask_repeats(fasta_file_name_undirected_digests_tss_merged)
-print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_merged_masked)
+
+# get FASTA with merged promoter sequences for calculation of sequence statistics
+fasta_file_name_undirected_digests_tss_merged = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_merged) # used for sequence statistics of promoters
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_merged)
+
+
+# trim merged promoter regions to a uniform length for motif analysis with DREME
+total_num_center_trimmed_directed, long_num_center_trimmed_directed, max_size_center_trimmed_directed, bed_file_name_directed_digests_tss_merged_center_trimmed =\
+    center_trim_bed(bed_file_name_directed_digests_tss_merged, up_dist, down_dist)
+
+print("total_num_center_trimmed_directed: " + str(total_num_center_trimmed_directed))
+print("long_num_center_trimmed_directed: " + str(long_num_center_trimmed_directed))
+print("max_size_center_trimmed_directed: " + str(max_size_center_trimmed_directed))
+print("bed_file_name_center_trimmed_directed: " + bed_file_name_directed_digests_tss_merged_center_trimmed)
+
+# convert merged and trimmed promoter regions to FASTA
+fasta_file_name_directed_digests_tss_merged_center_trimmed = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_merged_center_trimmed) # could be removed after repeat masking
+fasta_file_name_directed_digests_tss_merged_center_trimmed_masked = mask_repeats(fasta_file_name_directed_digests_tss_merged_center_trimmed)
+
+
+# trim merged promoter regions to a uniform length for motif analysis with DREME
+total_num_center_trimmed_undirected, long_num_center_trimmed_undirected, max_size_center_trimmed_undirected, bed_file_name_undirected_digests_tss_merged_center_trimmed =\
+    center_trim_bed(bed_file_name_undirected_digests_tss_merged, up_dist, down_dist)
+
+print("total_num_center_trimmed_undirected: " + str(total_num_center_trimmed_undirected))
+print("long_num_center_trimmed_undirected: " + str(long_num_center_trimmed_undirected))
+print("max_size_center_trimmed_undirected: " + str(max_size_center_trimmed_undirected))
+print("bed_file_name_center_trimmed_undirected: " + bed_file_name_undirected_digests_tss_merged_center_trimmed)
+
+# convert merged and trimmed promoter regions to FASTA
+fasta_file_name_undirected_digests_tss_merged_center_trimmed = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_merged_center_trimmed) # could be removed after repeat masking
+fasta_file_name_undirected_digests_tss_merged_center_trimmed_masked = mask_repeats(fasta_file_name_undirected_digests_tss_merged_center_trimmed)
 
 print("\t[INFO] ... done.")
 
@@ -1122,8 +1206,8 @@ print("\t[INFO] Number of undirected interactions: " + str(undirected_interactio
 print("\t[INFO] Number of all unique directed digests: " + str(len(directed_digests_set)))
 print("\t[INFO] Number of all unique undirected digests: " + str(len(undirected_digests_set)))
 
-print("\t[INFO] Number of unique directed digests that are not undirected: " + str(len(directed_wo_undirected_digests_set)))
-print("\t[INFO] Number of unique undirected digests that are not directed: " + str(len(undirected_wo_directed_digests_set)))
+print("\t[INFO] Number of unique directed digests that are not undirected: " + str(len(directed_digests_comparative_set)))
+print("\t[INFO] Number of unique undirected digests that are not directed: " + str(len(undirected_digests_comparative_set)))
 
 print("\t[INFO] Number of intersecting digests: " + str(len(directed_intersect_undirected_digests_set)))
 print("\t[INFO] Size of the union of directed and undirected digests: " + str(len(directed_union_directed_digests_set)))
@@ -1215,8 +1299,8 @@ tab_file_stream_interaction_and_digest_statistics.write(
     "directed_digests_set_size" + "\t" +
     "undirected_digests_set_size" + "\t" +
 
-    "directed_wo_undirected_digests_set_size" + "\t" +
-    "undirected_wo_directed_digests_set_size" + "\t" +
+    "directed_digests_comparative_set_size" + "\t" +
+    "undirected_digests_comparative_set_size" + "\t" +
 
     "directed_intersect_undirected_digests_set" + "\t" +
     "directed_union_directed_digests_set_size" + "\t" +
@@ -1291,8 +1375,8 @@ tab_file_stream_interaction_and_digest_statistics.write(
     str(len(directed_digests_set)) + "\t" +
     str(len(undirected_digests_set)) + "\t" +
 
-    str(len(directed_wo_undirected_digests_set)) + "\t" +
-    str(len(undirected_wo_directed_digests_set)) + "\t" +
+    str(len(directed_digests_comparative_set)) + "\t" +
+    str(len(undirected_digests_comparative_set)) + "\t" +
 
     str(len(directed_intersect_undirected_digests_set)) + "\t" +
     str(len(directed_union_directed_digests_set)) + "\t" +
