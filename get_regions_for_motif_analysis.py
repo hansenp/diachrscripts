@@ -1,6 +1,57 @@
 """
-This script performs a number of comparisons between digests and promoters of direct und undirected reference
-promoter-promoter interactions. The input file was prepared using the python script 'get_gene_symbols.py' and contains
+This script performs a number of comparisons between directed and undirected interactions and associated
+digests and promoters.
+
+It builds upon the output of the script 'get_gene_symbols_of_interactions_script.py' that contains predefined
+sets of directed and undirected reference interactions (column 3).
+
+The analysis is restricted to the following interaction categories:
+
+   1. Directed interactions between promoters: Simple (S) or twisted (T) and in addition enrichment status pair tag AA
+   2. Undirected reference interactions between promoters (URAA)
+
+Directed and undirected reference interactions were selected in way so as they are comparable with regard to:
+
+   1. Signal strength measured as the number of read pairs
+   2. Enrichment status of interacting digests (AA)
+   3. Distance between interacting digests
+
+
+
+# Overview
+##########
+
+This script performs performs comparisons of interactions, digests and associated promoters between directed (D) and
+undirected reference (UR) interactions. For this purpose, comparative sets for directed and undirected interactions need to be
+defined at the level of digests and interactions. The comparative sets can be defined in two different ways:
+
+1. Compare digests that occur exclusively either for directed or undirected interactions, i.e. remove all ambiguous digests that
+are involved in directed and undirected interactions at the same time. We refer to the remaining digest as
+'exclusive digests' (ED). At the level of interactions, keep only interactions with two exclusive digests. We refer to
+these interaction as 'exclusive interactions' (EI). This yields four comparative sets:
+
+   i. Exclusive directed digests EDD
+   ii. Exclusive directed digests EUD
+   iii. Exclusive directed interactions EDI
+   iv. Exclusive directed interactions EUI
+
+2. Remove ambiguous digests for undirected interactions only and leave digests from directed interactions unfiltered.
+This yields four comparative sets:
+
+   i. Directed digests DD
+   ii. Exclusive directed digests EUD
+   iii. Directed interactions DI
+   iv. Exclusive directed interactions EUI
+
+Use the option --comparative-sets with 'DWOU-VS-UWOD'  for the first and 'D-VS-UWOD' for the second definition of
+comparative sets.
+
+
+
+# Input file
+############
+
+The input file was prepared using the python script 'get_gene_symbols.py' and contains
 detailed information about one interaction in each line. This is one line as an example:
 
 chr2:112534779-112543248;chr2:112577153-112587985	33905	S	LOC105373562,POLR1B;CHCHD5	221:130	AA	14.20	d/+	chr2:112541915:+,chr2:112542212:-,chr2:112542036:+;chr2:112584437:+,chr2:112584609:+,chr2:112584854:+
@@ -37,6 +88,9 @@ The same applies to digest that are assigned a '+'. Digests wit TSS on the forwa
 Field 9: 'chr2:112541915:+,chr2:112542212:-,chr2:112542036:+;chr2:112584437:+,chr2:112584609:+,chr2:112584854:+' - Two
 comma separated lists of TSS (chromosome:coordinate:strand) separated by a semicolon.
 
+# Workflow
+##########
+
 Essentially, the script follows a two pass approach:
 
    1. Pass through all interactions in order to identify unique exclusive digests that do not interact with digests
@@ -46,6 +100,10 @@ Essentially, the script follows a two pass approach:
 
    2. Pass through all interactions a second time in order to identify TSS that are on unique exclusive digests.
 
+
+# Calculated statistics
+#######################
+
 In the course of that, a variety of digest and promoter features is determined that are listed below:
 
 1. Connectivity factor: One digest can be involved in more than one interaction. During the first pass we use a set to
@@ -53,59 +111,71 @@ store the coordinates of digests from directed interactions and undirected refer
 calculate the connectivity factor for directed and undirected references interactions, we divide the cardinalities of the
 corresponding sets by twice the number of corresponding interactions and subtract this number from 1.
 
-2. Mean number of interaction partners of unique exclusive digests. These numbers are determined during the second
+2. Mean number of interaction partners of unique exclusive digests: These numbers are determined during the second
 pass.
 
+3. Base frequencies:
 
-This script is to prepare BED files containing interacting digests and promoter regions used for motif analysis.
-It iterates a file with interactions, gene symbols,
-strand and TSS information, etc. created with the script 'get_gene_symbols_of_interactions_script.py'.
+4. Digest sizes:
 
-Six BED files are created:
+5. Interaction sizes:
 
-   1. BED files with regions of unique exclusive digests (see schematic representation with venn diagrams)
+6. Strand pair tag frequencies:
 
-      a. of directed interactions ('S' or 'T' in column 3 of file with gene symbols and interactions)
-         '<OUT_PREFIX>_directed_digests.bed'
 
-      b. of undirected reference interactions ('URAA' in column 3 of file with gene symbols and interactions)
-         '<OUT_PREFIX>_undirected_digests.bed'
+# Output files
+##############
 
-   2. BED files for promoter regions
+This script generates the following files:
 
-      a. on directed interacting digests
-         i. and on the '-' strand
-            '<OUT_PREFIX>_directed_minus_tss.bed'
+# Central file with most of the calculated statistics in one tab separated line
 
-         ii. and on the '+' strand
-            '<OUT_PREFIX>_directed_plus_tss.bed'
+<OUT_PREFIX>_interaction_and_digest_statistics.tab
 
-      b. on undirected interacting digests
-         i. and on the '-' strand
-            '<OUT_PREFIX>_undirected_minus_tss.bed'
+# Base and strand pair tag frequencies
 
-         ii. and on the '+' strand
-            '<OUT_PREFIX>_undirected_plus_tss.bed'
+<OUT_PREFIX>_base_frequencies.tab
+<OUT_PREFIX>_strand_pair_tag_frequencies.tab
 
-Use copy these lines to a text file:
+# Gene symbols associated with digests for GO analysis
 
-chr9:128781853-128788644;chr9:128855420-128861085	66776	S	TBC1D13;KYAT1	12:0	AA	8.32	+/-	chr9:128787253:+,chr9:128787207:+;chr9:128860532:-
-chr17:39397580-39405334;chr17:39461300-39463357	55966	T	FBXL20;CDK12	33:11	AA	7.37	-/+	chr17:39402556:-,chr17:39401626:-;chr17:39461486:+
-chr3:101509230-101513979;chr3:101842446-101853540	328467	URAA	SENP7;NFKBIZ	6:3	AA	1.37	-/+	chr3:101513212:-,chr3:101513241:-;chr3:101849514:+
-chr21:30736306-30747469;chr21:30819004-30819702	71535	URAI	KRTAP21-2;	8:4	AI	1.64	-/-1	chr21:30747259:-;
-chr5:74778161-74782279;chr5:74867764-74868683	85485	URII	;	17:6	II	4.05	-1/-1	;
-chr5:88676106-88682018;chr5:88927332-88929569	245314	NA	LINC00461,MEF2C-AS2;	5:1	II	2.21	d/-1	chr5:88676298:-,chr5:88678448:-,chr5:88676218:+;
+<OUT_PREFIX>_directed_digest_symbols.tab
+<OUT_PREFIX>_undirected_digest_symbols.tab
 
-gzip the test file and use this file as input for this script.
-Digest and promoter will be extracted only for the first two lines (directed interactions) and the third line (undirected reference interaction).
 
-The BED files with digest regions are used for motif discovery using DREME.
-The BED files with promoter regions are used the analysis of motif occurrences relative to TSS using CentriMo.
+# Exhaustive collections for interaction partners per digests and digest and interaction sizes
 
-We use 'bedtools getfasta' for sequence extraction and gsub for repeat masking.
+<OUT_PREFIX>_directed_digests_interaction_partner_per_digest_distribution.tab
+<OUT_PREFIX>_undirected_digests_interaction_partner_per_digest_distribution.tab
 
-We use 'gsub(/a|c|g|t/,"N",$1)' for repeat masking.
+<OUT_PREFIX>_directed_digests_size_distribution.tab
+<OUT_PREFIX>_undirected_digests_size_distribution.tab
 
+<OUT_PREFIX>_directed_interaction_size_distribution.tab
+<OUT_PREFIX>_undirected_interaction_size_distribution.tab
+
+
+# BED and FASTA files for calculation of sequence statistics and downstream analysis
+
+<OUT_PREFIX>_directed_digests.bed                                                    # Digest regions (keep for others)
+<OUT_PREFIX>_directed_digests.fasta                                                  # Digest sequences for statistics (REMOVED after calculation)
+<OUT_PREFIX>_directed_digests_tss_redundant.bed                                      # Redundant promoter regions (keep for others)
+<OUT_PREFIX>_directed_digests_tss_redundant_merged.bed                               # Merged promoter regions (keep for others)
+<OUT_PREFIX>_directed_digests_tss_redundant_merged.fasta                             # Merged promoter sequences for statistics (REMOVED after calculation)
+<OUT_PREFIX>_directed_digests_tss_redundant_merged_center_trimmed.bed                # Merged and center-trimmed promoter regions (keep for others)
+<OUT_PREFIX>_directed_digests_tss_redundant_merged_center_trimmed_masked.fasta       # Merged and center-trimmed promoter repeat masked sequences for motif analysis with DREME
+<OUT_PREFIX>_directed_digests_tss_redundant_minus.fasta                              # Redundant promoter regions on '-' strand for motif analysis with CentriMo
+<OUT_PREFIX>_directed_digests_tss_redundant_plus.fasta                               # Redundant promoter regions on '+' strand for motif analysis with CentriMo
+
+<OUT_PREFIX>_undirected_digests.bed                                                  # see comment for directed counterpart
+<OUT_PREFIX>_undirected_digests.fasta                                                # see comment for directed counterpart
+<OUT_PREFIX>_undirected_digests_tss_redundant.bed                                    # see comment for directed counterpart
+<OUT_PREFIX>_undirected_digests_tss_redundant_merged.bed                             # see comment for directed counterpart
+<OUT_PREFIX>_undirected_digests_tss_redundant_merged.fasta                           # see comment for directed counterpart
+<OUT_PREFIX>_undirected_digests_tss_redundant_merged_center_trimmed.bed              # see comment for directed counterpart
+<OUT_PREFIX>_undirected_digests_tss_redundant_merged_center_trimmed_masked.fasta     # see comment for directed counterpart
+<OUT_PREFIX>_undirected_digests_tss_redundant_minus.fasta                            # see comment for directed counterpart
+<OUT_PREFIX>_undirected_digests_tss_redundant_plus.fasta                             # see comment for directed counterpart
 """
 
 import argparse
@@ -574,19 +644,19 @@ bed_file_name_undirected_digests = out_prefix + "_undirected_digests.bed"
 bed_stream_name_undirected_digests = open(bed_file_name_undirected_digests, 'wt')
 
 # create two BED files for promoters on digests of directed iteractions, one for promoters on the plus and another one for promoters on the minus strand
-bed_file_name_directed_digests_tss_minus = out_prefix + "_directed_digests_tss_minus.bed"
+bed_file_name_directed_digests_tss_minus = out_prefix + "_directed_digests_tss_redundant_minus.bed"
 bed_stream_name_directed_digests_tss_minus = open(bed_file_name_directed_digests_tss_minus, 'wt')
-bed_file_name_directed_digests_tss_plus = out_prefix + "_directed_digests_tss_plus.bed"
+bed_file_name_directed_digests_tss_plus = out_prefix + "_directed_digests_tss_redundant_plus.bed"
 bed_stream_name_directed_digests_tss_plus = open(bed_file_name_directed_digests_tss_plus, 'wt')
 
 # create two BED files for promoters on digests of undirected iteractions, one for promoters on the plus and another one for promoters on the minus strand
-bed_file_name_undirected_digests_tss_minus = out_prefix + "_undirected_digests_tss_minus.bed"
+bed_file_name_undirected_digests_tss_minus = out_prefix + "_undirected_digests_tss_redundant_minus.bed"
 bed_stream_name_undirected_digests_tss_minus = open(bed_file_name_undirected_digests_tss_minus, 'wt')
-bed_file_name_undirected_digests_tss_plus = out_prefix + "_undirected_digests_tss_plus.bed"
+bed_file_name_undirected_digests_tss_plus = out_prefix + "_undirected_digests_tss_redundant_plus.bed"
 bed_stream_name_undirected_digests_tss_plus = open(bed_file_name_undirected_digests_tss_plus, 'wt')
 
-bed_file_name_directed_digests_tss = out_prefix + "_directed_digests_tss.bed"
-bed_file_name_undirected_digests_tss = out_prefix + "_undirected_digests_tss.bed"
+bed_file_name_directed_digests_tss = out_prefix + "_directed_digests_tss_redundant.bed"
+bed_file_name_undirected_digests_tss = out_prefix + "_undirected_digests_tss_redundant.bed"
 
 
 ### Prepare variables and data structures
@@ -1074,59 +1144,56 @@ print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_minu
 fasta_file_name_undirected_digests_tss_plus = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_plus)
 print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_plus)
 
-
 # concat BED files with promoter regions for plus and minus strand
 sys_cmd = 'cat ' + bed_file_name_directed_digests_tss_minus + ' ' + bed_file_name_directed_digests_tss_plus + ' > ' + bed_file_name_directed_digests_tss
+os.system(sys_cmd)
+sys_cmd = 'cat ' + bed_file_name_undirected_digests_tss_minus + ' ' + bed_file_name_undirected_digests_tss_plus + ' > ' + bed_file_name_undirected_digests_tss
+os.system(sys_cmd)
+
+# remove separate BED files for different strands
+sys_cmd = 'rm ' + bed_file_name_directed_digests_tss_minus + ' ' + bed_file_name_directed_digests_tss_plus
+os.system(sys_cmd)
+sys_cmd = 'rm ' + bed_file_name_undirected_digests_tss_minus + ' ' + bed_file_name_undirected_digests_tss_plus
 os.system(sys_cmd)
 
 # merge promoter regions
 bed_file_name_directed_digests_tss_merged = merge_bed(bedtools_path, bed_file_name_directed_digests_tss)
 print("\t\t[INFO] Wrote to file: " + bed_file_name_directed_digests_tss_merged)
-
-# get FASTA with merged promoter sequences for calculation of sequence statistics
-fasta_file_name_directed_digests_tss_merged = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_merged) # used for sequence statistics of promoters
-print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_merged)
-
-
-# concat BED files with promoter regions for plus and minus strand
-sys_cmd = 'cat ' + bed_file_name_undirected_digests_tss_minus + ' ' + bed_file_name_undirected_digests_tss_plus + ' > ' + bed_file_name_undirected_digests_tss
-os.system(sys_cmd)
-
-# merge promoter regions
 bed_file_name_undirected_digests_tss_merged = merge_bed(bedtools_path, bed_file_name_undirected_digests_tss)
 print("\t\t[INFO] Wrote to file: " + bed_file_name_undirected_digests_tss_merged)
 
 # get FASTA with merged promoter sequences for calculation of sequence statistics
+fasta_file_name_directed_digests_tss_merged = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_merged) # used for sequence statistics of promoters
+print("\t\t[INFO] Wrote to file: " + fasta_file_name_directed_digests_tss_merged)
 fasta_file_name_undirected_digests_tss_merged = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_merged) # used for sequence statistics of promoters
 print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_merged)
-
 
 # trim merged promoter regions to a uniform length for motif analysis with DREME
 total_num_center_trimmed_directed, long_num_center_trimmed_directed, max_size_center_trimmed_directed, bed_file_name_directed_digests_tss_merged_center_trimmed =\
     center_trim_bed(bed_file_name_directed_digests_tss_merged, up_dist, down_dist)
+total_num_center_trimmed_undirected, long_num_center_trimmed_undirected, max_size_center_trimmed_undirected, bed_file_name_undirected_digests_tss_merged_center_trimmed =\
+    center_trim_bed(bed_file_name_undirected_digests_tss_merged, up_dist, down_dist)
+
+# convert merged and trimmed promoter regions to FASTA
+fasta_file_name_directed_digests_tss_merged_center_trimmed = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_merged_center_trimmed) # could be removed after repeat masking
+fasta_file_name_directed_digests_tss_merged_center_trimmed_masked = mask_repeats(fasta_file_name_directed_digests_tss_merged_center_trimmed)
+fasta_file_name_undirected_digests_tss_merged_center_trimmed = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_merged_center_trimmed) # could be removed after repeat masking
+fasta_file_name_undirected_digests_tss_merged_center_trimmed_masked = mask_repeats(fasta_file_name_undirected_digests_tss_merged_center_trimmed)
+
+# remove unmasked FASTA files with sequences of merged, centered and trimmed promoters
+sys_cmd = 'rm ' + fasta_file_name_directed_digests_tss_merged_center_trimmed + ' ' + fasta_file_name_undirected_digests_tss_merged_center_trimmed
+os.system(sys_cmd)
 
 print("total_num_center_trimmed_directed: " + str(total_num_center_trimmed_directed))
 print("long_num_center_trimmed_directed: " + str(long_num_center_trimmed_directed))
 print("max_size_center_trimmed_directed: " + str(max_size_center_trimmed_directed))
 print("bed_file_name_center_trimmed_directed: " + bed_file_name_directed_digests_tss_merged_center_trimmed)
 
-# convert merged and trimmed promoter regions to FASTA
-fasta_file_name_directed_digests_tss_merged_center_trimmed = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_directed_digests_tss_merged_center_trimmed) # could be removed after repeat masking
-fasta_file_name_directed_digests_tss_merged_center_trimmed_masked = mask_repeats(fasta_file_name_directed_digests_tss_merged_center_trimmed)
-
-
-# trim merged promoter regions to a uniform length for motif analysis with DREME
-total_num_center_trimmed_undirected, long_num_center_trimmed_undirected, max_size_center_trimmed_undirected, bed_file_name_undirected_digests_tss_merged_center_trimmed =\
-    center_trim_bed(bed_file_name_undirected_digests_tss_merged, up_dist, down_dist)
-
 print("total_num_center_trimmed_undirected: " + str(total_num_center_trimmed_undirected))
 print("long_num_center_trimmed_undirected: " + str(long_num_center_trimmed_undirected))
 print("max_size_center_trimmed_undirected: " + str(max_size_center_trimmed_undirected))
 print("bed_file_name_center_trimmed_undirected: " + bed_file_name_undirected_digests_tss_merged_center_trimmed)
 
-# convert merged and trimmed promoter regions to FASTA
-fasta_file_name_undirected_digests_tss_merged_center_trimmed = convert_bed_to_fasta(bedtools_path, genome_fasta_path, bed_file_name_undirected_digests_tss_merged_center_trimmed) # could be removed after repeat masking
-fasta_file_name_undirected_digests_tss_merged_center_trimmed_masked = mask_repeats(fasta_file_name_undirected_digests_tss_merged_center_trimmed)
 
 print("\t[INFO] ... done.")
 
@@ -1151,17 +1218,23 @@ header_line, value_line, repeat_content_undirected_digests, gc_content_repeat_un
     get_base_frequencies(fasta_file_name_undirected_digests)
 tab_stream_name_base_frequencies.write(value_line + "\n")
 
-# Promoters on directed digests
+# Merged promoters on directed digests
 header_line, value_line, repeat_content_directed_digests_tss_merged, gc_content_repeat_directed_digests_tss_merged, gc_content_non_repeat_directed_digests_tss_merged, gc_content_total_directed_digests_tss_merged = \
     get_base_frequencies(fasta_file_name_directed_digests_tss_merged)
 tab_stream_name_base_frequencies.write(value_line + "\n")
 
-# Promoters on undirected digests
+# Merged promoters on undirected digests
 header_line, value_line, repeat_content_undirected_digests_tss_merged, gc_content_repeat_undirected_digests_tss_merged, gc_content_non_repeat_undirected_digests_tss_merged, gc_content_total_undirected_digests_tss_merged = \
     get_base_frequencies(fasta_file_name_undirected_digests_tss_merged)
 tab_stream_name_base_frequencies.write(value_line + "\n")
 
 tab_stream_name_base_frequencies.close()
+
+# remove FASTA files for calculation of sequence statistics on digests and promoters
+sys_cmd = 'rm ' + fasta_file_name_directed_digests + ' ' + fasta_file_name_undirected_digests
+os.system(sys_cmd)
+sys_cmd = 'rm ' + fasta_file_name_directed_digests_tss_merged + ' ' + fasta_file_name_undirected_digests_tss_merged
+os.system(sys_cmd)
 
 print("\t[INFO] ... done.")
 
