@@ -155,7 +155,7 @@ This script generates the following files:
 <OUT_PREFIX>_undirected_interaction_size_distribution.tab
 
 
-# BED and FASTA files for calculation of sequence statistics and downstream analysis
+# Generated BED and FASTA files for calculation of sequence statistics and downstream analysis:
 
 <OUT_PREFIX>_directed_digests.bed                                                    # Digest regions (keep for others)
 <OUT_PREFIX>_directed_digests.fasta                                                  # Digest sequences for statistics (REMOVED after calculation)
@@ -292,39 +292,49 @@ def center_trim_bed(bed_file_name, up_size, down_size):
     bed_file_name_center_trimmed = bed_file_name_base + '_center_trimmed.bed'
     bed_file_stream_center_trimmed = open(bed_file_name_center_trimmed, 'wt')
 
-    total_num = 0   # total number of regions in input BED file
-    long_num = 0    # number of regions that are longer than 'up_size + down_size'
-    max_size = 0    # size of largest region in input BED file
+    target_region_size = up_size + down_size
+    total_region_num = 0                       # total number of regions in input BED file
+    trimmed_region_num = 0                     # number of trimmed regions that are longer than 'up_size + down_size'
+    region_max_size = 0                        # size of largest region in input BED file
+    total_region_size = 0                      # total size of regions in input BED file
+    total_trimmed_region_size = 0              # total size of trimmed region
 
     with open(bed_file_name, 'rt') as fp:
         line = fp.readline()
         while line:
-            total_num += 1
+            total_region_num += 1
 
             chr = line.split("\t")[0]
             sta = int(line.split("\t")[1])
             end = int(line.split("\t")[2])
             size = end - sta
 
-            if max_size < size:
-                max_size = size
+            total_region_size = total_region_size + size
 
-            if up_size + down_size < size: # trim
-                long_num += 1
+            if region_max_size < size:
+                region_max_size = size
+
+            if target_region_size < size: # trim
+                trimmed_region_num += 1
                 center = sta + int(size / 2)
                 sta = center - up_size
                 end = center + down_size
+                total_trimmed_region_size = total_trimmed_region_size + (size - target_region_size)
 
-            bed_file_stream_center_trimmed.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(total_num) + "\n")
+            bed_file_stream_center_trimmed.write(chr + "\t" + str(sta) + "\t" + str(end) + "\t" + str(total_region_num) + "\n")
 
-            if up_size + down_size > size:
+            if size < target_region_size:
                 print("[WARNING] Region is smaller than \'up_dist + down_dist\'!")
 
             line = fp.readline()
 
     bed_file_stream_center_trimmed.close()
 
-    return total_num, long_num, max_size, bed_file_name_center_trimmed
+    avg_region_size = int(total_region_size / total_region_num)                                 # Average size of input regions
+    trimmed_region_num_frac = "{:.2f}".format(100*trimmed_region_num / total_region_num)                # fraction of input regions that were trimmed
+    total_trimmed_region_size_frac = "{:.2f}".format(100*total_trimmed_region_size/total_region_size)   # overall fraction of bases that were trimmed (removed)
+
+    return target_region_size, total_region_num, trimmed_region_num_frac, avg_region_size, region_max_size, total_trimmed_region_size_frac, bed_file_name_center_trimmed
 
 
 def mask_repeats(fasta_file_name):
@@ -995,6 +1005,7 @@ for tss in directed_digests_tss_comparative_set:
 # Close output streams
 bed_stream_name_directed_digests_tss_minus.close()
 bed_stream_name_directed_digests_tss_plus.close()
+directed_digests_tss_comparative_set_size = len(directed_digests_tss_comparative_set)
 
 # Report names of files that are going to be created for TSS on undirected digests
 print("\t\t[INFO] Writing to file: " + bed_file_name_undirected_digests_tss_minus)
@@ -1024,6 +1035,7 @@ for tss in undirected_digests_tss_comparative_set:
 # Close output streams
 bed_stream_name_undirected_digests_tss_minus.close()
 bed_stream_name_undirected_digests_tss_plus.close()
+undirected_digests_tss_comparative_set_size = len(undirected_digests_tss_comparative_set)
 
 print("\t[INFO] ... done.")
 
@@ -1169,9 +1181,9 @@ fasta_file_name_undirected_digests_tss_merged = convert_bed_to_fasta(bedtools_pa
 print("\t\t[INFO] Wrote to file: " + fasta_file_name_undirected_digests_tss_merged)
 
 # trim merged promoter regions to a uniform length for motif analysis with DREME
-total_num_center_trimmed_directed, long_num_center_trimmed_directed, max_size_center_trimmed_directed, bed_file_name_directed_digests_tss_merged_center_trimmed =\
+target_region_size_center_trimmed_directed, total_region_num_center_trimmed_directed, trimmed_region_num_frac_center_trimmed_directed, avg_region_size_center_trimmed_directed, region_max_size_center_trimmed_directed, total_trimmed_region_size_frac_center_trimmed_directed, bed_file_name_directed_digests_tss_merged_center_trimmed =\
     center_trim_bed(bed_file_name_directed_digests_tss_merged, up_dist, down_dist)
-total_num_center_trimmed_undirected, long_num_center_trimmed_undirected, max_size_center_trimmed_undirected, bed_file_name_undirected_digests_tss_merged_center_trimmed =\
+target_region_size_center_trimmed_undirected, total_region_num_center_trimmed_undirected, trimmed_region_num_frac_center_trimmed_undirected, avg_region_size_center_trimmed_undirected, region_max_size_center_trimmed_undirected, total_trimmed_region_size_frac_center_trimmed_undirected, bed_file_name_undirected_digests_tss_merged_center_trimmed =\
     center_trim_bed(bed_file_name_undirected_digests_tss_merged, up_dist, down_dist)
 
 # convert merged and trimmed promoter regions to FASTA
@@ -1183,17 +1195,6 @@ fasta_file_name_undirected_digests_tss_merged_center_trimmed_masked = mask_repea
 # remove unmasked FASTA files with sequences of merged, centered and trimmed promoters
 sys_cmd = 'rm ' + fasta_file_name_directed_digests_tss_merged_center_trimmed + ' ' + fasta_file_name_undirected_digests_tss_merged_center_trimmed
 os.system(sys_cmd)
-
-print("total_num_center_trimmed_directed: " + str(total_num_center_trimmed_directed))
-print("long_num_center_trimmed_directed: " + str(long_num_center_trimmed_directed))
-print("max_size_center_trimmed_directed: " + str(max_size_center_trimmed_directed))
-print("bed_file_name_center_trimmed_directed: " + bed_file_name_directed_digests_tss_merged_center_trimmed)
-
-print("total_num_center_trimmed_undirected: " + str(total_num_center_trimmed_undirected))
-print("long_num_center_trimmed_undirected: " + str(long_num_center_trimmed_undirected))
-print("max_size_center_trimmed_undirected: " + str(max_size_center_trimmed_undirected))
-print("bed_file_name_center_trimmed_undirected: " + bed_file_name_undirected_digests_tss_merged_center_trimmed)
-
 
 print("\t[INFO] ... done.")
 
@@ -1353,6 +1354,7 @@ print("\t\t\t[INFO] Q1: " + str(q1_interaction_sizes_undirected_digests))
 print("\t\t\t[INFO] Q2: " + str(q2_interaction_sizes_undirected_digests))
 print("\t\t\t[INFO] Q3: " + str(q3_interaction_sizes_undirected_digests))
 print("\t\t\t[INFO] Mean: " + str(mean_interaction_sizes_undirected_digests))
+
 print("\t[INFO] Strand pair tags")
 print("\t\tstrand_pair_tag\tfrac_directed\tfrac_undirected\tabs_directed\tabs_undirected")
 for key in strand_pair_tag_list:
@@ -1360,6 +1362,27 @@ for key in strand_pair_tag_list:
           "{:.2f}".format(100 * strand_pair_tag_directed_dict[key] / strand_pair_tag_directed_num) + "\t" + "{:.2f}".format(100 * strand_pair_tag_undirected_dict[key] / strand_pair_tag_undirected_num) + "\t" +
           str(strand_pair_tag_directed_dict[key]) + "\t" + str(strand_pair_tag_undirected_dict[key])
           )
+
+print("\t[INFO] Merged and trimmed promoters")
+print("\t\t[INFO] Directed")
+print("\t\t\t[INFO] Target region size: " + str(target_region_size_center_trimmed_directed))
+print("\t\t\t[INFO] Total number of input regions (merged): " + str(total_region_num_center_trimmed_directed))
+print("\t\t\t[INFO] Fraction of trimmed regions: " + str(trimmed_region_num_frac_center_trimmed_directed) + "%")
+print("\t\t\t[INFO] Average size of regions: " + str(avg_region_size_center_trimmed_directed))
+print("\t\t\t[INFO] Size of largest region: " + str(region_max_size_center_trimmed_directed))
+print("\t\t\t[INFO] Fraction of trimmed sequence: " + str(total_trimmed_region_size_frac_center_trimmed_directed) + "%")
+print("\t\t\t[INFO] BED file with trimmed regions: " + bed_file_name_directed_digests_tss_merged_center_trimmed)
+
+print("\t\t[INFO] Unirected")
+print("\t\t\t[INFO] Target region size: " + str(target_region_size_center_trimmed_undirected))
+print("\t\t\t[INFO] Total number of input regions (merged): " + str(total_region_num_center_trimmed_undirected))
+print("\t\t\t[INFO] Fraction of trimmed regions: " + str(trimmed_region_num_frac_center_trimmed_undirected) + "%")
+print("\t\t\t[INFO] Average size of regions: " + str(avg_region_size_center_trimmed_undirected))
+print("\t\t\t[INFO] Size of largest region: " + str(region_max_size_center_trimmed_undirected))
+print("\t\t\t[INFO] Fraction of trimmed sequence: " + str(total_trimmed_region_size_frac_center_trimmed_undirected) + "%")
+print("\t\t\t[INFO] BED file with trimmed regions: " + bed_file_name_undirected_digests_tss_merged_center_trimmed)
+
+
 tab_file_name_interaction_and_digest_statistics = out_prefix + "_interaction_and_digest_statistics.tab"
 tab_file_stream_interaction_and_digest_statistics = open(tab_file_name_interaction_and_digest_statistics, 'wt')
 
@@ -1433,9 +1456,26 @@ tab_file_stream_interaction_and_digest_statistics.write(
     "q1_interaction_sizes_undirected_digests" + "\t" +
     "q2_interaction_sizes_undirected_digests" + "\t" +
     "q3_interaction_sizes_undirected_digests" + "\t" +
-    "mean_interaction_sizes_undirected_digests" +
+    "mean_interaction_sizes_undirected_digests" + "\t" +
+
+    "directed_digests_tss_comparative_set_size" + "\t" + # redundant promoters
+
+    "total_region_num_center_trimmed_directed" + "\t" +  # merged promoters
+    "target_region_size_center_trimmed_directed" + "\t" +
+    "trimmed_region_num_frac_center_trimmed_directed" + "\t" +
+    "avg_region_size_center_trimmed_directed" + "\t" +
+    "total_trimmed_region_size_frac_center_trimmed_directed" + "\t" +
+
+    "undirected_digests_tss_comparative_set_size" + "\t" + # redundant promoters
+
+    "total_region_num_center_trimmed_undirected" + "\t" +  # merged promoters
+    "target_region_size_center_trimmed_undirected" + "\t" +
+    "trimmed_region_num_frac_center_trimmed_undirected" + "\t" +
+    "avg_region_size_center_trimmed_undirected" + "\t" +
+    "total_trimmed_region_size_frac_center_trimmed_undirected" +
 
     "\n")
+
 
 # Write line with corresponding values
 tab_file_stream_interaction_and_digest_statistics.write(
@@ -1513,15 +1553,26 @@ tab_file_stream_interaction_and_digest_statistics.write(
     str(q1_interaction_sizes_undirected_digests) + "\t" +
     str(q2_interaction_sizes_undirected_digests) + "\t" +
     str(q3_interaction_sizes_undirected_digests) + "\t" +
-    str(mean_interaction_sizes_undirected_digests) +
+    str(mean_interaction_sizes_undirected_digests) + "\t" +
+
+    str(directed_digests_tss_comparative_set_size) + "\t" +  # redundant promoters
+
+    str(total_region_num_center_trimmed_directed) + "\t" +  # merged promoters
+    str(target_region_size_center_trimmed_directed) + "\t" +
+    str(trimmed_region_num_frac_center_trimmed_directed) + "\t" +
+    str(avg_region_size_center_trimmed_directed) + "\t" +
+    str(total_trimmed_region_size_frac_center_trimmed_directed) + "\t" +
+
+    str(undirected_digests_tss_comparative_set_size) + "\t" +  # redundant promoters
+
+    str(total_region_num_center_trimmed_undirected) + "\t" +  # merged promoters
+    str(target_region_size_center_trimmed_undirected) + "\t" +
+    str(trimmed_region_num_frac_center_trimmed_undirected) + "\t" +
+    str(avg_region_size_center_trimmed_undirected) + "\t" +
+    str(total_trimmed_region_size_frac_center_trimmed_undirected) +
 
     "\n")
 
 tab_file_stream_interaction_and_digest_statistics.close()
 
 print("[INFO] ... done.")
-
-
-
-
-
