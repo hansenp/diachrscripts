@@ -17,8 +17,9 @@ parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
 parser.add_argument('--p-value-cutoff', help='P-value cutoff used for categorization of interactions.')
 parser.add_argument('--status-pair-flag', help='Pair of \'A\' and \'I\' depending on whether a digest was selected for enrichment (A) or not (I).')
 parser.add_argument('--min-digest-dist', help='All interactions with smaller distances will be discarded.', default=20000)
-
+parser.add_argument('--adjust-to-interaction-distance', help='Adjust selected reference interactions to distance between interacting digests.', action='store_true')
 args = parser.parse_args()
+
 out_prefix = args.out_prefix
 ref_gene_file = args.ref_gene_file
 diachromatic_interaction_file = args.interaction_file
@@ -27,6 +28,8 @@ status_pair_flag = args.status_pair_flag
 if status_pair_flag != "ALL":
     status_pair_flag = sorted(status_pair_flag)[0] + sorted(status_pair_flag)[1]
 min_digest_dist = int(args.min_digest_dist)
+adjust_to_interaction_distance = args.adjust_to_interaction_distance
+
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] Analysis for: " + out_prefix)
@@ -35,6 +38,7 @@ print("\t[INFO] refGene file: " + ref_gene_file)
 print("\t[INFO] --p-value-cutoff: " + str(p_value_cutoff))
 print("\t[INFO] --status-pair-flag: " + str(status_pair_flag))
 print("\t[INFO] --min-digest-dist: " + str(min_digest_dist))
+print("\t[INFO] --adjust-to-interaction-distance: " + str(adjust_to_interaction_distance))
 
 
 ### Define auxiliary functions
@@ -113,6 +117,7 @@ if(-1 in nested_n_dict['II'] and -3 in nested_n_dict['II']):
     min_digest_distance_range_ii = nested_n_dict['II'][-1]
     max_digest_distance_range_ii = nested_n_dict['II'][-3]
 
+
 # iterate interactions
 print("[INFO] Determining pair category for each interaction in " + diachromatic_interaction_file + " ...")
 with gzip.open(diachromatic_interaction_file, 'rt') as fp:
@@ -183,26 +188,37 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
         n_total = interaction.n_simple + interaction.n_twisted
 
+        d_dist = interaction.get_digest_distance()
+        if adjust_to_interaction_distance:
+            digest_distance_range_ii_ok = min_digest_distance_range_ii <= d_dist and d_dist <= max_digest_distance_range_ii
+            digest_distance_range_ai_ok = min_digest_distance_range_ai <= d_dist and d_dist <= max_digest_distance_range_ai
+            digest_distance_range_aa_ok = min_digest_distance_range_aa <= d_dist and d_dist <= max_digest_distance_range_aa
+        else:
+            digest_distance_range_ii_ok = True
+            digest_distance_range_ai_ok = True
+            digest_distance_range_aa_ok = True
+
+
         if interaction.get_interaction_type() == None:
             raise Exception("[FATAL] Interaction type is 'None'. This should never happen.")
         elif interaction.get_interaction_type() == "NA":
             n_indefinable_interaction += 1
             itype = "NA"
-        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'II' and min_digest_distance_range_ii <= interaction.get_digest_distance() and interaction.get_digest_distance() <= max_digest_distance_range_ii:
+        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'II' and digest_distance_range_ii_ok:
             n_undirected_interaction += 1
             if n_total in nested_n_dict['II'] and 0 < nested_n_dict['II'][n_total]:
                 itype = "URII"
                 nested_n_dict['II'][n_total] = nested_n_dict['II'][n_total] - 1
             else:
                 itype = "U"
-        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'AI' and min_digest_distance_range_ai <= interaction.get_digest_distance() and interaction.get_digest_distance() <= max_digest_distance_range_ai:
+        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'AI' and digest_distance_range_ai_ok:
             n_undirected_interaction += 1
             if n_total in nested_n_dict['AI'] and 0 < nested_n_dict['AI'][n_total]:
                 itype = "URAI"
                 nested_n_dict['AI'][n_total] = nested_n_dict['AI'][n_total] - 1
             else:
                 itype = "U"
-        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'AA' and min_digest_distance_range_aa <= interaction.get_digest_distance() and interaction.get_digest_distance() <= max_digest_distance_range_aa:
+        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'AA' and digest_distance_range_aa_ok:
             n_undirected_interaction += 1
             if n_total in nested_n_dict['AA'] and 0 < nested_n_dict['AA'][n_total]:
                 itype = "URAA"
