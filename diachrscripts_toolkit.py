@@ -599,15 +599,17 @@ def calculate_binomial_p_value(n_simple, n_twisted):
             p_value = 1 - binom.cdf(n_simple - 1, n_simple + n_twisted, 0.5)
             return p_value
 
-def find_indefinable_n(p_value_cutoff):
+def find_indefinable_n(p_value_cutoff, verbose = True):
     """
     :param p_value_cutoff: Chosen threshold
     :return: Minimal n that yields a signifcant P-value given the threshold
     """
-    print("[INFO] Looking for smallest number of read pairs n that yields a significant P-value with the given threshold of " + str(p_value_cutoff) + ".")
+    if verbose:
+        print("[INFO] Looking for smallest number of read pairs n that yields a significant P-value with the given threshold of " + str(p_value_cutoff) + ".")
     for n in range(1, 1000):
         if calculate_binomial_p_value(n, 0) < p_value_cutoff:
-            print("\t[INFO] Smallest n: " + str(n) + " read pairs")
+            if verbose:
+                print("\t[INFO] Smallest n: " + str(n) + " read pairs")
             return n
 
 def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff):
@@ -679,3 +681,65 @@ def get_binomial_p_value(n_simple, n_twisted):
     else:
         p_value = 1 - binom.cdf(n_simple - 1, n_simple + n_twisted, 0.5)
         return p_value
+
+def parse_enhanced_interaction_line_with_gene_symbols(interaction_line_with_gene_symbols):
+    """
+    This function takes a tab separated line with coordinates and gene symbols that correspond to an interaction and
+    parses it into individual fields that are relevant for the analyses performed in this script.
+
+    :param interaction_line_with_gene_symbols: Line from a file that was created using the script 'get_gene_symbols_interactions'.
+    :return: chr_a: Chromosome of the first digest of the interaction (e.g. chr1)
+             sta_a: Start coordinate of the first digest of the interaction (e.g. 123456)
+             end_a: End coordinate of the first digest of the interaction (e.g. 234567)
+             syms_a: Comma separated list of gene symbols associated with TSS on the first digest (e.g. HIST1H1E,HIST1H2BD)
+             tsss_a: Comma separated list of TSS coordinates on the first digest (e.g. chr6:26158121:+,chr6:26156331:+)
+             chr_b, sta_b, end_b, syms_b, tsss_b: Same as for the first digest but for the second digest
+             enrichment_pair_tag: Two letter tag indicating the enrichment status of the two digests (e.g.  AA, AI, II)
+             strand_pair_tag: Two symbol tag separated by '/' indicating the strands of TSS on first and second digest (e.g. -/-, +/+, -/+, +/-, -/d, ...)
+             interaction_category: Interaction category with respect to directionality (S, T, URAA, URAI, ...)
+    """
+
+    # Split line into individual fields
+    field = interaction_line_with_gene_symbols.split("\t")
+
+    # Split string for digest pair associated with the interaction
+    coordinate_pair = field[0].split(";")
+    coordinate_a = coordinate_pair[0]
+    coordinate_b = coordinate_pair[1]
+
+    # Extract digest coordinates
+    chr_a = coordinate_a.split(":")[0]
+    chr_b = coordinate_b.split(":")[0]
+
+    sta_a = int(coordinate_a.split(":")[1].split("-")[0])
+    sta_b = int(coordinate_b.split(":")[1].split("-")[0])
+
+    end_a = int(coordinate_a.split(":")[1].split("-")[1])
+    end_b = int(coordinate_b.split(":")[1].split("-")[1])
+
+    # Split string for pair of comma separated lists of gene symbols
+    symbols_pair = field[3].split(";")
+    syms_a = symbols_pair[0]
+    syms_b = symbols_pair[1]
+
+    # Split string for pair of comma separated lists of TSS
+    tsss_pair = field[8].split(";")
+    tsss_a = tsss_pair[0]
+    tsss_b = tsss_pair[1]
+
+    # Extract letter pair tag for enrichment status of digests
+    enrichment_pair_tag = field[5]
+
+    # Extract symbol pair tag for TSS orientations on associated digests
+    strand_pair_tag = field[7]
+
+    # Extract category of interaction with respect to directionality
+    interaction_category = field[2]
+
+    # Get negative decadic logarithm of directionality P-value
+    neg_log_p_value = float(field[6])
+
+    # Get total number of read pairs
+    rp_total = int(field[4].split(":")[0]) + int(field[4].split(":")[1])
+
+    return chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total

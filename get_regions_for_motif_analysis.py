@@ -727,7 +727,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
         if n_interaction_total % 1000000 == 0:
             print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
 
-        # Parse line from interaction file with gene symbols
+        # Parse line from enhanced interaction file with gene symbols
         chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category = \
             parse_interaction_line_with_gene_symbols(line.rstrip())
 
@@ -763,7 +763,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
         # Restrict analysis to specified set of categories for directed interactions (typicall we use both, i.e. 'S' and 'T')
         if interaction_category in allowed_interaction_categories_directed:
 
-            # Increment conter for directed interactions
+            # Increment counter for directed interactions
             directed_interaction_num += 1
 
             # Add digest regions to set for directed interactions
@@ -779,7 +779,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
         # Restrict analysis to specified set of categories for undirected interactions (typicall we use 'URAA' only)
         if interaction_category in allowed_interaction_categories_undirected:
 
-            # Increment conter for undirected interactions
+            # Increment counter for undirected interactions
             undirected_interaction_num += 1
 
             # Add digest regions to set for undirected interactions
@@ -933,12 +933,12 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
         # Check if the first digest belongs to a directed interaction and does not additionally interact with a digest from the undirected reference interaction set
         if d1_coord in directed_digests_comparative_set:
             # Add all TSS positions on this digest to a set of TSS
-            for tss_a in tsss_a.split(','): # ToDo: If we do want to avoid overlapping promoters, we could do it here
+            for tss_a in tsss_a.split(','):
                 directed_digests_tss_comparative_set.add(tss_a)
         # Check if the first digest belongs to a undirected reference interaction and does not additionally interact with a digest from the directed interaction set
         if d1_coord in undirected_digests_comparative_set:
             # Add all TSS positions on this digest to a set of TSS
-            for tss_a in tsss_a.split(','): # ToDo: If we do want to avoid overlapping promoters, we could do it here
+            for tss_a in tsss_a.split(','):
                 undirected_digests_tss_comparative_set.add(tss_a)
 
         # Get coordinates of the second digest from interaction line
@@ -946,10 +946,10 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
 
         # Do the same as for the first digest
         if d2_coord in directed_digests_comparative_set:
-            for tss_b in tsss_b.split(','): # ToDo: If we do want to avoid overlapping promoters, we could do it here
+            for tss_b in tsss_b.split(','):
                 directed_digests_tss_comparative_set.add(tss_b)
         if d2_coord in undirected_digests_comparative_set:
-            for tss_b in tsss_b.split(','): # ToDo: If we do want to avoid overlapping promoters, we could do it here
+            for tss_b in tsss_b.split(','):
                 undirected_digests_tss_comparative_set.add(tss_b)
 
         # Get distance between directed interacting digests and strand pair tags, if both digests digest do not interact with a digests of the set of undirected reference interactions
