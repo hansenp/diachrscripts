@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 """
-This script takes an enhanced interaction file supplemented with digest associated gene symbols and TSS as well as
-directionality P-values and segments the interactions based on a P-value threshold into the following subsets:
+This script takes an enhanced interaction file, supplemented with digest associated gene symbols and TSS as well as
+directionality P-values, and segments the interactions based on a P-value threshold into the following subsets:
 
    1. DI - Directed interactions
    2. UI - Undirected interactions
@@ -19,14 +19,14 @@ DI and UIE interactions are written to a file in enhanced interaction format wit
 
    '<OUT_PREFIX>_enhanced_interaction_file_with_exclusive_ui.tsv'
 
-Column 3 of the created file contains S or T for DI or UIE.
+Column 3 of the created file contains DI or UIE.
 
-Finally, summary statistics about interaction, associated digest sets and connectivity within interaction subsets are
-reported and written to a tab separated file with the name:
+Finally, summary statistics about interaction and associated digest sets as well as connectivity within interaction
+subsets are reported and written to a tab separated file with the name:
 
    '<OUT_PREFIX>_stats_exclusive_ui.tsv'
 
-containing one header line and one line with the corresponding value:
+containing one header line and one line with the corresponding values:
 
    1. Prefix for output
 
@@ -77,7 +77,7 @@ import diachrscripts_toolkit
 ### Parse command line
 ######################
 
-parser = argparse.ArgumentParser(description='Select comparative sets of interactions.')
+parser = argparse.ArgumentParser(description='Identify directed and exclusive undirected interactions.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--enhanced-interaction-file', help='Enhanced interaction file supplemented with digest associated gene symbols and TSS as well as directionality P-values.', required=True)
 parser.add_argument('--p-value-threshold', help='P-value threshold for directed interactions.', default=0.001)
@@ -93,8 +93,8 @@ print("\t[INFO] Interaction file: " + enhanced_interaction_file)
 print("\t[INFO] --p-value-cutoff: " + str(p_value_threshold))
 
 
-### Define auxiliary function
-#############################
+### Define auxiliary functions
+##############################
 
 def set_interaction_category_in_enhanced_interaction_line(line, new_category):
     fields = line.rstrip("\n").split("\t")
@@ -140,11 +140,11 @@ undir_inc_dig_set = set()
 smallest_n = diachrscripts_toolkit.find_indefinable_n(p_value_threshold, verbose = False)
 
 # Prepare stream for output of filtered interactions annotated with respect to exclusive undirected interactions
-enhanced_interaction_file_output = out_prefix + "_enhanced_interaction_file_with_exclusive_ui.tsv"
-enhanced_interaction_stream_output = open(enhanced_interaction_file_output, 'wt')
+enhanced_interaction_file_output = out_prefix + "_enhanced_interaction_file_with_di_and_uie.tsv.gz"
+enhanced_interaction_stream_output = gzip.open(enhanced_interaction_file_output, 'wt')
 
 # Prepare stream for output of filtered interactions annotated with respect to exclusive undirected interactions
-tab_file_stats_output = out_prefix + "_stats_exclusive_ui.tsv"
+tab_file_stats_output = out_prefix + "_stats_di_and_uie.tsv"
 tab_stream_stats_output = open(tab_file_stats_output, 'wt')
 
 
@@ -182,7 +182,7 @@ print("\t[INFO] ... done.")
 
 
 ### 2nd pass: Identifiy exclusive undirected interactions and associated digests
-###########################################################################
+################################################################################
 
 print("[INFO] 2nd pass: Identifiy exclusive undirected interactions (UIE) ...")
 
