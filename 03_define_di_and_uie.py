@@ -208,9 +208,8 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
             line = fp.readline()
             continue
 
-        # Skip directed interactions
+        # Print line with directed interaction to file (field 3 will be 'DI')
         if neg_log_p_val_thresh <= neg_log_p_value:
-            # Print line with directed interaction
             enhanced_interaction_stream_output.write(set_interaction_category_in_enhanced_interaction_line(line, "DI") + "\n")
             line = fp.readline()
             continue
@@ -230,7 +229,7 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         if not (d1_coords in dir_dig_set or d2_coords in dir_dig_set):
             undir_exc_dig_set.add(d1_coords)
             undir_exc_dig_set.add(d2_coords)
-            # Print line with exclusive undirected interaction
+            # Print line with exclusive undirected interaction to file (field 3 will be 'UIE')
             enhanced_interaction_stream_output.write(set_interaction_category_in_enhanced_interaction_line(line, "UIE") + "\n")
             undir_exc_inter_num += 1
         else:
