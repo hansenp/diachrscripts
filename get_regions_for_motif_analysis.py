@@ -898,7 +898,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             line = fp.readline()
             continue
 
-        # Skrip line with wrong strand symbol pair tag (typically we use no restriction, i.e. 'All')
+        # Skip line with wrong strand symbol pair tag (typically we use no restriction, i.e. 'All')
         if strand_pair_tag not in allowed_strand_pair_tags and 'All' not in allowed_strand_pair_tags: # use only interactions with specified digest strand pair tags (-/-, +/+, -/+, +/-, -/d, ...) or 'All'
             line = fp.readline()
             continue

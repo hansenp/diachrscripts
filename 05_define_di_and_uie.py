@@ -17,7 +17,7 @@ The script implements a two pass approach:
 
 DI and UIE interactions are written to a file in enhanced interaction format with the name:
 
-   '<OUT_PREFIX>_enhanced_interaction_file_with_exclusive_ui.tsv'
+   '<OUT_PREFIX>_enhanced_interaction_file_with_exclusive_ui.tsv.gz'
 
 Column 3 of the created file contains DI or UIE.
 
@@ -226,7 +226,7 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         undir_dig_set.add(d2_coords)
 
         # Identify exclusive undirected interactions
-        if not (d1_coords in dir_dig_set or d2_coords in dir_dig_set):
+        if d1_coords not in dir_dig_set and d2_coords not in dir_dig_set:
             undir_exc_dig_set.add(d1_coords)
             undir_exc_dig_set.add(d2_coords)
             # Print line with exclusive undirected interaction to file (field 3 will be 'UIE')
@@ -235,6 +235,8 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         else:
             undir_inc_dig_set.add(d1_coords)
             undir_inc_dig_set.add(d2_coords)
+            # Print line with inclusive undirected interaction to file (field 3 will be 'UII')
+            enhanced_interaction_stream_output.write(set_interaction_category_in_enhanced_interaction_line(line, "UII") + "\n")
             undir_inc_inter_num += 1
 
         line = fp.readline()
