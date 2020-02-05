@@ -686,7 +686,6 @@ with open(chrom_info_file, 'rt') as fp:
 # Sets that will store tab separated digest coordinates
 directed_digests_set = set() # digests that occur in directed interactions
 undirected_digests_set = set() # digests that occur in undirected reference interactions
-all_undirected_digests_set =  set() # digests that occur in undirected interactions, i.e. any type of undirected interaction
 
 # Variables to count interactions
 directed_interaction_num = 0
@@ -724,7 +723,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
 
         # Report progress
         n_interaction_total += 1
-        if n_interaction_total % 1000000 == 0:
+        if n_interaction_total % 100000 == 0:
             print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
 
         # Parse line from enhanced interaction file with gene symbols
@@ -754,11 +753,6 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             second_digest_without_tss_num += 1
             line = fp.readline()
             continue
-
-        if interaction_category == 'U':
-            # Add digest regions to set for all undirected interactions
-            all_undirected_digests_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
-            all_undirected_digests_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
 
         # Restrict analysis to specified set of categories for directed interactions (typicall we use both, i.e. 'S' and 'T')
         if interaction_category in allowed_interaction_categories_directed:
@@ -822,20 +816,6 @@ undirected_digests_comparative_set = undirected_digests_set.difference(directed_
 directed_intersect_undirected_digests_set = directed_digests_set.intersection(undirected_digests_set)
 directed_union_directed_digests_set = directed_digests_set.union(undirected_digests_set)
 
-eed_set = directed_digests_set.difference(all_undirected_digests_set)
-eud_set = all_undirected_digests_set.difference(directed_digests_set)
-ad_set = directed_digests_set.intersection(all_undirected_digests_set)
-
-print("************************************")
-print("Total number of digests in D: " + str(len(directed_digests_set)))
-print("Number of AD digests in D: " + str(len(ad_set)))
-print("Fraction of AD digests in D: " + str(len(ad_set)/len(directed_digests_set)))
-print("------------------------------------")
-print("Total number of digests in U: " + str(len(all_undirected_digests_set)))
-print("Number of AD digests in U: " + str(len(ad_set)))
-print("Fraction of AD digests in U: " + str(len(ad_set)/len(all_undirected_digests_set)))
-print("************************************")
-
 cnt = 1 # use consecutive numbers as unique IDs
 print("\t\t[INFO] Writing to file: " + bed_file_name_directed_digests)
 for digest in directed_digests_comparative_set:
@@ -886,7 +866,7 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
 
         # Report progress
         n_interaction_total += 1
-        if n_interaction_total % 1000000 == 0:
+        if n_interaction_total % 100000 == 0:
             print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
 
         # Parse line from interaction file with gene symbols
@@ -917,15 +897,11 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
             line = fp.readline()
             continue
 
-        if interaction_category == 'U':
+        if interaction_category == 'U' or interaction_category == 'UIRAA':
             total_number_of_all_undirected_interactions += 1
-            if (str(chr_a + "\t" + str(sta_a) + "\t" + str(end_a)) in ad_set) or (str(chr_b + "\t" + str(sta_b) + "\t" + str(end_b)) in ad_set):
-                number_of_all_undirected_interactions_with_ad_digest += 1
 
-        if interaction_category == 'S' or interaction_category == 'T':
+        if interaction_category == 'S' or interaction_category == 'T' or interaction_category == 'DIAA':
             total_number_of_directed_interactions += 1
-            if (str(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))) in ad_set or (str(chr_b + "\t" + str(sta_b) + "\t" + str(end_b)) in ad_set):
-                number_of_directed_interactions_with_ad_digest += 1
 
         # Get coordinates of the first digest from interaction line
         d1_coord = str(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
@@ -1002,16 +978,6 @@ with gzip.open(interaction_gs_file, 'rt') as fp:
 
 print("\t[INFO] ... done.")
 
-
-print("************************************")
-print("Total number of interactions in D: " + str(total_number_of_directed_interactions))
-print("Number of interactions in D with AD digest: " + str(number_of_directed_interactions_with_ad_digest))
-print("Fraction AD interactions in D: " + str(number_of_directed_interactions_with_ad_digest/total_number_of_directed_interactions))
-print("------------------------------------")
-print("Total number of interactions in U: " + str(total_number_of_all_undirected_interactions))
-print("Number of interactions in U with AD digest: " + str(number_of_all_undirected_interactions_with_ad_digest))
-print("Fraction AD interactions in U: " + str(number_of_all_undirected_interactions_with_ad_digest/total_number_of_all_undirected_interactions))
-print("************************************")
 
 
 ### Write promoter coordinates to BED files for sequence analysis

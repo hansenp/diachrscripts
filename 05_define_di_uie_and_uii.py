@@ -93,14 +93,6 @@ print("\t[INFO] Interaction file: " + enhanced_interaction_file)
 print("\t[INFO] --p-value-cutoff: " + str(p_value_threshold))
 
 
-### Define auxiliary functions
-##############################
-
-def set_interaction_category_in_enhanced_interaction_line(line, new_category):
-    fields = line.rstrip("\n").split("\t")
-    new_line = fields[0] + "\t" + fields[1] + "\t" + new_category + "\t" + fields[3] + "\t" + fields[4] + "\t" + fields[5] + "\t" + fields[6] + "\t" + fields[7] + "\t" + fields[8]
-    return new_line
-
 ### Prepare variables, data structures and streams for output files
 ###################################################################
 
@@ -166,7 +158,7 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
             print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
 
         # Parse enhanced interactions line
-        chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total = \
+        chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
             diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
 
         # Add digest of directed interactions to digest set
@@ -199,7 +191,7 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
             print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
 
         # Parse enhanced interactions line
-        chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total = \
+        chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
             diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
 
         # Skip and count indefinable interactions
@@ -210,7 +202,7 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
 
         # Print line with directed interaction to file (field 3 will be 'DI')
         if neg_log_p_val_thresh <= neg_log_p_value:
-            enhanced_interaction_stream_output.write(set_interaction_category_in_enhanced_interaction_line(line, "DI") + "\n")
+            enhanced_interaction_stream_output.write(diachrscripts_toolkit.set_interaction_category_in_enhanced_interaction_line(line, "DI") + "\n")
             line = fp.readline()
             continue
 
@@ -230,13 +222,13 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
             undir_exc_dig_set.add(d1_coords)
             undir_exc_dig_set.add(d2_coords)
             # Print line with exclusive undirected interaction to file (field 3 will be 'UIE')
-            enhanced_interaction_stream_output.write(set_interaction_category_in_enhanced_interaction_line(line, "UIE") + "\n")
+            enhanced_interaction_stream_output.write(diachrscripts_toolkit.set_interaction_category_in_enhanced_interaction_line(line, "UIE") + "\n")
             undir_exc_inter_num += 1
         else:
             undir_inc_dig_set.add(d1_coords)
             undir_inc_dig_set.add(d2_coords)
             # Print line with inclusive undirected interaction to file (field 3 will be 'UII')
-            enhanced_interaction_stream_output.write(set_interaction_category_in_enhanced_interaction_line(line, "UII") + "\n")
+            enhanced_interaction_stream_output.write(diachrscripts_toolkit.set_interaction_category_in_enhanced_interaction_line(line, "UII") + "\n")
             undir_inc_inter_num += 1
 
         line = fp.readline()

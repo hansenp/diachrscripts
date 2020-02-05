@@ -742,4 +742,11 @@ def parse_enhanced_interaction_line_with_gene_symbols(interaction_line_with_gene
     # Get total number of read pairs
     rp_total = int(field[4].split(":")[0]) + int(field[4].split(":")[1])
 
-    return chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total
+    i_dist = int(field[1])
+
+    return chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist
+
+def set_interaction_category_in_enhanced_interaction_line(line, new_category):
+    fields = line.rstrip("\n").split("\t")
+    new_line = fields[0] + "\t" + fields[1] + "\t" + new_category + "\t" + fields[3] + "\t" + fields[4] + "\t" + fields[5] + "\t" + fields[6] + "\t" + fields[7] + "\t" + fields[8]
+    return new_line
