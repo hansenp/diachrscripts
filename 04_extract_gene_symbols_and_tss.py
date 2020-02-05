@@ -1,9 +1,72 @@
 #!/usr/bin/env python
 
+"""
+This script takes a Diachromatic interaction file and a 'refGene.txt.gz' file and creates for each interaction a line in
+enhanced interaction format with the binomial P-value for the counts of simple and twisted read pairs, interaction
+distances and, if the associated digests contain TSS, TSS coordinates and gene symbols.
+
+This is one line in enhanced interaction format as an example:
+
+chr2:112534779-112543248;chr2:112577153-112587985	33905	NA	LOC105373562,POLR1B;CHCHD5	221:130	AA	14.20	d/+	chr2:112541915:+,chr2:112542212:-,chr2:112542036:+;chr2:112584437:+,chr2:112584609:+,chr2:112584854:+
+
+------------------------------------------------------------------------------------------------------------------------
+
+FIELD 1: 'chr2:112534779-112543248;chr2:112577153-112587985' - Coordinates of the interacting digests separated
+separated by a semicolon. The first comes before the second digest in sequential order.
+
+------------------------------------------------------------------------------------------------------------------------
+
+FIELD 2: '33905' - Distance between interacting digests measured as the end position of the first an start position of
+the second digest.
+
+------------------------------------------------------------------------------------------------------------------------
+
+FIELD 3: 'NA' - wildcard interaction category tag.
+
+------------------------------------------------------------------------------------------------------------------------
+
+FIELD 4: 'LOC105373562,POLR1B;CHCHD5' - Two comma separated lists of gene symbols separated by a semicolon. The symbols
+before and after the semicolon correspond to the TSS on the first and second digest.
+
+------------------------------------------------------------------------------------------------------------------------
+
+FIELD 5: '221:130' - Number of simple and twisted read pair counts separated by a colon.
+
+------------------------------------------------------------------------------------------------------------------------
+
+FIELD 6: 'AA' - Enrichment pair tag. Indicates which digest of the interaction was selected for target enrichment,
+whereby 'A' means 'active' (enriched) and 'I' 'inactive' (not enriched). There are four possible tags:
+
+   1. 'AA' - Both digests selected
+   2. 'AI' - First digests selected
+   3. 'IA' - Second digests selected
+   4. 'II' - No digests selected
+
+------------------------------------------------------------------------------------------------------------------------
+
+FIELD 7: '14.20' - Negative logarithm of the binomial P-value for orientation of interactions.
+
+------------------------------------------------------------------------------------------------------------------------
+
+FIELD 8: 'd/+' - Strand pair tag. There are three strand tags for digests:
+
+   1. '-' - Digest contains one or more TSS on the minus strand only
+   2. '+' - Digest contains one or more TSS on the plus strand only
+   3. 'd' - Digest contains TSS on the minus and plus strand (discordant)
+
+At the level of interactions, this results in nine possible strand pair tags.
+
+------------------------------------------------------------------------------------------------------------------------
+
+FIELD 9: 'chr2:112541915:+,chr2:112542212:-,chr2:112542036:+;chr2:112584437:+,chr2:112584609:+,chr2:112584854:+' - Two
+comma separated lists of TSS coordinates separated by a semicolon.
+
+"""
+
+
 import argparse
 import gzip
 import math
-
 import diachrscripts_toolkit as dclass
 
 
@@ -29,7 +92,6 @@ if status_pair_flag != "ALL":
     status_pair_flag = sorted(status_pair_flag)[0] + sorted(status_pair_flag)[1]
 min_digest_dist = int(args.min_digest_dist)
 adjust_to_interaction_distance = args.adjust_to_interaction_distance
-
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] Analysis for: " + out_prefix)
@@ -153,12 +215,6 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
         # assign expression level category to digest using max approach
         d1_symbols, d2_symbols, d1_strands, d2_strands, tss_list_d1, tss_list_d2 = get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map)
-
-        #print(tss_list_d1)
-        #print(tss_list_d2)
-        #print(d1_symbols)
-        #print(d2_symbols)
-        #print()
 
         symbols_d12 = ",".join(set(sum(d1_symbols, [] ))) + ";" + ",".join(set(sum(d2_symbols, [] )))
         strands_d12 = ",".join(set(sum(d1_strands, []))) + ";" + ",".join(set(sum(d2_strands, [])))

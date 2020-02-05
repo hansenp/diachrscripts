@@ -2,7 +2,7 @@
 This script performs a number of comparisons between directed and undirected interactions and associated
 digests and promoters.
 
-It builds upon the output of the script 'get_gene_symbols_of_interactions_script.py' that contains predefined
+It builds upon the output of the script '04_extract_gene_symbols_and_tss.py' that contains predefined
 sets of directed and undirected reference interactions (column 3).
 
 The analysis is restricted to the following interaction categories:
@@ -189,7 +189,7 @@ import numpy
 
 parser = argparse.ArgumentParser(description='Extract regions for motif analysis from file with interactions and gene symbols.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-parser.add_argument('--interaction-gs-file', help='Interaction file with gene symbols created with \'get_gene_symbols_of_interactions_script.py\'.')
+parser.add_argument('--interaction-gs-file', help='Interaction file with gene symbols created with \'04_extract_gene_symbols_and_tss.py\'.')
 parser.add_argument('--chrom-info-file', help='File with chromosome sizes <CHROMOSOME NAME>\\t<CHROMOSOME SIZE>.')
 parser.add_argument('--up-dist', help='Number of bases upstream of TSS.', default=1000)
 parser.add_argument('--down-dist', help='Number of bases upstream of TSS.', default=1000)
