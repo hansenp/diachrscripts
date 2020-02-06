@@ -3,38 +3,52 @@
 """
 This script takes a Diachromatic interaction file and a 'refGene.txt.gz' file and creates for each interaction a line in
 enhanced interaction format with the binomial P-value for the counts of simple and twisted read pairs, interaction
-distances and, if the associated digests contain TSS, TSS coordinates and gene symbols.
+distances and, if the associated digests contain TSS, TSS coordinates and gene symbols as well as strand information.
 
 This is one line in enhanced interaction format as an example:
 
 chr2:112534779-112543248;chr2:112577153-112587985	33905	NA	LOC105373562,POLR1B;CHCHD5	221:130	AA	14.20	d/+	chr2:112541915:+,chr2:112542212:-,chr2:112542036:+;chr2:112584437:+,chr2:112584609:+,chr2:112584854:+
 
+Each individual field of an enhanced interaction line is explained below.
+
 ------------------------------------------------------------------------------------------------------------------------
 
-FIELD 1: 'chr2:112534779-112543248;chr2:112577153-112587985' - Coordinates of the interacting digests separated
+FIELD 1: 'chr2:112534779-112543248;chr2:112577153-112587985'
+
+Coordinates of the interacting digests separated
 separated by a semicolon. The first comes before the second digest in sequential order.
 
 ------------------------------------------------------------------------------------------------------------------------
 
-FIELD 2: '33905' - Distance between interacting digests measured as the end position of the first an start position of
+FIELD 2: '33905'
+
+Distance between interacting digests measured as the end position of the first an start position of
 the second digest.
 
 ------------------------------------------------------------------------------------------------------------------------
 
-FIELD 3: 'NA' - wildcard interaction category tag.
+FIELD 3: 'NA'
+
+Wildcard for interaction category tag.
 
 ------------------------------------------------------------------------------------------------------------------------
 
-FIELD 4: 'LOC105373562,POLR1B;CHCHD5' - Two comma separated lists of gene symbols separated by a semicolon. The symbols
+FIELD 4: 'LOC105373562,POLR1B;CHCHD5'
+
+Two comma separated lists of gene symbols separated by a semicolon. The symbols
 before and after the semicolon correspond to the TSS on the first and second digest.
 
 ------------------------------------------------------------------------------------------------------------------------
 
-FIELD 5: '221:130' - Number of simple and twisted read pair counts separated by a colon.
+FIELD 5: '221:130'
+
+Number of simple and twisted read pair counts separated by a colon.
 
 ------------------------------------------------------------------------------------------------------------------------
 
-FIELD 6: 'AA' - Enrichment pair tag. Indicates which digest of the interaction was selected for target enrichment,
+FIELD 6: 'AA'
+
+Enrichment pair tag. Indicates which digest of the interaction was selected for target enrichment,
 whereby 'A' means 'active' (enriched) and 'I' 'inactive' (not enriched). There are four possible tags:
 
    1. 'AA' - Both digests selected
@@ -44,11 +58,15 @@ whereby 'A' means 'active' (enriched) and 'I' 'inactive' (not enriched). There a
 
 ------------------------------------------------------------------------------------------------------------------------
 
-FIELD 7: '14.20' - Negative logarithm of the binomial P-value for orientation of interactions.
+FIELD 7: '14.20'
+
+Negative logarithm of the binomial P-value for orientation of interactions.
 
 ------------------------------------------------------------------------------------------------------------------------
 
-FIELD 8: 'd/+' - Strand pair tag. There are three strand tags for digests:
+FIELD 8: 'd/+'
+
+Strand pair tag. There are three strand tags for digests:
 
    1. '-' - Digest contains one or more TSS on the minus strand only
    2. '+' - Digest contains one or more TSS on the plus strand only
@@ -58,9 +76,11 @@ At the level of interactions, this results in nine possible strand pair tags.
 
 ------------------------------------------------------------------------------------------------------------------------
 
-FIELD 9: 'chr2:112541915:+,chr2:112542212:-,chr2:112542036:+;chr2:112584437:+,chr2:112584609:+,chr2:112584854:+' - Two
-comma separated lists of TSS coordinates separated by a semicolon.
+FIELD 9: 'chr2:112541915:+,chr2:112542212:-,chr2:112542036:+;chr2:112584437:+,chr2:112584609:+,chr2:112584854:+'
 
+Two comma separated lists of TSS coordinates separated by a semicolon.
+
+------------------------------------------------------------------------------------------------------------------------
 """
 
 
@@ -73,40 +93,44 @@ import diachrscripts_toolkit as dclass
 ### Parse command line
 ######################
 
-parser = argparse.ArgumentParser(description='Determine expression category levels for interacting digest pairs.')
+parser = argparse.ArgumentParser(description='Create enhanced interaction file from Diachromatic interaction and refGene.txt.gz file.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--ref-gene-file', help='UCSC refGene file (must be gzipped and the same version that was used to create the digest map for Diachromatic).')
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
-parser.add_argument('--p-value-cutoff', help='P-value cutoff used for categorization of interactions.')
-parser.add_argument('--status-pair-flag', help='Pair of \'A\' and \'I\' depending on whether a digest was selected for enrichment (A) or not (I).')
 parser.add_argument('--min-digest-dist', help='All interactions with smaller distances will be discarded.', default=20000)
-parser.add_argument('--adjust-to-interaction-distance', help='Adjust selected reference interactions to distance between interacting digests.', action='store_true')
 args = parser.parse_args()
 
 out_prefix = args.out_prefix
 ref_gene_file = args.ref_gene_file
 diachromatic_interaction_file = args.interaction_file
-p_value_cutoff = float(args.p_value_cutoff)
-status_pair_flag = args.status_pair_flag
-if status_pair_flag != "ALL":
-    status_pair_flag = sorted(status_pair_flag)[0] + sorted(status_pair_flag)[1]
 min_digest_dist = int(args.min_digest_dist)
-adjust_to_interaction_distance = args.adjust_to_interaction_distance
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] Analysis for: " + out_prefix)
 print("\t[INFO] Interaction file: " + diachromatic_interaction_file)
 print("\t[INFO] refGene file: " + ref_gene_file)
-print("\t[INFO] --p-value-cutoff: " + str(p_value_cutoff))
-print("\t[INFO] --status-pair-flag: " + str(status_pair_flag))
 print("\t[INFO] --min-digest-dist: " + str(min_digest_dist))
-print("\t[INFO] --adjust-to-interaction-distance: " + str(adjust_to_interaction_distance))
 
 
 ### Define auxiliary functions
 ##############################
 
 def get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map):
+    """
+    This function takes an interaction object and a map containing information about genes, i.e. gene symbols as well as
+    coordinates and strands of TSS. For each digest of the interaction, the associated annotation data is retrieved from
+    the map and combined into arrays.
+
+    :param interaction: Interaction object of the class 'Interaction' defined in 'diachrscripts_toolkit.py'
+    :param ref_gene_tss_map: Object of the class 'TSSCoordinateMap' defined in 'diachrscripts_toolkit.py'
+
+    :return: gene_symbols_d1: Array containing all symbols of genes on the first digest
+             gene_symbols_d2: Array containing all symbols of genes on the second digest
+             gene_strands_d1: Array containing all strand tags of TSS ('-', '+' or 'd') on the first digest
+             gene_strands_d2: Array containing all strand tags of TSS ('-', '+' or 'd') on the second digest
+             tss_list_d1: Array containing all coordinates of TSS ('<chr>:<pos>:<strand>') on the first digest
+             tss_list_d2: Array containing all coordinates of TSS ('<chr>:<pos>:<strand>') on the second digest
+    """
 
     gene_symbols_d1 = []
     gene_strands_d1 = []
@@ -137,89 +161,62 @@ def get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map):
     return gene_symbols_d1, gene_symbols_d2, gene_strands_d1, gene_strands_d2, tss_list_d1, tss_list_d2
 
 
-### Start execution
-###################
+### Prepare variables, data structures and streams for output files
+###################################################################
 
 file_name_original = out_prefix + "_original_interactions_with_genesymbols.tsv"
 f_output_original = open(file_name_original, 'wt')
 
-# prepare variables and data structures
 ref_gene_tss_map = dclass.TSSCoordinateMap(ref_gene_file, "refGene") # parse refGene file with TSS
 ref_gene_tss_map.analyze_coordinates_and_print_report() # collect counts and print report
 
-n_interaction_total = 0
 n_trans_short_range_interaction = 0
-n_non_promoter_promoter_interaction = 0
-n_simple_interaction = 0
-n_twisted_interaction = 0
-n_undirected_interaction = 0
-n_indefinable_interaction = 0
-
-# Given the P-value cutoff, find the smallest n that yields a significant P-value
-n_indefinable_cutoff = dclass.find_indefinable_n(p_value_cutoff)
-
-# Determine distribution of n for directed interactions
-#n_dict = dclass.get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff)
-
-# create separate dictionaries for 'AA', 'AI' and 'II'
-nested_n_dict = { 'AA': dclass.get_n_dict(diachromatic_interaction_file, 'AA', min_digest_dist, p_value_cutoff),
-                  'AI': dclass.get_n_dict(diachromatic_interaction_file, 'AI', min_digest_dist, p_value_cutoff),
-                  'II': dclass.get_n_dict(diachromatic_interaction_file, 'II', min_digest_dist, p_value_cutoff)
-                  }
-
-if(-1 in nested_n_dict['AA'] and -3 in nested_n_dict['AA']):
-    min_digest_distance_range_aa = nested_n_dict['AA'][-1]
-    max_digest_distance_range_aa = nested_n_dict['AA'][-3]
-
-if(-1 in nested_n_dict['AI'] and -3 in nested_n_dict['AI']):
-    min_digest_distance_range_ai = nested_n_dict['AI'][-1]
-    max_digest_distance_range_ai = nested_n_dict['AI'][-3]
-
-if(-1 in nested_n_dict['II'] and -3 in nested_n_dict['II']):
-    min_digest_distance_range_ii = nested_n_dict['II'][-1]
-    max_digest_distance_range_ii = nested_n_dict['II'][-3]
 
 
-# iterate interactions
-print("[INFO] Determining pair category for each interaction in " + diachromatic_interaction_file + " ...")
+### Start execution
+###################
+
+print("[INFO] Adding P-value, gene symbols and TSS coordinates to each interaction in " + diachromatic_interaction_file + " ...")
+
+print("\t[INFO] Iterating Diachromatic interaction file ...")
+
 with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
+    n_interaction_total = 0
     line = fp.readline()
-
     while line:
 
+        # Report progress
         n_interaction_total += 1
-        if n_interaction_total%100000 == 0:
-            print("\t[INFO]", n_interaction_total, "interactions processed ...")
+        if n_interaction_total % 1000 == 0:
+            print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
 
-        # parse line representing one interaction
+        # Create interaction object from Diachromatic interaction line
         interaction = dclass.Interaction(line)
 
-        # restrict analysis to cis long range interactions
+        # Restrict analysis to cis long range interactions
         if not(interaction.is_cis_long_range(min_digest_dist)):
             n_trans_short_range_interaction += 1
             line = fp.readline()
             continue
 
-        # restrict analysis to interactions between targeted promoters
-        if status_pair_flag != "ALL" and interaction.get_digest_status_pair_flag() != status_pair_flag:
-            n_non_promoter_promoter_interaction += 1
-            line = fp.readline()
-            continue
-
+        # Calculate logarithm of binomial P-value
         interaction.set_logsf_binomial_p_value()
+        logsf_binomial_p_value = "{:.2f}".format(-interaction.get_binomial_p_value())
 
-        # set the type of interaction based on P-value ('S', 'T', 'U', 'NA')
-        if interaction.get_interaction_type() == "TBD":
-            interaction.set_interaction_type("TBD", math.log(p_value_cutoff), n_indefinable_cutoff)
-
-        # assign expression level category to digest using max approach
+        # Fetch gene symbols and TSS coordinates from refGene.txt.gz
         d1_symbols, d2_symbols, d1_strands, d2_strands, tss_list_d1, tss_list_d2 = get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map)
 
+        # Combine gene symbols into comma separated lists separated by a semicolon
         symbols_d12 = ",".join(set(sum(d1_symbols, [] ))) + ";" + ",".join(set(sum(d2_symbols, [] )))
-        strands_d12 = ",".join(set(sum(d1_strands, []))) + ";" + ",".join(set(sum(d2_strands, [])))
-        tss_d12 =  ",".join(set(tss_list_d1)) + ";" + ",".join(set(tss_list_d2))
 
+        # Combine strands of TSS into comma separated lists separated by a semicolon
+        strands_d12 = ",".join(set(sum(d1_strands, []))) + ";" + ",".join(set(sum(d2_strands, [])))
+
+        # Combine TSS coordinates into comma separated lists separated by a semicolon
+        tss_d12 = ",".join(set(tss_list_d1)) + ";" + ",".join(set(tss_list_d2))
+
+        # Determine strand category tag ('-', '+' or 'd') of the first digest
         sd1='-1'
         if ['d'] in d1_strands:
             sd1='d'
@@ -230,6 +227,7 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
         elif ['-'] in d1_strands:
             sd1 = '-'
 
+        # Determine strand category tag ('-', '+' or 'd') of the second digest
         sd2='-1'
         if ['d'] in d2_strands:
             sd2='d'
@@ -240,63 +238,30 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
         elif ['-'] in d2_strands:
             sd2 = '-'
 
+        # Combine strand tags into strand pair tag
+        strand_pair_tag = sd1 + "/" + sd2
+
+        # Combine simple and twisted read pairs into one colon separated string
         simple_twisted_counts = str(interaction.n_simple) + ":" + str(interaction.n_twisted)
 
-        n_total = interaction.n_simple + interaction.n_twisted
+        # Get distance between interacting digests
+        d_dist = str(interaction.get_digest_distance())
 
-        d_dist = interaction.get_digest_distance()
-        if adjust_to_interaction_distance:
-            digest_distance_range_ii_ok = min_digest_distance_range_ii <= d_dist and d_dist <= max_digest_distance_range_ii
-            digest_distance_range_ai_ok = min_digest_distance_range_ai <= d_dist and d_dist <= max_digest_distance_range_ai
-            digest_distance_range_aa_ok = min_digest_distance_range_aa <= d_dist and d_dist <= max_digest_distance_range_aa
-        else:
-            digest_distance_range_ii_ok = True
-            digest_distance_range_ai_ok = True
-            digest_distance_range_aa_ok = True
+        # Set wildcard for interaction category
+        itype = "NA"
 
-
-        if interaction.get_interaction_type() == None:
-            raise Exception("[FATAL] Interaction type is 'None'. This should never happen.")
-        elif interaction.get_interaction_type() == "NA":
-            n_indefinable_interaction += 1
-            itype = "NA"
-        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'II' and digest_distance_range_ii_ok:
-            n_undirected_interaction += 1
-            if n_total in nested_n_dict['II'] and 0 < nested_n_dict['II'][n_total]:
-                itype = "URII"
-                nested_n_dict['II'][n_total] = nested_n_dict['II'][n_total] - 1
-            else:
-                itype = "U"
-        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'AI' and digest_distance_range_ai_ok:
-            n_undirected_interaction += 1
-            if n_total in nested_n_dict['AI'] and 0 < nested_n_dict['AI'][n_total]:
-                itype = "URAI"
-                nested_n_dict['AI'][n_total] = nested_n_dict['AI'][n_total] - 1
-            else:
-                itype = "U"
-        elif interaction.get_interaction_type() == "U" and interaction.get_digest_status_pair_flag() == 'AA' and digest_distance_range_aa_ok:
-            n_undirected_interaction += 1
-            if n_total in nested_n_dict['AA'] and 0 < nested_n_dict['AA'][n_total]:
-                itype = "URAA"
-                nested_n_dict['AA'][n_total] = nested_n_dict['AA'][n_total] - 1
-            else:
-                itype = "U"
-        elif interaction.get_interaction_type() == "U":
-            itype = "U"
-        elif interaction.get_interaction_type() == "S":
-            n_simple_interaction += 1
-            itype = "S"
-        elif interaction.get_interaction_type() == "T":
-            n_twisted_interaction += 1
-            itype = "T"
-        else:
-            line = fp.readline()
-            print(interaction.get_interaction_type())
-            raise Exception("[FATAL] Invalid interaction type. Should be either 'S', 'T', 'U' or 'NA' but was " + interaction.get_interaction_type() + ".")
-
-        line = line.rstrip()
-
-        f_output_original.write(interaction.get_coord_string() + "\t" + str(interaction.get_digest_distance())  + "\t" + itype + "\t" + symbols_d12 + "\t" + simple_twisted_counts + "\t" + interaction.get_digest_pair_flag_original_order() + "\t" + str("{:.2f}".format(-interaction.get_binomial_p_value())) + "\t" + sd1 + "/" + sd2 + "\t" + tss_d12 + "\n")
+        # Write interaction to enhanced interaction file
+        f_output_original.write(
+            interaction.get_coord_string() + "\t" +
+            d_dist  + "\t" +
+            itype + "\t" +
+            symbols_d12 + "\t" +
+            simple_twisted_counts + "\t" +
+            interaction.get_digest_pair_flag_original_order() + "\t" +
+            logsf_binomial_p_value + "\t" +
+            strand_pair_tag + "\t" +
+            tss_d12
+            + "\n")
 
         line = fp.readline()
 
@@ -305,21 +270,4 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 fp.close()
 f_output_original.close()
 
-
-for key, value in nested_n_dict['AA'].items():
-    if key == -1 or key == -3:
-        continue
-    if 0 < value:
-        print("[Warning] " + "Could not find corresponding number of undirected reference interactions for n = " + str(key) + " and 'AA'. Missing reference interactions: " + str(value))
-
-for key, value in nested_n_dict['AI'].items():
-    if key == -1 or key == -3:
-        continue
-    if 0 < value:
-        print("[Warning] " + "Could not find corresponding number of undirected reference interactions for n = " + str(key) + " and 'AI'. Missing reference interactions: " + str(value))
-
-for key, value in nested_n_dict['II'].items():
-    if key == -1 or key == -3:
-        continue
-    if 0 < value:
-        print("[Warning] " + "Could not find corresponding number of undirected reference interactions for n = " + str(key) + " and 'II'. Missing reference interactions: " + str(value))
+print("[INFO] Number of discarded trans and short range interactions: " + str(n_trans_short_range_interaction))

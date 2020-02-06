@@ -46,48 +46,6 @@ This yields four comparative sets:
 Use the option --comparative-sets with 'DWOU-VS-UWOD'  for the first and 'D-VS-UWOD' for the second definition of
 comparative sets.
 
-
-
-# Input file
-############
-
-The input file was prepared using the python script 'get_gene_symbols.py' and contains
-detailed information about one interaction in each line. This is one line as an example:
-
-chr2:112534779-112543248;chr2:112577153-112587985	33905	S	LOC105373562,POLR1B;CHCHD5	221:130	AA	14.20	d/+	chr2:112541915:+,chr2:112542212:-,chr2:112542036:+;chr2:112584437:+,chr2:112584609:+,chr2:112584854:+
-
-Field 1: 'chr2:112534779-112543248;chr2:112577153-112587985' - Coordinates of the interacting digests separated
-separated by a semicolon. The first comes before the second digest in sequential order.
-
-Field 2: '33905' - Distance between interactiong digests measured as the end position of the first an start position
-of the second digest.
-
-Field 3: 'S' - Tag for interaction category. 'S' means directed simple interactions. Beyond that, there are
-'T' for directed twisted, 'U' undirected, 'NA' for indefinable and the undirected reference interactions
-'URII', 'URAI' and 'URAA' for interacions with no, one or two enriched digests. The categorization is done by
-the script 'get_gene_symbols.py' based on a P-value threshold defined using the empirical FDR procedure. For this
-script, we use typically 'S', 'T' and 'URAA' because we are dealing with promoter-promoter interactions.
-
-Field 4: 'LOC105373562,POLR1B;CHCHD5' - Two comma separated lists of gene symbols separated by a semicolon. The symbols
-before and after the semicolon correspond to the TSS on the first and second digest of the interaction.
-
-Field 5: '221:130' - Number of simple and twisted read pair counts separated by a colon.
-
-Field 6: 'AA' - Enrichment pair tag. Indicates which digest of the interaction was selected for target enrichment,
-whereby 'A' means 'active' (enriched) and 'I' 'inactive' (not enriched). There are four possible tags:
-'AA' (both digests selected), 'AI' (first digests selected), 'IA' (second digests selected), 'II' (no digests selected).
-
-Field 7: '14.20' - Negative decadic logarithm of the binomial P-value for orientation of interactions.
-
-Field 8: 'd/+' - Strand pair tag. There are three tags for the individual strands: '-', '+' and 'd' separted by a
-forward slash. The first tag corresponds to the first and the second tag to the second digest of the interactions.
-A digest is assigned a '-' tag, if it has one or more TSS on the reverse strand and no TSS on the forward strand.
-The same applies to digest that are assigned a '+'. Digests wit TSS on the forward and reverse strand are assigned an
-'d' (stands for discordant).
-
-Field 9: 'chr2:112541915:+,chr2:112542212:-,chr2:112542036:+;chr2:112584437:+,chr2:112584609:+,chr2:112584854:+' - Two
-comma separated lists of TSS (chromosome:coordinate:strand) separated by a semicolon.
-
 # Workflow
 ##########
 
