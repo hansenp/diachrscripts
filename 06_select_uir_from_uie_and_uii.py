@@ -64,6 +64,7 @@ import diachrscripts_toolkit
 import numpy
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.backends.backend_pdf
 
 
 ### Parse command line
@@ -589,3 +590,58 @@ plt.grid(True)
 fig1.set_size_inches(10,5)
 plt.savefig(pdf_name_boxplots_interaction_distances)
 plt.close()
+
+
+### Create barplots for composition of AA, AI and II
+####################################################
+
+pdf = matplotlib.backends.backend_pdf.PdfPages("foo.pdf")
+
+labels = ['DI', 'U', 'UR 1', 'UR 2']
+aa_percentages = [round(100 * dir_inter_aa_num / dir_inter_num, 2), round(100 * undir_inter_aa_num / undir_inter_num, 2), round(100 * undir_ref_1_inter_aa_num / undir_ref_1_inter_num, 2), round(100 * undir_ref_2_inter_aa_num / undir_ref_2_inter_num, 2)]
+aa_percentages = [round(100 * dir_inter_ai_num / dir_inter_num, 2), round(100 * undir_inter_ai_num / undir_inter_num, 2), round(100 * undir_ref_1_inter_ai_num / undir_ref_1_inter_num, 2), round(100 * undir_ref_2_inter_ai_num / undir_ref_2_inter_num, 2)]
+aa_percentages = [round(100 * dir_inter_ii_num / dir_inter_num, 2), round(100 * undir_inter_ii_num / undir_inter_num, 2), round(100 * undir_ref_1_inter_ii_num / undir_ref_1_inter_num, 2), round(100 * undir_ref_2_inter_ii_num / undir_ref_2_inter_num, 2)]
+
+x = numpy.arange(len(labels))  # the label locations
+width = 0.35  # the width of the bars
+
+fig1, ax1 = plt.subplots()
+ax1.grid(zorder=0)
+aa_rects = ax1.bar(x, aa_percentages, width, zorder=3)
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax1.set_xlabel('Interaction category')
+ax1.set_ylabel('Percentages')
+ax1.set_title('Proportions of interactions within AA')
+ax1.set_xticks(x)
+ax1.set_xticklabels(labels)
+
+
+def autolabel(rects, labels):
+    """Attach a text label above each bar in *rects*, displaying its height."""
+    i = 0
+    for rect in rects:
+        height = rect.get_height()
+        ax1.annotate(labels[i],
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 3),  # 3 points vertical offset
+                    textcoords="offset points",
+                    ha='center', va='bottom')
+        i += 1
+
+
+aa_labels = [dir_inter_aa_num, undir_inter_aa_num, undir_ref_1_inter_aa_num, undir_ref_2_inter_aa_num]
+ai_labels = [dir_inter_ai_num, undir_inter_ai_num, undir_ref_1_inter_ai_num, undir_ref_2_inter_ai_num]
+ai_labels = [dir_inter_ii_num, undir_inter_ii_num, undir_ref_1_inter_ii_num, undir_ref_2_inter_ii_num]
+autolabel(aa_rects, ai_labels)
+
+
+
+
+
+
+fig1.tight_layout()
+pdf.savefig(fig1)
+pdf.savefig(fig1)
+pdf.savefig(fig1)
+pdf.close()
