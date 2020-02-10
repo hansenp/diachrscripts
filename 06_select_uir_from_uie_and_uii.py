@@ -51,10 +51,16 @@ Column 3 of the created file contains the following interaction categories:
 
 Finally, summary statistics about numbers of interactions within different enrichment state categories (AA, AI and II)
 and corresponding read pair numbers are printed to the screen and two boxplots are created, one for read pair numbers
-and another one for interaction distances.
+and another one for interaction distances:
 
    '<OUT_PREFIX>_read_pair_number_boxplot.pdf'
    '<OUT_PREFIX>_interaction_distance_boxplot.pdf'
+
+Furthermore, barplots for the proportions of interactions and associated digests are created:
+
+   '<OUT_PREFIX>_interaction_enrichment_pair_tags_barplot.pdf'
+   '<OUT_PREFIX>__digest_enrichment_tags_barplot.pdf'
+
 """
 
 
@@ -239,6 +245,16 @@ rp_dict_aa = {}
 rp_dict_ai = {}
 rp_dict_ii = {}
 
+# Sets for digests involved directed and undirected interactions
+dir_a_dig_set = set()
+dir_i_dig_set = set()
+undir_a_dig_set = set()
+undir_i_dig_set = set()
+undir_ref_1_a_dig_set = set()
+undir_ref_1_i_dig_set = set()
+undir_ref_2_a_dig_set = set()
+undir_ref_2_i_dig_set = set()
+
 # Output files
 ##############
 
@@ -251,6 +267,10 @@ pdf_name_boxplots_read_pair_numbers = out_prefix + "_read_pair_number_boxplot.pd
 
 # PDF file with boxplots for distributions of interaction distances
 pdf_name_boxplots_interaction_distances = out_prefix + "_interaction_distance_boxplot.pdf"
+
+# PDF file with three barplots showing the proportions of interactions within the enrichment pair categories AA, AI and II
+pdf_name_barplots_interaction_enrichment_pair_tags = out_prefix + "_interaction_enrichment_pair_tags_barplot.pdf"
+
 
 
 ### 1st pass: Collect information about DI, UIE and UII
@@ -273,6 +293,9 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         # Parse enhanced interactions line
         chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
             diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
+
+        enrichment_tag_dig_1 = enrichment_pair_tag[0]
+        enrichment_tag_dig_2 = enrichment_pair_tag[1]
 
         # Collect read pair numbers for DI, UIE and UII
         if interaction_category == 'DI':
@@ -308,6 +331,15 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
                 # Write directed interaction to file
                 enhanced_interaction_stream_output.write(diachrscripts_toolkit.set_interaction_category_in_enhanced_interaction_line(line, 'DIII') + "\n")
 
+            if enrichment_tag_dig_1 == 'A':
+                dir_a_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+            else:
+                dir_i_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+            if enrichment_tag_dig_2 == 'A':
+                dir_a_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
+            else:
+                dir_i_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
+
         elif interaction_category == 'UIE' or interaction_category == 'UII':
             undir_inter_num += 1
             if enrichment_pair_tag == 'AA':
@@ -322,6 +354,14 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
                 undir_inter_ii_num += 1
                 undir_inter_ii_rp_array.append(rp_total)
                 undir_inter_ii_dist_array.append(i_dist)
+            if enrichment_tag_dig_1 == 'A':
+                undir_a_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+            else:
+                undir_i_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+            if enrichment_tag_dig_2 == 'A':
+                undir_a_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
+            else:
+                undir_i_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
         else:
             print("[Error] Interaction category must be either \'DI\', \'UIE\' or \'UII\'!")
             exit(1)
@@ -372,6 +412,9 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
             diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
 
+        enrichment_tag_dig_1 = enrichment_pair_tag[0]
+        enrichment_tag_dig_2 = enrichment_pair_tag[1]
+
         # Adjust reference interactions to interaction size
         if adjust_to_interaction_distance:
             i_dist_range_aa_ok = dir_inter_aa_dist_q1 <= i_dist and i_dist <= dir_inter_aa_dist_q3
@@ -391,18 +434,30 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
                 undir_ref_1_inter_num +=1
                 undir_ref_1_inter_aa_num += 1
                 interaction_category_tag = 'UIRAA'
+                undir_ref_1_a_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+                undir_ref_1_a_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
             elif (enrichment_pair_tag == 'AI' or enrichment_pair_tag == 'IA') and dir_inter_ai_rp_q1 < rp_total and rp_total < dir_inter_ai_rp_q3 and i_dist_range_ai_ok:
                 undir_ref_1_inter_ai_rp_array.append(rp_total)
                 undir_ref_1_inter_ai_dist_array.append(i_dist)
                 undir_ref_1_inter_num += 1
                 undir_ref_1_inter_ai_num += 1
                 interaction_category_tag = 'UIRAI'
+                if enrichment_tag_dig_1 == 'A':
+                    undir_ref_1_a_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+                else:
+                    undir_ref_1_i_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+                if enrichment_tag_dig_2 == 'A':
+                    undir_ref_1_a_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
+                else:
+                    undir_ref_1_i_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
             elif enrichment_pair_tag == 'II' and dir_inter_ii_rp_q1 < rp_total and rp_total < dir_inter_ii_rp_q3 and i_dist_range_ii_ok:
                 undir_ref_1_inter_ii_rp_array.append(rp_total)
                 undir_ref_1_inter_ii_dist_array.append(i_dist)
                 undir_ref_1_inter_num += 1
                 undir_ref_1_inter_ii_num += 1
                 interaction_category_tag = 'UIRII'
+                undir_ref_1_i_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+                undir_ref_1_i_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
 
             if selection_approach == 'q13' and interaction_category_tag != 'NA':
                 # Override interaction category tag in column 3 and write interaction to file
@@ -418,6 +473,8 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
                 undir_ref_2_inter_num +=1
                 undir_ref_2_inter_aa_num += 1
                 interaction_category_tag = 'UIRAA'
+                undir_ref_2_a_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+                undir_ref_2_a_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
             elif (enrichment_pair_tag == 'AI' or enrichment_pair_tag == 'IA') and rp_total in rp_dict_ai and 0 < rp_dict_ai[rp_total] and i_dist_range_ai_ok:
                 rp_dict_ai[rp_total] -= 1
                 undir_ref_2_inter_ai_rp_array.append(rp_total)
@@ -425,6 +482,14 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
                 undir_ref_2_inter_num += 1
                 undir_ref_2_inter_ai_num += 1
                 interaction_category_tag = 'UIRAI'
+                if enrichment_tag_dig_1 == 'A':
+                    undir_ref_2_a_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+                else:
+                    undir_ref_2_i_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+                if enrichment_tag_dig_2 == 'A':
+                    undir_ref_2_a_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
+                else:
+                    undir_ref_2_i_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
             elif enrichment_pair_tag == 'II' and rp_total in rp_dict_ii and 0 < rp_dict_ii[rp_total] and i_dist_range_ii_ok:
                 rp_dict_ii[rp_total] -= 1
                 undir_ref_2_inter_ii_rp_array.append(rp_total)
@@ -432,6 +497,8 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
                 undir_ref_2_inter_num += 1
                 undir_ref_2_inter_ii_num += 1
                 interaction_category_tag = 'UIRII'
+                undir_ref_2_i_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
+                undir_ref_2_i_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
 
             if selection_approach == 'exact' and interaction_category_tag != 'NA':
                 # Override interaction category tag in column 3 and write interaction to file
@@ -592,56 +659,83 @@ plt.savefig(pdf_name_boxplots_interaction_distances)
 plt.close()
 
 
-### Create barplots for composition of AA, AI and II
-####################################################
+### Create barplots for proportions of interactions within AA, AI and II
+########################################################################
 
-pdf = matplotlib.backends.backend_pdf.PdfPages("foo.pdf")
+def create_barplot_for_enrichment_pair_tag_percentages(title, i_percentages, i_numbers):
 
-labels = ['DI', 'U', 'UR 1', 'UR 2']
-aa_percentages = [round(100 * dir_inter_aa_num / dir_inter_num, 2), round(100 * undir_inter_aa_num / undir_inter_num, 2), round(100 * undir_ref_1_inter_aa_num / undir_ref_1_inter_num, 2), round(100 * undir_ref_2_inter_aa_num / undir_ref_2_inter_num, 2)]
-aa_percentages = [round(100 * dir_inter_ai_num / dir_inter_num, 2), round(100 * undir_inter_ai_num / undir_inter_num, 2), round(100 * undir_ref_1_inter_ai_num / undir_ref_1_inter_num, 2), round(100 * undir_ref_2_inter_ai_num / undir_ref_2_inter_num, 2)]
-aa_percentages = [round(100 * dir_inter_ii_num / dir_inter_num, 2), round(100 * undir_inter_ii_num / undir_inter_num, 2), round(100 * undir_ref_1_inter_ii_num / undir_ref_1_inter_num, 2), round(100 * undir_ref_2_inter_ii_num / undir_ref_2_inter_num, 2)]
+    fig, ax = plt.subplots()
 
-x = numpy.arange(len(labels))  # the label locations
-width = 0.35  # the width of the bars
+    xticklables_labels = ['DI', 'U', 'UR 1', 'UR 2']
+    x = numpy.arange(len(xticklables_labels))  # the label locations
+    width = 0.35  # the width of the bars
+    ax.set_title(title)
+    ax.set_xlabel('Interaction category')
+    ax.set_ylabel('Percentages')
+    ax.grid(zorder=0)
+    ax.set_xticks(x)
+    plt.ylim(0, max(i_percentages) + max(i_percentages)/10)
+    ax.set_xticklabels(xticklables_labels)
+    fig.tight_layout()
 
-fig1, ax1 = plt.subplots()
-ax1.grid(zorder=0)
-aa_rects = ax1.bar(x, aa_percentages, width, zorder=3)
+    rects = ax.bar(x, i_percentages, width, zorder=3)
 
-# Add some text for labels, title and custom x-axis tick labels, etc.
-ax1.set_xlabel('Interaction category')
-ax1.set_ylabel('Percentages')
-ax1.set_title('Proportions of interactions within AA')
-ax1.set_xticks(x)
-ax1.set_xticklabels(labels)
-
-
-def autolabel(rects, labels):
-    """Attach a text label above each bar in *rects*, displaying its height."""
     i = 0
     for rect in rects:
         height = rect.get_height()
-        ax1.annotate(labels[i],
+        ax.annotate(i_numbers[i],
                     xy=(rect.get_x() + rect.get_width() / 2, height),
                     xytext=(0, 3),  # 3 points vertical offset
                     textcoords="offset points",
                     ha='center', va='bottom')
         i += 1
 
+    fig.tight_layout()
 
-aa_labels = [dir_inter_aa_num, undir_inter_aa_num, undir_ref_1_inter_aa_num, undir_ref_2_inter_aa_num]
-ai_labels = [dir_inter_ai_num, undir_inter_ai_num, undir_ref_1_inter_ai_num, undir_ref_2_inter_ai_num]
-ai_labels = [dir_inter_ii_num, undir_inter_ii_num, undir_ref_1_inter_ii_num, undir_ref_2_inter_ii_num]
-autolabel(aa_rects, ai_labels)
+    return fig
 
 
+pdf = matplotlib.backends.backend_pdf.PdfPages(pdf_name_barplots_interaction_enrichment_pair_tags)
+
+aa_percentages = [round(100 * dir_inter_aa_num / dir_inter_num, 2), round(100 * undir_inter_aa_num / undir_inter_num, 2), round(100 * undir_ref_1_inter_aa_num / undir_ref_1_inter_num, 2), round(100 * undir_ref_2_inter_aa_num / undir_ref_2_inter_num, 2)]
+aa_numbers = [dir_inter_aa_num, undir_inter_aa_num, undir_ref_1_inter_aa_num, undir_ref_2_inter_aa_num]
+
+ai_percentages = [round(100 * dir_inter_ai_num / dir_inter_num, 2), round(100 * undir_inter_ai_num / undir_inter_num, 2), round(100 * undir_ref_1_inter_ai_num / undir_ref_1_inter_num, 2), round(100 * undir_ref_2_inter_ai_num / undir_ref_2_inter_num, 2)]
+ai_numbers = [dir_inter_ai_num, undir_inter_ai_num, undir_ref_1_inter_ai_num, undir_ref_2_inter_ai_num]
+
+ii_percentages = [round(100 * dir_inter_ii_num / dir_inter_num, 2), round(100 * undir_inter_ii_num / undir_inter_num, 2), round(100 * undir_ref_1_inter_ii_num / undir_ref_1_inter_num, 2), round(100 * undir_ref_2_inter_ii_num / undir_ref_2_inter_num, 2)]
+ii_numbers = [dir_inter_ii_num, undir_inter_ii_num, undir_ref_1_inter_ii_num, undir_ref_2_inter_ii_num]
+
+pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of interactions within AA", aa_percentages, aa_numbers))
+pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of interactions within AI", ai_percentages, ai_numbers))
+pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of interactions within II", ii_percentages, ii_numbers))
 
 
 
 
-fig1.tight_layout()
-pdf.savefig(fig1)
-pdf.savefig(fig1)
-pdf.savefig(fig1)
+### Create barplots for proportions of interaction associated digests within AA, AI and II
+##########################################################################################
+
+print()
+percentage_dir_a_dig = 100 * len(dir_a_dig_set) / (len(dir_a_dig_set) + len(dir_i_dig_set))
+print("Number of active (A) digests involved in DI: " + str(len(dir_a_dig_set)) + " (" + "{0:.2f}".format(percentage_dir_a_dig) + "%)")
+print("Number of inactive (I) digests involved in DI: " + str(len(dir_i_dig_set)))
+print()
+percentage_undir_a_dig = 100 * len(undir_a_dig_set) / (len(undir_a_dig_set) + len(undir_i_dig_set))
+print("Number of active (A) digests involved in U: " + str(len(undir_a_dig_set)) + " (" + "{0:.2f}".format(percentage_undir_a_dig) + "%)")
+print("Number of inactive (I) digests involved in U: " + str(len(undir_i_dig_set)))
+print()
+percentage_undir_ref_1_a_dig = 100 * len(undir_ref_1_a_dig_set) / (len(undir_ref_1_a_dig_set) + len(undir_ref_1_i_dig_set))
+print("Number of active (A) digests involved in UR1: " + str(len(undir_ref_1_a_dig_set)) + " (" + "{0:.2f}".format(percentage_undir_ref_1_a_dig) + "%)")
+print("Number of inactive (I) digests involved in UR1: " + str(len(undir_ref_1_i_dig_set)))
+print()
+percentage_undir_ref_2_a_dig = 100 * len(undir_ref_2_a_dig_set) / (len(undir_ref_2_a_dig_set) + len(undir_ref_2_i_dig_set))
+print("Number of active (A) digests involved in UR2: " + str(len(undir_ref_2_a_dig_set)) + " (" + "{0:.2f}".format(percentage_undir_ref_2_a_dig) + "%)")
+print("Number of inactive (I) digests involved in UR2: " + str(len(undir_ref_2_i_dig_set)))
+print()
+
+a_percentages = [round(percentage_dir_a_dig, 2), round(percentage_undir_a_dig, 2), round(percentage_undir_ref_1_a_dig, 2), round(percentage_undir_ref_2_a_dig, 2)]
+a_numbers = [len(dir_a_dig_set), len(undir_a_dig_set), len(undir_ref_1_a_dig_set), len(undir_ref_2_a_dig_set)]
+pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of active (A) digests involved in interaction categories", a_percentages, a_numbers))
+
 pdf.close()
