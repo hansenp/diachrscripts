@@ -10,7 +10,7 @@ import numpy as np
 
 
 """
-perform_fdr_analysis_script.py
+02_perform_permutation_analysis.py
 This script uses a simple procedure to estimate the FDR of directed interactions.
 
 """
