@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+
+"""
+This takes a path to a directory containing Diachromatic interaction files and combines interactions that occur in a
+specified number of files into one interaction with summed simple and twisted read pair counts.
+"""
+
 import argparse
 import os
 import gzip
@@ -8,7 +14,7 @@ from collections import defaultdict
 ### Parse command line
 ######################
 
-parser = argparse.ArgumentParser(description='Discard all interactions that are not significant in a given number of replicates.')
+parser = argparse.ArgumentParser(description='Combine interactions that occur in a specified number of replicates.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--interaction-files-path', help='Path to directory with gt1 gzip files')
 parser.add_argument('--required-replicates', help='Required number of replicates.')
