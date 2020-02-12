@@ -607,9 +607,10 @@ def find_indefinable_n(p_value_cutoff, verbose = True):
     if verbose:
         print("[INFO] Looking for smallest number of read pairs n that yields a significant P-value with the given threshold of " + str(p_value_cutoff) + ".")
     for n in range(1, 1000):
-        if calculate_binomial_p_value(n, 0) < p_value_cutoff:
+        p_value = calculate_binomial_p_value(n, 0)
+        if p_value < p_value_cutoff:
             if verbose:
-                print("\t[INFO] Smallest n: " + str(n) + " read pairs")
+                print("\t[INFO] Smallest n: " + str(n) + " read pairs (" + str(p_value) + ")")
             return n
 
 def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff):

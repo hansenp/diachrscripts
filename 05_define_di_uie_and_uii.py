@@ -4,22 +4,22 @@
 This script takes an enhanced interaction file, supplemented with digest associated gene symbols and TSS as well as
 directionality P-values, and segments the interactions based on a P-value threshold into the following subsets:
 
-   1. DI - Directed interactions
-   2. UI - Undirected interactions
+   1. Indefinable interactions that cannot be significant with the chosen P-value threshold
+   2. DI - Directed interactions
+   3. UI - Undirected interactions
       i. UIE - Exclusive undirected interactions. Subset of UI. No digest interacts with a digest involved in DI
       ii. UII - Inclusive undirected interactions. Subset of UI. UI without UIE
-   3. Indefinable interactions that cannot be significant with the chosen P-value threshold
 
 The script implements a two pass approach:
 
    1. Iterate interactions in order to identify DI and involved digests.
    2. Iterate interactions a second time and use information from the first pass in order to identify UIE.
 
-DI and UIE interactions are written to a file in enhanced interaction format with the name:
+DI, UII and UIE interactions are written to a file in enhanced interaction format with the name:
 
    '<OUT_PREFIX>_enhanced_interaction_file_with_exclusive_ui.tsv.gz'
 
-Column 3 of the created file contains DI or UIE.
+Column 3 of the created file contains DI or UIE. Indefinable interactions are discarded.
 
 Finally, summary statistics about interaction and associated digest sets as well as connectivity within interaction
 subsets are reported and written to a tab separated file with the name:
@@ -32,39 +32,40 @@ containing one header line and one line with the corresponding values:
 
    2. Total number of interactions
 
-   3. Number of indefinable interactions
-   4. Percentage of indefinable interactions
+   3. Smallest n that can yield a significant interaction given the P-value threshold
+   4. Number of indefinable interactions
+   5. Percentage of indefinable interactions
 
-   5. Number of DI
-   6. Percentage of DI
+   6. Number of DI
+   7. Percentage of DI
 
-   7. Number of UI
-   8. Percentage of UI
+   8. Number of UI
+   9. Percentage of UI
 
-   9. Number of UIE
-  10. Percentage of UIE
+  10. Number of UIE
+  11. Percentage of UIE
 
-  11. Number of UII
-  12. Percentage of UII
+  12. Number of UII
+  13. Percentage of UII
 
-  13. Number of digests involved in DI and UI
-  14. Connectivity factor for DI and UI
+  14. Number of digests involved in DI and UI
+  15. Connectivity factor for DI and UI
 
-  15. Number of digests involved in DI
-  16. Connectivity factor for DI
+  16. Number of digests involved in DI
+  17. Connectivity factor for DI
 
-  17. Number of digests involved in UI
-  18. Connectivity factor for UI
+  18. Number of digests involved in UI
+  19. Connectivity factor for UI
 
-  19. Number of digests involved in UIE
-  20. Connectivity factor for UIE
+  20. Number of digests involved in UIE
+  21. Connectivity factor for UIE
 
-  21. Number of digests involved in UII
-  22. Connectivity factor for UII
+  22. Number of digests involved in UII
+  23. Connectivity factor for UII
 
-  23. Number of digests involved in DI and UIE (sanity check: Must be 0!)
-  24. Number of digests involved in DI and UII
-  25. Percentage of digests involved in DI and UII
+  24. Number of digests involved in DI and UIE (sanity check: Must be 0!)
+  25. Number of digests involved in DI and UII
+  26. Percentage of digests involved in DI and UII
 """
 
 
@@ -129,14 +130,14 @@ undir_exc_dig_set = set()
 undir_inc_dig_set = set()
 
 # Smallest n that required for significance given the P-value threshold
-smallest_n = diachrscripts_toolkit.find_indefinable_n(p_value_threshold, verbose = False)
+indef_n = diachrscripts_toolkit.find_indefinable_n(p_value_threshold, verbose = True)
 
 # Prepare stream for output of filtered interactions annotated with respect to exclusive undirected interactions
-enhanced_interaction_file_output = out_prefix + "_enhanced_interaction_file_with_di_and_uie.tsv.gz"
+enhanced_interaction_file_output = out_prefix + "_enhanced_interaction_file_with_di_uii_and_uie.tsv.gz"
 enhanced_interaction_stream_output = gzip.open(enhanced_interaction_file_output, 'wt')
 
 # Prepare stream for output of filtered interactions annotated with respect to exclusive undirected interactions
-tab_file_stats_output = out_prefix + "_stats_di_and_uie.tsv"
+tab_file_stats_output = out_prefix + "_stats_di_uii_and_uie.tsv"
 tab_stream_stats_output = open(tab_file_stats_output, 'wt')
 
 
@@ -176,7 +177,7 @@ print("\t[INFO] ... done.")
 ### 2nd pass: Identifiy exclusive undirected interactions and associated digests
 ################################################################################
 
-print("[INFO] 2nd pass: Identifiy exclusive undirected interactions (UIE) ...")
+print("[INFO] 2nd pass: Identifiy inclusive and exclusive undirected interactions (UII and UIE) ...")
 
 print("\t[INFO] Iterating enhanced interaction file ...")
 with gzip.open(enhanced_interaction_file, 'rt') as fp:
@@ -195,7 +196,7 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
             diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
 
         # Skip and count indefinable interactions
-        if rp_total < smallest_n:
+        if rp_total < indef_n:
             indef_inter_num +=1
             line = fp.readline()
             continue
@@ -251,6 +252,10 @@ print("\t[INFO] Interaction statistics")
 print()
 
 print("\t\t[INFO] Total number of processed interactions: " + str(n_interaction_total))
+
+print()
+
+print("\t\t[INFO] Smallest n that can yield a significant interaction: " + str(indef_n))
 
 print()
 
@@ -342,6 +347,7 @@ tab_stream_stats_output.write(
 
     "n_interaction_total" + "\t" +                      # Total number of interactions
 
+    "indef_n" + "\t" +                                  # Smallest n that can yield a significant interaction given the P-value threshold
     "indef_inter_num" + "\t" +                          # Number of indefinable interactions
     "indef_inter_percentage" + "\t" +                   # Percentage of indefinable interactions
 
@@ -384,6 +390,7 @@ tab_stream_stats_output.write(
 
     str(n_interaction_total) + "\t" +
 
+    str(indef_n) + "\t" +
     str(indef_inter_num) + "\t" +
     str(indef_inter_percentage) + "\t" +
 
