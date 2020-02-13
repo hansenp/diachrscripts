@@ -9,7 +9,7 @@ import time
 
 
 """
-fdr.py
+02_perform_permutation_analysis.py
 This script estimates the signficance of the observation of a certain amount of interactions that
 are nominally signicant under a binomial test with the null hypothesis that simple and twisted
 read pairs are equally probably.
