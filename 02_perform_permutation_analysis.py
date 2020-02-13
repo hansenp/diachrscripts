@@ -134,10 +134,9 @@ def count_significant_pvals_in_permutation(chc_interactions, n_dict, n_alpha=nom
 ###################
 
 #  Input diachromatic file
-n_dict = {} # dictionary that stores the numbers of interactions with n read pairs; is used as input for 'random_numbers_dict()' to generate random count efficiently
+n_dict = {} # dictionary that stores the numbers of interactions with n read pairs; is used as input for 'random_numbers_dict()' to generate random counts efficiently
 chc_interactions = [] # list of original interactions
 n_indefinable_cutoff = dclass.find_indefinable_n(nominal_alpha) # minimum number of read pairs required for significance
-print("[INFO] Ingesting diachromatic file at", diachromatic_interaction_file, "...")
 nsig_o = 0 # number of observed significant interactions
 n_interaction = 0
 n_cis_long_range_interaction = 0
@@ -145,7 +144,7 @@ n_trans_short_range_interaction = 0
 n_indefinable_interaction = 0
 n_undirected_interaction = 0
 
-
+print("[INFO] Ingesting diachromatic file at", diachromatic_interaction_file, "...")
 with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
     for line in fp:
         n_interaction +=1
@@ -161,7 +160,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
             n_simple = int(n_simple)
             n_twisted = int(n_twisted)
             n = n_simple + n_twisted
-            if n < n_indefinable_cutoff: # skip interactions that cannot be significant due to small number of read pairs
+            if n < n_indefinable_cutoff: # skip interactions that cannot be significant given the nominal alpha due to small number of read pairs
                 n_indefinable_interaction +=1
                 continue
 
@@ -194,7 +193,7 @@ print("[INFO] Number of indefinable cis long range interactions: {}".format(n_in
 print("[INFO] Number of undirected cis long range interactions: {}".format(n_undirected_interaction))
 print("[INFO] Number of cis long range interactions with nominally significant P-values: {}".format(nsig_o))
 
-# Perform permutation anlysis
+# Perform permutation analysis
 print("[INFO] Performing permutation analysis with " + str(iter_num) + " iterations ...")
 random_better_than_observed = 0
 nsig_p_list = [] # stores numbers of significant interactions for each iteration
