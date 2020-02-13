@@ -1395,7 +1395,7 @@ tab_file_stream_interaction_and_digest_statistics.write(
     "gc_content_total_directed_digests" + "\t" +
     "gc_content_total_undirected_digests" + "\t" +
     "gc_content_total_directed_digests_tss_merged" + "\t" +
-    "gc_content_non_repeat_undirected_digests_tss_merged" + "\t" +
+    "gc_content_total_undirected_digests_tss_merged" + "\t" +
 
     "directed_digest_q1" + "\t" +
     "directed_digest_q2" + "\t" +
