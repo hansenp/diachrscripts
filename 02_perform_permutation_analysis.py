@@ -21,11 +21,12 @@ interactions (call this number w). Our estimated p-value is then w/W.
 import diachrscripts_toolkit as dclass
 import argparse
 import gzip
-from scipy.stats import binom
+from scipy.stats import stats, binom
 from collections import defaultdict
-from statistics import mean
+from statistics import mean, stdev
 import time
 import multiprocessing as mp
+import itertools
 
 
 ### Parse command line
@@ -37,6 +38,8 @@ parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
 parser.add_argument('--iter-num', help='Number of iterations.', default=1000)
 parser.add_argument('--nominal-alpha', help='Nominal alpha. P-value threshold used for permutation analysis.', default=0.05)
 parser.add_argument('--min-digest-dist', help='All interactions with smaller distances will be discarded.', default=20000)
+parser.add_argument('--thread-num', help='Number of threads.', default=1)
+
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -44,6 +47,7 @@ diachromatic_interaction_file = args.interaction_file
 iter_num = int(args.iter_num)
 nominal_alpha = float(args.nominal_alpha)
 min_digest_dist = int(args.min_digest_dist)
+thread_num = int(args.thread_num)
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] --out_prefix: " + out_prefix)
@@ -51,6 +55,7 @@ print("\t[INFO] --interaction-file: " + diachromatic_interaction_file)
 print("\t[INFO] --iter-num: " + str(iter_num))
 print("\t[INFO] --nominal-alpha: " + str(nominal_alpha))
 print("\t[INFO] --min-digest-dist: " + str(min_digest_dist))
+print("\t[INFO] --thread-num: " + str(thread_num))
 
 
 ### Define auxiliary functions
@@ -152,12 +157,20 @@ def count_significant_pvals_in_permutation(chc_interactions, n_dict, n_alpha=nom
     return n_perm_significant
 
 
-def perform_n_iterations_of_permuatations(n_iter, chc_interactions, n_dict, n_alpha):
+def perform_n_iterations_of_permuatations(params):
+
+    n_iter = params[0]
+    chc_interactions = params[1]
+    n_dict = params[2]
+    n_alpha = params[3]
 
     n_sig_p_list = []
 
+    print("\t[INFO] Batch: Performing " + str(n_iter) + " iterations.")
+
     for n in range(1, n_iter + 1):
         n_sig_p_list.append(count_significant_pvals_in_permutation(chc_interactions, n_dict, n_alpha))
+
 
     return n_sig_p_list
 
@@ -204,7 +217,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         # Count total number of interactions
         n_interaction +=1
 
-        if n_interaction % 100000 == 0:
+        if n_interaction % 1000000 == 0:
             print("\t\t[INFO]", n_interaction, "interactions processed ...")
 
         # Split Diachromatic interaction line
@@ -281,33 +294,19 @@ nsig_p_list = []
 t = time.process_time()
 
 # Init pool with 2 processes
-pool = mp.Pool(processes=4)
+pool = mp.Pool(processes = thread_num)
 
-n_threads = 8
+# Perform permutation for 'thread_num' batches with balanced numbers of iterations
+batch_iter_nums = list(itertools.repeat(int(iter_num/thread_num), thread_num))
+if 0 < iter_num - thread_num * int(iter_num/thread_num):
+    # If there is a remainder, add it to the first element of list
+    batch_iter_nums[0] = batch_iter_nums[0] + iter_num - thread_num * int(iter_num/thread_num)
+results = [pool.apply_async(perform_n_iterations_of_permuatations, args=([batch_iter_num, chc_interactions, n_dict, nominal_alpha],)) for batch_iter_num in batch_iter_nums]
 
-results = [pool.apply(perform_n_iterations_of_permuatations, args=(10, chc_interactions, n_dict, nominal_alpha)) for x in range(1,10 + 1)]
-print(len(results))
-print(len(results[0]))
-elapsed_time = time.process_time() - t
-print(elapsed_time)
-
-# Perform random permutations
-for n in range(1, iter_num + 1):
-
-    # Permute counts of all interactions and determine the number of significant interactions
-    nsig_p = count_significant_pvals_in_permutation(chc_interactions, n_dict, nominal_alpha)
-
-    # Append number of significant interactions for this iteration to list
-    nsig_p_list.append(nsig_p)
-
-    # Count the number of iterations with more significant interactions as compared to the original data
-    if nsig_p >= n_directed_interaction:
-        random_better_than_observed += 1
-
-    # Report progress
-    if n % int(iter_num / 10) == 0:
-        elapsed_time = time.process_time() - t
-        print("\t[INFO] " + str(n) + " permutations for " + str(len(chc_interactions)) +  " interactions performed in " + str(elapsed_time) + " sec.")
+# Combine results from different batches
+batch_results = [p.get() for p in results]
+print("[INFO] Combining results from different batches ...")
+nsig_p_list = list(itertools.chain.from_iterable(batch_results))
 
 # Calculate average number of significant permuted interactions
 nsig_p_average = mean(nsig_p_list)
@@ -318,6 +317,11 @@ percentage_observed = n_directed_interaction / len(chc_interactions)
 # Calculate percentage of significant interactions for the permuted data
 percentage_permuted = nsig_p_average/len(chc_interactions)
 
+# Compute Z-score
+nsig_p_sd = stdev(nsig_p_list)
+z_score = (n_directed_interaction-nsig_p_average) / nsig_p_sd
+
+print("Z-score: " + str(z_score))
 
 ### Print results to screen
 ###########################
