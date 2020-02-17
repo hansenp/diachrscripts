@@ -25,6 +25,7 @@ from scipy.stats import binom
 from collections import defaultdict
 from statistics import mean
 import time
+import multiprocessing as mp
 
 
 ### Parse command line
@@ -43,10 +44,6 @@ diachromatic_interaction_file = args.interaction_file
 iter_num = int(args.iter_num)
 nominal_alpha = float(args.nominal_alpha)
 min_digest_dist = int(args.min_digest_dist)
-
-if diachromatic_interaction_file == None:
-    print("--interaction-file option required")
-    exit(1)
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] --out_prefix: " + out_prefix)
@@ -155,6 +152,16 @@ def count_significant_pvals_in_permutation(chc_interactions, n_dict, n_alpha=nom
     return n_perm_significant
 
 
+def perform_n_iterations_of_permuatations(n_iter, chc_interactions, n_dict, n_alpha):
+
+    n_sig_p_list = []
+
+    for n in range(1, n_iter + 1):
+        n_sig_p_list.append(count_significant_pvals_in_permutation(chc_interactions, n_dict, n_alpha))
+
+    return n_sig_p_list
+
+
 ### Prepare variables, data structures and streams for output files
 ###################################################################
 
@@ -196,6 +203,9 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
         # Count total number of interactions
         n_interaction +=1
+
+        if n_interaction % 100000 == 0:
+            print("\t\t[INFO]", n_interaction, "interactions processed ...")
 
         # Split Diachromatic interaction line
         fields = line.rstrip('\n').split('\t')
@@ -270,8 +280,19 @@ nsig_p_list = []
 # Record start time
 t = time.process_time()
 
+# Init pool with 2 processes
+pool = mp.Pool(processes=4)
+
+n_threads = 8
+
+results = [pool.apply(perform_n_iterations_of_permuatations, args=(10, chc_interactions, n_dict, nominal_alpha)) for x in range(1,10 + 1)]
+print(len(results))
+print(len(results[0]))
+elapsed_time = time.process_time() - t
+print(elapsed_time)
+
 # Perform random permutations
-for n in range(1, iter_num+1):
+for n in range(1, iter_num + 1):
 
     # Permute counts of all interactions and determine the number of significant interactions
     nsig_p = count_significant_pvals_in_permutation(chc_interactions, n_dict, nominal_alpha)
