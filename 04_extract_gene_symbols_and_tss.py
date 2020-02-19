@@ -97,19 +97,16 @@ parser = argparse.ArgumentParser(description='Create enhanced interaction file f
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--ref-gene-file', help='UCSC refGene file (must be gzipped and the same version that was used to create the digest map for Diachromatic).')
 parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
-parser.add_argument('--min-digest-dist', help='All interactions with smaller distances will be discarded.', default=20000)
 args = parser.parse_args()
 
 out_prefix = args.out_prefix
 ref_gene_file = args.ref_gene_file
 diachromatic_interaction_file = args.interaction_file
-min_digest_dist = int(args.min_digest_dist)
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] Analysis for: " + out_prefix)
 print("\t[INFO] Interaction file: " + diachromatic_interaction_file)
 print("\t[INFO] refGene file: " + ref_gene_file)
-print("\t[INFO] --min-digest-dist: " + str(min_digest_dist))
 
 
 ### Define auxiliary functions
@@ -170,8 +167,6 @@ f_output_original = open(file_name_original, 'wt')
 ref_gene_tss_map = dclass.TSSCoordinateMap(ref_gene_file, "refGene") # parse refGene file with TSS
 ref_gene_tss_map.analyze_coordinates_and_print_report() # collect counts and print report
 
-n_trans_short_range_interaction = 0
-
 
 ### Start execution
 ###################
@@ -193,12 +188,6 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
         # Create interaction object from Diachromatic interaction line
         interaction = dclass.Interaction(line)
-
-        # Restrict analysis to cis long range interactions
-        if not(interaction.is_cis_long_range(min_digest_dist)):
-            n_trans_short_range_interaction += 1
-            line = fp.readline()
-            continue
 
         # Calculate logarithm of binomial P-value
         interaction.set_logsf_binomial_p_value()
@@ -265,9 +254,9 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
 
         line = fp.readline()
 
-    print("... done.")
+print("\t[INFO] ... done.")
 
 fp.close()
 f_output_original.close()
 
-print("[INFO] Number of discarded trans and short range interactions: " + str(n_trans_short_range_interaction))
+print("[INFO] Number of processed interactions: " + str(n_interaction_total))
