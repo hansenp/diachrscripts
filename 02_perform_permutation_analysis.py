@@ -125,7 +125,7 @@ def perform_one_iteration():
                 pval_memo[key] = pv
 
             # Count significant interactions
-            if pv <= NOMINAL_ALPHA:
+            if pv < NOMINAL_ALPHA:
                 w_perm_significant += 1
 
     return w_perm_significant
@@ -214,7 +214,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
             pval_memo[key] = pv
 
         # Count interaction as directed or undirected
-        if pv < NOMINAL_ALPHA:
+        if pv <= NOMINAL_ALPHA:
             n_directed_interaction += 1
         else:
             n_undirected_interaction += 1
@@ -230,7 +230,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 print("[INFO] Total number interactions: {}".format(n_interaction))
 print("\t[INFO] Number of indefinable interactions (discarded): {}".format(n_indefinable_interaction))
 print("\t[INFO] Number of undirected interactions: {}".format(n_undirected_interaction))
-print("\t[INFO] Number of interactions with nominally significant P-values: {}".format(n_directed_interaction))
+print("\t[INFO] Number of interactions with nominally significant P-values (<{}): {}".format(NOMINAL_ALPHA, n_directed_interaction))
 
 # Perform permutation analysis
 print("[INFO] Performing permutation analysis with " + str(ITER_NUM) + " iterations ...")
