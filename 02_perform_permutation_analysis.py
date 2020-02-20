@@ -214,7 +214,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
             pval_memo[key] = pv
 
         # Count interaction as directed or undirected
-        if pv <= NOMINAL_ALPHA:
+        if pv < NOMINAL_ALPHA:
             n_directed_interaction += 1
         else:
             n_undirected_interaction += 1

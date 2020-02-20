@@ -602,7 +602,7 @@ def calculate_binomial_p_value(n_simple, n_twisted):
 def find_indefinable_n(p_value_cutoff, verbose = True):
     """
     :param p_value_cutoff: Chosen threshold
-    :return: Minimal n that yields a signifcant P-value given the threshold
+    :return: Minimal n that yields a significant P-value given the threshold
     """
     if verbose:
         print("[INFO] Looking for smallest number of read pairs n that yields a significant P-value with the given threshold of " + str(p_value_cutoff) + ".")
