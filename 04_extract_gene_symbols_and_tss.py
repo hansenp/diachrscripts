@@ -161,7 +161,7 @@ def get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map):
 ### Prepare variables, data structures and streams for output files
 ###################################################################
 
-file_name_original = out_prefix + "_original_interactions_with_genesymbols.tsv"
+file_name_original = out_prefix + "_enhanced_interaction_file.tsv"
 f_output_original = open(file_name_original, 'wt')
 
 ref_gene_tss_map = dclass.TSSCoordinateMap(ref_gene_file, "refGene") # parse refGene file with TSS
