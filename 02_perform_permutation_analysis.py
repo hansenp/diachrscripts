@@ -274,7 +274,7 @@ percentage_permuted = "{0:.2f}".format(w_sig_p_average / (n_directed_interaction
 ### Print summary statistics to screen
 ######################################
 
-print("OUT_PREFIX"
+print("\t[INFO] OUT_PREFIX"
                "\tITER_NUM"
                "\tNOMINAL_ALPHA"
                "\tINDEF_RP_CUTOFF"               
@@ -287,7 +287,7 @@ print("OUT_PREFIX"
                "\tZ_SCORE"
                "\tN_PERMUTED_BETTER_THAN_OBSERVED")
 
-print(out_prefix + "\t"
+print("\t[INFO] " + out_prefix + "\t"
       + str(ITER_NUM) + "\t"
       + str(NOMINAL_ALPHA) + "\t"
       + str(n_indefinable_cutoff) + "\t"
