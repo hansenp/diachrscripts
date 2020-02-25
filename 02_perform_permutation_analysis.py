@@ -184,6 +184,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         # Count total number of interactions
         n_interaction += 1
 
+        # Report progress
         if n_interaction % 1000000 == 0:
             print("\t\t[INFO]", n_interaction, "interactions processed ...")
 
