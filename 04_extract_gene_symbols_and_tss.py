@@ -86,7 +86,6 @@ Two comma separated lists of TSS coordinates separated by a semicolon.
 
 import argparse
 import gzip
-import math
 import diachrscripts_toolkit as dclass
 
 

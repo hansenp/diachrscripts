@@ -82,16 +82,10 @@ def binomial_p_value(simple_count, twisted_count):
     if key in pval_memo:
         return pval_memo[key]
     else:
-
         # Calculate P-value and add to dictionary
-        if simple_count < twisted_count:
-            p_value = 1 - binom.cdf(twisted_count - 1, simple_count + twisted_count, 0.5)
-            pval_memo[key] = p_value
-            return p_value
-        else:
-            p_value = 1 - binom.cdf(simple_count - 1, simple_count + twisted_count, 0.5)
-            pval_memo[key] = p_value
-            return p_value
+        p_value = dclass.calculate_binomial_p_value(simple_count, twisted_count)
+        pval_memo[key] = p_value
+        return p_value
 
 
 def perform_one_iteration():

@@ -87,7 +87,7 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
         if fields[8] in pval_dict:
             pval = pval_dict[fields[8]]
         else:
-            pval = dclass.get_binomial_p_value(n_simple, n_twisted)
+            pval = dclass.calculate_binomial_p_value(n_simple, n_twisted)
             pval_dict[fields[8]] = float(pval)
 
         if n_simple + n_twisted < n_indefinable_cutoff:

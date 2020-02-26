@@ -1,15 +1,13 @@
 import gzip
 
 import numpy
-from scipy.stats import binom, poisson
+from scipy.stats import binom
 import numpy as np
-from decimal import *
 import warnings
 warnings.filterwarnings("error")
-from decimal import Decimal, getcontext
-from math import log, log10
+from decimal import Decimal
+from math import log
 import sys
-import warnings
 from copy import deepcopy
 
 #######################################################################################################################
@@ -58,7 +56,7 @@ class Interaction:
     digest_distance = None  # Distance between the two interacting digests
     n_simple = 0            # Number of simple read pairs
     n_twisted = 0           # Number of twisted read pairs
-    cis = None              # Intrachromosomal interaction
+    cis = None              # Intra-chromosomal interaction
     type = None             # Either simple, twisted or undirected
     digest_1 = None
     digest_2 = None
@@ -185,38 +183,11 @@ class Interaction:
         if self.get_digest_distance() < d_dist:
             return False
         return True
-        #return self.digest_1.get_chromosome() == self.digest_2.get_chromosome() and d_dist < self.get_digest_distance()
-
-    def get_simulated_copy(self):
-
-        # create new instance
-        sim_interaction =  deepcopy(self)
-
-        # simulate simple and twisted read pairs
-        n = self.n_simple + self.n_twisted
-        simple = binom.rvs(n, 0.5, size=1)
-        twisted = n - simple
-        sim_interaction.n_simple = simple[0]
-        sim_interaction.n_twisted = twisted[0]
-
-        return sim_interaction
 
     def get_coord_string(self):
         d1_coords = self.digest_1.get_chromosome() + ":" + str(self.digest_1.get_start()) + "-" + str(self.digest_1.get_end())
         d2_coords = self.digest_2.get_chromosome() + ":" + str(self.digest_2.get_start()) + "-" + str(self.digest_2.get_end())
         return d1_coords + ";" + d2_coords
-
-    def get_permuted_counts(self):
-        """
-        Choose a number k from [0,N] by random uniform distribution
-        :return: k, N-k
-        """
-        k = binom.rvs(self.N, 0.5, size=1)
-        return k, self.N - k
-
-    def get_counts(self):
-        return self.n_simple, self.n_twisted
-
 
 #######################################################################################################################
 
@@ -675,13 +646,6 @@ def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist,
     fp.close()
     return n_dict
 
-def get_binomial_p_value(n_simple, n_twisted):
-    if n_simple < n_twisted:
-        p_value = 1 - binom.cdf(n_twisted - 1, n_simple + n_twisted, 0.5)
-        return p_value
-    else:
-        p_value = 1 - binom.cdf(n_simple - 1, n_simple + n_twisted, 0.5)
-        return p_value
 
 def parse_enhanced_interaction_line_with_gene_symbols(interaction_line_with_gene_symbols):
     """
