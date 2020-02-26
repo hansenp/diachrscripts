@@ -133,9 +133,9 @@ n_interaction = 0
 p_val_o_list = []
 
 # Prepare stream for output of results
-file_name = out_prefix + "_fdr_analysis_results.txt"
-f_output = open(file_name, 'wt')
-f_output.write("OUT_PREFIX\tFDR\tPC\tNSIG_P\tNSIG_O" + "\n")
+txt_file_name_results = out_prefix + "_fdr_analysis_results.txt"
+txt_file_stream_results = open(txt_file_name_results, 'wt')
+txt_file_stream_results.write("OUT_PREFIX\tFDR\tPC\tNSIG_P\tNSIG_O" + "\n")
 
 
 ### Start execution
@@ -202,7 +202,7 @@ for pc in np.arange(p_val_c_min, p_val_c_max, p_val_step_size):
     fdr = nsig_p / nsig_o
 
     # Write results for this threshold to file
-    f_output.write(out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(nsig_p) + "\t" + str(nsig_o) + "\n")
+    txt_file_stream_results.write(out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(nsig_p) + "\t" + str(nsig_o) + "\n")
 
     # Print results for this threshold to file
     print("\t" + out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(nsig_p) + "\t" + str(nsig_o))
@@ -214,7 +214,7 @@ for pc in np.arange(p_val_c_min, p_val_c_max, p_val_step_size):
         nsig_p_last = nsig_p
         pc_last = pc
 
-f_output.close()
+txt_file_stream_results.close()
 
 # Print results for the largest P-value that satisfies the FDR threshold to the screen
 print()

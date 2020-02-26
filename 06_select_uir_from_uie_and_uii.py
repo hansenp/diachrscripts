@@ -368,6 +368,8 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
 
         line = fp.readline()
 
+fp.close()
+print("\t[INFO] done ...")
 
 ### Get Q1 and Q3 for AA, AI and II
 ###################################
@@ -507,7 +509,38 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         line = fp.readline()
 
 enhanced_interaction_stream_output.close()
+fp.close()
+print("\t[INFO] done ...")
 
+print("[INFO] Checking whether reference interactions are missing for some n")
+
+print("\t[INFO] AA interactions")
+n_missing_aa = 0
+for x in rp_dict_aa:
+    if 0 < rp_dict_aa[x]:
+        n_missing_aa += 1
+        print("\t\t[WARNING] For " + str(rp_dict_aa[x]) + " directed interactions with " + str(x) + " read pairs no undirected reference interaction could be selected.")
+
+print("\t[INFO] AI interactions")
+n_missing_ai = 0
+for x in rp_dict_ai:
+    if 0 < rp_dict_ai[x]:
+        n_missing_ai += 1
+        print("\t\t[WARNING] For " + str(rp_dict_ai[x]) + " directed interactions with " + str(x) + " read pairs no undirected reference interaction could be selected.")
+
+print("\t[INFO] II interactions")
+n_missing_ii = 0
+for x in rp_dict_ii:
+    if 0 < rp_dict_ii[x]:
+        n_missing_ii += 1
+        print("\t\t[WARNING] For " + str(rp_dict_ii[x]) + " directed interactions with " + str(x) + " read pairs no undirected reference interaction could be selected.")
+
+print("\t[INFO] Summary for AA, AI and II")
+print("\t\t[WARNING] For " + str(n_missing_aa) + " out of " + str(dir_inter_aa_num) + " directed AA interactions no undirected reference interaction could be selected.")
+print("\t\t[WARNING] For " + str(n_missing_ai) + " out of " + str(dir_inter_ai_num) + " directed AI interactions no undirected reference interaction could be selected.")
+print("\t\t[WARNING] For " + str(n_missing_ii) + " out of " + str(dir_inter_ii_num) + " directed II interactions no undirected reference interaction could be selected.")
+
+print("\t[INFO] done ...")
 
 ### Output some statistics
 ##########################

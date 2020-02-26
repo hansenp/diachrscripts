@@ -12,7 +12,7 @@ threshold using our null model. Finally, the number of significant interactions 
 
 from collections import defaultdict
 import argparse
-from scipy.stats import uniform, binom
+from scipy.stats import binom
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -55,6 +55,7 @@ def random_numbers_dict(n_dict):
     return random_numbers_dict
 
 pval_memo = defaultdict(float)
+
 def binomial_p_value(n_simple, n_twisted):
     """
     Locally defined method for the calculation of the binomial P-value that uses a dictionary that keeps track of
