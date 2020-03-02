@@ -187,31 +187,31 @@ print("[INFO] Total number of interactions: {}".format(n_interaction))
 print("[INFO] Estimating FDR for increasing P-value thresholds ...")
 
 # Get list of randomized P-values
-p_val_p_list = get_pvals_permuted_counts()
+p_val_r_list = get_pvals_permuted_counts()
 
 # Estimate FDR for increasing P-value thresholds from original and randomized P-value lists
 for pc in np.arange(p_val_c_min, p_val_c_max, p_val_step_size):
 
     # Get number of significant interactions for original P-values
-    nsig_o = (p_val_o_list < pc).sum()
+    S_o = (p_val_o_list < pc).sum()
 
     # Get number of significant interactions for randomized P-values
-    nsig_p = (p_val_p_list < pc).sum()
+    S_r = (p_val_r_list < pc).sum()
 
     # Estimate FDR
-    fdr = nsig_p / nsig_o
+    fdr = S_r / S_o
 
     # Write results for this threshold to file
-    txt_file_stream_results.write(out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(nsig_p) + "\t" + str(nsig_o) + "\n")
+    txt_file_stream_results.write(out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(S_r) + "\t" + str(S_o) + "\n")
 
     # Print results for this threshold to file
-    print("\t" + out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(nsig_p) + "\t" + str(nsig_o))
+    print("\t" + out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(S_r) + "\t" + str(S_o))
 
     # Keep track of the largest P-value that satisfies the FDR threshold
     if fdr < fdr_threshold:
         fdr_last = fdr
-        nsig_o_last = nsig_o
-        nsig_p_last = nsig_p
+        S_o_last = S_o
+        S_r_last = S_r
         pc_last = pc
 
 txt_file_stream_results.close()
@@ -219,4 +219,4 @@ txt_file_stream_results.close()
 # Print results for the largest P-value that satisfies the FDR threshold to the screen
 print()
 print("\tOUT_PREFIX\tFDR\tPC\tNSIG_P\tNSIG_O")
-print("\t" + out_prefix + "\t" + str(fdr_last) + "\t" + str(pc_last) + "\t" + str(nsig_p_last) + "\t" + str(nsig_o_last))
+print("\t" + out_prefix + "\t" + str(fdr_last) + "\t" + str(pc_last) + "\t" + str(S_r_last) + "\t" + str(S_o_last))
