@@ -93,12 +93,29 @@ print("\t[INFO] Analysis for: " + out_prefix)
 print("\t[INFO] Interaction file: " + enhanced_interaction_file)
 print("\t[INFO] --p-value-cutoff: " + str(p_value_threshold))
 
+# n = 1500
+#
+# print("SIMPLE_RP\tTWISTED_RP\tCONVENTIONAL_P\tLOGSF_P")
+# for i in range(0, n+1):
+#      conventional_P = (-1) * math.log(diachrscripts_toolkit.calculate_binomial_p_value(i, n))
+#      logsf_P = (-1) * diachrscripts_toolkit.calculate_binomial_logsf_p_value(i, n)
+#      print(str(i) + "\t" + str(n) + "\t" + str(conventional_P) + "\t" + str(logsf_P))
+#
+# print()
+#
+# print("TWISTED_RP\tSIMPLE_RP\tCONVENTIONAL_P\tLOGSF_P")
+# for i in range(0, n+1):
+#     conventional_P = (-1) * math.log(diachrscripts_toolkit.calculate_binomial_p_value(n, i))
+#     logsf_P = (-1) * diachrscripts_toolkit.calculate_binomial_logsf_p_value(n, i)
+#     print(str(n) + "\t" + str(i) + "\t" + str(conventional_P) + "\t" + str(logsf_P))
+#
+# exit(1)
 
 ### Prepare variables, data structures and streams for output files
 ###################################################################
 
 # P-value threshold
-neg_log_p_val_thresh =  round((-1) * math.log(p_value_threshold), 2)
+neg_log_p_val_thresh =  (-1) * math.log(p_value_threshold)
 
 # Number of directed interactions and involved digests
 dir_inter_num = 0
@@ -162,8 +179,14 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
             diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
 
+        # Split line into individual fields XXX for testing XXX remove
+        field = line.split("\t")
+        n_simple = int(field[4].split(":")[0])
+        n_twisted = int(field[4].split(":")[1])
+
         # Add digest of directed interactions to digest set
-        if neg_log_p_val_thresh <= neg_log_p_value:
+        if neg_log_p_val_thresh < neg_log_p_value:
+        #if p_value_threshold >= diachrscripts_toolkit.calculate_binomial_p_value(n_simple, n_twisted):
             dir_inter_num += 1
             dir_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
             dir_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
@@ -201,8 +224,14 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
             line = fp.readline()
             continue
 
+        # Split line into individual fields XXX for testing XXX remove
+        field = line.split("\t")
+        n_simple = int(field[4].split(":")[0])
+        n_twisted = int(field[4].split(":")[1])
+
         # Print line with directed interaction to file (field 3 will be 'DI')
-        if neg_log_p_val_thresh <= neg_log_p_value:
+        if neg_log_p_val_thresh < neg_log_p_value:
+        #if p_value_threshold >= diachrscripts_toolkit.calculate_binomial_p_value(n_simple, n_twisted):
             enhanced_interaction_stream_output.write(diachrscripts_toolkit.set_interaction_category_in_enhanced_interaction_line(line, "DI") + "\n")
             line = fp.readline()
             continue

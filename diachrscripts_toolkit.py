@@ -8,7 +8,7 @@ warnings.filterwarnings("error")
 from decimal import Decimal
 from math import log
 import sys
-from copy import deepcopy
+
 
 #######################################################################################################################
 
@@ -562,13 +562,25 @@ def get_x_inter_binomial_log10_p_value(k, n, x):
     except RuntimeWarning: # underflow
        return -log(sys.float_info.min * sys.float_info.epsilon)/log(10), 2 # return smallest possible float
 
-def calculate_binomial_p_value(n_simple, n_twisted):
+
+def calculate_binomial_p_value(n_simple, n_twisted): # conventional with 1 - CDF
+    if n_simple < n_twisted:
+        p_value = 1 - binom.cdf(n_twisted - 1, n_simple + n_twisted, 0.5)
+        return p_value
+    else:
+        p_value = 1 - binom.cdf(n_simple - 1, n_simple + n_twisted, 0.5)
+        return p_value
+
+def calculate_binomial_logsf_p_value(n_simple, n_twisted): # (natural) logsf
+    try:
         if n_simple < n_twisted:
-            p_value = 1 - binom.cdf(n_twisted - 1, n_simple + n_twisted, 0.5)
+            p_value = binom.logsf(n_twisted - 1, n_simple + n_twisted, 0.5)
             return p_value
         else:
-            p_value = 1 - binom.cdf(n_simple - 1, n_simple + n_twisted, 0.5)
+            p_value = binom.logsf(n_simple - 1, n_simple + n_twisted, 0.5)
             return p_value
+    except RuntimeWarning:
+        return log(sys.float_info.min * sys.float_info.epsilon) # return natural log of smallest possible float
 
 def find_indefinable_n(p_value_cutoff, verbose = True):
     """
