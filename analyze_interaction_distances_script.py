@@ -205,7 +205,7 @@ n_trans_short_range_interaction = 0
 n_non_status_pair_flag_interaction = 0
 
 # Given the P-value cutoff, find the smallest n that yields a significant P-value
-n_indefinable_cutoff = dclass.find_indefinable_n(p_value_cutoff)
+n_indefinable_cutoff, pv_indefinable_cutoff = dclass.find_indefinable_n(p_value_cutoff)
 
 # Determine distribution of n for directed interactions
 min_digest_dist = 20000

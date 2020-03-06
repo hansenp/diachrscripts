@@ -594,7 +594,7 @@ def find_indefinable_n(p_value_cutoff, verbose = True):
         if p_value < p_value_cutoff:
             if verbose:
                 print("\t[INFO] Smallest n: " + str(n) + " read pairs (" + str(p_value) + ")")
-            return n
+            return n, p_value
 
 def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff):
     """
@@ -607,6 +607,7 @@ def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist,
     p_val_dict = {} # dictionary that stores previously calculated P-values (saves time)
     n_dict = {}  # dictionary that stores the numbers of interactions with n read pairs
     digest_distances = []
+
     print("[INFO] Determining distribution of n in significant interactions in: " + diachromatic_interaction_file + " ...")
     with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
         line = fp.readline()
@@ -641,6 +642,70 @@ def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist,
 
 
             if p_val <= p_value_cutoff:
+                digest_distances.append(interaction.get_digest_distance())
+                if n_total in n_dict:
+                    n_dict[n_total] += 1
+                else:
+                    n_dict[n_total] = 1
+
+            line = fp.readline()
+
+    if(0<len(digest_distances)):
+        n_dict[-1] = np.quantile(digest_distances, .25)
+        n_dict[-3] = np.quantile(digest_distances, .75)
+
+    print("... done.")
+
+    fp.close()
+    return n_dict
+
+
+def get_n_dict_definable(diachromatic_interaction_file, status_pair_flag, min_digest_dist, n_indef):
+    """
+    :param diachromatic_interaction_file: Interaction file in Diachromatic format
+    :param status_pair_flag: ALL, AA, AI or II
+    :param min_digest_dist: Minimal allowed distance between interacting digests, typically 10,000
+    :return: Dictionary with total read pair numbers (n) as keys and the corresponding numbers interactions with n read pairs
+    """
+
+    p_val_dict = {} # dictionary that stores previously calculated P-values (saves time)
+    n_dict = {}  # dictionary that stores the numbers of interactions with n read pairs
+    digest_distances = []
+
+    print("[INFO] Determining distribution of n in significant interactions in: " + diachromatic_interaction_file + " ...")
+    with gzip.open(diachromatic_interaction_file, mode='rt') as fp:
+        line = fp.readline()
+        n_interaction_total = 0
+        while line:
+
+            n_interaction_total += 1
+            if n_interaction_total % 1000000 == 0:
+                print("\t[INFO]", n_interaction_total, "interactions processed ...")
+
+            # parse line representing one interaction
+            interaction = Interaction(line)
+
+            # restrict analysis to interactions between targeted promoters
+            if status_pair_flag != "ALL" and interaction.get_digest_status_pair_flag() != status_pair_flag:
+                line = fp.readline()
+                continue
+
+            # restrict analysis to cis long range interactions
+            if not (interaction.is_cis_long_range(min_digest_dist)):
+                line = fp.readline()
+                continue
+
+            n_total = interaction.n_simple + interaction.n_twisted
+
+            key = ":".join((str(interaction.n_simple),str(interaction.n_twisted)))
+            if key in p_val_dict:
+                p_val = p_val_dict[key]
+            else:
+                p_val = interaction.get_binomial_p_value()
+                p_val_dict[key] = p_val
+
+
+            if n_total >= n_indef:
                 digest_distances.append(interaction.get_digest_distance())
                 if n_total in n_dict:
                     n_dict[n_total] += 1

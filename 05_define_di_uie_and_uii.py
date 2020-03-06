@@ -72,7 +72,8 @@ containing one header line and one line with the corresponding values:
 import argparse
 import math
 import gzip
-import diachrscripts_toolkit
+import diachrscripts_toolkit as dclass
+from collections import defaultdict
 
 
 ### Parse command line
@@ -111,6 +112,38 @@ print("\t[INFO] --p-value-cutoff: " + str(p_value_threshold))
 #
 # exit(1)
 
+### Define auxiliary functions
+##############################
+
+# Dictionary that keeps track of already calculated P-values
+#    key - a string like 2-7
+#    value - our corresponding binomial p-value
+#    note -- use this as a global variable in this script!
+pval_memo = defaultdict(float)
+
+def binomial_p_value(simple_count, twisted_count):
+    """
+    Locally defined method for the calculation of the binomial P-value that uses a dictionary that keeps track of
+    P-values that already have been calculated.
+
+    :param simple_count: Number of simple read pairs
+    :param twisted_count: Number of twisted read pairs
+    :return: Binomial P-value
+    """
+
+    # Create key from simple and twisted read pair counts
+    key = "{}-{}".format(simple_count, twisted_count)
+
+    # Check whether a P-value for this combination of simple and twisted counts has been calculated already
+    if key in pval_memo:
+        return pval_memo[key]
+    else:
+        # Calculate P-value and add to dictionary
+        p_value = dclass.calculate_binomial_p_value(simple_count, twisted_count)
+        pval_memo[key] = p_value
+        return p_value
+
+
 ### Prepare variables, data structures and streams for output files
 ###################################################################
 
@@ -147,7 +180,7 @@ undir_exc_dig_set = set()
 undir_inc_dig_set = set()
 
 # Smallest n that required for significance given the P-value threshold
-indef_n = diachrscripts_toolkit.find_indefinable_n(p_value_threshold, verbose = True)
+indef_n, indef_pv = dclass.find_indefinable_n(p_value_threshold, verbose = True)
 
 # Prepare stream for output of filtered interactions annotated with respect to exclusive undirected interactions
 enhanced_interaction_file_output = out_prefix + "_enhanced_interaction_file_with_di_uii_and_uie.tsv.gz"
@@ -177,7 +210,7 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
 
         # Parse enhanced interactions line
         chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
-            diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
+            dclass.parse_enhanced_interaction_line_with_gene_symbols(line)
 
         # Split line into individual fields XXX for testing XXX remove
         field = line.split("\t")
@@ -185,8 +218,8 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         n_twisted = int(field[4].split(":")[1])
 
         # Add digest of directed interactions to digest set
-        if neg_log_p_val_thresh < neg_log_p_value:
-        #if p_value_threshold >= diachrscripts_toolkit.calculate_binomial_p_value(n_simple, n_twisted):
+        #if neg_log_p_val_thresh < neg_log_p_value:
+        if p_value_threshold >= binomial_p_value(n_simple, n_twisted):
             dir_inter_num += 1
             dir_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
             dir_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
@@ -216,7 +249,7 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
 
         # Parse enhanced interactions line
         chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
-            diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
+            dclass.parse_enhanced_interaction_line_with_gene_symbols(line)
 
         # Skip and count indefinable interactions
         if rp_total < indef_n:
@@ -230,9 +263,9 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         n_twisted = int(field[4].split(":")[1])
 
         # Print line with directed interaction to file (field 3 will be 'DI')
-        if neg_log_p_val_thresh < neg_log_p_value:
-        #if p_value_threshold >= diachrscripts_toolkit.calculate_binomial_p_value(n_simple, n_twisted):
-            enhanced_interaction_stream_output.write(diachrscripts_toolkit.set_interaction_category_in_enhanced_interaction_line(line, "DI") + "\n")
+        #if neg_log_p_val_thresh < neg_log_p_value:
+        if p_value_threshold >= binomial_p_value(n_simple, n_twisted):
+            enhanced_interaction_stream_output.write(dclass.set_interaction_category_in_enhanced_interaction_line(line, "DI") + "\n")
             line = fp.readline()
             continue
 
@@ -252,13 +285,13 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
             undir_exc_dig_set.add(d1_coords)
             undir_exc_dig_set.add(d2_coords)
             # Print line with exclusive undirected interaction to file (field 3 will be 'UIE')
-            enhanced_interaction_stream_output.write(diachrscripts_toolkit.set_interaction_category_in_enhanced_interaction_line(line, "UIE") + "\n")
+            enhanced_interaction_stream_output.write(dclass.set_interaction_category_in_enhanced_interaction_line(line, "UIE") + "\n")
             undir_exc_inter_num += 1
         else:
             undir_inc_dig_set.add(d1_coords)
             undir_inc_dig_set.add(d2_coords)
             # Print line with inclusive undirected interaction to file (field 3 will be 'UII')
-            enhanced_interaction_stream_output.write(diachrscripts_toolkit.set_interaction_category_in_enhanced_interaction_line(line, "UII") + "\n")
+            enhanced_interaction_stream_output.write(dclass.set_interaction_category_in_enhanced_interaction_line(line, "UII") + "\n")
             undir_inc_inter_num += 1
 
         line = fp.readline()
@@ -312,7 +345,7 @@ print("\t\t\t[INFO] Percentage of exclusive undirected interactions: " + str(und
 
 print()
 
-print("\t\t\t[INFO] Number of inclusive undirected interactions (UII; discarded): " + str(undir_inc_inter_num))
+print("\t\t\t[INFO] Number of inclusive undirected interactions (UII): " + str(undir_inc_inter_num))
 undir_inc_inter_percentage = "{0:.2f}".format(100 * undir_inc_inter_num / n_interaction_total)
 print("\t\t\t[INFO] Percentage of inclusive undirected interactions: " + str(undir_inc_inter_percentage) + "%")
 

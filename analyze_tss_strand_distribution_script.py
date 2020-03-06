@@ -121,7 +121,7 @@ n_undirected_interaction = 0
 n_indefinable_interaction = 0
 
 # Given the P-value cutoff, find the smallest n that yields a significant P-value
-n_indefinable_cutoff = dclass.find_indefinable_n(p_value_cutoff)
+n_indefinable_cutoff, pv_indefinable_cutoff = dclass.find_indefinable_n(p_value_cutoff)
 
 # iterate interactions
 print("[INFO] Determining pair category for each interaction in " + diachromatic_interaction_file + " ...")

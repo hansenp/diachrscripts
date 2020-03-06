@@ -144,7 +144,7 @@ def perform_m_iterations(m_iter):
 N_DICT = {}
 
 # Minimum number of read pairs required for significance
-n_indefinable_cutoff = dclass.find_indefinable_n(NOMINAL_ALPHA)
+n_indefinable_cutoff, pv_indefinable_cutoff = dclass.find_indefinable_n(NOMINAL_ALPHA)
 
 # Total number of input interactions
 n_interaction = 0

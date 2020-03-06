@@ -88,8 +88,10 @@ def binomial_p_value(simple_count, twisted_count):
 ###################################################################
 
 # Dictionary that stores the numbers of significant interactions for each n
-N_DICT_SIM = {}
-N_DICT_EMP = {}
+N_SIG_DICT_SIM = {}
+N_SIG_DICT_EMP = {}
+N_DEF_DICT_EMP = {}
+
 
 # List containing counts of significant simple and twisted interactions for each n
 signum_list = [0] * (n_max + 1)
@@ -116,16 +118,16 @@ print("[INFO] " + "Generating random numbers of simple and twisted read pairs ..
 # Random vector for n with uniform distribution
 random_n_vec = np.random.randint(low = 1, high = n_max  + 1, size = i_num)
 for n in random_n_vec:
-    if n in N_DICT_SIM:
-        N_DICT_SIM[n] += 1
+    if n in N_SIG_DICT_SIM:
+        N_SIG_DICT_SIM[n] += 1
     else:
-        N_DICT_SIM[n] = 1
+        N_SIG_DICT_SIM[n] = 1
 
 
 print("[INFO] " + "Counting significant interactions for each n ...")
 
 # Iterate dictionary with numbers of interactions for each read pair number n
-for n, i in N_DICT_SIM.items():
+for n, i in N_SIG_DICT_SIM.items():
 
     # Generate random simple read pair counts for current n
     simple_count_list = list(binom.rvs(n, p = 0.5, size = i))
@@ -161,7 +163,7 @@ plt.savefig(pdf_name, format = "pdf")
 print("[INFO] " + "Writing numbers of significant simulated interactions for each n to text file ...")
 for n in range(0, n_max + 1):
     try:
-        sim_tab_stream_name.write(str(n) + "\t" + str(signum_list[n]) + "\t" + str(N_DICT_SIM[n]) + "\n")
+        sim_tab_stream_name.write(str(n) + "\t" + str(signum_list[n]) + "\t" + str(N_SIG_DICT_SIM[n]) + "\n")
     except KeyError:
         sim_tab_stream_name.write(str(n) + "\t" + str(signum_list[n]) + "\t" + str(0) + "\n")
 sim_tab_stream_name.close()
@@ -169,14 +171,28 @@ sim_tab_stream_name.close()
 
 if diachromatic_interaction_file != None:
 
+    # Determine indefinable cutoff
+    n_indef, pv_indef = dclass.find_indefinable_n(p_value_cutoff)
+    print(n_indef)
+    print(pv_indef)
+
     # Count significant interactions in empirical data for each n
-    N_DICT_EMP = dclass.get_n_dict(diachromatic_interaction_file, 'ALL', 20000, 0.0039)
+    N_SIG_DICT_EMP = dclass.get_n_dict(diachromatic_interaction_file, 'ALL', 20000, p_value_cutoff)
+    N_DEF_DICT_EMP = dclass.get_n_dict_definable(diachromatic_interaction_file, 'ALL', 20000, n_indef)
 
     print("[INFO] " + "Writing numbers of significant empirical interactions for each n to text file ...")
     for n in range(0, 2000):
+
         try:
-            emp_tab_stream_name.write(str(n) + "\t" + str(N_DICT_EMP[n]) + "\n")
+            n_def = N_DEF_DICT_EMP[n]
         except KeyError:
-            emp_tab_stream_name.write(str(n) + "\t" + str(0) + "\n")
+            n_def = 0
+
+        try:
+            n_sig = N_SIG_DICT_EMP[n]
+        except KeyError:
+            n_sig = 0
+
+        emp_tab_stream_name.write(str(n) + "\t" + str(n_def) + "\t" + str(n_sig) + "\n")
 
     emp_tab_stream_name.close()
