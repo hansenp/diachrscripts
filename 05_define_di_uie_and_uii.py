@@ -94,20 +94,20 @@ print("\t[INFO] Analysis for: " + out_prefix)
 print("\t[INFO] Interaction file: " + enhanced_interaction_file)
 print("\t[INFO] --p-value-cutoff: " + str(p_value_threshold))
 
-# n = 1500
+# n = 2000
 #
 # print("SIMPLE_RP\tTWISTED_RP\tCONVENTIONAL_P\tLOGSF_P")
 # for i in range(0, n+1):
-#      conventional_P = (-1) * math.log(diachrscripts_toolkit.calculate_binomial_p_value(i, n))
-#      logsf_P = (-1) * diachrscripts_toolkit.calculate_binomial_logsf_p_value(i, n)
-#      print(str(i) + "\t" + str(n) + "\t" + str(conventional_P) + "\t" + str(logsf_P))
+#     conventional_P = (-1) * math.log(dclass.calculate_binomial_p_value(i, n))
+#     logsf_P = (-1) * dclass.calculate_binomial_logsf_p_value(i, n)
+#     print(str(i) + "\t" + str(n) + "\t" + str(conventional_P) + "\t" + str(logsf_P))
 #
 # print()
 #
 # print("TWISTED_RP\tSIMPLE_RP\tCONVENTIONAL_P\tLOGSF_P")
 # for i in range(0, n+1):
-#     conventional_P = (-1) * math.log(diachrscripts_toolkit.calculate_binomial_p_value(n, i))
-#     logsf_P = (-1) * diachrscripts_toolkit.calculate_binomial_logsf_p_value(n, i)
+#     conventional_P = (-1) * math.log(dclass.calculate_binomial_p_value(n, i))
+#     logsf_P = (-1) * dclass.calculate_binomial_logsf_p_value(n, i)
 #     print(str(n) + "\t" + str(i) + "\t" + str(conventional_P) + "\t" + str(logsf_P))
 #
 # exit(1)

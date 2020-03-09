@@ -60,7 +60,7 @@ whereby 'A' means 'active' (enriched) and 'I' 'inactive' (not enriched). There a
 
 FIELD 7: '14.20'
 
-Negative logarithm of the binomial P-value for orientation of interactions.
+Negative natural logarithm of the binomial P-value for directionality of interactions rounded to 2 decimal places.
 
 ------------------------------------------------------------------------------------------------------------------------
 
@@ -189,8 +189,8 @@ with gzip.open(diachromatic_interaction_file, 'rt') as fp:
         interaction = dclass.Interaction(line)
 
         # Calculate logarithm of binomial P-value
-        interaction.set_logsf_binomial_p_value()
-        logsf_binomial_p_value = "{:.2f}".format(-interaction.get_binomial_p_value())
+        #interaction.set_logsf_binomial_p_value()
+        logsf_binomial_p_value = "{:.2f}".format(-dclass.calculate_binomial_logsf_p_value(interaction.n_simple,interaction.n_twisted))
 
         # Fetch gene symbols and TSS coordinates from refGene.txt.gz
         d1_symbols, d2_symbols, d1_strands, d2_strands, tss_list_d1, tss_list_d2 = get_gene_symbols_of_interacting_digests(interaction, ref_gene_tss_map)

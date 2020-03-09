@@ -115,8 +115,11 @@ if diachromatic_interaction_file != None:
 
 print("[INFO] " + "Generating random numbers of simple and twisted read pairs ...")
 
+# Determine indefinable cutoff for given P-value
+n_indef, pv_indef = dclass.find_indefinable_n(p_value_cutoff)
+
 # Random vector for n with uniform distribution
-random_n_vec = np.random.randint(low = 1, high = n_max  + 1, size = i_num)
+random_n_vec = np.random.randint(low = n_indef, high = n_max  + 1, size = i_num)
 for n in random_n_vec:
     if n in N_SIG_DICT_SIM:
         N_SIG_DICT_SIM[n] += 1
@@ -150,18 +153,18 @@ for n, i in N_SIG_DICT_SIM.items():
             signum_list[n] += 1
 
 
-print("[INFO] " + "Generating plot: Significant simulated interactions versus n ...")
-plt.plot(signum_list)
-plt.grid(True)
-plt.xlabel("n")
-plt.ylabel("# Significant interactions")
-sub_title = "# Interactions: " + str(i_num) + " | Max n: " + str(n_max) + " | P-value cutoff: " + str(p_value_cutoff)
-plt.suptitle(sub_title)
-plt.savefig(pdf_name, format = "pdf")
+# print("[INFO] " + "Generating plot: Significant simulated interactions versus n ...")
+# plt.plot(signum_list)
+# plt.grid(True)
+# plt.xlabel("n")
+# plt.ylabel("# Significant interactions")
+# sub_title = "# Interactions: " + str(i_num) + " | Max n: " + str(n_max) + " | P-value cutoff: " + str(p_value_cutoff)
+# plt.suptitle(sub_title)
+# plt.savefig(pdf_name, format = "pdf")
 
 
 print("[INFO] " + "Writing numbers of significant simulated interactions for each n to text file ...")
-for n in range(0, n_max + 1):
+for n in range(1, n_max + 1):
     try:
         sim_tab_stream_name.write(str(n) + "\t" + str(signum_list[n]) + "\t" + str(N_SIG_DICT_SIM[n]) + "\n")
     except KeyError:
@@ -171,17 +174,12 @@ sim_tab_stream_name.close()
 
 if diachromatic_interaction_file != None:
 
-    # Determine indefinable cutoff
-    n_indef, pv_indef = dclass.find_indefinable_n(p_value_cutoff)
-    print(n_indef)
-    print(pv_indef)
-
     # Count significant interactions in empirical data for each n
     N_SIG_DICT_EMP = dclass.get_n_dict(diachromatic_interaction_file, 'ALL', 20000, p_value_cutoff)
     N_DEF_DICT_EMP = dclass.get_n_dict_definable(diachromatic_interaction_file, 'ALL', 20000, n_indef)
 
     print("[INFO] " + "Writing numbers of significant empirical interactions for each n to text file ...")
-    for n in range(0, 2000):
+    for n in range(1, 2000):
 
         try:
             n_def = N_DEF_DICT_EMP[n]

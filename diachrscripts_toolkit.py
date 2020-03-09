@@ -129,18 +129,6 @@ class Interaction:
                 self.p_value = 1 - binom.cdf(self.n_simple-1, self.n_simple + self.n_twisted, 0.5)
                 return self.p_value
 
-    def set_logsf_binomial_p_value(self): # natural logarithm
-        numpy.seterr(divide='ignore')
-        if self.p_value != None:
-            return self.p_value
-        else:
-            if self.n_simple < self.n_twisted:
-                self.p_value = binom.logsf(self.n_twisted - 1, self.n_simple + self.n_twisted, 0.5)
-                return self.p_value
-            else:
-                self.p_value = binom.logsf(self.n_simple - 1, self.n_simple + self.n_twisted, 0.5)
-                return self.p_value
-
 
     def set_interaction_type(self, type, p_thresh, n_indefinable_cutoff):
         """
@@ -579,8 +567,10 @@ def calculate_binomial_logsf_p_value(n_simple, n_twisted): # (natural) logsf
         else:
             p_value = binom.logsf(n_simple - 1, n_simple + n_twisted, 0.5)
             return p_value
-    except RuntimeWarning:
-        return log(sys.float_info.min * sys.float_info.epsilon) # return natural log of smallest possible float
+    except RuntimeWarning: # Underflow: P-value is too small
+        return -np.inf
+        #return log(sys.float_info.min * sys.float_info.epsilon) # return natural log of smallest possible float
+
 
 def find_indefinable_n(p_value_cutoff, verbose = True):
     """
