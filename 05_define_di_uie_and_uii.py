@@ -94,55 +94,6 @@ print("\t[INFO] Analysis for: " + out_prefix)
 print("\t[INFO] Interaction file: " + enhanced_interaction_file)
 print("\t[INFO] --p-value-cutoff: " + str(p_value_threshold))
 
-# n = 2000
-#
-# print("SIMPLE_RP\tTWISTED_RP\tCONVENTIONAL_P\tLOGSF_P")
-# for i in range(0, n+1):
-#     conventional_P = (-1) * math.log(dclass.calculate_binomial_p_value(i, n))
-#     logsf_P = (-1) * dclass.calculate_binomial_logsf_p_value(i, n)
-#     print(str(i) + "\t" + str(n) + "\t" + str(conventional_P) + "\t" + str(logsf_P))
-#
-# print()
-#
-# print("TWISTED_RP\tSIMPLE_RP\tCONVENTIONAL_P\tLOGSF_P")
-# for i in range(0, n+1):
-#     conventional_P = (-1) * math.log(dclass.calculate_binomial_p_value(n, i))
-#     logsf_P = (-1) * dclass.calculate_binomial_logsf_p_value(n, i)
-#     print(str(n) + "\t" + str(i) + "\t" + str(conventional_P) + "\t" + str(logsf_P))
-#
-# exit(1)
-
-### Define auxiliary functions
-##############################
-
-# Dictionary that keeps track of already calculated P-values
-#    key - a string like 2-7
-#    value - our corresponding binomial p-value
-#    note -- use this as a global variable in this script!
-pval_memo = defaultdict(float)
-
-def binomial_p_value(simple_count, twisted_count):
-    """
-    Locally defined method for the calculation of the binomial P-value that uses a dictionary that keeps track of
-    P-values that already have been calculated.
-
-    :param simple_count: Number of simple read pairs
-    :param twisted_count: Number of twisted read pairs
-    :return: Binomial P-value
-    """
-
-    # Create key from simple and twisted read pair counts
-    key = "{}-{}".format(simple_count, twisted_count)
-
-    # Check whether a P-value for this combination of simple and twisted counts has been calculated already
-    if key in pval_memo:
-        return pval_memo[key]
-    else:
-        # Calculate P-value and add to dictionary
-        p_value = dclass.calculate_binomial_p_value(simple_count, twisted_count)
-        pval_memo[key] = p_value
-        return p_value
-
 
 ### Prepare variables, data structures and streams for output files
 ###################################################################
@@ -213,7 +164,7 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
             dclass.parse_enhanced_interaction_line_with_gene_symbols(line)
 
         # Add digest of directed interactions to digest set
-        if neg_log_p_val_thresh <= neg_log_p_value:
+        if neg_log_p_val_thresh < neg_log_p_value:
             dir_inter_num += 1
             dir_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
             dir_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
@@ -247,12 +198,12 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
 
         # Skip and count indefinable interactions
         if rp_total < indef_n:
-            indef_inter_num +=1
+            indef_inter_num += 1
             line = fp.readline()
             continue
 
         # Print line with directed interaction to file (field 3 will be 'DI')
-        if neg_log_p_val_thresh <= neg_log_p_value:
+        if neg_log_p_val_thresh < neg_log_p_value:
             enhanced_interaction_stream_output.write(dclass.set_interaction_category_in_enhanced_interaction_line(line, "DI") + "\n")
             line = fp.readline()
             continue

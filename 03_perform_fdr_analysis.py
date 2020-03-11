@@ -20,6 +20,8 @@ S_p / S_o is used as estimator for the FDR.
 
 import argparse
 import gzip
+import math
+
 from scipy.stats import binom
 from collections import defaultdict
 import numpy as np
@@ -31,7 +33,7 @@ import diachrscripts_toolkit as dclass
 
 parser = argparse.ArgumentParser(description='Determine a P-value threshold that corresponds to a given FDR threshold.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
+parser.add_argument('--enhanced-interaction-file', help='Enhanced interaction file.')
 parser.add_argument('--fdr-threshold', help='Use this switch to estimate a P-value cutoff that corresponds to a given FDR threshold.', default=0.25)
 parser.add_argument('--p-val-c-min', help='Smallest P-value cutoff.', default=0.00025)
 parser.add_argument('--p-val-c-max', help='Largest P-value cutoff.', default=0.05)
@@ -39,7 +41,7 @@ parser.add_argument('--p-val-step-size', help='P-value step size.', default=0.00
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
-diachromatic_interaction_file = args.interaction_file
+enhanced_interaction_file = args.enhanced_interaction_file
 fdr_threshold = float(args.fdr_threshold)
 p_val_c_min = float(args.p_val_c_min)
 p_val_c_max = float(args.p_val_c_max)
@@ -47,7 +49,7 @@ p_val_step_size = float(args.p_val_step_size)
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] --out_prefix: " + out_prefix)
-print("\t[INFO] --interaction-file: " + diachromatic_interaction_file)
+print("\t[INFO] --enhanced-interaction-file: " + enhanced_interaction_file)
 print("\t[INFO] --fdr-threshold: " + str(fdr_threshold))
 print("\t[INFO] --p-val-c-min: " + str(p_val_c_min))
 print("\t[INFO] --p-val-c-max: " + str(p_val_c_max))
@@ -63,7 +65,7 @@ print("\t[INFO] --p-val-step-size: " + str(p_val_step_size))
 #    note -- use this as a global variable in this script!
 pval_memo = defaultdict(float)
 
-def binomial_p_value(simple_count, twisted_count):
+def binomial_nlogsf_p_value(simple_count, twisted_count):
     """
     Locally defined method for the calculation of the binomial P-value that uses a dictionary that keeps track of
     P-values that already have been calculated.
@@ -81,9 +83,9 @@ def binomial_p_value(simple_count, twisted_count):
         return pval_memo[key]
     else:
         # Calculate P-value and add to dictionary
-        p_value = dclass.calculate_binomial_p_value(simple_count, twisted_count)
-        pval_memo[key] = p_value
-        return p_value
+        nnl_p_value = -dclass.calculate_binomial_logsf_p_value(simple_count, twisted_count)
+        pval_memo[key] = nnl_p_value
+        return nnl_p_value
 
 
 def get_pvals_permuted_counts():
@@ -110,12 +112,12 @@ def get_pvals_permuted_counts():
             # Get binomial P-value
             key = "{}-{}".format(simple_count, twisted_count)
             if key in pval_memo:
-                pv = pval_memo[key]
+                pv_nnl = pval_memo[key]
             else:
-                pv = binomial_p_value(simple_count, twisted_count)
-                pval_memo[key] = pv
+                pv_nnl = binomial_nlogsf_p_value(simple_count, twisted_count)
+                pval_memo[key] = pv_nnl
 
-            pvals_permuted_counts.append(pv)
+            pvals_permuted_counts.append(pv_nnl)
 
     return pvals_permuted_counts
 
@@ -141,8 +143,8 @@ txt_file_stream_results.write("OUT_PREFIX\tFDR\tPC\tNSIG_P\tNSIG_O" + "\n")
 ### Start execution
 ###################
 
-print("[INFO] Iterating Diachromatic interaction file ...")
-with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
+print("[INFO] Iterating Enhanced interaction file ...")
+with gzip.open(enhanced_interaction_file, 'r' + 't') as fp:
 
     for line in fp:
 
@@ -153,33 +155,17 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         if n_interaction % 1000000 == 0:
             print("\t\t[INFO]", n_interaction, "interactions processed ...")
 
-        # Split Diachromatic interaction line
-        fields = line.rstrip('\n').split('\t')
+        # Parse enhanced interactions line
+        chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
+            dclass.parse_enhanced_interaction_line_with_gene_symbols(line)
 
-        if len(fields) < 9:
-            raise TypeError("Malformed diachromatic input line {} (number of fields {})".format(line, len(fields)))
-
-        # Extract simple and twisted read pair counts from Diachromatic interaction line
-        n_simple, n_twisted = fields[8].split(':')
-        n_simple = int(n_simple)
-        n_twisted = int(n_twisted)
-        n = n_simple + n_twisted
-
-        # Calculate P-value and add to list
-        key = "{}-{}".format(n_simple, n_twisted)
-        if key in pval_memo:
-            pv = pval_memo[key]
-        else:
-            pv = binomial_p_value(n_simple, n_twisted)
-            pval_memo[key] = pv
-
-        p_val_o_list.append(pv)
+        p_val_o_list.append(float(neg_log_p_value))
 
         # Add the sum of simple and twisted read pair counts to dictionary that will be used for randomization
-        if n in N_DICT:
-            N_DICT[n] +=1
+        if rp_total in N_DICT:
+            N_DICT[rp_total] +=1
         else:
-            N_DICT[n] = 1
+            N_DICT[rp_total] = 1
 
 print("[INFO] Total number of interactions: {}".format(n_interaction))
 
@@ -192,11 +178,14 @@ p_val_r_list = get_pvals_permuted_counts()
 # Estimate FDR for increasing P-value thresholds from original and randomized P-value lists
 for pc in np.arange(p_val_c_min, p_val_c_max, p_val_step_size):
 
+    # Transform P-value to negative natural logarithm (nnl)
+    pc_nnl = - math.log(pc)
+
     # Get number of significant interactions for original P-values
-    S_o = (p_val_o_list < pc).sum()
+    S_o = sum(pc_nnl < pv_nnl for pv_nnl in p_val_o_list)
 
     # Get number of significant interactions for randomized P-values
-    S_r = (p_val_r_list < pc).sum()
+    S_r = sum(pc_nnl < pv_nnl   for pv_nnl in p_val_r_list)
 
     # Estimate FDR
     fdr = S_r / S_o
