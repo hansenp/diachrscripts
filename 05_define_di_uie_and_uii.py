@@ -212,14 +212,8 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
             dclass.parse_enhanced_interaction_line_with_gene_symbols(line)
 
-        # Split line into individual fields XXX for testing XXX remove
-        field = line.split("\t")
-        n_simple = int(field[4].split(":")[0])
-        n_twisted = int(field[4].split(":")[1])
-
         # Add digest of directed interactions to digest set
-        #if neg_log_p_val_thresh < neg_log_p_value:
-        if p_value_threshold >= binomial_p_value(n_simple, n_twisted):
+        if neg_log_p_val_thresh <= neg_log_p_value:
             dir_inter_num += 1
             dir_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
             dir_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
@@ -257,14 +251,8 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
             line = fp.readline()
             continue
 
-        # Split line into individual fields XXX for testing XXX remove
-        field = line.split("\t")
-        n_simple = int(field[4].split(":")[0])
-        n_twisted = int(field[4].split(":")[1])
-
         # Print line with directed interaction to file (field 3 will be 'DI')
-        #if neg_log_p_val_thresh < neg_log_p_value:
-        if p_value_threshold >= binomial_p_value(n_simple, n_twisted):
+        if neg_log_p_val_thresh <= neg_log_p_value:
             enhanced_interaction_stream_output.write(dclass.set_interaction_category_in_enhanced_interaction_line(line, "DI") + "\n")
             line = fp.readline()
             continue
