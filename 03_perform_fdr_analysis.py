@@ -143,7 +143,7 @@ txt_file_stream_results.write("OUT_PREFIX\tFDR\tPC\tNSIG_P\tNSIG_O" + "\n")
 ### Start execution
 ###################
 
-print("[INFO] Iterating Enhanced interaction file ...")
+print("[INFO] Iterating enhanced interaction file ...")
 with gzip.open(enhanced_interaction_file, 'r' + 't') as fp:
 
     for line in fp:
@@ -169,23 +169,34 @@ with gzip.open(enhanced_interaction_file, 'r' + 't') as fp:
 
 print("[INFO] Total number of interactions: {}".format(n_interaction))
 
-
-print("[INFO] Estimating FDR for increasing P-value thresholds ...")
+print("[INFO] Getting sorted lists of P-values ...")
 
 # Get list of randomized P-values
 p_val_r_list = get_pvals_permuted_counts()
 
+# Sort P-value lists
+p_val_o_list.sort(key=float, reverse=True)
+p_val_r_list.sort(key=float, reverse=True)
+
+print("[INFO] Estimating FDR for increasing P-value thresholds ...")
+
 # Estimate FDR for increasing P-value thresholds from original and randomized P-value lists
+S_o = 0 # start index in sorted list
+S_r = 0 # start index in sorted list
 for pc in np.arange(p_val_c_min, p_val_c_max, p_val_step_size):
 
     # Transform P-value to negative natural logarithm (nnl)
     pc_nnl = - math.log(pc)
 
     # Get number of significant interactions for original P-values
-    S_o = sum(pc_nnl < pv_nnl for pv_nnl in p_val_o_list)
+    #S_o = sum(pc_nnl < pv_nnl for pv_nnl in p_val_o_list) # slow
+    while S_o < len(p_val_o_list) and p_val_o_list[S_o] > pc_nnl:
+        S_o += 1
 
     # Get number of significant interactions for randomized P-values
-    S_r = sum(pc_nnl < pv_nnl   for pv_nnl in p_val_r_list)
+    #S_r = sum(pc_nnl < pv_nnl for pv_nnl in p_val_r_list) # slow
+    while S_r < len(p_val_r_list) and p_val_r_list[S_r] > pc_nnl:
+        S_r += 1
 
     # Estimate FDR
     fdr = S_r / S_o
@@ -193,7 +204,7 @@ for pc in np.arange(p_val_c_min, p_val_c_max, p_val_step_size):
     # Write results for this threshold to file
     txt_file_stream_results.write(out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(S_r) + "\t" + str(S_o) + "\n")
 
-    # Print results for this threshold to file
+    # Print results for this threshold to screen
     print("\t" + out_prefix + "\t" + str(fdr) + "\t" + str(pc) + "\t" + str(S_r) + "\t" + str(S_o))
 
     # Keep track of the largest P-value that satisfies the FDR threshold
