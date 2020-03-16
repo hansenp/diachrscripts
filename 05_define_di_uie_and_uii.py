@@ -94,6 +94,13 @@ print("\t[INFO] Analysis for: " + out_prefix)
 print("\t[INFO] Interaction file: " + enhanced_interaction_file)
 print("\t[INFO] --p-value-cutoff: " + str(p_value_threshold))
 
+# Explore indefinable n
+# import numpy as np
+# for pc in np.arange(0.00001, 0.01, 0.00001):
+#     n_1, pv_n_1 = dclass.find_indefinable_n(pc, False)
+#     print(str(pc) + "\t" + str(pv_n_1) + "\t" + str(n_1))
+#
+# exit(1)
 
 ### Prepare variables, data structures and streams for output files
 ###################################################################
@@ -346,9 +353,12 @@ tab_stream_stats_output.write(
 
     "out_prefix" + "\t" +                               # Prefix for output
 
+    "p_value_threshold" + "\t" +                        # P-value threshold used to define directed interactions
+
     "n_interaction_total" + "\t" +                      # Total number of interactions
 
     "indef_n" + "\t" +                                  # Smallest n that can yield a significant interaction given the P-value threshold
+    "indef_pv" + "\t" +                                 # P-value that corresponds to indefinable n
     "indef_inter_num" + "\t" +                          # Number of indefinable interactions
     "indef_inter_percentage" + "\t" +                   # Percentage of indefinable interactions
 
@@ -389,9 +399,12 @@ tab_stream_stats_output.write(
 
     str(out_prefix) + "\t" +
 
+    str(p_value_threshold) + "\t" +
+
     str(n_interaction_total) + "\t" +
 
     str(indef_n) + "\t" +
+    str(indef_pv) + "\t" +
     str(indef_inter_num) + "\t" +
     str(indef_inter_percentage) + "\t" +
 

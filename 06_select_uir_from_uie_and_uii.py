@@ -98,7 +98,6 @@ if not(selection_approach == 'q13' or selection_approach == 'exact'):
     print("\t[ERROR] --selection-approach must be \'q13\' or \'exact\'!")
     exit(1)
 
-
 ### Prepare variables, data structures and streams for output files
 ###################################################################
 
@@ -168,7 +167,7 @@ undir_inter_aa_rp_array = []
 undir_inter_ai_rp_array = []
 undir_inter_ii_rp_array = []
 
-# Second quantiles of read pair number distribution within AA, AI and II
+# Second quartiles of read pair number distribution within AA, AI and II
 undir_inter_aa_rp_median = None
 undir_inter_ai_rp_median = None
 undir_inter_ii_rp_median = None
@@ -199,7 +198,7 @@ undir_ref_1_inter_aa_rp_array = []
 undir_ref_1_inter_ai_rp_array = []
 undir_ref_1_inter_ii_rp_array = []
 
-# Second quantiles of read pair number distribution within AA, AI and II
+# Second quartiles of read pair number distribution within AA, AI and II
 undir_ref_1_inter_aa_rp_median = None
 undir_ref_1_inter_ai_rp_median = None
 undir_ref_1_inter_ii_rp_median = None
