@@ -144,7 +144,7 @@ indef_n, indef_pv = dclass.find_indefinable_n(p_value_threshold, verbose = True)
 enhanced_interaction_file_output = out_prefix + "_enhanced_interaction_file_with_di_uii_and_uie.tsv.gz"
 enhanced_interaction_stream_output = gzip.open(enhanced_interaction_file_output, 'wt')
 
-# Prepare stream for output of filtered interactions annotated with respect to exclusive undirected interactions
+# Prepare stream for output of statistics
 tab_file_stats_output = out_prefix + "_stats_di_uii_and_uie.tsv"
 tab_stream_stats_output = open(tab_file_stats_output, 'wt')
 

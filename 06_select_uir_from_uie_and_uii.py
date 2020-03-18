@@ -270,6 +270,14 @@ pdf_name_boxplots_interaction_distances = out_prefix + "_interaction_distance_bo
 # PDF file with three barplots showing the proportions of interactions within the enrichment pair categories AA, AI and II
 pdf_name_barplots_interaction_enrichment_pair_tags = out_prefix + "_interaction_enrichment_pair_tags_barplot.pdf"
 
+# Prepare stream for warnings
+tab_file_warnings_output = out_prefix + "_warnings_di_and_uri.tsv"
+tab_stream_warnings_output = open(tab_file_warnings_output, 'wt')
+
+# Prepare stream for output of statistics
+tab_file_stats_output = out_prefix + "_stats_di_and_uri.tsv"
+tab_stream_stats_output = open(tab_file_stats_output, 'wt')
+
 
 
 ### 1st pass: Collect information about DI, UIE and UII
@@ -513,32 +521,42 @@ print("\t[INFO] done ...")
 
 print("[INFO] Checking whether reference interactions are missing for some n")
 
-print("\t[INFO] AA interactions")
+#print("\t[INFO] AA interactions")
+tab_stream_warnings_output.write("AA_INTERACTIONS" + "\n")
+tab_stream_warnings_output.write("READ_PAIRS" + "\t" + "MISSING_REFERENCE_INTERACTIONS"  + "\n")
 n_missing_aa = 0
 for x in rp_dict_aa:
     if 0 < rp_dict_aa[x]:
-        n_missing_aa += 1
-        print("\t\t[WARNING] For " + str(rp_dict_aa[x]) + " directed interactions with " + str(x) + " read pairs no undirected reference interaction could be selected.")
+        n_missing_aa += rp_dict_aa[x]
+        tab_stream_warnings_output.write(str(x) + "\t" + str(rp_dict_aa[x]) + "\n")
+        #print("\t\t[WARNING] For " + str(rp_dict_aa[x]) + " directed interactions with " + str(x) + " read pairs no undirected reference interaction could be selected.")
 
-print("\t[INFO] AI interactions")
+#print("\t[INFO] AI interactions")
+tab_stream_warnings_output.write("AI_INTERACTIONS" + "\n")
+tab_stream_warnings_output.write("READ_PAIRS" + "\t" + "MISSING_REFERENCE_INTERACTIONS"  + "\n")
 n_missing_ai = 0
 for x in rp_dict_ai:
     if 0 < rp_dict_ai[x]:
-        n_missing_ai += 1
-        print("\t\t[WARNING] For " + str(rp_dict_ai[x]) + " directed interactions with " + str(x) + " read pairs no undirected reference interaction could be selected.")
+        n_missing_ai += rp_dict_ai[x]
+        tab_stream_warnings_output.write(str(x) + "\t" + str(rp_dict_ai[x]) + "\n")
+        #print("\t\t[WARNING] For " + str(rp_dict_ai[x]) + " directed interactions with " + str(x) + " read pairs no undirected reference interaction could be selected.")
 
-print("\t[INFO] II interactions")
+#print("\t[INFO] II interactions")
+tab_stream_warnings_output.write("II_INTERACTIONS" + "\n")
+tab_stream_warnings_output.write("READ_PAIRS" + "\t" + "MISSING_REFERENCE_INTERACTIONS"  + "\n")
 n_missing_ii = 0
 for x in rp_dict_ii:
     if 0 < rp_dict_ii[x]:
-        n_missing_ii += 1
-        print("\t\t[WARNING] For " + str(rp_dict_ii[x]) + " directed interactions with " + str(x) + " read pairs no undirected reference interaction could be selected.")
+        n_missing_ii += rp_dict_ii[x]
+        tab_stream_warnings_output.write(str(x) + "\t" + str(rp_dict_ii[x]) + "\n")
+        #print("\t\t[WARNING] For " + str(rp_dict_ii[x]) + " directed interactions with " + str(x) + " read pairs no undirected reference interaction could be selected.")
 
 print("\t[INFO] Summary for AA, AI and II")
 print("\t\t[WARNING] For " + str(n_missing_aa) + " out of " + str(dir_inter_aa_num) + " directed AA interactions no undirected reference interaction could be selected.")
 print("\t\t[WARNING] For " + str(n_missing_ai) + " out of " + str(dir_inter_ai_num) + " directed AI interactions no undirected reference interaction could be selected.")
 print("\t\t[WARNING] For " + str(n_missing_ii) + " out of " + str(dir_inter_ii_num) + " directed II interactions no undirected reference interaction could be selected.")
 
+tab_stream_warnings_output.close()
 print("\t[INFO] done ...")
 
 ### Output some statistics
@@ -612,7 +630,232 @@ print("\t\tMedian number of read pairs: " + str(undir_ref_2_inter_ai_rp_median))
 print("\tWithin 'II': " + str(undir_ref_2_inter_ii_num) + " (" + str(undir_ref_2_inter_ii_percentage) + "%)")
 print("\t\tMedian number of read pairs: " + str(undir_ref_2_inter_ii_rp_median))
 
+dir_a_dig_num = len(dir_a_dig_set)                   # Number of active digests involved in directed interactions
+dir_i_dig_num = len(dir_i_dig_set)                   # Number of inactive digests involved in directed interactions
+percentage_dir_a_dig = 100 * dir_a_dig_num / (dir_a_dig_num + dir_i_dig_num)
+
+undir_a_dig_num = len(undir_a_dig_set)               # Number of active digests involved in undirected interactions
+undir_i_dig_num = len(undir_i_dig_set)               # Number of inactive digests involved in undirected interactions
+percentage_undir_a_dig = 100 * undir_a_dig_num / (undir_a_dig_num + undir_i_dig_num)
+
+undir_ref_1_a_dig_num = len(undir_ref_1_a_dig_set)   # Number of active digests involved in undirected interactions
+undir_ref_1_i_dig_num = len(undir_ref_1_i_dig_set)   # Number of inactive digests involved in undirected interactions
+percentage_undir_ref_1_a_dig = 100 * undir_ref_1_a_dig_num / (undir_ref_1_a_dig_num + undir_ref_1_i_dig_num)
+
+undir_ref_2_a_dig_num = len(undir_ref_2_a_dig_set)   # Number of active digests involved in undirected interactions
+undir_ref_2_i_dig_num = len(undir_ref_2_i_dig_set)   # Number of inactive digests involved in undirected interactions
+percentage_undir_ref_2_a_dig = 100 * undir_ref_2_a_dig_num / (undir_ref_2_a_dig_num + undir_ref_2_i_dig_num)
+
 print()
+print("Number of active (A) digests involved in DI: " + str(dir_a_dig_num) + " (" + "{0:.2f}".format(percentage_dir_a_dig) + "%)")
+print("Number of inactive (I) digests involved in DI: " + str(dir_i_dig_num))
+print()
+print("Number of active (A) digests involved in U: " + str(undir_a_dig_num) + " (" + "{0:.2f}".format(percentage_undir_a_dig) + "%)")
+print("Number of inactive (I) digests involved in U: " + str(undir_i_dig_num))
+print()
+print("Number of active (A) digests involved in UR1: " + str(undir_ref_1_a_dig_num) + " (" + "{0:.2f}".format(percentage_undir_ref_1_a_dig) + "%)")
+print("Number of inactive (I) digests involved in UR1: " + str(undir_ref_1_i_dig_num))
+print()
+print("Number of active (A) digests involved in UR2: " + str(undir_ref_2_a_dig_num) + " (" + "{0:.2f}".format(percentage_undir_ref_2_a_dig) + "%)")
+print("Number of inactive (I) digests involved in UR2: " + str(undir_ref_2_i_dig_num))
+print()
+
+dir_inter_aa_dist_median = int(numpy.quantile(dir_inter_aa_dist_array, 0.50))
+dir_inter_ai_dist_median = int(numpy.quantile(dir_inter_ai_dist_array, 0.50))
+dir_inter_ii_dist_median = int(numpy.quantile(dir_inter_ii_dist_array, 0.50))
+
+print("Median distances of directed interactions:")
+print("\tAA: " + str(dir_inter_aa_dist_median))
+print("\tAI: " + str(dir_inter_ai_dist_median))
+print("\tII: " + str(dir_inter_ii_dist_median))
+
+undir_inter_aa_dist_median = int(numpy.quantile(undir_inter_aa_dist_array, 0.50))
+undir_inter_ai_dist_median = int(numpy.quantile(undir_inter_ai_dist_array, 0.50))
+undir_inter_ii_dist_median = int(numpy.quantile(undir_inter_ii_dist_array, 0.50))
+
+print("Median distances of undirected interactions:")
+print("\tAA: " + str(undir_inter_aa_dist_median))
+print("\tAI: " + str(undir_inter_ai_dist_median))
+print("\tII: " + str(undir_inter_ii_dist_median))
+
+undir_ref_1_inter_aa_dist_median = int(numpy.quantile(undir_ref_1_inter_aa_dist_array, 0.50))
+undir_ref_1_inter_ai_dist_median = int(numpy.quantile(undir_ref_1_inter_ai_dist_array, 0.50))
+undir_ref_1_inter_ii_dist_median = int(numpy.quantile(undir_ref_1_inter_ii_dist_array, 0.50))
+
+print("Median distances of undirected reference interactions (q13):")
+print("\tAA: " + str(undir_ref_1_inter_aa_dist_median))
+print("\tAI: " + str(undir_ref_1_inter_ai_dist_median))
+print("\tII: " + str(undir_ref_1_inter_ii_dist_median))
+
+undir_ref_2_inter_aa_dist_median = int(numpy.quantile(undir_ref_2_inter_aa_dist_array, 0.50))
+undir_ref_2_inter_ai_dist_median = int(numpy.quantile(undir_ref_2_inter_ai_dist_array, 0.50))
+undir_ref_2_inter_ii_dist_median = int(numpy.quantile(undir_ref_2_inter_ii_dist_array, 0.50))
+
+print("Median distances of undirected reference interactions (exact):")
+print("\tAA: " + str(undir_ref_2_inter_aa_dist_median))
+print("\tAI: " + str(undir_ref_2_inter_ai_dist_median))
+print("\tII: " + str(undir_ref_2_inter_ii_dist_median))
+
+print()
+
+tab_stream_stats_output.write(
+
+    "out_prefix" + "\t" +                               # Prefix for output
+
+    "dir_inter_num" + "\t" +                            # Total number of directed interactions
+
+    "dir_inter_aa_num" + "\t" +                         # Number of directed interactions within AA
+    "dir_inter_ai_num" + "\t" +                         # Number of directed interactions within AI
+    "dir_inter_ii_num" + "\t" +                         # Number of directed interactions within II
+
+    "dir_inter_aa_rp_median" + "\t" +                   # Median number of read pairs in directed interactions within AA
+    "dir_inter_ai_rp_median" + "\t" +                   # Median number of read pairs in directed interactions within AI
+    "dir_inter_ii_rp_median" + "\t" +                   # Median number of read pairs in directed interactions within II
+
+    "undir_inter_num" + "\t" +                          # Total number of undirected interactions
+
+    "undir_inter_aa_num" + "\t" +                       # Number of undirected interactions within AA
+    "undir_inter_ai_num" + "\t" +                       # Number of undirected interactions within AI
+    "undir_inter_ii_num" + "\t" +                       # Number of undirected interactions within II
+
+    "undir_inter_aa_rp_median" + "\t" +                 # Median number of read pairs in undirected interactions within AA
+    "undir_inter_ai_rp_median" + "\t" +                 # Median number of read pairs in undirected interactions within AI
+    "undir_inter_ii_rp_median" + "\t" +                 # Median number of read pairs in undirected interactions within II
+
+    "undir_ref_1_inter_num" + "\t" +                    # Total number of undirected reference interactions (q13)
+
+    "undir_ref_1_inter_aa_num" + "\t" +                 # Number of undirected reference interactions within AA
+    "undir_ref_1_inter_ai_num" + "\t" +                 # Number of undirected reference interactions within AI
+    "undir_ref_1_inter_ii_num" + "\t" +                 # Number of undirected reference interactions within II
+
+    "undir_ref_1_inter_aa_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within AA
+    "undir_ref_1_inter_ai_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within AI
+    "undir_ref_1_inter_ii_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within II
+
+    "undir_ref_2_inter_num" + "\t" +                    # Total number of undirected interactions (exact)
+
+    "undir_ref_2_inter_aa_num" + "\t" +                 # Number of undirected reference interactions within AA
+    "undir_ref_2_inter_ai_num" + "\t" +                 # Number of undirected reference interactions within AI
+    "undir_ref_2_inter_ii_num" + "\t" +                 # Number of undirected reference interactions within II
+
+    "n_missing_aa" + "\t" +                             # Number of missing reference interactions within AA
+    "n_missing_ai" + "\t" +                             # Number of missing reference interactions within AI
+    "n_missing_ii" + "\t" +                             # Number of missing reference interactions within II
+
+    "undir_ref_2_inter_aa_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within AA
+    "undir_ref_2_inter_ai_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within AI
+    "undir_ref_2_inter_ii_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within II
+
+    "dir_a_dig_num" + "\t" +                            # Number of active digests involved in directed interactions
+    "dir_i_dig_num" + "\t" +                            # Number of inactive digests involved in directed interactions
+
+    "undir_a_dig_num" + "\t" +                          # Number of active digests involved in undirected interactions
+    "undir_i_dig_num" + "\t" +                          # Number of inactive digests involved in undirected interactions
+
+    "undir_ref_1_a_dig_num" + "\t" +                    # Number of active digests involved in undirected reference interactions (q13)
+    "undir_ref_1_i_dig_num" + "\t" +                    # Number of inactive digests involved in undirected reference interactions (q13)
+
+    "undir_ref_2_a_dig_num" + "\t" +                    # Number of active digests involved in undirected reference interactions (exact)
+    "undir_ref_2_i_dig_num" + "\t" +                    # Number of inactive digests involved in undirected reference interactions (exact)
+
+    "dir_inter_aa_dist_median" + "\t" +                 # Median interaction distance of directed interactions within AA
+    "dir_inter_ai_dist_median" + "\t" +                 # Median interaction distance of directed interactions within AI
+    "dir_inter_ii_dist_median" + "\t" +                 # Median interaction distance of directed interactions within II
+
+    "undir_inter_aa_dist_median" + "\t" +               # Median interaction distance of undirected interactions within AA
+    "undir_inter_ai_dist_median" + "\t" +               # Median interaction distance of undirected interactions within AI
+    "undir_inter_ii_dist_median" + "\t" +               # Median interaction distance of undirected interactions within II
+
+    "undir_ref_1_inter_aa_dist_median" + "\t" +         # Median interaction distance of undirected reference interactions within AA (q13)
+    "undir_ref_1_inter_ai_dist_median" + "\t" +         # Median interaction distance of undirected reference interactions within AI (q13)
+    "undir_ref_1_inter_ii_dist_median" + "\t" +         # Median interaction distance of undirected reference interactions within II (q13)
+
+    "undir_ref_2_inter_aa_dist_median" + "\t" +         # Median interaction distance of undirected reference interactions within AA (exact)
+    "undir_ref_2_inter_ai_dist_median" + "\t" +         # Median interaction distance of undirected reference interactions within AI (exact)
+    "undir_ref_2_inter_ii_dist_median" +                # Median interaction distance of undirected reference interactions within II (exact)
+
+    "\n"
+)
+tab_stream_stats_output.write(
+
+    str(out_prefix) + "\t" +
+
+    str(dir_inter_num) + "\t" +
+
+    str(dir_inter_aa_num) + "\t" +
+    str(dir_inter_ai_num) + "\t" +
+    str(dir_inter_ii_num) + "\t" +
+
+    str(dir_inter_aa_rp_median) + "\t" +
+    str(dir_inter_ai_rp_median) + "\t" +
+    str(dir_inter_ii_rp_median) + "\t" +
+
+    str(undir_inter_num) + "\t" +
+
+    str(undir_inter_aa_num) + "\t" +
+    str(undir_inter_ai_num) + "\t" +
+    str(undir_inter_ii_num) + "\t" +
+
+    str(undir_inter_aa_rp_median) + "\t" +
+    str(undir_inter_ai_rp_median) + "\t" +
+    str(undir_inter_ii_rp_median) + "\t" +
+
+    str(undir_ref_1_inter_num) + "\t" +
+
+    str(undir_ref_1_inter_aa_num) + "\t" +
+    str(undir_ref_1_inter_ai_num) + "\t" +
+    str(undir_ref_1_inter_ii_num) + "\t" +
+
+    str(undir_ref_1_inter_aa_rp_median) + "\t" +
+    str(undir_ref_1_inter_ai_rp_median) + "\t" +
+    str(undir_ref_1_inter_ii_rp_median) + "\t" +
+
+    str(undir_ref_2_inter_num) + "\t" +
+
+    str(undir_ref_2_inter_aa_num) + "\t" +
+    str(undir_ref_2_inter_ai_num) + "\t" +
+    str(undir_ref_2_inter_ii_num) + "\t" +
+
+    str(n_missing_aa) + "\t" +
+    str(n_missing_ai) + "\t" +
+    str(n_missing_ii) + "\t" +
+
+    str(undir_ref_2_inter_aa_rp_median) + "\t" +
+    str(undir_ref_2_inter_ai_rp_median) + "\t" +
+    str(undir_ref_2_inter_ii_rp_median) + "\t" +
+
+    str(dir_a_dig_num) + "\t" +
+    str(dir_i_dig_num) + "\t" +
+
+    str(undir_a_dig_num) + "\t" +
+    str(undir_i_dig_num) + "\t" +
+
+    str(undir_ref_1_a_dig_num) + "\t" +
+    str(undir_ref_1_i_dig_num) + "\t" +
+
+    str(undir_ref_2_a_dig_num) + "\t" +
+    str(undir_ref_2_i_dig_num) + "\t" +
+
+    str(dir_inter_aa_dist_median) + "\t" +
+    str(dir_inter_ai_dist_median) + "\t" +
+    str(dir_inter_ii_dist_median) + "\t" +
+
+    str(undir_inter_aa_dist_median) + "\t" +
+    str(undir_inter_ai_dist_median) + "\t" +
+    str(undir_inter_ii_dist_median) + "\t" +
+
+    str(undir_ref_1_inter_aa_dist_median) + "\t" +
+    str(undir_ref_1_inter_ai_dist_median) + "\t" +
+    str(undir_ref_1_inter_ii_dist_median) + "\t" +
+
+    str(undir_ref_2_inter_aa_dist_median) + "\t" +
+    str(undir_ref_2_inter_ai_dist_median) + "\t" +
+    str(undir_ref_2_inter_ii_dist_median) +
+
+    "\n"
+)
+
+tab_stream_stats_output.close()
 
 
 ### Create boxplots for read pair numbers
@@ -743,31 +986,11 @@ pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of in
 pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of interactions within II", ii_percentages, ii_numbers))
 
 
-
-
 ### Create barplots for proportions of interaction associated digests within AA, AI and II
 ##########################################################################################
 
-print()
-percentage_dir_a_dig = 100 * len(dir_a_dig_set) / (len(dir_a_dig_set) + len(dir_i_dig_set))
-print("Number of active (A) digests involved in DI: " + str(len(dir_a_dig_set)) + " (" + "{0:.2f}".format(percentage_dir_a_dig) + "%)")
-print("Number of inactive (I) digests involved in DI: " + str(len(dir_i_dig_set)))
-print()
-percentage_undir_a_dig = 100 * len(undir_a_dig_set) / (len(undir_a_dig_set) + len(undir_i_dig_set))
-print("Number of active (A) digests involved in U: " + str(len(undir_a_dig_set)) + " (" + "{0:.2f}".format(percentage_undir_a_dig) + "%)")
-print("Number of inactive (I) digests involved in U: " + str(len(undir_i_dig_set)))
-print()
-percentage_undir_ref_1_a_dig = 100 * len(undir_ref_1_a_dig_set) / (len(undir_ref_1_a_dig_set) + len(undir_ref_1_i_dig_set))
-print("Number of active (A) digests involved in UR1: " + str(len(undir_ref_1_a_dig_set)) + " (" + "{0:.2f}".format(percentage_undir_ref_1_a_dig) + "%)")
-print("Number of inactive (I) digests involved in UR1: " + str(len(undir_ref_1_i_dig_set)))
-print()
-percentage_undir_ref_2_a_dig = 100 * len(undir_ref_2_a_dig_set) / (len(undir_ref_2_a_dig_set) + len(undir_ref_2_i_dig_set))
-print("Number of active (A) digests involved in UR2: " + str(len(undir_ref_2_a_dig_set)) + " (" + "{0:.2f}".format(percentage_undir_ref_2_a_dig) + "%)")
-print("Number of inactive (I) digests involved in UR2: " + str(len(undir_ref_2_i_dig_set)))
-print()
-
 a_percentages = [round(percentage_dir_a_dig, 2), round(percentage_undir_a_dig, 2), round(percentage_undir_ref_1_a_dig, 2), round(percentage_undir_ref_2_a_dig, 2)]
-a_numbers = [len(dir_a_dig_set), len(undir_a_dig_set), len(undir_ref_1_a_dig_set), len(undir_ref_2_a_dig_set)]
+a_numbers = [dir_a_dig_num, undir_a_dig_num, undir_ref_1_a_dig_num, undir_ref_2_a_dig_num]
 pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of active (A) digests involved in interaction categories", a_percentages, a_numbers))
 
 pdf.close()
