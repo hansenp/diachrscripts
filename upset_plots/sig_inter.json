@@ -10,6 +10,6 @@
 				{ "type": "integer", "index": 2, "name": "Strand" }
     ],
 	"sets": [
-		{ "format": "binary", "start": 3, "end": 6 }
+		{ "format": "binary", "start": 3, "end": 9 }
 	]
 }
