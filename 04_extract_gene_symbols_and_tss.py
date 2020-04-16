@@ -15,14 +15,14 @@ Each individual field of an enhanced interaction line is explained below.
 
 FIELD 1: 'chr2:112534779-112543248;chr2:112577153-112587985'
 
-Coordinates of the interacting digests separated
-separated by a semicolon. The first comes before the second digest in sequential order.
+Coordinates of the interacting digests separated by a semicolon. The first comes before the second digest in sequential
+order.
 
 ------------------------------------------------------------------------------------------------------------------------
 
 FIELD 2: '33905'
 
-Distance between interacting digests measured as the end position of the first an start position of
+Distance between interacting digests measured as the end position of the first and the start position of
 the second digest.
 
 ------------------------------------------------------------------------------------------------------------------------

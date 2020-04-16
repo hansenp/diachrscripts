@@ -378,6 +378,22 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
 fp.close()
 print("\t[INFO] done ...")
 
+if dir_inter_aa_num < 3 or dir_inter_ai_num < 3 or dir_inter_ii_num < 3:
+
+    print("[ERROR] Too few directed interactions within AA, AI or II! Cannot select reference interactions.")
+
+    print("\tdir_inter_num\tdir_inter_aa_num\tdir_inter_ai_num\tdir_inter_ii_num")
+    print("\t" + str(dir_inter_num) + "\t" + str(dir_inter_aa_num) + "\t" + str(dir_inter_ai_num) + "\t" + str(dir_inter_ii_num))
+
+    print("\tundir_inter_num\tundir_inter_aa_num\tundir_inter_ai_num\tundir_inter_ii_num")
+    print("\t" + str(undir_inter_num) + "\t" + str(undir_inter_aa_num) + "\t" + str(undir_inter_ai_num) + "\t" + str(undir_inter_ii_num))
+
+    tab_stream_warnings_output.close()
+    tab_stream_stats_output.close()
+
+    exit(0)
+
+
 ### Get Q1 and Q3 for AA, AI and II
 ###################################
 
