@@ -1,0 +1,15 @@
+{
+	"file": "https://raw.githubusercontent.com/TheJacksonLaboratory/diachrscripts/master/upset_plots/sig_inter.csv?token=ACQCL7LA6YS25C5YZUBPZ426UHA24",
+	"name": "Significant interactions",
+	"header": 0,
+	"separator": "/",
+	"skip": 0,
+	"meta": [
+		{ "type": "id", "index": 0, "name": "Interaction" },
+        { "type": "integer", "index": 1, "name": "Distance" },
+				{ "type": "integer", "index": 2, "name": "Strand" }
+    ],
+	"sets": [
+		{ "format": "binary", "start": 3, "end": 19 }
+	]
+}
