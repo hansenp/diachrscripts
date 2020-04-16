@@ -12,6 +12,11 @@ chc2go/
 # C extensions
 *.so
 
+
+.idea/*.*
+
+
+
 # Distribution / packaging
 .Python
 build/
