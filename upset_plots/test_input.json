@@ -1,6 +1,6 @@
 {
-	"file": "ftp://ftp.jax.org/robinp/Diachromatic/upset_plots/test/test_input.csv",
-	"name": "Test",
+	"file": "https://github.com/TheJacksonLaboratory/diachrscripts/blob/master/upset_plots/test_input.csv",
+	"name": "Testx",
 	"header": 0,
 	"separator": ";",
 	"skip": 0,
