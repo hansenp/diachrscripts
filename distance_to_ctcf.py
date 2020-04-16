@@ -47,8 +47,16 @@ class CTCF:
             raise ValueError("Chromosomes do not match for distance calculation. Should never happen, Bug!")
         if self.__overlaps(other_start, other_end):
             return 0
+        if not isinstance(other_start, int):
+            print("OTHER START NOT AN INT:", other_start)
+        if not isinstance(self.end, int):
+            print("self.end NOT AN INT:", self.end)
         if other_start > self.end:
             return other_start - self.end
+        if not isinstance(other_end, int):
+            print("OTHER END NOT AN INT:", other_start)
+        if not isinstance(self.start, int):
+            print("self.start NOT AN INT:", self.end)
         if other_end < self.start:
             return self.start - other_end
         # we should never get here
@@ -107,6 +115,7 @@ def extract_ctcf_from_ensembl(url):
 
 def process_digests():
     digest_list = []
+    n_chromosome_Y = 0
     with gzip.open(infile, 'rt') as g:
         for line in g:
             # print(line)
@@ -116,12 +125,18 @@ def process_digests():
             loc = fields[0]
             type = fields[2]
             chroms = loc.split(';')
+            if loc.startswith('chrY'):
+                # Note that the regulatory build does not have chromosome Y
+                n_chromosome_Y += 1
+                continue
             if len(chroms) != 2:
                 raise ValueError("Bad chroms line=", line)
             digest_a = Digest(chroms[0], type)
             digest_list.append(digest_a)
             digest_b = Digest(chroms[1], type)
             digest_list.append(digest_b)
+    print(
+        "Skipped %d chromosome Y digest pairs (Ensembl regulatory build does not include chromosome Y)" % n_chromosome_Y)
     return digest_list
 
 
@@ -153,7 +168,8 @@ def calculate_distances(ctcf_d, digest_list):
     """
     min_dist = []
     n = 0
-    LIMIT = 1000 # for testing
+    BIG_NUMBER = 1000000000
+    LIMIT = 1000  # for testing
     for d in digest_list:
         chr = d.chrom
         start = d.start
@@ -161,7 +177,7 @@ def calculate_distances(ctcf_d, digest_list):
         ctcf_list = ctcf_d[chr]
         if ctcf_list is None:
             raise ValueError("Could not get CTCF list for chrom {}".format(chr))
-        distance = float('inf')
+        distance = BIG_NUMBER
         for ctcf in ctcf_list:
             try:
                 dist = ctcf.distance(chr, start, end)
@@ -169,10 +185,15 @@ def calculate_distances(ctcf_d, digest_list):
                 continue
             if dist < distance:
                 distance = dist
+        if distance == BIG_NUMBER:
+            print("Dist is BUG")
+            print("Digest=chr{}:{}-{}".format(d.chrom, d.start, d.end))
         min_dist.append(distance)
         n += 1
-        if n > LIMIT:
-            break
+        #if n > LIMIT:
+        #   break
+        #if n % 100000 == 0:
+        #    print("Processed %d digests" % n)
     return np.array(min_dist)
 
 
@@ -180,4 +201,7 @@ for k, v in digest_dict.items():
     print("Category {}: {} digests".format(k, len(v)))
     min_dist = calculate_distances(ctcf_dict, v)
     print("\t{} +/- {}".format(np.mean(min_dist), np.std(min_dist)))
-
+    N = len(min_dist)
+    oneslist = [1 for i in min_dist if i > 0]
+    n_overlap = sum(oneslist)
+    print("\t{}/{} ({:.2f}%) digests had overlapping CTCF sites".format(n_overlap, N, 100.0*n_overlap/N))
