@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from collections import defaultdict
 import argparse
 import gzip
@@ -6,6 +8,7 @@ import os
 from scipy.stats import binom
 import numpy as np
 import matplotlib.pyplot as plt
+import wget
 
 parser = argparse.ArgumentParser(description='Calculate mean distance to nearest CTCF site for sets of digests')
 parser.add_argument('-i', help='input digest file')
@@ -92,7 +95,6 @@ def extract_ctcf_from_ensembl(url):
     if os.path.exists(local_path):
         print("regulatory build file previously downloaded!")
     else:
-        import wget
         print("Downloading regulatory build file")
         wget.download(url, local_path)
     # When we get here, the ensembl file is available
@@ -169,7 +171,7 @@ def calculate_distances(ctcf_d, digest_list):
     min_dist = []
     n = 0
     BIG_NUMBER = 1000000000
-    LIMIT = 1000  # for testing
+    LIMIT = 10000  # for testing
     for d in digest_list:
         chr = d.chrom
         start = d.start
@@ -190,10 +192,10 @@ def calculate_distances(ctcf_d, digest_list):
             print("Digest=chr{}:{}-{}".format(d.chrom, d.start, d.end))
         min_dist.append(distance)
         n += 1
-        #if n > LIMIT:
-        #   break
-        #if n % 100000 == 0:
-        #    print("Processed %d digests" % n)
+        if n > LIMIT:
+           break
+        if n % 1000 == 0:
+            print("Processed %d digests" % n)
     return np.array(min_dist)
 
 
