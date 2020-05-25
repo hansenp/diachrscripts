@@ -136,22 +136,21 @@ with open(tsv_interaction_file, 'r' + 't') as fp:
                 print("[ERROR] Something is wrong! Please check the input tsv file.")
                 exit(1)
             else:
-                # Prepare array with cell type names and proceed with the next line
+                # Prepare array with cell type names
                 cell_type_names = [ Mon, Mac0, Mac1, Mac2, Neu, MK, EP, Ery, FoeT, nCD4, tCD4, aCD4, naCD4, nCD8, tCD8, nB, tB ]
 
-                # Prepare streams for output BED files
+                # Prepare streams for output BED files and proceed with the next line of the tsv file
                 cell_type_streams = []
                 for cell_type_name in cell_type_names:
-                    print(cell_type_name)
                     cell_type_streams.append(open(out_prefix + "_chicago_threshold_" + str(chicago_threshold) + "_" + cell_type_name + ".bed", 'wt'))
                 continue
 
-        # Check whether the baited digest comes before the other end in sequential order
+        # Check for trans-interactions and whether the baited digest comes before the other end in sequential order
         if dist == 'NA':
             # This is a trans-chromosomal interaction
             continue
-        # the distance needs to be converted to float first because some distances are given in scientific noation, e.g. '2e+05'
         elif(int(float(dist)) < 0):
+            # Note: The distances need to be converted to float first because some distances are given in scientific noation, e.g. '2e+05'
             sta = int(float(oeStart))
             end = int(float(baitEnd))
         else:
@@ -171,8 +170,9 @@ with open(tsv_interaction_file, 'r' + 't') as fp:
         for i in range(0,17):
             stream = cell_type_streams[i]
             score = float(cell_type_scores[i])
-            if chicago_threshold < score:
-                stream.write(interactions_coordinates + '\t' + str(score) + '\n')
+            if chicago_threshold <= score:
+                #stream.write(interactions_coordinates + '\t' + str(score) + '\t' + cell_type_names[i] + '\n')
+                stream.write(interactions_coordinates + '\n')
 
 fp.close()
 
@@ -181,3 +181,5 @@ fp.close()
 
 for stream in cell_type_streams:
     stream.close()
+
+print("[INFO] ... done.")

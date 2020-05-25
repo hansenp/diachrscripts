@@ -257,7 +257,7 @@ undir_ref_2_i_dig_set = set()
 # Output files
 ##############
 
-# Enhanced interaction file with interaction categories: DI, UIRAA, UIRAI and UIRII
+# Enhanced interaction file with interaction categories: DIAA, DIAI, DIII, UIRAA, UIRAI and UIRII
 enhanced_interaction_file_output = out_prefix + "_enhanced_interaction_file_with_di_and_uir.tsv.gz"
 enhanced_interaction_stream_output = gzip.open(enhanced_interaction_file_output, 'wt')
 
