@@ -129,8 +129,6 @@ class Tad_boundaries:
             return coord - nearest_tad_boundary_coord
 
 
-
-
 ### Begin execution
 ###################
 
@@ -151,9 +149,15 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
             dclass.parse_enhanced_interaction_line_with_gene_symbols(line)
 
+        x = line.split('\t')
+        n_simple = x[4].split(':')[0]
+        n_twisted = x[4].split(':')[1]
+
+        # Add digest to set for directed interactions
         if interaction_category == "DIII" or interaction_category == "DIII" or interaction_category == "DIII":
             digests_from_dir_inter.add(chr_a + '\t' + str(sta_a) + '\t' + str(end_a))
 
+        # Add digest to set for undirected interactions
         if interaction_category == "UIRII" or interaction_category == "UIRII" or interaction_category == "UIRII":
             digests_from_undir_inter.add(chr_b + '\t' + str(sta_b) + '\t' + str(end_b))
 
@@ -198,3 +202,16 @@ print("Average distance of digests from undirected interactions: " + str(total_d
 
 print(np.median(dir_dist_array))
 print(np.median(undir_dist_array))
+
+
+# Write distances to files
+
+tab_stream_dist_to_tad_dir_output = open(out_prefix + "_dist_to_tad_dir.tsv", 'wt')
+for dist in dir_dist_array:
+    tab_stream_dist_to_tad_dir_output.write(str(dist) + '\n')
+tab_stream_dist_to_tad_dir_output.close()
+
+tab_stream_dist_to_tad_undir_output = open(out_prefix + "_dist_to_tad_undir.tsv", 'wt')
+for dist in undir_dist_array:
+    tab_stream_dist_to_tad_undir_output.write(str(dist) + '\n')
+tab_stream_dist_to_tad_undir_output.close()
