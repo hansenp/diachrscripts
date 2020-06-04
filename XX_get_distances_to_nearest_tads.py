@@ -135,6 +135,7 @@ class Tad_boundaries:
 # Init object for TAD boundaries
 TAD_boundaries = Tad_boundaries(tad_region_bed_file)
 
+# Init digest sets
 digests_from_dir_inter = set()
 digests_from_undir_inter = set()
 
@@ -215,3 +216,5 @@ tab_stream_dist_to_tad_undir_output = open(out_prefix + "_dist_to_tad_undir.tsv"
 for dist in undir_dist_array:
     tab_stream_dist_to_tad_undir_output.write(str(dist) + '\n')
 tab_stream_dist_to_tad_undir_output.close()
+
+
