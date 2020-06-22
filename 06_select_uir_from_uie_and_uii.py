@@ -877,76 +877,76 @@ tab_stream_stats_output.close()
 ### Create boxplots for read pair numbers
 #########################################
 
+plt.rcParams.update({'font.size':15})
+
 data = [
     dir_inter_aa_rp_array, dir_inter_ai_rp_array, dir_inter_ii_rp_array,
     undir_inter_aa_rp_array,undir_inter_ai_rp_array, undir_inter_ii_rp_array,
-    undir_ref_1_inter_aa_rp_array, undir_ref_1_inter_ai_rp_array, undir_ref_1_inter_ii_rp_array,
     undir_ref_2_inter_aa_rp_array, undir_ref_2_inter_ai_rp_array, undir_ref_2_inter_ii_rp_array
 ]
-labels = ['AA', 'AI', 'II', 'AA', 'AI', 'II','AA', 'AI', 'II','AA', 'AI', 'II']
+labels = ['EE', 'EN', 'NN', 'EE', 'EN', 'NN','EE', 'EN', 'NN']
 fig1, ax1 = plt.subplots()
-ax1.set_title('Distributions of read pair numbers for DI, U, UR1 and UR2 (' + out_prefix + ')')
+ax1.set_title('Distributions of read pair numbers for DI, U, and UR2 (' + out_prefix + ')')
 ax1.boxplot(data, showfliers=False, labels=labels)
 
 box = ax1.boxplot(data, showfliers=False, labels=labels, patch_artist=True)
 
-colors = ['blue', 'blue', 'blue', 'gray', 'gray', 'gray', 'lavender', 'lavender', 'lavender', 'pink', 'pink', 'pink']
+colors = ['orange', 'orange', 'orange', 'darkgray', 'darkgray', 'darkgray', 'lightblue', 'lightblue', 'lightblue']
 
 for patch, color in zip(box['boxes'], colors):
     patch.set_facecolor(color)
 
 lab = "DI - AA: " + str(dir_inter_aa_num) + " (" + dir_inter_aa_percentage + "%), AI: " + str(dir_inter_ai_num) + " (" + dir_inter_ai_percentage + "%), II: " + str(dir_inter_ii_num) + " (" + dir_inter_ii_percentage + "%)"
-di_patch = mpatches.Patch(color='blue', label=lab)
+di_patch = mpatches.Patch(color='orange', label=lab)
 lab = "U - AA: " + str(undir_inter_aa_num) + " (" + undir_inter_aa_percentage + "%), AI: " + str(undir_inter_ai_num) + " (" + undir_inter_ai_percentage + "%), II: " + str(undir_inter_ii_num) + " (" + undir_inter_ii_percentage + "%)"
-u_patch = mpatches.Patch(color='gray', label=lab)
-lab = "UR 1 - AA: " + str(undir_ref_1_inter_aa_num) + " (" + undir_ref_1_inter_aa_percentage + "%), AI: " + str(undir_ref_1_inter_ai_num) + " (" + undir_ref_1_inter_ai_percentage + "%), II: " + str(undir_ref_1_inter_ii_num) + " (" + undir_ref_1_inter_ii_percentage + "%)"
-ur_patch = mpatches.Patch(color='lavender', label=lab)
+u_patch = mpatches.Patch(color='darkgray', label=lab)
 lab = "UR 2 - AA: " + str(undir_ref_2_inter_aa_num) + " (" + undir_ref_2_inter_aa_percentage + "%), AI: " + str(undir_ref_2_inter_ai_num) + " (" + undir_ref_2_inter_ai_percentage + "%), II: " + str(undir_ref_2_inter_ii_num) + " (" + undir_ref_2_inter_ii_percentage + "%)"
-ur2_patch = mpatches.Patch(color='pink', label=lab)
-plt.legend(handles=[di_patch, u_patch, ur_patch, ur2_patch])
+ur2_patch = mpatches.Patch(color='lightblue', label=lab)
+plt.legend(handles=[di_patch, u_patch, ur2_patch])
 ax1.set_xlabel('Enrichment state pair tag')
 ax1.set_ylabel('Read pair number')
 plt.grid(True)
-fig1.set_size_inches(10,5)
-plt.savefig(pdf_name_boxplots_read_pair_numbers)
+fig1.set_size_inches(7,5)
+plt.savefig(pdf_name_boxplots_read_pair_numbers, bbox_inches='tight')
 plt.close()
 
 
 ### Create boxplots for interaction distances
 #############################################
 
+plt.rcParams.update({'font.size':15})
+
 data = [
     dir_inter_aa_dist_array, dir_inter_ai_dist_array, dir_inter_ii_dist_array,
     undir_inter_aa_dist_array,undir_inter_ai_dist_array, undir_inter_ii_dist_array,
-    undir_ref_1_inter_aa_dist_array, undir_ref_1_inter_ai_dist_array, undir_ref_1_inter_ii_dist_array,
     undir_ref_2_inter_aa_dist_array, undir_ref_2_inter_ai_dist_array, undir_ref_2_inter_ii_dist_array
 ]
-labels = ['AA', 'AI', 'II', 'AA', 'AI', 'II','AA', 'AI', 'II','AA', 'AI', 'II']
+labels = ['EE', 'EN', 'NN', 'EE', 'EN', 'NN','EE', 'EN', 'NN']
 fig1, ax1 = plt.subplots()
-ax1.set_title('Distributions of interaction distances for DI, U, UR 1 and UR 2 (' + out_prefix + ')')
+ax1.get_yaxis().set_major_formatter(
+matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
+ax1.set_title('Distributions of interaction distances for DI, U, and UR (' + out_prefix + ')')
 ax1.boxplot(data, showfliers=False, labels=labels)
 
 box = ax1.boxplot(data, showfliers=False, labels=labels, patch_artist=True)
 
-colors = ['blue', 'blue', 'blue', 'gray', 'gray', 'gray', 'lavender', 'lavender', 'lavender', 'pink', 'pink', 'pink']
+colors = ['orange', 'orange', 'orange', 'darkgray', 'darkgray', 'darkgray', 'lightblue', 'lightblue', 'lightblue']
 
 for patch, color in zip(box['boxes'], colors):
     patch.set_facecolor(color)
 
 lab = "DI - AA: " + str(dir_inter_aa_num) + " (" + dir_inter_aa_percentage + "%), AI: " + str(dir_inter_ai_num) + " (" + dir_inter_ai_percentage + "%), II: " + str(dir_inter_ii_num) + " (" + dir_inter_ii_percentage + "%)"
-di_patch = mpatches.Patch(color='blue', label=lab)
+di_patch = mpatches.Patch(color='orange', label=lab)
 lab = "U - AA: " + str(undir_inter_aa_num) + " (" + undir_inter_aa_percentage + "%), AI: " + str(undir_inter_ai_num) + " (" + undir_inter_ai_percentage + "%), II: " + str(undir_inter_ii_num) + " (" + undir_inter_ii_percentage + "%)"
-u_patch = mpatches.Patch(color='gray', label=lab)
-lab = "UR 1 - AA: " + str(undir_ref_1_inter_aa_num) + " (" + undir_ref_1_inter_aa_percentage + "%), AI: " + str(undir_ref_1_inter_ai_num) + " (" + undir_ref_1_inter_ai_percentage + "%), II: " + str(undir_ref_1_inter_ii_num) + " (" + undir_ref_1_inter_ii_percentage + "%)"
-ur_patch = mpatches.Patch(color='lavender', label=lab)
+u_patch = mpatches.Patch(color='darkgray', label=lab)
 lab = "UR 2 - AA: " + str(undir_ref_2_inter_aa_num) + " (" + undir_ref_2_inter_aa_percentage + "%), AI: " + str(undir_ref_2_inter_ai_num) + " (" + undir_ref_2_inter_ai_percentage + "%), II: " + str(undir_ref_2_inter_ii_num) + " (" + undir_ref_2_inter_ii_percentage + "%)"
-ur2_patch = mpatches.Patch(color='pink', label=lab)
-plt.legend(handles=[di_patch, u_patch, ur_patch, ur2_patch])
+ur2_patch = mpatches.Patch(color='lightblue', label=lab)
+plt.legend(handles=[di_patch, u_patch, ur2_patch])
 ax1.set_xlabel('Enrichment state pair tag')
 ax1.set_ylabel('Interaction distance')
 plt.grid(True)
-fig1.set_size_inches(10,5)
-plt.savefig(pdf_name_boxplots_interaction_distances)
+fig1.set_size_inches(7,5)
+plt.savefig(pdf_name_boxplots_interaction_distances, bbox_inches='tight')
 plt.close()
 
 
