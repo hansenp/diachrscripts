@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
 """
-This script takes as input an enhanced interaction file and a BED file with TAD regions. Two digest sets are derived
+This script takes as input an enhanced interaction file, a BED file with TAD regions and, optionally, a file with the
+coordinates of digests that will be excluded from the analysis. Three digest sets are derived
 from the interaction file:
 
    1. Digests that are involved in directed interactions only.
    2. Digests that are involved in undirected interactions only.
+   3. Digests that are involved in directed and undirected interactions.
 
 The TAD regions are stored in an object of the class 'TADs' that is essentially a hash map. The names of the
 chromosomes serve as keys and for each key there is a sorted list of boundary coordinates. The class has a function that
@@ -13,6 +15,13 @@ returns the coordinate of the next TAD boundary for a given coordinate. This is 
 
 For each digest, the distance to the nearest TAD boundary is determined and added to a list that corresponds to one of
 the two digest sets.
+
+Black list: We used the '.baitmap' file for CHiCAGO used in the original publication (Javierre 2016) to exclude digests
+that were selected for enrichment. We downloaded the file from here:
+
+https://osf.io/u8tzp/wiki/home/
+
+We used UCSC's liftOver tool to convert the coordinates of baited digests from hg19 to hg38.
 
 """
 
@@ -31,16 +40,20 @@ parser = argparse.ArgumentParser(description='Get distances to nearest TAD bound
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--enhanced-interaction-file', help='Enhanced interaction file supplemented with digest associated gene symbols and TSS as well as directionality P-values.', required=True)
 parser.add_argument('--tad-region-bed-file', help='BED file with TAD regions.', required=True)
+parser.add_argument('--digest-black-list', help='BED file with digests to be excluded.')
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
 enhanced_interaction_file = args.enhanced_interaction_file
 tad_region_bed_file = args.tad_region_bed_file
+digest_black_list = args.digest_black_list
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] --out-prefix: " + out_prefix)
 print("\t[INFO] --enhanced-interaction-file: " + enhanced_interaction_file)
 print("\t[INFO] --tad-region-bed-file: " + tad_region_bed_file)
+if digest_black_list != None:
+    print("\t[INFO] --digest-black-list: " + digest_black_list)
 
 
 ### Definition of the class 'Tad_boundaries'
@@ -136,6 +149,23 @@ TAD_boundaries = Tad_boundaries(tad_region_bed_file)
 # Init digest sets
 digests_from_dir_inter = set()
 digests_from_undir_inter = set()
+digest_to_be_excluded = set()
+
+# Read digest regions to be excluded from file
+if digest_black_list != None:
+    with open(digest_black_list, 'rt') as fp:
+        line = fp.readline().rstrip()
+        while line:
+
+            # Parse line
+            chr, sta, end = line.split('\t')
+
+            # Add to set
+            digest_to_be_excluded.add(chr + '\t' + str(sta) + '\t' + str(end))
+
+            # Go to next line
+            line = fp.readline().rstrip()
+
 
 # Determine comparative digest sets
 print("[INFO] Determining comparative digest sets ...")
@@ -151,14 +181,19 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
             dclass.parse_enhanced_interaction_line_with_gene_symbols(line)
 
         # Add digests to set for directed interactions
-        if interaction_category == "DIII" or interaction_category == "DIII" or interaction_category == "DIII":
-            digests_from_dir_inter.add(chr_a + '\t' + str(sta_a) + '\t' + str(end_a))
-            digests_from_dir_inter.add(chr_b + '\t' + str(sta_b) + '\t' + str(end_b))
+        if interaction_category == "DIII" or interaction_category == "DIAI" or interaction_category == "DIAA":
+
+            if chr_a + '\t' + str(sta_a) + '\t' + str(end_a) not in digest_to_be_excluded:
+                digests_from_dir_inter.add(chr_a + '\t' + str(sta_a) + '\t' + str(end_a))
+            if chr_b + '\t' + str(sta_b) + '\t' + str(end_b) not in digest_to_be_excluded:
+                digests_from_dir_inter.add(chr_b + '\t' + str(sta_b) + '\t' + str(end_b))
 
         # Add digests to set for undirected interactions
-        if interaction_category == "UIRII" or interaction_category == "UIRII" or interaction_category == "UIRII":
-            digests_from_undir_inter.add(chr_a + '\t' + str(sta_a) + '\t' + str(end_a))
-            digests_from_undir_inter.add(chr_b + '\t' + str(sta_b) + '\t' + str(end_b))
+        if interaction_category == "UIRII" or interaction_category == "UIRAI" or interaction_category == "UIRAA":
+            if chr_a + '\t' + str(sta_a) + '\t' + str(end_a) not in digest_to_be_excluded:
+                digests_from_undir_inter.add(chr_a + '\t' + str(sta_a) + '\t' + str(end_a))
+            if chr_b + '\t' + str(sta_b) + '\t' + str(end_b) not in digest_to_be_excluded:
+                digests_from_undir_inter.add(chr_b + '\t' + str(sta_b) + '\t' + str(end_b))
 
         line = fp.readline()
 
@@ -206,8 +241,23 @@ for digest in digests_from_undir_inter_wo_digests_from_dir_inter:
         total_dist_undir = total_dist_undir + dist
         undir_dist_array.append(dist)
 
+print("\t[INFO] For digests involved in undirected interactions only ...")
+total_dist_amb = 0
+amb_dist_array = []
+for digest in digests_from_dir_inter_and_digests_from_undir_inter:
+    chr_key, sta, end = digest.split('\t')
+    digest_center_pos = int(sta) + int((int(end) - int(sta))/2)
+    dist = TAD_boundaries.get_distance_to_nearest_tad_boundary(chr_key,digest_center_pos)
+    if dist == -1:
+        print("\t\t[Warning] No TAD boundary for " + chr_key + "!")
+    else:
+        total_dist_amb = total_dist_amb + dist
+        amb_dist_array.append(dist)
+
+
 print("\t[INFO] Median distance between digests involved in directed interactions only and next TAD boundary: " + str(np.median(dir_dist_array)))
 print("\t[INFO] Median distance between digests involved in undirected interactions only and next TAD boundary: " + str(np.median(undir_dist_array)))
+print("\t[INFO] Median distance between digests involved in directed and undirected interactions and next TAD boundary: " + str(np.median(amb_dist_array)))
 
 print("\t[INFO] Writing distances to files ...")
 
@@ -221,9 +271,14 @@ for dist in undir_dist_array:
     tab_stream_dist_to_tad_undir_output.write(str(dist) + '\n')
 tab_stream_dist_to_tad_undir_output.close()
 
+tab_stream_dist_to_tad_amb_output = open(out_prefix + "_dist_to_tad_amb_unique.tsv", 'wt')
+for dist in amb_dist_array:
+    tab_stream_dist_to_tad_amb_output.write(str(dist) + '\n')
+tab_stream_dist_to_tad_amb_output.close()
+
 print("[INFO] ... done.")
 
-print("[INFO] Writing BED files containing one digest regions involved in directed or undirected interactions only ...")
+print("[INFO] Writing BED files containing digest regions involved in directed or undirected interactions only ...")
 
 bed_stream_dist_to_tad_dir_output = open(out_prefix + "_dist_to_tad_dir_unique.bed", 'wt')
 for digest_region in digests_from_dir_inter_wo_digests_from_undir_inter:
@@ -235,16 +290,24 @@ for digest_region in digests_from_undir_inter_wo_digests_from_dir_inter:
     bed_stream_dist_to_tad_undir_output.write(digest_region + '\n')
 bed_stream_dist_to_tad_undir_output.close()
 
+bed_stream_dist_to_tad_amb_output = open(out_prefix + "_dist_to_tad_amb_unique.bed", 'wt')
+for digest_region in digests_from_dir_inter_and_digests_from_undir_inter:
+    bed_stream_dist_to_tad_amb_output.write(digest_region + '\n')
+bed_stream_dist_to_tad_amb_output.close()
+
 print("[INFO] ... done.")
 
 
 print("[INFO] Determining REDUNDANT distances between digests and next TAD ...")
 dir_dist_array_redundant = []
 undir_dist_array_redundant = []
+amb_dist_array_redundant = []
 dir_interaction_end_array_redundant = []
 undir_interaction_end_array_redundant = []
+amb_interaction_end_array_redundant = []
 n_directed_interaction_ends = 0
 n_undirected_interaction_ends = 0
+n_amb_interaction_ends = 0
 print("\t[INFO] Iterating enhanced interaction file ...")
 with gzip.open(enhanced_interaction_file, 'rt') as fp:
 
@@ -260,7 +323,7 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         digest_coord_key_b = chr_b + '\t' + str(sta_b) + '\t' + str(end_b)
 
         # Add distances to list of distances between directed interaction ends and next TAD boundaries
-        if interaction_category == "DIII" or interaction_category == "DIII" or interaction_category == "DIII":
+        if interaction_category == "DIII" or interaction_category == "DIAI"  or interaction_category == "DIAA":
 
             # First digest of interaction
             if digest_coord_key_a in digests_from_dir_inter_wo_digests_from_undir_inter:
@@ -284,8 +347,9 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
                     print("\t\t[Warning] No TAD boundary for " + chr_b + "!")
                 n_directed_interaction_ends += 1
 
+
         # Add distances to list of distances between undirected interaction ends and next TAD boundaries
-        if interaction_category == "UIRII" or interaction_category == "UIRII" or interaction_category == "UIRII":
+        if interaction_category == "UIRII" or interaction_category == "UIRAI" or interaction_category == "UIRAA":
 
             # First digest of interaction
             if digest_coord_key_a in digests_from_undir_inter_wo_digests_from_dir_inter:
@@ -309,15 +373,42 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
                     print("\t\t[Warning] No TAD boundary for " + chr_key + "!")
                 n_undirected_interaction_ends += 1
 
+        # Add distances to list of distances between ambiguous interaction ends and next TAD boundaries
+        if interaction_category == "DIII" or interaction_category == "DIAI"  or interaction_category == "DIAA":
+
+            # First digest of interaction
+            if digest_coord_key_a in digests_from_dir_inter_and_digests_from_undir_inter:
+                digest_center_pos = int(sta_a) + int((int(end_a) - int(sta_a)) / 2)
+                dist = TAD_boundaries.get_distance_to_nearest_tad_boundary(chr_a, digest_center_pos)
+                if dist != -1:
+                    amb_dist_array_redundant.append(dist)
+                    amb_interaction_end_array_redundant.append(digest_coord_key_a)
+                else:
+                    print("\t\t[Warning] No TAD boundary for " + chr_key + "!")
+                n_amb_interaction_ends += 1
+
+            # Second digest of interaction
+            if digest_coord_key_b in digests_from_dir_inter_and_digests_from_undir_inter:
+                digest_center_pos = int(sta_b) + int((int(end_b) - int(sta_b)) / 2)
+                dist = TAD_boundaries.get_distance_to_nearest_tad_boundary(chr_b, digest_center_pos)
+                if dist != -1:
+                    amb_dist_array_redundant.append(dist)
+                    amb_interaction_end_array_redundant.append(digest_coord_key_b)
+                else:
+                    print("\t\t[Warning] No TAD boundary for " + chr_key + "!")
+                n_amb_interaction_ends += 1
+
         line = fp.readline()
 fp.close()
 print("\t[INFO] ... done.")
 
 print("\t[INFO] Number of directed interactions ending in directed digests: " + str(n_directed_interaction_ends))
 print("\t[INFO] Number of undirected interactions ending in undirected digests: " + str(n_undirected_interaction_ends))
+print("\t[INFO] Number of directed interactions ending in ambiguous digests: " + str(n_amb_interaction_ends))
 
 print("\t[INFO] Median distance (redundant) between digests involved in directed interactions only and next TAD boundary: " + str(np.median(dir_dist_array_redundant)))
 print("\t[INFO] Median distance (redundant) between digests involved in undirected interactions only and next TAD boundary: " + str(np.median(undir_dist_array_redundant)))
+print("\t[INFO] Median distance (redundant) between digests involved in directed and undirected interactions and next TAD boundary: " + str(np.median(amb_dist_array_redundant)))
 
 print("\t[INFO] Writing distances to files ...")
 tab_stream_dist_to_tad_dir_output = open(out_prefix + "_dist_to_tad_dir_redundant.tsv", 'wt')
@@ -329,6 +420,11 @@ tab_stream_dist_to_tad_undir_output = open(out_prefix + "_dist_to_tad_undir_redu
 for dist in undir_dist_array_redundant:
     tab_stream_dist_to_tad_undir_output.write(str(dist) + '\n')
 tab_stream_dist_to_tad_undir_output.close()
+
+tab_stream_dist_to_tad_amb_output = open(out_prefix + "_dist_to_tad_amb_redundant.tsv", 'wt')
+for dist in amb_dist_array_redundant:
+    tab_stream_dist_to_tad_amb_output.write(str(dist) + '\n')
+tab_stream_dist_to_tad_amb_output.close()
 
 print("[INFO] ... done.")
 
@@ -345,6 +441,11 @@ for digest_region in undir_interaction_end_array_redundant:
     bed_stream_dist_to_tad_undir_output.write(digest_region + '\n')
 bed_stream_dist_to_tad_undir_output.close()
 
+bed_stream_dist_to_tad_amb_output = open(out_prefix + "_dist_to_tad_amb_redundant.bed", 'wt')
+for digest_region in amb_interaction_end_array_redundant:
+    bed_stream_dist_to_tad_amb_output.write(digest_region + '\n')
+bed_stream_dist_to_tad_amb_output.close()
+
 print("[INFO] ... done.")
 
 print()
@@ -353,25 +454,31 @@ print("out_prefix" + '\t' +
       "n_digests_from_dir_inter" + '\t' +           # Number of digests involved in directed interactions
       "n_digests_from_undir_inter" + '\t' +         # Number of digests involved in undirected interactions
       "n_digests_from_dir_inter_exc" + '\t' +       # Number of digests involved in directed interactions only
-      "n_digests_from_dir_and_undir_inter" + '\t' + # Number of digests involved in directed and undirected interactions
       "n_digests_from_undir_inter_exc" + '\t' +     # Number of digests involved in undirected interactions only
+      "n_digests_from_dir_and_undir_inter" + '\t' +  # Number of digests involved in directed and undirected interactions
       "median_dist_dir_unique" + '\t' +             # Median distance between directed digests and next TAD
       "median_dist_undir_unique" + '\t' +           # Median distance between undirected digests and next TAD
+      "median_dist_amb_unique" + '\t' +             # Median distance between ambiguous digests and next TAD
       "n_directed_interaction_ends" + '\t' +        # Number of directed interactions ending in directed digests
       "n_undirected_interaction_ends" + '\t' +      # Number of undirected interactions ending in undirected digests
+      "n_amb_interaction_ends" + '\t' +             # Number of undirected interactions ending in ambiguous digests
       "median_dist_dir_redundant" + '\t' +          # Median distance between directed interaction ends and next TAD
-      "median_dist_undir_redundant"                 # Median distance between undirected interaction ends and next TAD
+      "median_dist_undir_redundant"  + '\t' +       # Median distance between undirected interaction ends and next TAD
+      "median_dist_amb_redundant"                   # Median distance between ambiguous interaction ends and next TAD
       )
 print(out_prefix + '\t' +
       str(len(digests_from_dir_inter)) + '\t' +
       str(len(digests_from_undir_inter)) + '\t' +
       str(len(digests_from_dir_inter_wo_digests_from_undir_inter)) + '\t' +
-      str(len(digests_from_dir_inter_and_digests_from_undir_inter)) + '\t' +
       str(len(digests_from_undir_inter_wo_digests_from_dir_inter)) + '\t' +
+      str(len(digests_from_dir_inter_and_digests_from_undir_inter)) + '\t' +
       str(np.median(dir_dist_array)) + '\t' +
       str(np.median(undir_dist_array)) + '\t' +
+      str(np.median(amb_dist_array)) + '\t' +
       str(n_directed_interaction_ends) + '\t' +
       str(n_undirected_interaction_ends) + '\t' +
+      str(n_amb_interaction_ends) + '\t' +
       str(np.median(dir_dist_array_redundant)) + '\t' +
-      str(np.median(undir_dist_array_redundant))
+      str(np.median(undir_dist_array_redundant)) + '\t' +
+      str(np.median(amb_dist_array_redundant))
       )
