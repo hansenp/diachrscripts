@@ -50,7 +50,7 @@ import diachrscripts_toolkit as dclass
 ### Parse command line
 ######################
 
-parser = argparse.ArgumentParser(description='Determine densities along the genome.')
+parser = argparse.ArgumentParser(description='Determine digest densities along the genome.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--enhanced-interaction-file', help='Enhanced interaction file with interactions already divided into directional (DI, DIAA, DIAI or DIII) and undirected interactions (all others) based on directionality P-value threshold.', required=True)
 parser.add_argument('--gopher-digest-file', help='File produced by GOPHER that contains the coordinates of all digests for a given genome build.', required=True)
@@ -165,31 +165,21 @@ ad_key_set = ddad_key_set & udad_key_set
 ud_key_set = udad_key_set - ddad_key_set
 cd_key_set = ddad_key_set | udad_key_set
 
-# Print out some statistics
-print("[INFO] Statistics about interactions and digest types ...")
-print("\t[INFO] Number of all DI interactions: " + str(di_cnt))
-print("\t[INFO] Number of all UI interactions: " + str(ui_cnt))
-print("\t[INFO] ------------------------------------------------------- " )
-print("\t[INFO] Number of DI interactions with baited digest: " + str(di_bl_cnt) + " (" + "{:.2%}".format(di_bl_cnt/di_cnt) + ")")
-print("\t[INFO] Number of UI interactions with baited digest: " + str(ui_bl_cnt) + " (" + "{:.2%}".format(ui_bl_cnt/ui_cnt) + ")")
-print("\t[INFO] ------------------------------------------------------- " )
-print("\t[INFO] Number of DD digests before blacklisting: " + str(len(dd_key_set)))
-print("\t[INFO] Number of AD digests before blacklisting: " + str(len(ad_key_set)))
-print("\t[INFO] Number of UD digests before blacklisting: " + str(len(ud_key_set)))
-print("\t[INFO] Number of CD digests before blacklisting: " + str(len(cd_key_set)))
-
-# Subtract blacklisted digests
-dd_key_set_bl = dd_key_set - digest_to_be_excluded
-ddad_key_set_bl = ddad_key_set - digest_to_be_excluded
-ad_key_set_bl = ad_key_set - digest_to_be_excluded
-ud_key_set_bl = ud_key_set - digest_to_be_excluded
-cd_key_set_bl = cd_key_set - digest_to_be_excluded
-
-print("\t[INFO] ------------------------------------------------------- " )
-print("\t[INFO] Number of DD digests after blacklisting: " + str(len(dd_key_set_bl)) + " (" + "{:.2%}".format(len(dd_key_set_bl)/len(dd_key_set)) + ")")
-print("\t[INFO] Number of UD digests after blacklisting: " + str(len(ud_key_set_bl)) + " (" + "{:.2%}".format(len(ud_key_set_bl)/len(ud_key_set)) + ")")
-print("\t[INFO] Number of AD digests after blacklisting: " + str(len(ad_key_set_bl)) + " (" + "{:.2%}".format(len(ad_key_set_bl)/len(ad_key_set)) + ")")
-print("\t[INFO] Number of CD digests after blacklisting: " + str(len(cd_key_set_bl)) + " (" + "{:.2%}".format(len(cd_key_set_bl)/(len(dd_key_set) + len(ud_key_set) + len(ad_key_set))) + ")")
+# Subtract blacklisted digests or invert blacklist
+if not invert_black_list:
+    ddad_key_set_bl = ddad_key_set - digest_to_be_excluded
+    udad_key_set_bl = udad_key_set - digest_to_be_excluded
+    dd_key_set_bl = dd_key_set - digest_to_be_excluded
+    ad_key_set_bl = ad_key_set - digest_to_be_excluded
+    ud_key_set_bl = ud_key_set - digest_to_be_excluded
+    cd_key_set_bl = cd_key_set - digest_to_be_excluded
+else:
+    ddad_key_set_bl = ddad_key_set & digest_to_be_excluded
+    udad_key_set_bl = udad_key_set & digest_to_be_excluded
+    dd_key_set_bl = dd_key_set & digest_to_be_excluded
+    ad_key_set_bl = ad_key_set & digest_to_be_excluded
+    ud_key_set_bl = ud_key_set & digest_to_be_excluded
+    cd_key_set_bl = cd_key_set & digest_to_be_excluded
 
 
 ### Determine digest densities and write to BedGraph files
@@ -244,6 +234,8 @@ nd_density = 0.0
 bl_cnt = 0
 bl_density = 0.0
 chr_d_cnt = 0
+
+nd_key_set = set()
 
 with open(gopher_digest_file, 'rt') as fp:
 
@@ -303,9 +295,10 @@ with open(gopher_digest_file, 'rt') as fp:
         if coord_key in cd_key_set_bl:
             cd_cnt +=1
 
-        # Not interacting
+        # Not interacting (we do not exclude blacklisted digest from ND)
         if coord_key not in cd_key_set:
-            nd_cnt = nd_cnt + 1
+            nd_cnt += 1
+            nd_key_set.add(coord_key)
 
         # Blacklisted
         if coord_key in digest_to_be_excluded:
@@ -323,27 +316,27 @@ with open(gopher_digest_file, 'rt') as fp:
             # Directed
             if old_digest_from_q in ddad_key_set_bl:
                 ddad_cnt = ddad_cnt - 1
-            ddad_density = ddad_cnt/current_window_size
+            ddad_density = ddad_cnt/digest_density_range
 
             # Undirected
             if old_digest_from_q in ud_key_set_bl:
                 ud_cnt = ud_cnt - 1
-            ud_density = ud_cnt/current_window_size
+            ud_density = ud_cnt/digest_density_range
 
             # Blacklisted
             if old_digest_from_q in digest_to_be_excluded:
                 bl_cnt = bl_cnt - 1
-            bl_density = bl_cnt/current_window_size
+            bl_density = bl_cnt/digest_density_range
 
             # Directed or undirected
             if old_digest_from_q in cd_key_set_bl:
                 cd_cnt = cd_cnt - 1
-            cd_density = cd_cnt/current_window_size
+            cd_density = cd_cnt/digest_density_range
 
-            # Not interacting
+            # Not interacting (we do not exclude blacklisted digest from ND)
             if old_digest_from_q not in cd_key_set:
                 nd_cnt = nd_cnt - 1
-            nd_density = nd_cnt/current_window_size
+            nd_density = nd_cnt/digest_density_range
 
             # Keep track of current chromosome
             last_chr = fields[0]
@@ -372,5 +365,76 @@ bedgraph_stream_ud_digests_density_output.close()
 bedgraph_stream_cd_digests_density_output.close()
 bedgraph_stream_bl_digests_density_output.close()
 bedgraph_stream_nd_digests_density_output.close()
+
+print("[INFO] ... done.")
+
+# Print out some statistics
+print("[INFO] Statistics about interactions and digest types ...")
+print("\t[INFO] Number of all DI interactions: " + str(di_cnt))
+print("\t[INFO] Number of all UI interactions: " + str(ui_cnt))
+print("\t[INFO] ------------------------------------------------------- " )
+print("\t[INFO] Number of DI interactions with baited digest: " + str(di_bl_cnt) + " (" + "{:.2%}".format(di_bl_cnt/di_cnt) + ")")
+print("\t[INFO] Number of UI interactions with baited digest: " + str(ui_bl_cnt) + " (" + "{:.2%}".format(ui_bl_cnt/ui_cnt) + ")")
+print("\t[INFO] ------------------------------------------------------- " )
+print("\t[INFO] Number of DD digests before blacklisting: " + str(len(dd_key_set)))
+print("\t[INFO] Number of AD digests before blacklisting: " + str(len(ad_key_set)))
+print("\t[INFO] Number of UD digests before blacklisting: " + str(len(ud_key_set)))
+print("\t[INFO] Number of CD digests before blacklisting: " + str(len(cd_key_set)))
+print("\t[INFO] Number of ND digests before blacklisting: " + str(len(nd_key_set)))
+print("\t[INFO] ------------------------------------------------------- " )
+nd_key_set_bl = nd_key_set - digest_to_be_excluded
+print("\t[INFO] Number of DD digests after blacklisting: " + str(len(dd_key_set_bl)) + " (" + "{:.2%}".format(len(dd_key_set_bl)/len(dd_key_set)) + ")")
+print("\t[INFO] Number of AD digests after blacklisting: " + str(len(ad_key_set_bl)) + " (" + "{:.2%}".format(len(ad_key_set_bl)/len(ad_key_set)) + ")")
+print("\t[INFO] Number of UD digests after blacklisting: " + str(len(ud_key_set_bl)) + " (" + "{:.2%}".format(len(ud_key_set_bl)/len(ud_key_set)) + ")")
+print("\t[INFO] Number of CD digests after blacklisting: " + str(len(cd_key_set_bl)) + " (" + "{:.2%}".format(len(cd_key_set_bl)/len(cd_key_set)) + ")")
+print("\t[INFO] Number of ND digests after blacklisting: " + str(len(nd_key_set_bl)) + " (" + "{:.2%}".format(len(nd_key_set_bl)/len(nd_key_set)) + ")")
+
+digests_density_stats_output = open(out_prefix + "_digests_density_stats.tab", 'wt')
+digests_density_stats_output.write(
+    "out_prefix" + '\t' +
+    "di_cnt" + '\t' +
+    "ui_cnt" + '\t' +
+    "ddad_cnt" + '\t' +
+    "udad_cnt" + '\t' +
+    "dd_cnt" + '\t' +
+    "ad_cnt" + '\t' +
+    "ud_cnt" + '\t' +
+    "cd_cnt" + '\t' +
+    "nd_cnt" + '\t' +
+    "di_bl_cnt" + '\t' +
+    "ui_bl_cnt" + '\t' +
+    "ddad_bl_cnt" + '\t' +
+    "udad_bl_cnt" + '\t' +
+    "dd_bl_cnt" + '\t' +
+    "ad_bl_cnt" + '\t' +
+    "ud_bl_cnt" + '\t' +
+    "cd_bl_cnt" + '\t' +
+    "nd_bl_cnt" +
+    '\n'
+)
+digests_density_stats_output.write(
+    out_prefix + '\t' +
+    str(di_cnt) + '\t' +
+    str(ui_cnt) + '\t' +
+    str(len(ddad_key_set)) + '\t' +
+    str(len(udad_key_set)) + '\t' +
+    str(len(dd_key_set)) + '\t' +
+    str(len(ad_key_set)) + '\t' +
+    str(len(ud_key_set)) + '\t' +
+    str(len(cd_key_set)) + '\t' +
+    str(len(nd_key_set)) + '\t' +
+    str(di_bl_cnt) + '\t' +
+    str(ui_bl_cnt) + '\t' +
+    str(len(ddad_key_set_bl)) + '\t' +
+    str(len(udad_key_set_bl)) + '\t' +
+    str(len(dd_key_set_bl)) + '\t' +
+    str(len(ad_key_set_bl)) + '\t' +
+    str(len(ud_key_set_bl)) + '\t' +
+    str(len(cd_key_set_bl)) + '\t' +
+    str(len(nd_key_set_bl)) +
+    '\n'
+)
+
+digests_density_stats_output.close()
 
 print("[INFO] ... done.")
