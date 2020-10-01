@@ -215,6 +215,28 @@ track_description = track_name
 bedgraph_stream_bl_digests_density_output = open(out_prefix + "_bl_digests_density.bedgraph", 'wt')
 bedgraph_stream_bl_digests_density_output.write("track type=bedGraph name=\"" + track_name + "\" description=\"" + track_description + "\" visibility=full color=" + track_color + " altColor=" + track_altColor + " priority=20 maxHeightPixels=" + str(track_maxHeightPixels) + '\n')
 
+
+track_name = data_set_track_tag + " - DENSITY - DDAD - Normalized"
+track_description = track_name
+bedgraph_stream_ddad_norm_digests_density_output = open(out_prefix + "_norm_ddad_digests_density.bedgraph", 'wt')
+bedgraph_stream_ddad_norm_digests_density_output.write("track type=bedGraph name=\"" + track_name + "\" description=\"" + track_description + "\" visibility=full color=" + track_color + " altColor=" + track_altColor + " priority=20 maxHeightPixels=" + str(track_maxHeightPixels) + '\n')
+
+track_name = data_set_track_tag + " - DENSITY - UD - Normalized"
+track_description = track_name
+bedgraph_stream_ud_norm_digests_density_output = open(out_prefix + "_norm_ud_digests_density.bedgraph", 'wt')
+bedgraph_stream_ud_norm_digests_density_output.write("track type=bedGraph name=\"" + track_name + "\" description=\"" + track_description + "\" visibility=full color=" + track_color + " altColor=" + track_altColor + " priority=20 maxHeightPixels=" + str(track_maxHeightPixels) + '\n')
+
+track_name = data_set_track_tag + " - DENSITY - CD - Normalized"
+track_description = track_name
+bedgraph_stream_cd_norm_digests_density_output = open(out_prefix + "_norm_cd_digests_density.bedgraph", 'wt')
+bedgraph_stream_cd_norm_digests_density_output.write("track type=bedGraph name=\"" + track_name + "\" description=\"" + track_description + "\" visibility=full color=" + track_color + " altColor=" + track_altColor + " priority=20 maxHeightPixels=" + str(track_maxHeightPixels) + '\n')
+
+track_name = data_set_track_tag + " - DENSITY - ND - Normalized"
+track_description = track_name
+bedgraph_stream_nd_norm_digests_density_output = open(out_prefix + "_norm_nd_digests_density.bedgraph", 'wt')
+bedgraph_stream_nd_norm_digests_density_output.write("track type=bedGraph name=\"" + track_name + "\" description=\"" + track_description + "\" visibility=full color=" + track_color + " altColor=" + track_altColor + " priority=20 maxHeightPixels=" + str(track_maxHeightPixels) + '\n')
+
+
 print("[INFO] Iterating digest file to create BedGraph tracks for interaction distances ...")
 
 # Init variables for sliding digest window
@@ -225,12 +247,16 @@ current_window_size = 0
 
 ddad_cnt = 0
 ddad_density = 0.0
+ddad_density_norm = 0.0
 ud_cnt = 0
 ud_density = 0.0
+ud_density_norm = 0.0
 cd_cnt = 0
 cd_density = 0.0
+cd_density_norm = 0.0
 nd_cnt = 0
 nd_density = 0.0
+nd_density_norm = 0.0
 bl_cnt = 0
 bl_density = 0.0
 chr_d_cnt = 0
@@ -264,14 +290,18 @@ with open(gopher_digest_file, 'rt') as fp:
             # Reset variables for sliding digest window
             ddad_cnt = 0
             ddad_density = 0.0
+            ddad_density_norm = 0.0
             ud_cnt = 0
             ud_density = 0.0
+            ud_density_norm = 0.0
             cd_cnt = 0
             cd_density = 0.0
+            cd_density_norm = 0.0
             bl_cnt = 0
             bl_density = 0.0
             nd_cnt = 0
             nd_density = 0.0
+            nd_density_norm = 0.0
             current_window_size = 0
             last_chr = fields[0]
             chr_d_cnt = 0
@@ -298,7 +328,7 @@ with open(gopher_digest_file, 'rt') as fp:
         # Not interacting (we do not exclude blacklisted digest from ND)
         if coord_key not in cd_key_set:
             nd_cnt += 1
-            nd_key_set.add(coord_key)
+            nd_key_set.add(coord_key) # ?
 
         # Blacklisted
         if coord_key in digest_to_be_excluded:
@@ -338,6 +368,13 @@ with open(gopher_digest_file, 'rt') as fp:
                 nd_cnt = nd_cnt - 1
             nd_density = nd_cnt/digest_density_range
 
+            # Normalize DDAD and UD to BL
+            norm_factor = 1.0 * (digest_density_range/(cd_cnt+1))
+            ddad_density_norm = ddad_density * norm_factor
+            ud_density_norm = ud_density * norm_factor
+            cd_density_norm = cd_density * norm_factor
+            nd_density_norm = nd_density * norm_factor
+
             # Keep track of current chromosome
             last_chr = fields[0]
 
@@ -351,13 +388,20 @@ with open(gopher_digest_file, 'rt') as fp:
             bedgraph_stream_cd_digests_density_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(0.0) + '\n')
             bedgraph_stream_bl_digests_density_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(0.0) + '\n')
             bedgraph_stream_nd_digests_density_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(0.0) + '\n')
+            bedgraph_stream_ddad_norm_digests_density_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(0.0) + '\n')
+            bedgraph_stream_ud_norm_digests_density_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(0.0) + '\n')
+            bedgraph_stream_cd_norm_digests_density_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(0.0) + '\n')
+            bedgraph_stream_nd_norm_digests_density_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(0.0) + '\n')
         elif digest_density_range <= chr_d_cnt:
             bedgraph_stream_ddad_digests_density_output.write(str(digest_queue[window_center_pos]) + '\t' + str(ddad_density) + '\n')
             bedgraph_stream_ud_digests_density_output.write(str(digest_queue[window_center_pos]) + '\t' + str(ud_density) + '\n')
             bedgraph_stream_cd_digests_density_output.write(str(digest_queue[window_center_pos]) + '\t' + str(cd_density) + '\n')
             bedgraph_stream_bl_digests_density_output.write(str(digest_queue[window_center_pos]) + '\t' + str(bl_density) + '\n')
             bedgraph_stream_nd_digests_density_output.write(str(digest_queue[window_center_pos]) + '\t' + str(nd_density) + '\n')
-
+            bedgraph_stream_ddad_norm_digests_density_output.write(str(digest_queue[window_center_pos]) + '\t' + str(ddad_density_norm) + '\n')
+            bedgraph_stream_ud_norm_digests_density_output.write(str(digest_queue[window_center_pos]) + '\t' + str(ud_density_norm) + '\n')
+            bedgraph_stream_cd_norm_digests_density_output.write(str(digest_queue[window_center_pos]) + '\t' + str(cd_density_norm) + '\n')
+            bedgraph_stream_nd_norm_digests_density_output.write(str(digest_queue[window_center_pos]) + '\t' + str(nd_density_norm) + '\n')
         line = fp.readline()
 
 bedgraph_stream_ddad_digests_density_output.close()
@@ -365,6 +409,10 @@ bedgraph_stream_ud_digests_density_output.close()
 bedgraph_stream_cd_digests_density_output.close()
 bedgraph_stream_bl_digests_density_output.close()
 bedgraph_stream_nd_digests_density_output.close()
+bedgraph_stream_ddad_norm_digests_density_output.close()
+bedgraph_stream_ud_norm_digests_density_output.close()
+bedgraph_stream_cd_norm_digests_density_output.close()
+bedgraph_stream_nd_norm_digests_density_output.close()
 
 print("[INFO] ... done.")
 
