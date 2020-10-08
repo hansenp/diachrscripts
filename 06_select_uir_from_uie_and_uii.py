@@ -45,8 +45,8 @@ Column 3 of the created files contains the following tags for the interaction ca
 Column 6 of the created files contains the following the following tags for the enrichment states of interactions:
 
    1. EE - Both digests enriched
-   2. EN - First digests enriched
-   3. NE - Second digests enriched
+   2. NE - Second digests enriched
+   3. EN - First digests enriched
    4. NN - No digest enriched
 
 Finally, summary statistics are written to a tab separated file:
