@@ -178,19 +178,10 @@ uir_nn_rp_array = []
 print("[INFO] Reading list with digests selected for enrichment ...")
 enriched_digests_set = set()
 with open(enriched_digests_file, 'rt') as fp:
-    line = fp.readline().rstrip()
-    while line:
-
-        # Parse line
-        chr, sta, end = line.split('\t')
-
-        # Add to set
+    for line in fp:
+        chr, sta, end = line.rstrip().split('\t')
         enriched_digests_set.add(chr + '\t' + str(sta) + '\t' + str(end))
 
-        # Go to next line
-        line = fp.readline().rstrip()
-
-fp.close()
 print("\t[INFO] Read " + str(len(enriched_digests_set)) + " digests ...")
 print("[INFO] ... done.")
 
@@ -228,8 +219,7 @@ print("\t[INFO] Iterating enhanced interaction file ...")
 with gzip.open(enhanced_interaction_file, 'rt') as fp:
 
     n_interaction_total = 0
-    line = fp.readline()
-    while line:
+    for line in fp:
 
         # Report progress
         n_interaction_total += 1
@@ -325,9 +315,6 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
             print("[Error] Interaction category must be either \'DI\', \'UIE\' or \'UII\'!")
             exit(1)
 
-        line = fp.readline()
-
-fp.close()
 print("\t[INFO] done ...")
 
 if di_ee_num < 3 or di_en_num < 3 or di_nn_num < 3:
@@ -353,8 +340,7 @@ print("\t[INFO] Iterating enhanced interaction file ...")
 with gzip.open(enhanced_interaction_file, 'rt') as fp:
 
     n_interaction_total = 0
-    line = fp.readline()
-    while line:
+    for line in fp:
 
         # Report progress
         n_interaction_total += 1
@@ -434,11 +420,10 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
             ####XX In a second EI file, we write DI and UIR interactions only. This results in a much smaller file that is better suited for some analyzes.
             di_uir_enhanced_interaction_stream_output.write(line + "\n")
 
-        line = fp.readline()
-
+        
 di_uir_enhanced_interaction_stream_output.close()
 di_ui_uir_enhanced_interaction_stream_output.close()
-fp.close()
+
 print("\t[INFO] done ...")
 
 print("[INFO] Checking whether reference interactions are missing for some n")

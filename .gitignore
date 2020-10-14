@@ -113,3 +113,10 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+JAV_MK_RALT_0.0019_CHC_BL_R_bl_digests_density.bedgraph
+JAV_MK_RALT_0.0019_CHC_BL_R_cd_digests_density.bedgraph
+JAV_MK_RALT_0.0019_CHC_BL_R_ddad_digests_density.bedgraph
+JAV_MK_RALT_0.0019_CHC_BL_R_nd_digests_density.bedgraph
+JAV_MK_RALT_0.0019_CHC_BL_R_ud_digests_density.bedgraph
+tmp_data/README~
+tmp_data/homo_sapiens.GRCh38.Regulatory_Build.regulatory_features.20190329.gff.gz
