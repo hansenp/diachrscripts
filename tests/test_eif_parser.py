@@ -36,12 +36,12 @@ class TestEnhancedInteractionParser(TestCase):
         self.assertEqual(89920828, ei.end_b)
         self.assertEqual("",ei.syms_a)
         self.assertEqual("",ei.syms_b)
-        self.assertEqual("",ei.tss_a)
-        self.assertEqual("",ei.tss_b)
-        self.assertEqual("II", ei.enr_pair_tag)
+        self.assertEqual("",ei.tsss_a)
+        self.assertEqual("",ei.tsss_b)
+        self.assertEqual("II", ei.enrichment_pair_tag)
         self.assertEqual("-1/-1", ei.strand_pair_tag)
         self.assertEqual("DIII", ei.interaction_category)
-        self.assertAlmostEqual(8.51, ei.neg_log_p)
+        self.assertAlmostEqual(8.51, ei.neg_log_p_value)
         self.assertEqual(20, ei.rp_total)  # 2:18 means 20 read pairs in total
         self.assertEqual(199854, ei.i_dist)
         #  interaction_category, neg_log_p_value, rp_total, i_dist 
