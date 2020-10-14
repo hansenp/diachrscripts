@@ -13,18 +13,22 @@ class EnhancedInteraction:
     strand_pair_tag: Two symbol tag separated by '/' indicating the strands of TSS on first and second digest (e.g. -/-, +/+, -/+, +/-, -/d, ...)
     interaction_category: Interaction category wi
     """
-    def __init__(self, chrA:str, staA:int, endA:int, symsA:str, tssA:str,chrB:str, staB:int, endB:int, symsB:str, tssB:str,
+    def __init__(self, chrA:str, staA:int, endA:int, symsA:str, tsssA:str,chrB:str, staB:int, endB:int, symsB:str, tsssB:str,
                  enr_pair_tag:str, strand_pair_tag:str, intera_cat:str, neg_log_p:float, read_pair_left:int, read_pair_right:int,i_dist:int):
         self._chr_a = chrA
         self._start_a = staA
         self._end_a = endA
+        self._syms_a = symsA
         self._symbols_a = symsA.split(",")
-        self._trans_starts_a = tssA.split(",")
+        self._tsss_a = tsssA
+        self._trans_starts_a = tsssA.split(",")
         self._chr_b = chrB
         self._start_b = staB
         self._end_b = endB
+        self._syms_b = symsB
         self._symbols_b = symsB.split(",")
-        self._trans_starts_b = tssB.split(",")
+        self._tsss_b = tsssB
+        self._trans_starts_b = tsssB.split(",")
         self._enrichment_pair_tag = enr_pair_tag
         self._strand_pair_tag = strand_pair_tag
         self._interaction_category = intera_cat
@@ -58,23 +62,23 @@ class EnhancedInteraction:
         return self._end_b
 
     @property
-    def syms_a(self) -> List:
-        return self._symbols_a
+    def syms_a(self) -> str:
+        return self._syms_a
 
     @property
-    def syms_b(self) -> List:
-        return self._symbols_b
+    def syms_b(self) -> str:
+        return self._syms_b
 
     @property
-    def tss_a(self) -> List:
-        return self._trans_starts_a
+    def tsss_a(self) -> str:
+        return self._tsss_a
 
     @property
-    def tss_b(self) -> List:
-        return self._trans_starts_b
+    def tsss_b(self) -> str:
+        return self._tsss_b
 
     @property
-    def enr_pair_tag(self) -> str:
+    def enrichment_pair_tag(self) -> str:
         return self._enrichment_pair_tag
 
     @property
@@ -86,7 +90,7 @@ class EnhancedInteraction:
         return self._interaction_category
 
     @property
-    def neg_log_p(self) -> float:
+    def neg_log_p_value(self) -> float:
         return self._neg_log_p_value
 
     @property
@@ -99,7 +103,7 @@ class EnhancedInteraction:
 
     @property
     def i_dist(self) -> int:
-        return i_dist
+        return self._i_dist
 
     @property
     def rp_total(self) -> int:
