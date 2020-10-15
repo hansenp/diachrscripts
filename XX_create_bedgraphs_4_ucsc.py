@@ -779,6 +779,21 @@ track_description = track_name
 bedgraph_stream_right_disp_uie_digests_output = open(out_prefix + "_right_dispersion_uie.bedgraph", 'wt')
 bedgraph_stream_right_disp_uie_digests_output.write("track type=bedGraph name=\"" + track_name + "\" description=\"" + track_description + "\" visibility=full color=" + track_color + " altColor=" + track_altColor + " priority=20 maxHeightPixels=" + str(track_maxHeightPixels) + '\n')
 
+track_name = data_set_track_tag + " - LR-RP-Ratio - DI"
+track_description = track_name
+bedgraph_stream_lr_rp_ratio_di_digests_output = open(out_prefix + "_lr_rp_ratio_di.bedgraph", 'wt')
+bedgraph_stream_lr_rp_ratio_di_digests_output.write("track type=bedGraph name=\"" + track_name + "\" description=\"" + track_description + "\" visibility=full color=" + track_color + " altColor=" + track_altColor + " priority=20 maxHeightPixels=" + str(track_maxHeightPixels) + '\n')
+
+track_name = data_set_track_tag + " - LR-RP-Ratio - UIE"
+track_description = track_name
+bedgraph_stream_lr_rp_ratio_uie_digests_output = open(out_prefix + "_lr_rp_ratio_uie.bedgraph", 'wt')
+bedgraph_stream_lr_rp_ratio_uie_digests_output.write("track type=bedGraph name=\"" + track_name + "\" description=\"" + track_description + "\" visibility=full color=" + track_color + " altColor=" + track_altColor + " priority=20 maxHeightPixels=" + str(track_maxHeightPixels) + '\n')
+
+track_name = data_set_track_tag + " - LR-RP-Ratio - UII"
+track_description = track_name
+bedgraph_stream_lr_rp_ratio_uii_digests_output = open(out_prefix + "_lr_rp_ratio_uii.bedgraph", 'wt')
+bedgraph_stream_lr_rp_ratio_uii_digests_output.write("track type=bedGraph name=\"" + track_name + "\" description=\"" + track_description + "\" visibility=full color=" + track_color + " altColor=" + track_altColor + " priority=20 maxHeightPixels=" + str(track_maxHeightPixels) + '\n')
+
 
 print("[INFO] Iterating digest file to create BedGraph tracks for interaction distances ...")
 with open(gopher_digest_file, 'rt') as fp:
@@ -807,6 +822,7 @@ with open(gopher_digest_file, 'rt') as fp:
             right_rp_number_dir = 0
             left_disp_dir = 0
             right_disp_dir = 0
+            lr_rp_ratio = 0.0
         else:
             simple_rp_dist_median_dir = digests_from_dir_inter[coord_key].get_median_simple_read_pair_distance()
             twisted_rp_dist_median_dir = digests_from_dir_inter[coord_key].get_median_twisted_read_pair_distance()
@@ -819,6 +835,13 @@ with open(gopher_digest_file, 'rt') as fp:
 
             left_disp_dir = digests_from_dir_inter[coord_key].get_left_dispersion()
             right_disp_dir = digests_from_dir_inter[coord_key].get_right_dispersion()
+
+            if left_rp_number_dir < right_rp_number_dir:
+                lr_rp_ratio = right_rp_number_dir # * (right_rp_number_dir + 1.0)/(left_rp_number_dir + 1.0)
+            else:
+                lr_rp_ratio = -left_rp_number_dir # * (left_rp_number_dir + 1.0) / (right_rp_number_dir + 1.0)
+
+        bedgraph_stream_lr_rp_ratio_di_digests_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(lr_rp_ratio) + '\n')
 
         bedgraph_stream_simple_rp_dist_median_dir_digests_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(simple_rp_dist_median_dir) + '\n')
         bedgraph_stream_twisted_rp_dist_median_dir_digests_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(twisted_rp_dist_median_dir) + '\n')
@@ -842,15 +865,26 @@ with open(gopher_digest_file, 'rt') as fp:
             right_rp_number_undir = 0
             left_disp_undir = 0
             right_disp_undir = 0
+            lr_rp_ratio = 0.0
         else:
             simple_rp_dist_median_undir = digests_from_uie_inter[coord_key].get_median_simple_read_pair_distance()
             twisted_rp_dist_median_undir = digests_from_uie_inter[coord_key].get_median_twisted_read_pair_distance()
+
             left_rp_dist_median_undir = digests_from_uie_inter[coord_key].get_median_left_read_pair_distance()
             right_rp_dist_median_undir = digests_from_uie_inter[coord_key].get_median_right_read_pair_distance()
+
             left_rp_number_undir = digests_from_uie_inter[coord_key].get_total_number_of_left_read_pairs()
             right_rp_number_undir = digests_from_uie_inter[coord_key].get_total_number_of_right_read_pairs()
+
             left_disp_undir = digests_from_uie_inter[coord_key].get_left_dispersion()
             right_disp_undir = digests_from_uie_inter[coord_key].get_right_dispersion()
+
+            if left_rp_number_undir < right_rp_number_undir:
+                lr_rp_ratio = right_rp_number_undir # 1.0 * (right_rp_number_undir + 1.0) / (left_rp_number_undir + 1.0)
+            else:
+                lr_rp_ratio = -left_rp_number_undir #-1.0 * (left_rp_number_undir + 1.0) / (right_rp_number_undir + 1.0)
+
+        bedgraph_stream_lr_rp_ratio_uie_digests_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(lr_rp_ratio) + '\n')
 
         bedgraph_stream_simple_rp_dist_median_undir_digests_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(-simple_rp_dist_median_undir) + '\n')
         bedgraph_stream_twisted_rp_dist_median_undir_digests_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(-twisted_rp_dist_median_undir) + '\n')
@@ -874,15 +908,26 @@ with open(gopher_digest_file, 'rt') as fp:
             right_rp_number_uii = 0
             left_disp_uii = 0
             right_disp_uii = 0
+            lr_rp_ratio = 0.0
         else:
             simple_rp_dist_median_uii = digests_from_uii_inter[coord_key].get_median_simple_read_pair_distance()
             twisted_rp_dist_median_uii = digests_from_uii_inter[coord_key].get_median_twisted_read_pair_distance()
+
             left_rp_dist_median_uii = digests_from_uii_inter[coord_key].get_median_left_read_pair_distance()
             right_rp_dist_median_uii = digests_from_uii_inter[coord_key].get_median_right_read_pair_distance()
+
             left_rp_number_uii = digests_from_uii_inter[coord_key].get_total_number_of_left_read_pairs()
             right_rp_number_uii = digests_from_uii_inter[coord_key].get_total_number_of_right_read_pairs()
+
             left_disp_uii = digests_from_uii_inter[coord_key].get_left_dispersion()
             right_disp_uii = digests_from_uii_inter[coord_key].get_right_dispersion()
+
+            if left_rp_number_uii < right_rp_number_uii:
+                lr_rp_ratio = right_rp_number_uii #1.0 * (right_rp_number_uii + 1.0)/(left_rp_number_uii + 1.0)
+            else:
+                lr_rp_ratio = -left_rp_number_uii #     -1.0 * (left_rp_number_uii + 1.0) / (right_rp_number_uii + 1.0)
+
+        bedgraph_stream_lr_rp_ratio_uii_digests_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(lr_rp_ratio) + '\n')
 
         bedgraph_stream_simple_rp_dist_median_uii_digests_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(-simple_rp_dist_median_uii) + '\n')
         bedgraph_stream_twisted_rp_dist_median_uii_digests_output.write(fields[0] + '\t' + str(int(fields[1]) - 1) + '\t' + str(int(fields[2])) + '\t' + str(-twisted_rp_dist_median_uii) + '\n')
@@ -935,6 +980,10 @@ bedgraph_stream_right_disp_uii_digests_output.close()
 
 bedgraph_stream_left_disp_uie_digests_output.close()
 bedgraph_stream_right_disp_uie_digests_output.close()
+
+bedgraph_stream_lr_rp_ratio_di_digests_output.close()
+bedgraph_stream_lr_rp_ratio_uie_digests_output.close()
+bedgraph_stream_lr_rp_ratio_uii_digests_output.close()
 
 
 print("[INFO] ... done.")

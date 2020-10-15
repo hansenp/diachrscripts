@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-This script takes an enhanced interaction file (created with the script '05_define_di_uie_and_uii.py') with the
+This script takes an enhanced interaction (EI) file (created with the script '05_define_di_uie_and_uii.py') with the
 following interaction categories:
 
    1. DI - Directed interactions
@@ -9,59 +9,75 @@ following interaction categories:
       i. UIE - Exclusive undirected interactions. Subset of UI. No digest interacts with a digest involved in DI
       ii. UII - Inclusive undirected interactions. Subset of UI. UI without UIE
 
-that are specified in the third column.
+that are specified in the third column of the EI file.
 
-Undirected reference interactions (UIR) that are comparable to DI with respect to enrichment status of digests, read
-pair numbers and, optionally, interaction distances are selected from UIE and UII.
+In addition, a BED file with the coordinates of the digests that were selected for enrichment must be specified. These
+coordinates are used to assign one of the four enrichment states EE, EN, NE and NN to each interaction, where 'E' stands
+for 'enriched' and 'N' for 'not enriched'. In the EI file that will be generated, the enrichment status is written to
+column 6, with the order of 'E' and 'N' indicating which of the two digests involved has been enriched.
+
+Undirected reference interactions (UIR) that are comparable to DI with respect to the distribution of read pair numbers
+per interaction within the enrichment states EE, EN and NN will be selected from UIE and UII.
 
 The script implements a two pass approach:
 
-   1. Iterate interactions and collect information about DI with respect to enrichment status of digests, read pair
-   numbers and interaction distances.
-   2. Iterate interactions a second time and use the collected information to select reference interactions that are
-   comparable to DI.
+   1. Iterate interactions and determine the distribution of read pair numbers per interaction within DI.
 
-The script implements two different approaches for the selection of undirected reference interactions:
-
-   1. Determine Q1 and Q3 for the distribution of read pair numbers within DI during the first pass and select all
-   undirected interactions with read pair numbers between Q1 and Q2 during the second pass.
-   2. Determine the exact distribution of read pair numbers within DI during the first pass and select the same number
-   of undirected interactions for each read number during the second pass.
-
-Use '--selection-approach q13' for the first and '--selection-approach exact' for the second approach.
-
-Optionally, the selected reference interaction can be adjusted to DI with respect to interaction size (in addition to
-the adjustment to read pair numbers). For this purpose, the distribution of distances within DI is determined during the
-first pass and only undirected interactions with a size between Q1 and Q3 are selected as reference interactions. Use
-'--adjust-to-interaction-distance' to adjust reference interaction to interaction size.
+   2. Iterate interactions a second time and select a set of undirected reference interactions that are comparable to
+    DI with respect to the distribution of read pair numbers per interaction.
 
 Directed interactions and undirected reference interactions are written to a file in enhanced interaction format with
 the name:
 
    '<OUT_PREFIX>_enhanced_interaction_file_with_di_and_uir.tsv.gz'
 
-Column 3 of the created file contains the following interaction categories:
+Directed interactions and all undirected interactions including reference interactions are written to a second file with
+the name:
 
-   1. DIAA - Directed interactions within AA
-   2. DIAI - Directed interactions within AI
-   3. DIII - Directed interactions within II
-   4. UIRAA - Undirected reference interactions within AA
-   5. UIRAI - Undirected reference interactions within AI
-   6. UIRII - Undirected reference interactions within II
+   '<OUT_PREFIX>_enhanced_interaction_file_with_di_ui_and_uir.tsv.gz'
 
-Finally, summary statistics about numbers of interactions within different enrichment state categories (AA, AI and II)
-and corresponding read pair numbers are printed to the screen and two boxplots are created, one for read pair numbers
-and another one for interaction distances:
+Column 3 of the created files contains the following tags for the interaction categories:
+
+   1. DI - Directed interactions
+   2. UI - Undirected interactions
+   3. UIR - Undirected reference interactions
+
+Column 6 of the created files contains the following the following tags for the enrichment states of interactions:
+
+   1. EE - Both digests enriched
+   2. EN - First digests enriched
+   3. NE - Second digests enriched
+   4. NN - No digest enriched
+
+Finally, summary statistics are written to a tab separated file:
+
+   '<OUT_PREFIX>_stats.tsv'
+
+and partly also to the screen. For some directed interactions, there is no undirected interaction with the same number
+of read pairs (typically for large read pair numbers) and, therefore, no reference interaction can be selected.
+Statistics about this will be reported in the file:
+
+   '<OUT_PREFIX>_warnings.tsv'
+
+Furthermore, a boxplot with the distribution of read pair numbers will be created:
 
    '<OUT_PREFIX>_read_pair_number_boxplot.pdf'
-   '<OUT_PREFIX>_interaction_distance_boxplot.pdf'
 
-Furthermore, barplots for the proportions of interactions and associated digests are created:
+Finally, barplots for the proportions of interactions within DI, UI and UIR:
 
    '<OUT_PREFIX>_interaction_enrichment_pair_tags_barplot.pdf'
-   '<OUT_PREFIX>__digest_enrichment_tags_barplot.pdf'
+
+Two EI files for downstream analyzes will be created, one file containing DI and UIR interactions only:
+
+   '<OUT_PREFIX>_enhanced_interaction_file_with_di_and_uir.tsv.gz'
+
+and another EI file containing all input interactions, but with overwritten tags for interaction categories (column 3)
+and enrichment states (column 6):
+
+   '<OUT_PREFIX>_enhanced_interaction_file_with_di_ui_and_uir.tsv.gz
 
 """
+####XX The section above explains the input for the script, what it does and what files will be created.
 
 
 import argparse
@@ -79,218 +95,131 @@ import matplotlib.backends.backend_pdf
 parser = argparse.ArgumentParser(description='Select reference interactions from exclusive undirected interactions.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--enhanced-interaction-file', help='Enhanced interaction file created with \'05_define_di_uie_and_uii.py\'. Column 3 contains either \'DI\' or\'UIE\'.', required=True)
-parser.add_argument('--selection-approach', help='Use \'q13\' to select undirected reference interactions with read pair numbers between Q1 and Q3 of the distribution for DI or \'exact\' to select a subset of undirected interactions with the almost same distribution of read pairs as compared to DI.', default='exact')
-parser.add_argument('--adjust-to-interaction-distance', help='Adjust selected reference interactions to interaction distances of directed interactions.', action='store_true', default=False)
-args = parser.parse_args()
+parser.add_argument('--enriched-digests-file', help='BED file with digests selcted for target enrichment.')
 
+args = parser.parse_args()
 out_prefix = args.out_prefix
 enhanced_interaction_file = args.enhanced_interaction_file
-selection_approach = args.selection_approach
-adjust_to_interaction_distance = args.adjust_to_interaction_distance
+enriched_digests_file = args.enriched_digests_file
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] Analysis for: " + out_prefix)
 print("\t[INFO] Interaction file: " + enhanced_interaction_file)
-print("\t[INFO] --selection-approach: " + selection_approach)
-print("\t[INFO] --adjust-to-interaction-distance: " + str(adjust_to_interaction_distance))
+print("\t[INFO] --enriched-digests-file: " + str(enriched_digests_file))
 
-if not(selection_approach == 'q13' or selection_approach == 'exact'):
-    print("\t[ERROR] --selection-approach must be \'q13\' or \'exact\'!")
-    exit(1)
-
-### Prepare variables, data structures and streams for output files
-###################################################################
+### Prepare variables
+#####################
+####XX The essential variables are declared in the following section.
 
 # Directed interactions
-#######################
+# ---------------------
+
+# Dictionaries for read pair numbers of directed interactions within EE, EN and NN
+di_ee_rp_dict = {}
+di_en_rp_dict = {}
+di_nn_rp_dict = {}
 
 # Total number of interactions
-dir_inter_num = 0
+di_num = 0
 
-# Numbers of interactions within AA, AI and II
-dir_inter_aa_num = 0
-dir_inter_ai_num = 0
-dir_inter_ii_num = 0
+# Numbers of interactions within EE, EN and NN
+di_ee_num = 0
+di_en_num = 0
+di_ne_num = 0
+di_nn_num = 0
 
-# Percentages of interactions within AA, AI and II
-dir_inter_aa_percentage = None
-dir_inter_ai_percentage = None
-dir_inter_ii_percentage = None
-
-dir_inter_aa_rp_q1 = None
-dir_inter_aa_rp_median = None
-dir_inter_aa_rp_q3 = None
-
-# Arrays for read pair numbers within AA, AI and II
-dir_inter_aa_rp_array = []
-dir_inter_ai_rp_array = []
-dir_inter_ii_rp_array = []
-
-# First quantiles of read pair number distribution within AA, AI and II
-dir_inter_aa_rp_q1 = None
-dir_inter_ai_rp_q1 = None
-dir_inter_ii_rp_q1 = None
-
-# Second quantiles of read pair number distribution within AA, AI and II
-dir_inter_aa_rp_median = None
-dir_inter_ai_rp_median = None
-dir_inter_ii_rp_median = None
-
-# Third quantiles of read pair number distribution within AA, AI and II
-dir_inter_aa_rp_q3 = None
-dir_inter_ai_rp_q3 = None
-dir_inter_ii_rp_q3 = None
-
-# Arrays for interaction distances within AA, AI and II
-dir_inter_aa_dist_array = []
-dir_inter_ai_dist_array = []
-dir_inter_ii_dist_array = []
+# Arrays for read pair numbers within EE, EN and NN
+di_ee_rp_array = []
+di_en_rp_array = []
+di_ne_rp_array = []
+di_nn_rp_array = []
 
 # Undirected interactions
-#########################
+# -----------------------
 
 # Total number of interactions
-undir_inter_num = 0
+ui_num = 0
 
-# Numbers of interactions within AA, AI and II
-undir_inter_aa_num = 0
-undir_inter_ai_num = 0
-undir_inter_ii_num = 0
+# Numbers of interactions within EE, EN and NN
+ui_ee_num = 0
+ui_en_num = 0
+ui_ne_num = 0
+ui_nn_num = 0
 
-# Percentages of interactions within AA, AI and II
-undir_inter_aa_percentage = None
-undir_inter_ai_percentage = None
-undir_inter_ii_percentage = None
+# Arrays for read pair numbers within EE, EN and NN
+ui_ee_rp_array = []
+ui_en_rp_array = []
+ui_ne_rp_array = []
+ui_nn_rp_array = []
 
-# Arrays for read pair numbers within AA, AI and II
-undir_inter_aa_rp_array = []
-undir_inter_ai_rp_array = []
-undir_inter_ii_rp_array = []
-
-# Second quartiles of read pair number distribution within AA, AI and II
-undir_inter_aa_rp_median = None
-undir_inter_ai_rp_median = None
-undir_inter_ii_rp_median = None
-
-# Arrays for interaction distances within AA, AI and II
-undir_inter_aa_dist_array = []
-undir_inter_ai_dist_array = []
-undir_inter_ii_dist_array = []
-
-# Undirected reference interactions 1 ('q13' selection approach)
-################################################################
+# Undirected reference interactions
+# ---------------------------------
 
 # Total number of interactions
-undir_ref_1_inter_num = 0
+uir_num = 0
 
-# Numbers of interactions within AA, AI and II
-undir_ref_1_inter_aa_num = 0
-undir_ref_1_inter_ai_num = 0
-undir_ref_1_inter_ii_num = 0
+# Numbers of interactions within EE, EN and NN
+uir_ee_num = 0
+uir_en_num = 0
+uir_ne_num = 0
+uir_nn_num = 0
 
-# Percentages of interactions within AA, AI and II
-undir_ref_1_inter_aa_percentage = None
-undir_ref_1_inter_ai_percentage = None
-undir_ref_1_inter_ii_percentage = None
+# Arrays for read pair numbers within EE, EN and NN
+uir_ee_rp_array = []
+uir_en_rp_array = []
+uir_ne_rp_array = []
+uir_nn_rp_array = []
 
-# Arrays for read pair numbers within AA, AI and II
-undir_ref_1_inter_aa_rp_array = []
-undir_ref_1_inter_ai_rp_array = []
-undir_ref_1_inter_ii_rp_array = []
 
-# Second quartiles of read pair number distribution within AA, AI and II
-undir_ref_1_inter_aa_rp_median = None
-undir_ref_1_inter_ai_rp_median = None
-undir_ref_1_inter_ii_rp_median = None
+### Read list with digests selected for enrichment
+##################################################
+####XX The regions of the enriched digests from the Javierre publication are stored to a set.
 
-# Arrays for interaction distances within AA, AI and II
-undir_ref_1_inter_aa_dist_array = []
-undir_ref_1_inter_ai_dist_array = []
-undir_ref_1_inter_ii_dist_array = []
+print("[INFO] Reading list with digests selected for enrichment ...")
+enriched_digests_set = set()
+with open(enriched_digests_file, 'rt') as fp:
+    for line in fp:
+        chr, sta, end = line.rstrip().split('\t')
+        enriched_digests_set.add(chr + '\t' + str(sta) + '\t' + str(end))
 
-# Undirected reference interactions 2 ('exact' selection approach)
-##################################################################
+print("\t[INFO] Read " + str(len(enriched_digests_set)) + " digests ...")
+print("[INFO] ... done.")
 
-# Total number of interactions
-undir_ref_2_inter_num = 0
 
-# Numbers of interactions within AA, AI and II
-undir_ref_2_inter_aa_num = 0
-undir_ref_2_inter_ai_num = 0
-undir_ref_2_inter_ii_num = 0
+### Prepare output files
+########################
+####XX The following files will be generated by the script.
 
-# Percentages of interactions within AA, AI and II
-undir_ref_2_inter_aa_percentage = None
-undir_ref_2_inter_ai_percentage = None
-undir_ref_2_inter_ii_percentage = None
+# EI file with interaction categories: DI and UIR only
+di_uir_enhanced_interaction_stream_output = gzip.open(out_prefix + "_enhanced_interaction_file_with_di_and_uir.tsv.gz", 'wt')
 
-# Arrays for read pair numbers within AA, AI and II
-undir_ref_2_inter_aa_rp_array = []
-undir_ref_2_inter_ai_rp_array = []
-undir_ref_2_inter_ii_rp_array = []
+# EI file with all input interactions, but with overwritten tags for interaction categories (column 3) and enrichment states (column 6)
+di_ui_uir_enhanced_interaction_stream_output = gzip.open(out_prefix + "_enhanced_interaction_file_with_di_ui_and_uir.tsv.gz", 'wt')
 
-# Second quantiles of read pair number distribution within AA, AI and II
-undir_ref_2_inter_aa_rp_median = None
-undir_ref_2_inter_ai_rp_median = None
-undir_ref_2_inter_ii_rp_median = None
+# Prepare stream for output of statistics
+tab_stream_stats_output = open(out_prefix + "_stats.tsv", 'wt')
 
-# Arrays for interaction distances within AA, AI and II
-undir_ref_2_inter_aa_dist_array = []
-undir_ref_2_inter_ai_dist_array = []
-undir_ref_2_inter_ii_dist_array = []
-
-# Dictionaries for read pair numbers of directed interactions within AA, AI and II
-rp_dict_aa = {}
-rp_dict_ai = {}
-rp_dict_ii = {}
-
-# Sets for digests involved directed and undirected interactions
-dir_a_dig_set = set()
-dir_i_dig_set = set()
-undir_a_dig_set = set()
-undir_i_dig_set = set()
-undir_ref_1_a_dig_set = set()
-undir_ref_1_i_dig_set = set()
-undir_ref_2_a_dig_set = set()
-undir_ref_2_i_dig_set = set()
-
-# Output files
-##############
-
-# Enhanced interaction file with interaction categories: DIAA, DIAI, DIII, UIRAA, UIRAI and UIRII
-enhanced_interaction_file_output = out_prefix + "_enhanced_interaction_file_with_di_and_uir.tsv.gz"
-enhanced_interaction_stream_output = gzip.open(enhanced_interaction_file_output, 'wt')
+# Prepare stream for warnings
+tab_stream_warnings_output = open(out_prefix + "_warnings.tsv", 'wt')
 
 # PDF file with boxplots for distributions of read pair numbers
 pdf_name_boxplots_read_pair_numbers = out_prefix + "_read_pair_number_boxplot.pdf"
 
-# PDF file with boxplots for distributions of interaction distances
-pdf_name_boxplots_interaction_distances = out_prefix + "_interaction_distance_boxplot.pdf"
-
-# PDF file with three barplots showing the proportions of interactions within the enrichment pair categories AA, AI and II
+# PDF file with three barplots showing the proportions of interactions within the enrichment pair categories EE, EN, NE and NN
 pdf_name_barplots_interaction_enrichment_pair_tags = out_prefix + "_interaction_enrichment_pair_tags_barplot.pdf"
 
-# Prepare stream for warnings
-tab_file_warnings_output = out_prefix + "_warnings_di_and_uri.tsv"
-tab_stream_warnings_output = open(tab_file_warnings_output, 'wt')
 
-# Prepare stream for output of statistics
-tab_file_stats_output = out_prefix + "_stats_di_and_uri.tsv"
-tab_stream_stats_output = open(tab_file_stats_output, 'wt')
+### 1st pass: Determine distribution of read pairs per interaction for DI
+#########################################################################
+####XX Here the distribution of read pairs per interaction is determined for directed interactions (DI).
 
-
-
-### 1st pass: Collect information about DI, UIE and UII
-#######################################################
-
-print("[INFO] 1st pass: Collect information about DI, UIE and UII ...")
+print("[INFO] 1st pass: Collect information about DI ...")
 
 print("\t[INFO] Iterating enhanced interaction file ...")
 with gzip.open(enhanced_interaction_file, 'rt') as fp:
 
     n_interaction_total = 0
-    line = fp.readline()
-    while line:
+    for line in fp:
 
         # Report progress
         n_interaction_total += 1
@@ -301,132 +230,117 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
             diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
 
-        enrichment_tag_dig_1 = enrichment_pair_tag[0]
-        enrichment_tag_dig_2 = enrichment_pair_tag[1]
+        # Get digest coordinates from enhanced interaction file
+        coord_key_da = chr_a + '\t' + str(sta_a) + '\t' + str(end_a)
+        coord_key_db = chr_b + '\t' + str(sta_b) + '\t' + str(end_b)
+
+        # Get enrichment status of digests from file for enriched digests
+        ####XX Here we use the enriched digest regions from the Javierre publication in order to determine the enrichment status of digests involved in this iteraction.
+        if coord_key_da in enriched_digests_set:
+            enrichment_tag_dig_1 = 'E'
+        else:
+            enrichment_tag_dig_1 = 'N'
+
+        if coord_key_db in enriched_digests_set:
+            enrichment_tag_dig_2 = 'E'
+        else:
+            enrichment_tag_dig_2 = 'N'
+
+        enrichment_pair_tag = enrichment_tag_dig_1 + enrichment_tag_dig_2
 
         # Collect read pair numbers for DI, UIE and UII
         if interaction_category == 'DI':
-            dir_inter_num += 1
-            if enrichment_pair_tag == 'AA':
-                dir_inter_aa_num +=1
-                dir_inter_aa_rp_array.append(rp_total)
-                dir_inter_aa_dist_array.append(i_dist)
-                if rp_total not in rp_dict_aa:
-                    rp_dict_aa[rp_total] = 1
-                else:
-                    rp_dict_aa[rp_total] +=1
-                # Write directed interaction to file
-                enhanced_interaction_stream_output.write(diachrscripts_toolkit.set_interaction_category_in_enhanced_interaction_line(line, 'DIAA') + "\n")
-            elif enrichment_pair_tag == 'AI' or  enrichment_pair_tag == 'IA':
-                dir_inter_ai_num += 1
-                dir_inter_ai_rp_array.append(rp_total)
-                dir_inter_ai_dist_array.append(i_dist)
-                if rp_total not in rp_dict_ai:
-                    rp_dict_ai[rp_total] = 1
-                else:
-                    rp_dict_ai[rp_total] +=1
-                # Write directed interaction to file
-                enhanced_interaction_stream_output.write(diachrscripts_toolkit.set_interaction_category_in_enhanced_interaction_line(line, 'DIAI') + "\n")
-            elif enrichment_pair_tag == 'II':
-                dir_inter_ii_num += 1
-                dir_inter_ii_rp_array.append(rp_total)
-                dir_inter_ii_dist_array.append(i_dist)
-                if rp_total not in rp_dict_ii:
-                    rp_dict_ii[rp_total] = 1
-                else:
-                    rp_dict_ii[rp_total] +=1
-                # Write directed interaction to file
-                enhanced_interaction_stream_output.write(diachrscripts_toolkit.set_interaction_category_in_enhanced_interaction_line(line, 'DIII') + "\n")
 
-            if enrichment_tag_dig_1 == 'A':
-                dir_a_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
-            else:
-                dir_i_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
-            if enrichment_tag_dig_2 == 'A':
-                dir_a_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
-            else:
-                dir_i_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
+            di_num += 1
 
+            if enrichment_pair_tag == 'EE':
+                di_ee_num +=1
+                di_ee_rp_array.append(rp_total)
+                ####XX We count directed interactions with certain numbers of read pairs using dictionaries.
+                if rp_total not in di_ee_rp_dict:
+                    di_ee_rp_dict[rp_total] = 1
+                else:
+                    di_ee_rp_dict[rp_total] +=1
+
+            elif enrichment_pair_tag == 'EN':
+                di_en_num += 1
+                di_en_rp_array.append(rp_total)
+                ####XX We use different dictionaries for EE, EN, NE and NN, because we assume that the enrichment status has an influence on the distribution of read pairs per interaction.
+                if rp_total not in di_en_rp_dict:
+                    di_en_rp_dict[rp_total] = 1
+                else:
+                    di_en_rp_dict[rp_total] +=1
+
+            elif enrichment_pair_tag == 'NE':
+                di_ne_num += 1
+                di_ne_rp_array.append(rp_total)
+                ####XX Optionally, we could combine the dictionaries for EN and NE, because the only thing that matters is whether there are two, one or no enriched digest for an interaction.
+                if rp_total not in di_en_rp_dict:
+                    di_en_rp_dict[rp_total] = 1
+                else:
+                    di_en_rp_dict[rp_total] +=1
+
+            elif enrichment_pair_tag == 'NN':
+                di_nn_num += 1
+                di_nn_rp_array.append(rp_total)
+                if rp_total not in di_nn_rp_dict:
+                    di_nn_rp_dict[rp_total] = 1
+                else:
+                    di_nn_rp_dict[rp_total] +=1
+
+        # Count all undirected interactions and collect read pair numbers
+        ####XX We keep track of the read pair numbers per interaction for directed (DI) all undirected interactions (UI) during the first pass.
+        ####XX During the second pass, we will do the same for undirected reference interactions (UIR).
         elif interaction_category == 'UIE' or interaction_category == 'UII':
-            undir_inter_num += 1
-            if enrichment_pair_tag == 'AA':
-                undir_inter_aa_num +=1
-                undir_inter_aa_rp_array.append(rp_total)
-                undir_inter_aa_dist_array.append(i_dist)
-            elif enrichment_pair_tag == 'AI' or  enrichment_pair_tag == 'IA':
-                undir_inter_ai_num += 1
-                undir_inter_ai_rp_array.append(rp_total)
-                undir_inter_ai_dist_array.append(i_dist)
-            elif enrichment_pair_tag == 'II':
-                undir_inter_ii_num += 1
-                undir_inter_ii_rp_array.append(rp_total)
-                undir_inter_ii_dist_array.append(i_dist)
-            if enrichment_tag_dig_1 == 'A':
-                undir_a_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
-            else:
-                undir_i_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
-            if enrichment_tag_dig_2 == 'A':
-                undir_a_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
-            else:
-                undir_i_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
+
+            ui_num += 1
+
+            if enrichment_pair_tag == 'EE':
+                ui_ee_num +=1
+                ui_ee_rp_array.append(rp_total)
+
+            elif enrichment_pair_tag == 'EN':
+                ui_en_num += 1
+                ui_en_rp_array.append(rp_total)
+
+            elif enrichment_pair_tag == 'NE':
+                ui_ne_num += 1
+                ui_ne_rp_array.append(rp_total)
+
+            elif enrichment_pair_tag == 'NN':
+                ui_nn_num += 1
+                ui_nn_rp_array.append(rp_total)
+
         else:
             print("[Error] Interaction category must be either \'DI\', \'UIE\' or \'UII\'!")
             exit(1)
 
-        line = fp.readline()
-
-fp.close()
 print("\t[INFO] done ...")
 
-if dir_inter_aa_num < 3 or dir_inter_ai_num < 3 or dir_inter_ii_num < 3:
+if di_ee_num < 3 or di_en_num < 3 or di_nn_num < 3:
+####XX This case occured at some point and I added this. But actually that never happens.
 
-    print("[ERROR] Too few directed interactions within AA, AI or II! Cannot select reference interactions.")
+    print("[ERROR] Too few directed interactions within EE, EN or NN! Cannot select reference interactions.")
 
-    print("\tdir_inter_num\tdir_inter_aa_num\tdir_inter_ai_num\tdir_inter_ii_num")
-    print("\t" + str(dir_inter_num) + "\t" + str(dir_inter_aa_num) + "\t" + str(dir_inter_ai_num) + "\t" + str(dir_inter_ii_num))
+    print("\tdi_num\tdi_ee_num\tdi_en_num\tdi_ne_num\tdi_nn_num")
+    print("\t" + str(di_num) + "\t" + str(di_ee_num) + "\t" + str(di_en_num) + "\t" + str(di_ne_num) + "\t" + str(di_nn_num))
 
-    print("\tundir_inter_num\tundir_inter_aa_num\tundir_inter_ai_num\tundir_inter_ii_num")
-    print("\t" + str(undir_inter_num) + "\t" + str(undir_inter_aa_num) + "\t" + str(undir_inter_ai_num) + "\t" + str(undir_inter_ii_num))
-
-    tab_stream_warnings_output.close()
-    tab_stream_stats_output.close()
+    print("\tui_num\tui_ee_num\tui_en_num\tui_ne_num\tui_nn_num")
+    print("\t" + str(ui_num) + "\t" + str(ui_ee_num) + "\t" + str(ui_en_num) + "\t" + str(ui_ne_num) + "\t" + str(ui_nn_num))
 
     exit(0)
 
 
-### Get Q1 and Q3 for AA, AI and II
-###################################
-
-# Read pair numbers
-dir_inter_aa_rp_q1 = int(numpy.quantile(dir_inter_aa_rp_array, 0.25))
-dir_inter_ai_rp_q1 = int(numpy.quantile(dir_inter_ai_rp_array, 0.25))
-dir_inter_ii_rp_q1 = int(numpy.quantile(dir_inter_ii_rp_array, 0.25))
-
-dir_inter_aa_rp_q3 = int(numpy.quantile(dir_inter_aa_rp_array, 0.75))
-dir_inter_ai_rp_q3 = int(numpy.quantile(dir_inter_ai_rp_array, 0.75))
-dir_inter_ii_rp_q3 = int(numpy.quantile(dir_inter_ii_rp_array, 0.75))
-
-# Interaction distances
-dir_inter_aa_dist_q1 = int(numpy.quantile(dir_inter_aa_dist_array, 0.25))
-dir_inter_ai_dist_q1 = int(numpy.quantile(dir_inter_ai_dist_array, 0.25))
-dir_inter_ii_dist_q1 = int(numpy.quantile(dir_inter_ii_dist_array, 0.25))
-
-dir_inter_aa_dist_q3 = int(numpy.quantile(dir_inter_aa_dist_array, 0.75))
-dir_inter_ai_dist_q3 = int(numpy.quantile(dir_inter_ai_dist_array, 0.75))
-dir_inter_ii_dist_q3 = int(numpy.quantile(dir_inter_ii_dist_array, 0.75))
-
-
 ### 2nd pass: Select undirected reference interactions
 ######################################################
-
+####XX During the second pass, we use the dictionaries with the interaction counts for the various per interaction read pair counts in order to select undirected reference interactions.
 print("[INFO] 2nd pass: Select undirected reference interactions ...")
 
 print("\t[INFO] Iterating enhanced interaction file ...")
 with gzip.open(enhanced_interaction_file, 'rt') as fp:
 
     n_interaction_total = 0
-    line = fp.readline()
-    while line:
+    for line in fp:
 
         # Report progress
         n_interaction_total += 1
@@ -437,358 +351,242 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
             diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
 
-        enrichment_tag_dig_1 = enrichment_pair_tag[0]
-        enrichment_tag_dig_2 = enrichment_pair_tag[1]
+        # Get digest coordinates from enhanced interaction file
+        coord_key_da = chr_a + '\t' + str(sta_a) + '\t' + str(end_a)
+        coord_key_db = chr_b + '\t' + str(sta_b) + '\t' + str(end_b)
 
-        # Adjust reference interactions to interaction size
-        if adjust_to_interaction_distance:
-            i_dist_range_aa_ok = dir_inter_aa_dist_q1 <= i_dist and i_dist <= dir_inter_aa_dist_q3
-            i_dist_range_ai_ok = dir_inter_ai_dist_q1 <= i_dist and i_dist <= dir_inter_ai_dist_q3
-            i_dist_range_ii_ok = dir_inter_ii_dist_q1 <= i_dist and i_dist <= dir_inter_ii_dist_q3
+        # Get enrichment status of digests from file for enriched digests
+        ####XX As in the first pass, we use the enriched digest regions of the Javierre publication in order to determine the enrichment status of interactions.
+        if coord_key_da in enriched_digests_set:
+            enrichment_tag_dig_1 = 'E'
         else:
-            i_dist_range_aa_ok = True
-            i_dist_range_ai_ok = True
-            i_dist_range_ii_ok = True
+            enrichment_tag_dig_1 = 'N'
 
-        # Select reference interactions (1) using Q1 and Q2 for read pair numbers in DI
+        if coord_key_db in enriched_digests_set:
+            enrichment_tag_dig_2 = 'E'
+        else:
+            enrichment_tag_dig_2 = 'N'
+
+        enrichment_pair_tag = enrichment_tag_dig_1 + enrichment_tag_dig_2
+
+        # Set tag for interaction category
+        if interaction_category == 'DI':
+            interaction_category_tag = 'DI'
+
+        # Select undirected reference interactions from UII and UIE using dictionaries for read pair numbers in DI
         if interaction_category == 'UIE' or interaction_category == 'UII':
-            interaction_category_tag = 'NA'
-            if enrichment_pair_tag == 'AA' and dir_inter_aa_rp_q1 < rp_total and rp_total < dir_inter_aa_rp_q3 and i_dist_range_aa_ok:
-                undir_ref_1_inter_aa_rp_array.append(rp_total)
-                undir_ref_1_inter_aa_dist_array.append(i_dist)
-                undir_ref_1_inter_num +=1
-                undir_ref_1_inter_aa_num += 1
-                interaction_category_tag = 'UIRAA'
-                undir_ref_1_a_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
-                undir_ref_1_a_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
-            elif (enrichment_pair_tag == 'AI' or enrichment_pair_tag == 'IA') and dir_inter_ai_rp_q1 < rp_total and rp_total < dir_inter_ai_rp_q3 and i_dist_range_ai_ok:
-                undir_ref_1_inter_ai_rp_array.append(rp_total)
-                undir_ref_1_inter_ai_dist_array.append(i_dist)
-                undir_ref_1_inter_num += 1
-                undir_ref_1_inter_ai_num += 1
-                interaction_category_tag = 'UIRAI'
-                if enrichment_tag_dig_1 == 'A':
-                    undir_ref_1_a_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
-                else:
-                    undir_ref_1_i_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
-                if enrichment_tag_dig_2 == 'A':
-                    undir_ref_1_a_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
-                else:
-                    undir_ref_1_i_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
-            elif enrichment_pair_tag == 'II' and dir_inter_ii_rp_q1 < rp_total and rp_total < dir_inter_ii_rp_q3 and i_dist_range_ii_ok:
-                undir_ref_1_inter_ii_rp_array.append(rp_total)
-                undir_ref_1_inter_ii_dist_array.append(i_dist)
-                undir_ref_1_inter_num += 1
-                undir_ref_1_inter_ii_num += 1
-                interaction_category_tag = 'UIRII'
-                undir_ref_1_i_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
-                undir_ref_1_i_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
 
-            if selection_approach == 'q13' and interaction_category_tag != 'NA':
-                # Override interaction category tag in column 3 and write interaction to file
-                enhanced_interaction_stream_output.write(diachrscripts_toolkit.set_interaction_category_in_enhanced_interaction_line(line, interaction_category_tag) + "\n")
+            interaction_category_tag = 'UI'
 
-        # Select reference interactions (2) using dictionaries for read pair numbers DI
-        if interaction_category == 'UIE' or interaction_category == 'UII':
-            interaction_category_tag = 'NA'
-            if enrichment_pair_tag == 'AA' and rp_total in rp_dict_aa and 0 < rp_dict_aa[rp_total] and i_dist_range_aa_ok:
-                rp_dict_aa[rp_total] -= 1
-                undir_ref_2_inter_aa_rp_array.append(rp_total)
-                undir_ref_2_inter_aa_dist_array.append(i_dist)
-                undir_ref_2_inter_num +=1
-                undir_ref_2_inter_aa_num += 1
-                interaction_category_tag = 'UIRAA'
-                undir_ref_2_a_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
-                undir_ref_2_a_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
-            elif (enrichment_pair_tag == 'AI' or enrichment_pair_tag == 'IA') and rp_total in rp_dict_ai and 0 < rp_dict_ai[rp_total] and i_dist_range_ai_ok:
-                rp_dict_ai[rp_total] -= 1
-                undir_ref_2_inter_ai_rp_array.append(rp_total)
-                undir_ref_2_inter_ai_dist_array.append(i_dist)
-                undir_ref_2_inter_num += 1
-                undir_ref_2_inter_ai_num += 1
-                interaction_category_tag = 'UIRAI'
-                if enrichment_tag_dig_1 == 'A':
-                    undir_ref_2_a_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
-                else:
-                    undir_ref_2_i_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
-                if enrichment_tag_dig_2 == 'A':
-                    undir_ref_2_a_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
-                else:
-                    undir_ref_2_i_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
-            elif enrichment_pair_tag == 'II' and rp_total in rp_dict_ii and 0 < rp_dict_ii[rp_total] and i_dist_range_ii_ok:
-                rp_dict_ii[rp_total] -= 1
-                undir_ref_2_inter_ii_rp_array.append(rp_total)
-                undir_ref_2_inter_ii_dist_array.append(i_dist)
-                undir_ref_2_inter_num += 1
-                undir_ref_2_inter_ii_num += 1
-                interaction_category_tag = 'UIRII'
-                undir_ref_2_i_dig_set.add(chr_a + "\t" + str(sta_a) + "\t" + str(end_a))
-                undir_ref_2_i_dig_set.add(chr_b + "\t" + str(sta_b) + "\t" + str(end_b))
+            if enrichment_pair_tag == 'EE' and rp_total in di_ee_rp_dict and 0 < di_ee_rp_dict[rp_total]:
+                ####XX Whenever we select an undirected reference interaction with a certain number of read pairs, we decrement the corresponding value in the dictionary (interaction count) by 1.
+                di_ee_rp_dict[rp_total] -= 1
+                uir_ee_rp_array.append(rp_total)
+                uir_num +=1
+                uir_ee_num += 1
+                interaction_category_tag = 'UIR'
 
-            if selection_approach == 'exact' and interaction_category_tag != 'NA':
-                # Override interaction category tag in column 3 and write interaction to file
-                enhanced_interaction_stream_output.write(diachrscripts_toolkit.set_interaction_category_in_enhanced_interaction_line(line, interaction_category_tag) + "\n")
+            elif (enrichment_pair_tag == 'EN') and rp_total in di_en_rp_dict and 0 < di_en_rp_dict[rp_total]:
+                di_en_rp_dict[rp_total] -= 1
+                uir_en_rp_array.append(rp_total)
+                uir_num += 1
+                uir_en_num += 1
+                interaction_category_tag = 'UIR'
 
-        line = fp.readline()
+            elif (enrichment_pair_tag == 'NE') and rp_total in di_en_rp_dict and 0 < di_en_rp_dict[rp_total]:
+                di_en_rp_dict[rp_total] -= 1
+                uir_ne_rp_array.append(rp_total)
+                uir_num += 1
+                uir_ne_num += 1
+                interaction_category_tag = 'UIR'
 
-enhanced_interaction_stream_output.close()
-fp.close()
+            elif enrichment_pair_tag == 'NN' and rp_total in di_nn_rp_dict and 0 < di_nn_rp_dict[rp_total]:
+                di_nn_rp_dict[rp_total] -= 1
+                uir_nn_rp_array.append(rp_total)
+                uir_num += 1
+                uir_nn_num += 1
+                interaction_category_tag = 'UIR'
+
+        # Override interaction category tag in column 3 and write interaction to files
+        ####XX We overwrite the enrichment pair tag in column 6 of the EI file with the new tag that results from Javierre's file.
+        ####XX Up until now there were tags here that resulted from GOPHER's  short-cut option 'All protein coding genes'.
+        ####XX We are now using EE, EN, NE or NN instead of AA, AI, IA or II.
+        line = diachrscripts_toolkit.set_column_in_enhanced_interaction_line(line, 6, enrichment_pair_tag)
+        ####XX We overwrite the interaction category tag in column 3 of the EI file with either DI, UI or UIR.
+        line = diachrscripts_toolkit.set_column_in_enhanced_interaction_line(line, 3, interaction_category_tag)
+        ####XX We write all input interactions to a new EI file with modified tags for interaction category and enrichment status.
+        di_ui_uir_enhanced_interaction_stream_output.write(line + "\n")
+        if interaction_category_tag == 'DI' or interaction_category_tag == 'UIR':
+            ####XX In a second EI file, we write DI and UIR interactions only. This results in a much smaller file that is better suited for some analyzes.
+            di_uir_enhanced_interaction_stream_output.write(line + "\n")
+
+        
+di_uir_enhanced_interaction_stream_output.close()
+di_ui_uir_enhanced_interaction_stream_output.close()
+
 print("\t[INFO] done ...")
 
 print("[INFO] Checking whether reference interactions are missing for some n")
+####XX For directed interactions with high read pair counts, there is sometimes no corresponding reference interaction.
+####XX In such cases the corresponding count in the dictionary is not zero.
+####XX Such cases will be reported in the file for warnings.
 
-#print("\t[INFO] AA interactions")
-tab_stream_warnings_output.write("AA_INTERACTIONS" + "\n")
+tab_stream_warnings_output.write("EE_INTERACTIONS" + "\n")
 tab_stream_warnings_output.write("READ_PAIRS" + "\t" + "MISSING_REFERENCE_INTERACTIONS"  + "\n")
-n_missing_aa = 0
-for x in rp_dict_aa:
-    if 0 < rp_dict_aa[x]:
-        n_missing_aa += rp_dict_aa[x]
-        tab_stream_warnings_output.write(str(x) + "\t" + str(rp_dict_aa[x]) + "\n")
-        #print("\t\t[WARNING] For " + str(rp_dict_aa[x]) + " directed interactions with " + str(x) + " read pairs no undirected reference interaction could be selected.")
+n_missing_ee = 0
+for x in di_ee_rp_dict:
+    if 0 < di_ee_rp_dict[x]:
+        n_missing_ee += di_ee_rp_dict[x]
+        tab_stream_warnings_output.write(str(x) + "\t" + str(di_ee_rp_dict[x]) + "\n")
 
-#print("\t[INFO] AI interactions")
-tab_stream_warnings_output.write("AI_INTERACTIONS" + "\n")
+tab_stream_warnings_output.write("EN_INTERACTIONS" + "\n")
 tab_stream_warnings_output.write("READ_PAIRS" + "\t" + "MISSING_REFERENCE_INTERACTIONS"  + "\n")
-n_missing_ai = 0
-for x in rp_dict_ai:
-    if 0 < rp_dict_ai[x]:
-        n_missing_ai += rp_dict_ai[x]
-        tab_stream_warnings_output.write(str(x) + "\t" + str(rp_dict_ai[x]) + "\n")
-        #print("\t\t[WARNING] For " + str(rp_dict_ai[x]) + " directed interactions with " + str(x) + " read pairs no undirected reference interaction could be selected.")
+n_missing_en = 0
+for x in di_en_rp_dict:
+    if 0 < di_en_rp_dict[x]:
+        n_missing_en += di_en_rp_dict[x]
+        tab_stream_warnings_output.write(str(x) + "\t" + str(di_en_rp_dict[x]) + "\n")
 
-#print("\t[INFO] II interactions")
-tab_stream_warnings_output.write("II_INTERACTIONS" + "\n")
+tab_stream_warnings_output.write("NN_INTERACTIONS" + "\n")
 tab_stream_warnings_output.write("READ_PAIRS" + "\t" + "MISSING_REFERENCE_INTERACTIONS"  + "\n")
-n_missing_ii = 0
-for x in rp_dict_ii:
-    if 0 < rp_dict_ii[x]:
-        n_missing_ii += rp_dict_ii[x]
-        tab_stream_warnings_output.write(str(x) + "\t" + str(rp_dict_ii[x]) + "\n")
-        #print("\t\t[WARNING] For " + str(rp_dict_ii[x]) + " directed interactions with " + str(x) + " read pairs no undirected reference interaction could be selected.")
+n_missing_nn = 0
+for x in di_nn_rp_dict:
+    if 0 < di_nn_rp_dict[x]:
+        n_missing_nn += di_nn_rp_dict[x]
+        tab_stream_warnings_output.write(str(x) + "\t" + str(di_nn_rp_dict[x]) + "\n")
 
-print("\t[INFO] Summary for AA, AI and II")
-print("\t\t[WARNING] For " + str(n_missing_aa) + " out of " + str(dir_inter_aa_num) + " directed AA interactions no undirected reference interaction could be selected.")
-print("\t\t[WARNING] For " + str(n_missing_ai) + " out of " + str(dir_inter_ai_num) + " directed AI interactions no undirected reference interaction could be selected.")
-print("\t\t[WARNING] For " + str(n_missing_ii) + " out of " + str(dir_inter_ii_num) + " directed II interactions no undirected reference interaction could be selected.")
+print("\t[INFO] Summary for EE, EN and NN")
+print("\t\t[WARNING] For " + str(n_missing_ee) + " out of " + str(di_ee_num) + " directed EE interactions no undirected reference interaction could be selected.")
+print("\t\t[WARNING] For " + str(n_missing_en) + " out of " + str(di_en_num) + " directed EN or NE interactions no undirected reference interaction could be selected.")
+print("\t\t[WARNING] For " + str(n_missing_nn) + " out of " + str(di_nn_num) + " directed NN interactions no undirected reference interaction could be selected.")
 
 tab_stream_warnings_output.close()
 print("\t[INFO] done ...")
 
+
 ### Output some statistics
 ##########################
+####XX During the selection of the reference interaction, we determined the distributions of read pair counts per interaction for DI, UI and UIR.
+####XX With this we can check afterwards whether the distributions for DI and UIR are really the same and how they differ from the distribution for UI.
 
-dir_inter_aa_rp_median = int(numpy.quantile(dir_inter_aa_rp_array, 0.50))
-dir_inter_ai_rp_median = int(numpy.quantile(dir_inter_ai_rp_array, 0.50))
-dir_inter_ii_rp_median = int(numpy.quantile(dir_inter_ii_rp_array, 0.50))
+di_ee_rp_median = int(numpy.quantile(di_ee_rp_array, 0.50))
+di_en_rp_median = int(numpy.quantile(di_en_rp_array, 0.50))
+di_ne_rp_median = int(numpy.quantile(di_ne_rp_array, 0.50))
+di_nn_rp_median = int(numpy.quantile(di_nn_rp_array, 0.50))
 
-dir_inter_aa_percentage = "{0:.2f}".format(100 * dir_inter_aa_num / dir_inter_num)
-dir_inter_ai_percentage = "{0:.2f}".format(100 * dir_inter_ai_num / dir_inter_num)
-dir_inter_ii_percentage = "{0:.2f}".format(100 * dir_inter_ii_num / dir_inter_num)
+di_ee_percent = "{0:.2f}".format(100 * di_ee_num / di_num)
+di_en_percent = "{0:.2f}".format(100 * di_en_num / di_num)
+di_ne_percent = "{0:.2f}".format(100 * di_ne_num / di_num)
+di_nn_percent = "{0:.2f}".format(100 * di_nn_num / di_num)
 
-undir_inter_aa_rp_median = int(numpy.quantile(undir_inter_aa_rp_array, 0.50))
-undir_inter_ai_rp_median = int(numpy.quantile(undir_inter_ai_rp_array, 0.50))
-undir_inter_ii_rp_median = int(numpy.quantile(undir_inter_ii_rp_array, 0.50))
+ui_ee_rp_median = int(numpy.quantile(ui_ee_rp_array, 0.50))
+ui_en_rp_median = int(numpy.quantile(ui_en_rp_array, 0.50))
+ui_ne_rp_median = int(numpy.quantile(ui_ne_rp_array, 0.50))
+ui_nn_rp_median = int(numpy.quantile(ui_nn_rp_array, 0.50))
 
-undir_inter_aa_percentage = "{0:.2f}".format(100 * undir_inter_aa_num / undir_inter_num)
-undir_inter_ai_percentage = "{0:.2f}".format(100 * undir_inter_ai_num / undir_inter_num)
-undir_inter_ii_percentage = "{0:.2f}".format(100 * undir_inter_ii_num / undir_inter_num)
+ui_ee_percent = "{0:.2f}".format(100 * ui_ee_num / ui_num)
+ui_en_percent = "{0:.2f}".format(100 * ui_en_num / ui_num)
+ui_ne_percent = "{0:.2f}".format(100 * ui_ne_num / ui_num)
+ui_nn_percent = "{0:.2f}".format(100 * ui_nn_num / ui_num)
 
-undir_ref_1_inter_aa_rp_median = int(numpy.quantile(undir_ref_1_inter_aa_rp_array, 0.50))
-undir_ref_1_inter_ai_rp_median = int(numpy.quantile(undir_ref_1_inter_ai_rp_array, 0.50))
-undir_ref_1_inter_ii_rp_median = int(numpy.quantile(undir_ref_1_inter_ii_rp_array, 0.50))
+uir_ee_rp_median = int(numpy.quantile(uir_ee_rp_array, 0.50))
+uir_en_rp_median = int(numpy.quantile(uir_en_rp_array, 0.50))
+uir_ne_rp_median = int(numpy.quantile(uir_ne_rp_array, 0.50))
+uir_nn_rp_median = int(numpy.quantile(uir_nn_rp_array, 0.50))
 
-undir_ref_1_inter_aa_percentage = "{0:.2f}".format(100 * undir_ref_1_inter_aa_num / undir_ref_1_inter_num)
-undir_ref_1_inter_ai_percentage = "{0:.2f}".format(100 * undir_ref_1_inter_ai_num / undir_ref_1_inter_num)
-undir_ref_1_inter_ii_percentage = "{0:.2f}".format(100 * undir_ref_1_inter_ii_num / undir_ref_1_inter_num)
+uir_ee_percent = "{0:.2f}".format(100 * uir_ee_num / uir_num)
+uir_en_percent = "{0:.2f}".format(100 * uir_en_num / uir_num)
+uir_ne_percent = "{0:.2f}".format(100 * uir_ne_num / uir_num)
+uir_nn_percent = "{0:.2f}".format(100 * uir_nn_num / uir_num)
 
-undir_ref_2_inter_aa_rp_median = int(numpy.quantile(undir_ref_2_inter_aa_rp_array, 0.50))
-undir_ref_2_inter_ai_rp_median = int(numpy.quantile(undir_ref_2_inter_ai_rp_array, 0.50))
-undir_ref_2_inter_ii_rp_median = int(numpy.quantile(undir_ref_2_inter_ii_rp_array, 0.50))
+####XX The most important results are written to the screen.
+print()
+print("[INFO] Total number of directed interactions: " + str(di_num))
 
-undir_ref_2_inter_aa_percentage = "{0:.2f}".format(100 * undir_ref_2_inter_aa_num / undir_ref_2_inter_num)
-undir_ref_2_inter_ai_percentage = "{0:.2f}".format(100 * undir_ref_2_inter_ai_num / undir_ref_2_inter_num)
-undir_ref_2_inter_ii_percentage = "{0:.2f}".format(100 * undir_ref_2_inter_ii_num / undir_ref_2_inter_num)
+print("\tWithin 'EE': " + str(di_ee_num) + " (" + str(di_ee_percent) + "%)")
+print("\t\tMedian number of read pairs: " + str(di_ee_rp_median))
+
+print("\tWithin 'EN': " + str(di_en_num) + " (" + str(di_en_percent) + "%)")
+print("\t\tMedian number of read pairs: " + str(di_en_rp_median))
+
+print("\tWithin 'NE': " + str(di_ne_num) + " (" + str(di_ne_percent) + "%)")
+print("\t\tMedian number of read pairs: " + str(di_ne_rp_median))
+
+print("\tWithin 'NN': " + str(di_nn_num) + " (" + str(di_nn_percent) + "%)")
+print("\t\tMedian number of read pairs: " + str(di_nn_rp_median))
 
 print()
-print("Total number of directed interactions: " + str(dir_inter_num))
-print("\tWithin 'AA': " + str(dir_inter_aa_num) + " (" + str(dir_inter_aa_percentage) + "%)")
-print("\t\tMedian number of read pairs: " + str(dir_inter_aa_rp_median))
-print("\tWithin 'AI': " + str(dir_inter_ai_num) + " (" + str(dir_inter_ai_percentage) + "%)")
-print("\t\tMedian number of read pairs: " + str(dir_inter_ai_rp_median))
-print("\tWithin 'II': " + str(dir_inter_ii_num) + " (" + str(dir_inter_ii_percentage) + "%)")
-print("\t\tMedian number of read pairs: " + str(dir_inter_ii_rp_median))
+print("[INFO] Number of undirected interactions: " + str(ui_num))
+print("\tWithin 'EE': " + str(ui_ee_num) + " (" + str(ui_ee_percent) + "%)")
+print("\t\tMedian number of read pairs: " + str(ui_ee_rp_median))
+
+print("\tWithin 'EN': " + str(ui_en_num) + " (" + str(ui_en_percent) + "%)")
+print("\t\tMedian number of read pairs: " + str(ui_en_rp_median))
+
+print("\tWithin 'NE': " + str(ui_ne_num) + " (" + str(ui_ne_percent) + "%)")
+print("\t\tMedian number of read pairs: " + str(ui_ne_rp_median))
+
+print("\tWithin 'NN': " + str(ui_nn_num) + " (" + str(ui_nn_percent) + "%)")
+print("\t\tMedian number of read pairs: " + str(ui_nn_rp_median))
 
 print()
-print("Number of exclusive and inclusive undirected interactions: " + str(undir_inter_num))
-print("\tWithin 'AA': " + str(undir_inter_aa_num) + " (" + str(undir_inter_aa_percentage) + "%)")
-print("\t\tMedian number of read pairs: " + str(undir_inter_aa_rp_median))
-print("\tWithin 'AI': " + str(undir_inter_ai_num) + " (" + str(undir_inter_ai_percentage) + "%)")
-print("\t\tMedian number of read pairs: " + str(undir_inter_ai_rp_median))
-print("\tWithin 'II': " + str(undir_inter_ii_num) + " (" + str(undir_inter_ii_percentage) + "%)")
-print("\t\tMedian number of read pairs: " + str(undir_inter_ii_rp_median))
+print("[INFO] Number of undirected reference interactions: " + str(uir_num))
+print("\tWithin 'EE': " + str(uir_ee_num) + " (" + str(uir_ee_percent) + "%)")
+print("\t\tMedian number of read pairs: " + str(uir_ee_rp_median))
 
-print()
-print("Number of exclusive and inclusive undirected reference (1) interactions: " + str(undir_ref_1_inter_num))
-print("\tWithin 'AA': " + str(undir_ref_1_inter_aa_num) + " (" + str(undir_ref_1_inter_aa_percentage) + "%)")
-print("\t\tMedian number of read pairs: " + str(undir_ref_1_inter_aa_rp_median))
-print("\tWithin 'AI': " + str(undir_ref_1_inter_ai_num) + " (" + str(undir_ref_1_inter_ai_percentage) + "%)")
-print("\t\tMedian number of read pairs: " + str(undir_ref_1_inter_ai_rp_median))
-print("\tWithin 'II': " + str(undir_ref_1_inter_ii_num) + " (" + str(undir_ref_1_inter_ii_percentage) + "%)")
-print("\t\tMedian number of read pairs: " + str(undir_ref_1_inter_ii_rp_median))
+print("\tWithin 'EN': " + str(uir_en_num) + " (" + str(uir_en_percent) + "%)")
+print("\t\tMedian number of read pairs: " + str(uir_en_rp_median))
 
-print()
-print("Number of exclusive and inclusive undirected reference (2) interactions: " + str(undir_ref_2_inter_num))
-print("\tWithin 'AA': " + str(undir_ref_2_inter_aa_num) + " (" + str(undir_ref_2_inter_aa_percentage) + "%)")
-print("\t\tMedian number of read pairs: " + str(undir_ref_2_inter_aa_rp_median))
-print("\tWithin 'AI': " + str(undir_ref_2_inter_ai_num) + " (" + str(undir_ref_2_inter_ai_percentage) + "%)")
-print("\t\tMedian number of read pairs: " + str(undir_ref_2_inter_ai_rp_median))
-print("\tWithin 'II': " + str(undir_ref_2_inter_ii_num) + " (" + str(undir_ref_2_inter_ii_percentage) + "%)")
-print("\t\tMedian number of read pairs: " + str(undir_ref_2_inter_ii_rp_median))
+print("\tWithin 'NE': " + str(uir_ne_num) + " (" + str(uir_ne_percent) + "%)")
+print("\t\tMedian number of read pairs: " + str(uir_ne_rp_median))
 
-dir_a_dig_num = len(dir_a_dig_set)                   # Number of active digests involved in directed interactions
-dir_i_dig_num = len(dir_i_dig_set)                   # Number of inactive digests involved in directed interactions
-percentage_dir_a_dig = 100 * dir_a_dig_num / (dir_a_dig_num + dir_i_dig_num)
+print("\tWithin 'NN': " + str(uir_nn_num) + " (" + str(uir_nn_percent) + "%)")
+print("\t\tMedian number of read pairs: " + str(uir_nn_rp_median))
 
-undir_a_dig_num = len(undir_a_dig_set)               # Number of active digests involved in undirected interactions
-undir_i_dig_num = len(undir_i_dig_set)               # Number of inactive digests involved in undirected interactions
-percentage_undir_a_dig = 100 * undir_a_dig_num / (undir_a_dig_num + undir_i_dig_num)
-
-undir_ref_1_a_dig_num = len(undir_ref_1_a_dig_set)   # Number of active digests involved in undirected interactions
-undir_ref_1_i_dig_num = len(undir_ref_1_i_dig_set)   # Number of inactive digests involved in undirected interactions
-percentage_undir_ref_1_a_dig = 100 * undir_ref_1_a_dig_num / (undir_ref_1_a_dig_num + undir_ref_1_i_dig_num)
-
-undir_ref_2_a_dig_num = len(undir_ref_2_a_dig_set)   # Number of active digests involved in undirected interactions
-undir_ref_2_i_dig_num = len(undir_ref_2_i_dig_set)   # Number of inactive digests involved in undirected interactions
-percentage_undir_ref_2_a_dig = 100 * undir_ref_2_a_dig_num / (undir_ref_2_a_dig_num + undir_ref_2_i_dig_num)
-
-print()
-print("Number of active (A) digests involved in DI: " + str(dir_a_dig_num) + " (" + "{0:.2f}".format(percentage_dir_a_dig) + "%)")
-print("Number of inactive (I) digests involved in DI: " + str(dir_i_dig_num))
-print()
-print("Number of active (A) digests involved in U: " + str(undir_a_dig_num) + " (" + "{0:.2f}".format(percentage_undir_a_dig) + "%)")
-print("Number of inactive (I) digests involved in U: " + str(undir_i_dig_num))
-print()
-print("Number of active (A) digests involved in UR1: " + str(undir_ref_1_a_dig_num) + " (" + "{0:.2f}".format(percentage_undir_ref_1_a_dig) + "%)")
-print("Number of inactive (I) digests involved in UR1: " + str(undir_ref_1_i_dig_num))
-print()
-print("Number of active (A) digests involved in UR2: " + str(undir_ref_2_a_dig_num) + " (" + "{0:.2f}".format(percentage_undir_ref_2_a_dig) + "%)")
-print("Number of inactive (I) digests involved in UR2: " + str(undir_ref_2_i_dig_num))
-print()
-
-dir_inter_aa_dist_median = int(numpy.quantile(dir_inter_aa_dist_array, 0.50))
-dir_inter_ai_dist_median = int(numpy.quantile(dir_inter_ai_dist_array, 0.50))
-dir_inter_ii_dist_median = int(numpy.quantile(dir_inter_ii_dist_array, 0.50))
-
-print("Median distances of directed interactions:")
-print("\tAA: " + str(dir_inter_aa_dist_median))
-print("\tAI: " + str(dir_inter_ai_dist_median))
-print("\tII: " + str(dir_inter_ii_dist_median))
-
-undir_inter_aa_dist_median = int(numpy.quantile(undir_inter_aa_dist_array, 0.50))
-undir_inter_ai_dist_median = int(numpy.quantile(undir_inter_ai_dist_array, 0.50))
-undir_inter_ii_dist_median = int(numpy.quantile(undir_inter_ii_dist_array, 0.50))
-
-print("Median distances of undirected interactions:")
-print("\tAA: " + str(undir_inter_aa_dist_median))
-print("\tAI: " + str(undir_inter_ai_dist_median))
-print("\tII: " + str(undir_inter_ii_dist_median))
-
-undir_ref_1_inter_aa_dist_median = int(numpy.quantile(undir_ref_1_inter_aa_dist_array, 0.50))
-undir_ref_1_inter_ai_dist_median = int(numpy.quantile(undir_ref_1_inter_ai_dist_array, 0.50))
-undir_ref_1_inter_ii_dist_median = int(numpy.quantile(undir_ref_1_inter_ii_dist_array, 0.50))
-
-print("Median distances of undirected reference interactions (q13):")
-print("\tAA: " + str(undir_ref_1_inter_aa_dist_median))
-print("\tAI: " + str(undir_ref_1_inter_ai_dist_median))
-print("\tII: " + str(undir_ref_1_inter_ii_dist_median))
-
-undir_ref_2_inter_aa_dist_median = int(numpy.quantile(undir_ref_2_inter_aa_dist_array, 0.50))
-undir_ref_2_inter_ai_dist_median = int(numpy.quantile(undir_ref_2_inter_ai_dist_array, 0.50))
-undir_ref_2_inter_ii_dist_median = int(numpy.quantile(undir_ref_2_inter_ii_dist_array, 0.50))
-
-print("Median distances of undirected reference interactions (exact):")
-print("\tAA: " + str(undir_ref_2_inter_aa_dist_median))
-print("\tAI: " + str(undir_ref_2_inter_ai_dist_median))
-print("\tII: " + str(undir_ref_2_inter_ii_dist_median))
-
-print()
-
+####XX All results are written to a table.
 tab_stream_stats_output.write(
 
-    "out_prefix" + "\t" +                               # Prefix for output
+    "out_prefix" + "\t" +                 # Prefix for output
 
-    "dir_inter_num" + "\t" +                            # Total number of directed interactions
+    "di_num" + "\t" +                     # Total number of directed interactions
 
-    "dir_inter_aa_num" + "\t" +                         # Number of directed interactions within AA
-    "dir_inter_ai_num" + "\t" +                         # Number of directed interactions within AI
-    "dir_inter_ii_num" + "\t" +                         # Number of directed interactions within II
+    "di_ee_num" + "\t" +                  # Number of directed interactions within EE
+    "di_en_num" + "\t" +                  # Number of directed interactions within EN
+    "di_ne_num" + "\t" +                  # Number of directed interactions within NE
+    "di_nn_num" + "\t" +                  # Number of directed interactions within NN
 
-    "dir_inter_aa_rp_median" + "\t" +                   # Median number of read pairs in directed interactions within AA
-    "dir_inter_ai_rp_median" + "\t" +                   # Median number of read pairs in directed interactions within AI
-    "dir_inter_ii_rp_median" + "\t" +                   # Median number of read pairs in directed interactions within II
+    "di_ee_rp_median" + "\t" +            # Median number of read pairs in directed interactions within EE
+    "di_en_rp_median" + "\t" +            # Median number of read pairs in directed interactions within EN
+    "di_ne_rp_median" + "\t" +            # Median number of read pairs in directed interactions within NE
+    "di_nn_rp_median" + "\t" +            # Median number of read pairs in directed interactions within NN
 
-    "undir_inter_num" + "\t" +                          # Total number of undirected interactions
+    "ui_num" + "\t" +                     # Total number of undirected interactions
 
-    "undir_inter_aa_num" + "\t" +                       # Number of undirected interactions within AA
-    "undir_inter_ai_num" + "\t" +                       # Number of undirected interactions within AI
-    "undir_inter_ii_num" + "\t" +                       # Number of undirected interactions within II
+    "ui_ee_num" + "\t" +                  # Number of undirected interactions within EE
+    "ui_en_num" + "\t" +                  # Number of undirected interactions within EN
+    "ui_ne_num" + "\t" +                  # Number of undirected interactions within NE
+    "ui_nn_num" + "\t" +                  # Number of undirected interactions within NN
 
-    "undir_inter_aa_rp_median" + "\t" +                 # Median number of read pairs in undirected interactions within AA
-    "undir_inter_ai_rp_median" + "\t" +                 # Median number of read pairs in undirected interactions within AI
-    "undir_inter_ii_rp_median" + "\t" +                 # Median number of read pairs in undirected interactions within II
+    "ui_ee_rp_median" + "\t" +            # Median number of read pairs in undirected interactions within EE
+    "ui_en_rp_median" + "\t" +            # Median number of read pairs in undirected interactions within EN
+    "ui_ne_rp_median" + "\t" +            # Median number of read pairs in undirected interactions within NE
+    "ui_nn_rp_median" + "\t" +            # Median number of read pairs in undirected interactions within NN
 
-    "undir_ref_1_inter_num" + "\t" +                    # Total number of undirected reference interactions (q13)
+    "uir_num" + "\t" +                    # Total number of undirected interactions (exact)
 
-    "undir_ref_1_inter_aa_num" + "\t" +                 # Number of undirected reference interactions within AA
-    "undir_ref_1_inter_ai_num" + "\t" +                 # Number of undirected reference interactions within AI
-    "undir_ref_1_inter_ii_num" + "\t" +                 # Number of undirected reference interactions within II
+    "uir_ee_num" + "\t" +                 # Number of undirected reference interactions within EE
+    "uir_en_num" + "\t" +                 # Number of undirected reference interactions within EN
+    "uir_ne_num" + "\t" +                 # Number of undirected reference interactions within NE
+    "uir_nn_num" + "\t" +                 # Number of undirected reference interactions within NN
 
-    "undir_ref_1_inter_aa_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within AA
-    "undir_ref_1_inter_ai_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within AI
-    "undir_ref_1_inter_ii_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within II
+    "n_missing_ee" + "\t" +               # Number of missing reference interactions within EE
+    "n_missing_en" + "\t" +               # Number of missing reference interactions within EN or NE
+    "n_missing_nn" + "\t" +               # Number of missing reference interactions within NN
 
-    "undir_ref_2_inter_num" + "\t" +                    # Total number of undirected interactions (exact)
-
-    "undir_ref_2_inter_aa_num" + "\t" +                 # Number of undirected reference interactions within AA
-    "undir_ref_2_inter_ai_num" + "\t" +                 # Number of undirected reference interactions within AI
-    "undir_ref_2_inter_ii_num" + "\t" +                 # Number of undirected reference interactions within II
-
-    "n_missing_aa" + "\t" +                             # Number of missing reference interactions within AA
-    "n_missing_ai" + "\t" +                             # Number of missing reference interactions within AI
-    "n_missing_ii" + "\t" +                             # Number of missing reference interactions within II
-
-    "undir_ref_2_inter_aa_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within AA
-    "undir_ref_2_inter_ai_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within AI
-    "undir_ref_2_inter_ii_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within II
-
-    "dir_a_dig_num" + "\t" +                            # Number of active digests involved in directed interactions
-    "dir_i_dig_num" + "\t" +                            # Number of inactive digests involved in directed interactions
-
-    "undir_a_dig_num" + "\t" +                          # Number of active digests involved in undirected interactions
-    "undir_i_dig_num" + "\t" +                          # Number of inactive digests involved in undirected interactions
-
-    "undir_ref_1_a_dig_num" + "\t" +                    # Number of active digests involved in undirected reference interactions (q13)
-    "undir_ref_1_i_dig_num" + "\t" +                    # Number of inactive digests involved in undirected reference interactions (q13)
-
-    "undir_ref_2_a_dig_num" + "\t" +                    # Number of active digests involved in undirected reference interactions (exact)
-    "undir_ref_2_i_dig_num" + "\t" +                    # Number of inactive digests involved in undirected reference interactions (exact)
-
-    "dir_inter_aa_dist_median" + "\t" +                 # Median interaction distance of directed interactions within AA
-    "dir_inter_ai_dist_median" + "\t" +                 # Median interaction distance of directed interactions within AI
-    "dir_inter_ii_dist_median" + "\t" +                 # Median interaction distance of directed interactions within II
-
-    "undir_inter_aa_dist_median" + "\t" +               # Median interaction distance of undirected interactions within AA
-    "undir_inter_ai_dist_median" + "\t" +               # Median interaction distance of undirected interactions within AI
-    "undir_inter_ii_dist_median" + "\t" +               # Median interaction distance of undirected interactions within II
-
-    "undir_ref_1_inter_aa_dist_median" + "\t" +         # Median interaction distance of undirected reference interactions within AA (q13)
-    "undir_ref_1_inter_ai_dist_median" + "\t" +         # Median interaction distance of undirected reference interactions within AI (q13)
-    "undir_ref_1_inter_ii_dist_median" + "\t" +         # Median interaction distance of undirected reference interactions within II (q13)
-
-    "undir_ref_2_inter_aa_dist_median" + "\t" +         # Median interaction distance of undirected reference interactions within AA (exact)
-    "undir_ref_2_inter_ai_dist_median" + "\t" +         # Median interaction distance of undirected reference interactions within AI (exact)
-    "undir_ref_2_inter_ii_dist_median" +                # Median interaction distance of undirected reference interactions within II (exact)
+    "uir_ee_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within EE
+    "uir_en_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within EN
+    "uir_ne_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within NE
+    "uir_nn_rp_median" + "\t" +           # Median number of read pairs in undirected reference interactions within NN
 
     "\n"
 )
@@ -796,113 +594,81 @@ tab_stream_stats_output.write(
 
     str(out_prefix) + "\t" +
 
-    str(dir_inter_num) + "\t" +
+    str(di_num) + "\t" +
 
-    str(dir_inter_aa_num) + "\t" +
-    str(dir_inter_ai_num) + "\t" +
-    str(dir_inter_ii_num) + "\t" +
+    str(di_ee_num) + "\t" +
+    str(di_en_num) + "\t" +
+    str(di_ne_num) + "\t" +
+    str(di_nn_num) + "\t" +
 
-    str(dir_inter_aa_rp_median) + "\t" +
-    str(dir_inter_ai_rp_median) + "\t" +
-    str(dir_inter_ii_rp_median) + "\t" +
+    str(di_ee_rp_median) + "\t" +
+    str(di_en_rp_median) + "\t" +
+    str(di_ne_rp_median) + "\t" +
+    str(di_nn_rp_median) + "\t" +
 
-    str(undir_inter_num) + "\t" +
+    str(ui_num) + "\t" +
 
-    str(undir_inter_aa_num) + "\t" +
-    str(undir_inter_ai_num) + "\t" +
-    str(undir_inter_ii_num) + "\t" +
+    str(ui_ee_num) + "\t" +
+    str(ui_en_num) + "\t" +
+    str(ui_ne_num) + "\t" +
+    str(ui_nn_num) + "\t" +
 
-    str(undir_inter_aa_rp_median) + "\t" +
-    str(undir_inter_ai_rp_median) + "\t" +
-    str(undir_inter_ii_rp_median) + "\t" +
+    str(ui_ee_rp_median) + "\t" +
+    str(ui_en_rp_median) + "\t" +
+    str(ui_ne_rp_median) + "\t" +
+    str(ui_nn_rp_median) + "\t" +
 
-    str(undir_ref_1_inter_num) + "\t" +
+    str(uir_num) + "\t" +
 
-    str(undir_ref_1_inter_aa_num) + "\t" +
-    str(undir_ref_1_inter_ai_num) + "\t" +
-    str(undir_ref_1_inter_ii_num) + "\t" +
+    str(uir_ee_num) + "\t" +
+    str(uir_en_num) + "\t" +
+    str(uir_ne_num) + "\t" +
+    str(uir_nn_num) + "\t" +
 
-    str(undir_ref_1_inter_aa_rp_median) + "\t" +
-    str(undir_ref_1_inter_ai_rp_median) + "\t" +
-    str(undir_ref_1_inter_ii_rp_median) + "\t" +
+    str(n_missing_ee) + "\t" +
+    str(n_missing_en) + "\t" +
+    str(n_missing_nn) + "\t" +
 
-    str(undir_ref_2_inter_num) + "\t" +
-
-    str(undir_ref_2_inter_aa_num) + "\t" +
-    str(undir_ref_2_inter_ai_num) + "\t" +
-    str(undir_ref_2_inter_ii_num) + "\t" +
-
-    str(n_missing_aa) + "\t" +
-    str(n_missing_ai) + "\t" +
-    str(n_missing_ii) + "\t" +
-
-    str(undir_ref_2_inter_aa_rp_median) + "\t" +
-    str(undir_ref_2_inter_ai_rp_median) + "\t" +
-    str(undir_ref_2_inter_ii_rp_median) + "\t" +
-
-    str(dir_a_dig_num) + "\t" +
-    str(dir_i_dig_num) + "\t" +
-
-    str(undir_a_dig_num) + "\t" +
-    str(undir_i_dig_num) + "\t" +
-
-    str(undir_ref_1_a_dig_num) + "\t" +
-    str(undir_ref_1_i_dig_num) + "\t" +
-
-    str(undir_ref_2_a_dig_num) + "\t" +
-    str(undir_ref_2_i_dig_num) + "\t" +
-
-    str(dir_inter_aa_dist_median) + "\t" +
-    str(dir_inter_ai_dist_median) + "\t" +
-    str(dir_inter_ii_dist_median) + "\t" +
-
-    str(undir_inter_aa_dist_median) + "\t" +
-    str(undir_inter_ai_dist_median) + "\t" +
-    str(undir_inter_ii_dist_median) + "\t" +
-
-    str(undir_ref_1_inter_aa_dist_median) + "\t" +
-    str(undir_ref_1_inter_ai_dist_median) + "\t" +
-    str(undir_ref_1_inter_ii_dist_median) + "\t" +
-
-    str(undir_ref_2_inter_aa_dist_median) + "\t" +
-    str(undir_ref_2_inter_ai_dist_median) + "\t" +
-    str(undir_ref_2_inter_ii_dist_median) +
+    str(uir_ee_rp_median) + "\t" +
+    str(uir_en_rp_median) + "\t" +
+    str(uir_ne_rp_median) + "\t" +
+    str(uir_nn_rp_median) +
 
     "\n"
 )
-
 tab_stream_stats_output.close()
 
 
 ### Create boxplots for read pair numbers
 #########################################
+####XX We create boxplots for the distributions of read pairs per interaction.
 
 plt.rcParams.update({'font.size':15})
 
 data = [
-    dir_inter_aa_rp_array, dir_inter_ai_rp_array, dir_inter_ii_rp_array,
-    undir_inter_aa_rp_array,undir_inter_ai_rp_array, undir_inter_ii_rp_array,
-    undir_ref_2_inter_aa_rp_array, undir_ref_2_inter_ai_rp_array, undir_ref_2_inter_ii_rp_array
+    di_ee_rp_array, di_en_rp_array, di_ne_rp_array, di_nn_rp_array,
+    ui_ee_rp_array, ui_en_rp_array, ui_ne_rp_array, ui_nn_rp_array,
+    uir_ee_rp_array, uir_en_rp_array, uir_ne_rp_array, uir_nn_rp_array
 ]
-labels = ['EE', 'EN', 'NN', 'EE', 'EN', 'NN','EE', 'EN', 'NN']
+labels = ['EE', 'EN', 'NE', 'NN', 'EE', 'EN', 'NE', 'NN','EE', 'EN', 'NE', 'NN']
 fig1, ax1 = plt.subplots()
-ax1.set_title('Distributions of read pair numbers for DI, U, and UR2 (' + out_prefix + ')')
+ax1.set_title('Distributions of read pair numbers for DI, UI, and UIR (' + out_prefix + ')', fontsize=10)
 ax1.boxplot(data, showfliers=False, labels=labels)
 
 box = ax1.boxplot(data, showfliers=False, labels=labels, patch_artist=True)
 
-colors = ['orange', 'orange', 'orange', 'darkgray', 'darkgray', 'darkgray', 'lightblue', 'lightblue', 'lightblue']
+colors = ['orange', 'orange', 'orange', 'orange', 'darkgray', 'darkgray', 'darkgray', 'darkgray', 'lightblue', 'lightblue', 'lightblue', 'lightblue']
 
 for patch, color in zip(box['boxes'], colors):
     patch.set_facecolor(color)
 
-lab = "DI - AA: " + str(dir_inter_aa_num) + " (" + dir_inter_aa_percentage + "%), AI: " + str(dir_inter_ai_num) + " (" + dir_inter_ai_percentage + "%), II: " + str(dir_inter_ii_num) + " (" + dir_inter_ii_percentage + "%)"
+lab = "DI - EE: " + str(di_ee_num) + " (" + di_ee_percent + "%), EN: " + str(di_en_num) + " (" + di_en_percent + "%), NE: " + str(di_ne_num) + " (" + di_ne_percent + "%), NN: " + str(di_nn_num) + " (" + di_nn_percent + "%)"
 di_patch = mpatches.Patch(color='orange', label=lab)
-lab = "U - AA: " + str(undir_inter_aa_num) + " (" + undir_inter_aa_percentage + "%), AI: " + str(undir_inter_ai_num) + " (" + undir_inter_ai_percentage + "%), II: " + str(undir_inter_ii_num) + " (" + undir_inter_ii_percentage + "%)"
+lab = "UI - EE: " + str(ui_ee_num) + " (" + ui_ee_percent + "%), EN: " + str(ui_en_num) + " (" + ui_en_percent + "%), NE: " + str(ui_ne_num) + " (" + ui_ne_percent + "%), NN: " + str(ui_nn_num) + " (" + ui_nn_percent + "%)"
 u_patch = mpatches.Patch(color='darkgray', label=lab)
-lab = "UR 2 - AA: " + str(undir_ref_2_inter_aa_num) + " (" + undir_ref_2_inter_aa_percentage + "%), AI: " + str(undir_ref_2_inter_ai_num) + " (" + undir_ref_2_inter_ai_percentage + "%), II: " + str(undir_ref_2_inter_ii_num) + " (" + undir_ref_2_inter_ii_percentage + "%)"
+lab = "UIR - EE: " + str(uir_ee_num) + " (" + uir_ee_percent + "%), EN: " + str(uir_en_num) + " (" + uir_en_percent + "%), NE: " + str(uir_ne_num) + " (" + uir_ne_percent + "%), NN: " + str(uir_nn_num) + " (" + uir_nn_percent + "%)"
 ur2_patch = mpatches.Patch(color='lightblue', label=lab)
-plt.legend(handles=[di_patch, u_patch, ur2_patch])
+plt.legend(handles=[di_patch, u_patch, ur2_patch], fontsize=10)
 ax1.set_xlabel('Enrichment state pair tag')
 ax1.set_ylabel('Read pair number')
 plt.grid(True)
@@ -911,53 +677,15 @@ plt.savefig(pdf_name_boxplots_read_pair_numbers, bbox_inches='tight')
 plt.close()
 
 
-### Create boxplots for interaction distances
-#############################################
-
-plt.rcParams.update({'font.size':15})
-
-data = [
-    dir_inter_aa_dist_array, dir_inter_ai_dist_array, dir_inter_ii_dist_array,
-    undir_inter_aa_dist_array,undir_inter_ai_dist_array, undir_inter_ii_dist_array,
-    undir_ref_2_inter_aa_dist_array, undir_ref_2_inter_ai_dist_array, undir_ref_2_inter_ii_dist_array
-]
-labels = ['EE', 'EN', 'NN', 'EE', 'EN', 'NN','EE', 'EN', 'NN']
-fig1, ax1 = plt.subplots()
-ax1.get_yaxis().set_major_formatter(
-matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
-ax1.set_title('Distributions of interaction distances for DI, U, and UR (' + out_prefix + ')')
-ax1.boxplot(data, showfliers=False, labels=labels)
-
-box = ax1.boxplot(data, showfliers=False, labels=labels, patch_artist=True)
-
-colors = ['orange', 'orange', 'orange', 'darkgray', 'darkgray', 'darkgray', 'lightblue', 'lightblue', 'lightblue']
-
-for patch, color in zip(box['boxes'], colors):
-    patch.set_facecolor(color)
-
-lab = "DI - AA: " + str(dir_inter_aa_num) + " (" + dir_inter_aa_percentage + "%), AI: " + str(dir_inter_ai_num) + " (" + dir_inter_ai_percentage + "%), II: " + str(dir_inter_ii_num) + " (" + dir_inter_ii_percentage + "%)"
-di_patch = mpatches.Patch(color='orange', label=lab)
-lab = "U - AA: " + str(undir_inter_aa_num) + " (" + undir_inter_aa_percentage + "%), AI: " + str(undir_inter_ai_num) + " (" + undir_inter_ai_percentage + "%), II: " + str(undir_inter_ii_num) + " (" + undir_inter_ii_percentage + "%)"
-u_patch = mpatches.Patch(color='darkgray', label=lab)
-lab = "UR 2 - AA: " + str(undir_ref_2_inter_aa_num) + " (" + undir_ref_2_inter_aa_percentage + "%), AI: " + str(undir_ref_2_inter_ai_num) + " (" + undir_ref_2_inter_ai_percentage + "%), II: " + str(undir_ref_2_inter_ii_num) + " (" + undir_ref_2_inter_ii_percentage + "%)"
-ur2_patch = mpatches.Patch(color='lightblue', label=lab)
-plt.legend(handles=[di_patch, u_patch, ur2_patch])
-ax1.set_xlabel('Enrichment state pair tag')
-ax1.set_ylabel('Interaction distance')
-plt.grid(True)
-fig1.set_size_inches(7,5)
-plt.savefig(pdf_name_boxplots_interaction_distances, bbox_inches='tight')
-plt.close()
-
-
-### Create barplots for proportions of interactions within AA, AI and II
-########################################################################
+### Create barplots for proportions of interactions within EE, EN, NE and NN
+############################################################################
+####XX We create four barplots (for EE, EN, NE and NN) for the numbers and proportions of interactions in DI, UI and UIR.
 
 def create_barplot_for_enrichment_pair_tag_percentages(title, i_percentages, i_numbers):
 
     fig, ax = plt.subplots()
 
-    xticklables_labels = ['DI', 'U', 'UR 1', 'UR 2']
+    xticklables_labels = ['DI', 'UI', 'UIR']
     x = numpy.arange(len(xticklables_labels))  # the label locations
     width = 0.35  # the width of the bars
     ax.set_title(title)
@@ -985,28 +713,22 @@ def create_barplot_for_enrichment_pair_tag_percentages(title, i_percentages, i_n
 
     return fig
 
-
 pdf = matplotlib.backends.backend_pdf.PdfPages(pdf_name_barplots_interaction_enrichment_pair_tags)
 
-aa_percentages = [round(100 * dir_inter_aa_num / dir_inter_num, 2), round(100 * undir_inter_aa_num / undir_inter_num, 2), round(100 * undir_ref_1_inter_aa_num / undir_ref_1_inter_num, 2), round(100 * undir_ref_2_inter_aa_num / undir_ref_2_inter_num, 2)]
-aa_numbers = [dir_inter_aa_num, undir_inter_aa_num, undir_ref_1_inter_aa_num, undir_ref_2_inter_aa_num]
+ee_percentages = [round(100 * di_ee_num / di_num, 2), round(100 * ui_ee_num / ui_num, 2), round(100 * uir_ee_num / uir_num, 2)]
+ee_numbers = [di_ee_num, ui_ee_num, uir_ee_num]
+pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of interactions within EE", ee_percentages, ee_numbers))
 
-ai_percentages = [round(100 * dir_inter_ai_num / dir_inter_num, 2), round(100 * undir_inter_ai_num / undir_inter_num, 2), round(100 * undir_ref_1_inter_ai_num / undir_ref_1_inter_num, 2), round(100 * undir_ref_2_inter_ai_num / undir_ref_2_inter_num, 2)]
-ai_numbers = [dir_inter_ai_num, undir_inter_ai_num, undir_ref_1_inter_ai_num, undir_ref_2_inter_ai_num]
+en_percentages = [round(100 * di_en_num / di_num, 2), round(100 * ui_en_num / ui_num, 2), round(100 * uir_en_num / uir_num, 2)]
+en_numbers = [di_en_num, ui_en_num, uir_en_num]
+pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of interactions within EN", en_percentages, en_numbers))
 
-ii_percentages = [round(100 * dir_inter_ii_num / dir_inter_num, 2), round(100 * undir_inter_ii_num / undir_inter_num, 2), round(100 * undir_ref_1_inter_ii_num / undir_ref_1_inter_num, 2), round(100 * undir_ref_2_inter_ii_num / undir_ref_2_inter_num, 2)]
-ii_numbers = [dir_inter_ii_num, undir_inter_ii_num, undir_ref_1_inter_ii_num, undir_ref_2_inter_ii_num]
+ne_percentages = [round(100 * di_ne_num / di_num, 2), round(100 * ui_ne_num / ui_num, 2), round(100 * uir_ne_num / uir_num, 2)]
+ne_numbers = [di_ne_num, ui_ne_num, uir_ne_num]
+pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of interactions within NE", ne_percentages, ne_numbers))
 
-pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of interactions within AA", aa_percentages, aa_numbers))
-pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of interactions within AI", ai_percentages, ai_numbers))
-pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of interactions within II", ii_percentages, ii_numbers))
-
-
-### Create barplots for proportions of interaction associated digests within AA, AI and II
-##########################################################################################
-
-a_percentages = [round(percentage_dir_a_dig, 2), round(percentage_undir_a_dig, 2), round(percentage_undir_ref_1_a_dig, 2), round(percentage_undir_ref_2_a_dig, 2)]
-a_numbers = [dir_a_dig_num, undir_a_dig_num, undir_ref_1_a_dig_num, undir_ref_2_a_dig_num]
-pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of active (A) digests involved in interaction categories", a_percentages, a_numbers))
+nn_percentages = [round(100 * di_nn_num / di_num, 2), round(100 * ui_nn_num / ui_num, 2), round(100 * uir_nn_num / uir_num, 2)]
+nn_numbers = [di_nn_num, ui_nn_num, uir_nn_num]
+pdf.savefig(create_barplot_for_enrichment_pair_tag_percentages("Proportion of interactions within NN", nn_percentages, nn_numbers))
 
 pdf.close()

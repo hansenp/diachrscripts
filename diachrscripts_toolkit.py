@@ -782,3 +782,9 @@ def set_interaction_category_in_enhanced_interaction_line(line, new_category):
     fields = line.rstrip("\n").split("\t")
     new_line = fields[0] + "\t" + fields[1] + "\t" + new_category + "\t" + fields[3] + "\t" + fields[4] + "\t" + fields[5] + "\t" + fields[6] + "\t" + fields[7] + "\t" + fields[8]
     return new_line
+
+def set_column_in_enhanced_interaction_line(line, column, new_content):
+    fields = line.rstrip("\n").split("\t")
+    fields[column-1] = new_content
+    new_line = fields[0] + "\t" + fields[1] + "\t" + fields[2] + "\t" + fields[3] + "\t" + fields[4] + "\t" + fields[5] + "\t" + fields[6] + "\t" + fields[7] + "\t" + fields[8]
+    return new_line
