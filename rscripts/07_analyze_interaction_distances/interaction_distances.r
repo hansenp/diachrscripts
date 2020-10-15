@@ -89,7 +89,7 @@ function.plot_histograms_ee_ne_en_nn <- function(
   # Plot six histograms to PDF file
   cairo_pdf(PDF_FILE_NAME, width=PDF_WIDTH, height=PDF_HEIGHT)
   
-    par(mfrow=c(6,4), oma = c(0, 0, 2, 0))
+    par(mfrow=c(9,5), oma = c(0, 0, 2, 0))
 
     # Directed
     hist(DI_EE,
@@ -123,7 +123,42 @@ function.plot_histograms_ee_ne_en_nn <- function(
            xlim=c(0,XMAX), breaks=BREAKS, ylim=c(0,YMAX), freq=F)
       legend("topright", cex=0.8, bty="n",
              legend=legend_vec_di_nn)
-
+      
+      # Get density differences of NE and EN for DI, UIR and UI
+      density_diff_list_ee_dine_dien <- function.get_density_diff(-DI_NE,DI_EN, BREAKS)
+      density_diff_list_ee_uirne_uiren <- function.get_density_diff(-UIR_NE,UIR_EN, BREAKS)
+      density_diff_list_ee_uine_uien <- function.get_density_diff(-UI_NE,UI_EN, BREAKS)
+      
+      # Get common ylims of density differences for DI, UIR and UI
+      MINY <- min(density_diff_list_ee_dine_dien$density_diff,
+                  density_diff_list_ee_uirne_uiren$density_diff,
+                  density_diff_list_ee_uine_uien$density_diff
+      )
+      MAXY <- max(density_diff_list_ee_dine_dien$density_diff,
+                  density_diff_list_ee_uirne_uiren$density_diff,
+                  density_diff_list_ee_uine_uien$density_diff
+      )
+      
+      # Plot differences of density differences of NE and EN within DI
+      plot(density_diff_list_ee_dine_dien$bin_centers,
+           density_diff_list_ee_dine_dien$density_diff,
+           col=directed_color,
+           xlim=c(0,XMAX),
+           ylim=c(MINY,MAXY),
+           main="Density difference - (NE-EN)",
+           xlab="Interaction distance",
+           ylab="NE minus EN",
+           pch=20)
+      abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_ee_dine_dien$bin_centers,
+        density_diff_list_ee_dine_dien$density_diff
+      )
+      
       # Undirected reference
       hist(UIR_EE,
            main="Undirected reference - EE",
@@ -157,6 +192,26 @@ function.plot_histograms_ee_ne_en_nn <- function(
       legend("topright", cex=0.8, bty="n",
              legend=legend_vec_uir_nn)
       
+      # Plot differences of density differences of NE and EN within UIR
+      plot(density_diff_list_ee_uirne_uiren$bin_centers,
+           density_diff_list_ee_uirne_uiren$density_diff,
+           col=undirected_ref_color,
+           xlim=c(0,XMAX),
+           ylim=c(MINY,MAXY),
+           main="Density difference - (NE-EN)",
+           xlab="Interaction distance",
+           ylab="NE minus EN",
+           pch=20)
+      abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_ee_uirne_uiren$bin_centers,
+        density_diff_list_ee_uirne_uiren$density_diff
+      )
+
       # Undirected
       hist(UI_EE,
            main="Undirected - EE",
@@ -189,7 +244,27 @@ function.plot_histograms_ee_ne_en_nn <- function(
              xlim=c(0,XMAX), breaks=BREAKS, ylim=c(0,YMAX), freq=F)
         legend("topright", cex=0.8, bty="n",
                legend=legend_vec_ui_nn)
-      
+        
+        # Plot differences of density differences of NE and EN within UI
+        plot(density_diff_list_ee_uine_uien$bin_centers,
+             density_diff_list_ee_uine_uien$density_diff,
+             col=undirected_color,
+             xlim=c(0,XMAX),
+             ylim=c(MINY,MAXY),
+             main="Density difference - (NE-EN)",
+             xlab="Interaction distance",
+             ylab="NE minus EN",
+             pch=20)
+        abline(h=0, col="gray")
+        abline(v=270600, col="gray", lwd=0.3)
+        abline(v=270600*2, col="gray", lwd=0.3)
+        abline(v=270600*3, col="gray", lwd=0.3)
+        abline(v=270600*4, col="gray", lwd=0.3)
+        function.add_spline_curve(
+          density_diff_list_ee_uine_uien$bin_centers,
+          density_diff_list_ee_uine_uien$density_diff
+        )
+
       # Get density differences of DI and UIR
       density_diff_list_ee_di_uir <- function.get_density_diff(DI_EE,UIR_EE, BREAKS)
       density_diff_list_ne_di_uir <- function.get_density_diff(DI_NE,UIR_NE, BREAKS)
@@ -212,12 +287,12 @@ function.plot_histograms_ee_ne_en_nn <- function(
                   density_diff_list_ne_di_uir$density_diff,
                   density_diff_list_en_di_uir$density_diff,
                   density_diff_list_nn_di_uir$density_diff,
-                  density_diff_list_en_di_ui$density_diff,
-                  density_diff_list_en_di_ui$density_diff,
+                  density_diff_list_ee_di_ui$density_diff,
+                  density_diff_list_ne_di_ui$density_diff,
                   density_diff_list_en_di_ui$density_diff,
                   density_diff_list_nn_di_ui$density_diff,
-                  density_diff_list_en_uir_ui$density_diff,
-                  density_diff_list_en_uir_ui$density_diff,
+                  density_diff_list_ee_uir_ui$density_diff,
+                  density_diff_list_ne_uir_ui$density_diff,
                   density_diff_list_en_uir_ui$density_diff,
                   density_diff_list_nn_uir_ui$density_diff
       )
@@ -226,12 +301,12 @@ function.plot_histograms_ee_ne_en_nn <- function(
                   density_diff_list_ne_di_uir$density_diff,
                   density_diff_list_en_di_uir$density_diff,
                   density_diff_list_nn_di_uir$density_diff,
-                  density_diff_list_en_di_ui$density_diff,
-                  density_diff_list_en_di_ui$density_diff,
+                  density_diff_list_ee_di_ui$density_diff,
+                  density_diff_list_ne_di_ui$density_diff,
                   density_diff_list_en_di_ui$density_diff,
                   density_diff_list_nn_di_ui$density_diff,
-                  density_diff_list_en_uir_ui$density_diff,
-                  density_diff_list_en_uir_ui$density_diff,
+                  density_diff_list_ee_uir_ui$density_diff,
+                  density_diff_list_ne_uir_ui$density_diff,
                   density_diff_list_en_uir_ui$density_diff,
                   density_diff_list_nn_uir_ui$density_diff
       )
@@ -243,8 +318,18 @@ function.plot_histograms_ee_ne_en_nn <- function(
            main="Density difference - EE",
            xlab="Interaction distance",
            ylab="DI minus UIR",
-           pch=20)
+           pch=21,
+           col=directed_color,
+           bg=undirected_ref_color)
       abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_ee_di_uir$bin_centers,
+        density_diff_list_ee_di_uir$density_diff
+        )
       
       plot(density_diff_list_ne_di_uir$bin_centers,
            density_diff_list_ne_di_uir$density_diff,
@@ -253,8 +338,18 @@ function.plot_histograms_ee_ne_en_nn <- function(
            main="Density difference - NE",
            xlab="Interaction distance",
            ylab="DI minus UIR",
-           pch=20)
+           pch=21,
+           col=directed_color,
+           bg=undirected_ref_color)
       abline(h=0, col="gray")
+      abline(v=-270600, col="gray", lwd=0.3)
+      abline(v=-270600*2, col="gray", lwd=0.3)
+      abline(v=-270600*3, col="gray", lwd=0.3)
+      abline(v=-270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_ne_di_uir$bin_centers,
+        density_diff_list_ne_di_uir$density_diff
+      )
       
       plot(density_diff_list_en_di_uir$bin_centers,
            density_diff_list_en_di_uir$density_diff,
@@ -263,8 +358,20 @@ function.plot_histograms_ee_ne_en_nn <- function(
            main="Density difference - EN",
            xlab="Interaction distance",
            ylab="DI minus UIR",
-           pch=20)
+           pch=21,
+           col=directed_color,
+           bg=undirected_ref_color)
       abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_en_di_uir$bin_centers,
+        density_diff_list_en_di_uir$density_diff
+      )
+      
+      
       
       plot(density_diff_list_nn_di_uir$bin_centers,
            density_diff_list_nn_di_uir$density_diff,
@@ -273,8 +380,20 @@ function.plot_histograms_ee_ne_en_nn <- function(
            main="Density difference - NN",
            xlab="Interaction distance",
            ylab="DI minus UIR",
-           pch=20)
+           pch=21,
+           col=directed_color,
+           bg=undirected_ref_color)
       abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_nn_di_uir$bin_centers,
+        density_diff_list_nn_di_uir$density_diff
+      )
+      
+      plot.new()
       
       # Plot density differences of DI and UI
       plot(density_diff_list_ee_di_ui$bin_centers,
@@ -284,8 +403,18 @@ function.plot_histograms_ee_ne_en_nn <- function(
            main="Density difference - EE",
            xlab="Interaction distance",
            ylab="DI minus UI",
-           pch=20)
+           pch=21,
+           col=directed_color,
+           bg=undirected_color)
       abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_ee_di_ui$bin_centers,
+        density_diff_list_ee_di_ui$density_diff
+      )
       
       plot(density_diff_list_ne_di_ui$bin_centers,
            density_diff_list_ne_di_ui$density_diff,
@@ -294,8 +423,18 @@ function.plot_histograms_ee_ne_en_nn <- function(
            main="Density difference - NE",
            xlab="Interaction distance",
            ylab="DI minus UI",
-           pch=20)
+           pch=21,
+           col=directed_color,
+           bg=undirected_color)
       abline(h=0, col="gray")
+      abline(v=-270600, col="gray", lwd=0.3)
+      abline(v=-270600*2, col="gray", lwd=0.3)
+      abline(v=-270600*3, col="gray", lwd=0.3)
+      abline(v=-270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_ne_di_ui$bin_centers,
+        density_diff_list_ne_di_ui$density_diff
+      )
       
       plot(density_diff_list_en_di_ui$bin_centers,
            density_diff_list_en_di_ui$density_diff,
@@ -304,8 +443,18 @@ function.plot_histograms_ee_ne_en_nn <- function(
            main="Density difference - EN",
            xlab="Interaction distance",
            ylab="DI minus UI",
-           pch=20)
+           pch=21,
+           col=directed_color,
+           bg=undirected_color)
       abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_en_di_ui$bin_centers,
+        density_diff_list_en_di_ui$density_diff
+      )
 
       plot(density_diff_list_nn_di_ui$bin_centers,
            density_diff_list_nn_di_ui$density_diff,
@@ -314,8 +463,20 @@ function.plot_histograms_ee_ne_en_nn <- function(
            main="Density difference - NN",
            xlab="Interaction distance",
            ylab="DI minus UI",
-           pch=20)
+           pch=21,
+           col=directed_color,
+           bg=undirected_color)
       abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_nn_di_ui$bin_centers,
+        density_diff_list_nn_di_ui$density_diff
+      )
+      
+      plot.new()
       
       # Plot density differences of UIR and UI
       plot(density_diff_list_ee_uir_ui$bin_centers,
@@ -325,8 +486,18 @@ function.plot_histograms_ee_ne_en_nn <- function(
            main="Density difference - EE",
            xlab="Interaction distance",
            ylab="UIR minus UI",
-           pch=20)
+           pch=21,
+           col=undirected_ref_color,
+           bg=undirected_color)
       abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_ee_uir_ui$bin_centers,
+        density_diff_list_ee_uir_ui$density_diff
+      )
       
       plot(density_diff_list_ne_uir_ui$bin_centers,
            density_diff_list_ne_uir_ui$density_diff,
@@ -335,8 +506,18 @@ function.plot_histograms_ee_ne_en_nn <- function(
            main="Density difference - NE",
            xlab="Interaction distance",
            ylab="UIR minus UI",
-           pch=20)
+           pch=21,
+           col=undirected_ref_color,
+           bg=undirected_color)
       abline(h=0, col="gray")
+      abline(v=-270600, col="gray", lwd=0.3)
+      abline(v=-270600*2, col="gray", lwd=0.3)
+      abline(v=-270600*3, col="gray", lwd=0.3)
+      abline(v=-270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_ne_uir_ui$bin_centers,
+        density_diff_list_ne_uir_ui$density_diff
+      )
       
       plot(density_diff_list_en_uir_ui$bin_centers,
            density_diff_list_en_uir_ui$density_diff,
@@ -345,8 +526,18 @@ function.plot_histograms_ee_ne_en_nn <- function(
            main="Density difference - EN",
            xlab="Interaction distance",
            ylab="UIR minus UI",
-           pch=20)
+           pch=21,
+           col=undirected_ref_color,
+           bg=undirected_color)
       abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_en_uir_ui$bin_centers,
+        density_diff_list_en_uir_ui$density_diff
+      )
 
       plot(density_diff_list_nn_uir_ui$bin_centers,
            density_diff_list_nn_uir_ui$density_diff,
@@ -355,8 +546,171 @@ function.plot_histograms_ee_ne_en_nn <- function(
            main="Density difference - NN",
            xlab="Interaction distance",
            ylab="UIR minus UI",
-           pch=20)
-      abline(h=0, col="gray")      
+           pch=21,
+           col=undirected_ref_color,
+           bg=undirected_color)
+      abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_nn_uir_ui$bin_centers,
+        density_diff_list_nn_uir_ui$density_diff
+      )
+      
+      # Plot density differences again, but for NE and EN only
+      MINY <- min(density_diff_list_ne_di_uir$density_diff,
+                  density_diff_list_en_di_uir$density_diff,
+                  density_diff_list_ne_di_ui$density_diff,
+                  density_diff_list_en_di_ui$density_diff,
+                  density_diff_list_ne_uir_ui$density_diff,
+                  density_diff_list_en_uir_ui$density_diff
+      )
+      
+      MAXY <- max(density_diff_list_ne_di_uir$density_diff,
+                  density_diff_list_en_di_uir$density_diff,
+                  density_diff_list_ne_di_ui$density_diff,
+                  density_diff_list_en_di_ui$density_diff,
+                  density_diff_list_ne_uir_ui$density_diff,
+                  density_diff_list_en_uir_ui$density_diff
+      )
+      
+      plot.new()
+      plot.new()
+      
+      plot(density_diff_list_ne_di_uir$bin_centers,
+           density_diff_list_ne_di_uir$density_diff,
+           xlim=c(-XMAX,0),
+           ylim=c(MINY,MAXY),
+           main="Density difference - NE",
+           xlab="Interaction distance",
+           ylab="DI minus UIR",
+           pch=21,
+           col=directed_color,
+           bg=undirected_ref_color)
+      abline(h=0, col="gray")
+      abline(v=-270600, col="gray", lwd=0.3)
+      abline(v=-270600*2, col="gray", lwd=0.3)
+      abline(v=-270600*3, col="gray", lwd=0.3)
+      abline(v=-270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_ne_di_uir$bin_centers,
+        density_diff_list_ne_di_uir$density_diff
+      )
+      
+      plot(density_diff_list_en_di_uir$bin_centers,
+           density_diff_list_en_di_uir$density_diff,
+           xlim=c(0,XMAX),
+           ylim=c(MINY,MAXY),
+           main="Density difference - EN",
+           xlab="Interaction distance",
+           ylab="DI minus UIR",
+           pch=21,
+           col=directed_color,
+           bg=undirected_ref_color)
+      abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_en_di_uir$bin_centers,
+        density_diff_list_en_di_uir$density_diff
+      )
+      
+      plot.new()
+      plot.new()
+      
+      plot.new()
+      
+      plot(density_diff_list_ne_di_ui$bin_centers,
+           density_diff_list_ne_di_ui$density_diff,
+           xlim=c(-XMAX,0),
+           ylim=c(MINY,MAXY),
+           main="Density difference - NE",
+           xlab="Interaction distance",
+           ylab="DI minus UI",
+           pch=21,
+           col=directed_color,
+           bg=undirected_color)
+      abline(h=0, col="gray")
+      abline(v=-270600, col="gray", lwd=0.3)
+      abline(v=-270600*2, col="gray", lwd=0.3)
+      abline(v=-270600*3, col="gray", lwd=0.3)
+      abline(v=-270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_ne_di_ui$bin_centers,
+        density_diff_list_ne_di_ui$density_diff
+      )
+      
+      plot(density_diff_list_en_di_ui$bin_centers,
+           density_diff_list_en_di_ui$density_diff,
+           xlim=c(0,XMAX),
+           ylim=c(MINY,MAXY),
+           main="Density difference - EN",
+           xlab="Interaction distance",
+           ylab="DI minus UI",
+           pch=21,
+           col=directed_color,
+           bg=undirected_color)
+      abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_en_di_ui$bin_centers,
+        density_diff_list_en_di_ui$density_diff
+      )
+      
+      plot.new()
+      plot.new()
+      
+      plot.new()
+      
+      plot(density_diff_list_ne_uir_ui$bin_centers,
+           density_diff_list_ne_uir_ui$density_diff,
+           xlim=c(-XMAX,0),
+           ylim=c(MINY,MAXY),
+           main="Density difference - NE",
+           xlab="Interaction distance",
+           ylab="UIR minus UI",
+           pch=21,
+           col=undirected_ref_color,
+           bg=undirected_color)
+      abline(h=0, col="gray")
+      abline(v=-270600, col="gray", lwd=0.3)
+      abline(v=-270600*2, col="gray", lwd=0.3)
+      abline(v=-270600*3, col="gray", lwd=0.3)
+      abline(v=-270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_ne_uir_ui$bin_centers,
+        density_diff_list_ne_uir_ui$density_diff
+      )
+      
+      plot(density_diff_list_en_uir_ui$bin_centers,
+           density_diff_list_en_uir_ui$density_diff,
+           xlim=c(0,XMAX),
+           ylim=c(MINY,MAXY),
+           main="Density difference - EN",
+           xlab="Interaction distance",
+           ylab="UIR minus UI",
+           pch=21,
+           col=undirected_ref_color,
+           bg=undirected_color)
+      abline(h=0, col="gray")
+      abline(v=270600, col="gray", lwd=0.3)
+      abline(v=270600*2, col="gray", lwd=0.3)
+      abline(v=270600*3, col="gray", lwd=0.3)
+      abline(v=270600*4, col="gray", lwd=0.3)
+      function.add_spline_curve(
+        density_diff_list_en_uir_ui$bin_centers,
+        density_diff_list_en_uir_ui$density_diff
+      )
+      
+      plot.new()
+      plot.new()
       
     mtext(MAIN_MAIN_TITLE, outer = TRUE, cex = 1)
     
@@ -527,8 +881,8 @@ function.write_statistics_to_file <- function(
 # Plot histograms for all interaction categories
 PDF_NAME <- paste(OUT_DIR, OUT_PREFIX,"_i_distance_histograms_ee_ne_en_nn.pdf",sep="")
 MM_TITLE <- paste(OUT_PREFIX," - Interaction distances for EE, NE, EN and NN",sep="")
-PDF_W <- 10
-PDF_H <- 16.5
+PDF_W <- 12.5
+PDF_H <- 24.75
 function.plot_histograms_ee_ne_en_nn(
   PDF_NAME,
   PDF_W,

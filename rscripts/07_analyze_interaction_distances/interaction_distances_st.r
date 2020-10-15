@@ -101,9 +101,9 @@ function.plot_histograms_i_ee_ne_en_nn <- function(
   # Plot six histograms to PDF file
   cairo_pdf(PDF_FILE_NAME, width=PDF_WIDTH, height=PDF_HEIGHT)
   
-  par(mfrow=c(3,4), oma = c(0, 0, 2, 0))
+  par(mfrow=c(4,5), oma = c(0, 0, 2, 0))
   
-  # Directed simple
+  # Simple
   hist(EE_S,
        main="Simple - EE",
        col=BAR_COLOR,
@@ -139,8 +139,41 @@ function.plot_histograms_i_ee_ne_en_nn <- function(
        xlim=c(0,XMAX), breaks=BREAKS, ylim=c(0,YMAX), freq=F)
   legend("topright", cex=0.8, bty="n",
          legend=legend_vec_nn_s)
+  
+  # Get density differences of NE and EN for simple and twisted
+  density_diff_list_ne_en_s <- function.get_density_diff(-NE_S,EN_S, BREAKS)
+  density_diff_list_ne_en_t <- function.get_density_diff(-NE_T,EN_T, BREAKS)
+  
+  # Get common ylims of density differences for DI, UIR and UI
+  MINY <- min(density_diff_list_ne_en_s$density_diff,
+              density_diff_list_ne_en_t$density_diff
+  )
+  MAXY <- max(density_diff_list_ne_en_s$density_diff,
+              density_diff_list_ne_en_t$density_diff
+  )
 
-  # Directed twisted
+  # Plot differences of density differences of NE and EN within simple
+  plot(density_diff_list_ne_en_s$bin_centers,
+       density_diff_list_ne_en_s$density_diff,
+       xlim=c(0,XMAX),
+       ylim=c(MINY,MAXY),
+       main="Density difference - (NE-EN)",
+       xlab="Interaction distance",
+       ylab="NE minus EN",
+       pch=21,
+       col=BAR_COLOR,
+       bg=simple_color)
+  abline(h=0, col="gray")
+  abline(v=270600, col="gray", lwd=0.3)
+  abline(v=270600*2, col="gray", lwd=0.3)
+  abline(v=270600*3, col="gray", lwd=0.3)
+  abline(v=270600*4, col="gray", lwd=0.3)
+  function.add_spline_curve(
+    density_diff_list_ne_en_s$bin_centers,
+    density_diff_list_ne_en_s$density_diff 
+  )
+
+  # Twisted
   hist(EE_T,
        main="Twisted - EE",
        col=BAR_COLOR,
@@ -177,6 +210,27 @@ function.plot_histograms_i_ee_ne_en_nn <- function(
   legend("topright", cex=0.8, bty="n",
          legend=legend_vec_nn_t)
   
+  # Plot differences of density differences of NE and EN within twisted
+  plot(density_diff_list_ne_en_t$bin_centers,
+       density_diff_list_ne_en_t$density_diff,
+       xlim=c(0,XMAX),
+       ylim=c(MINY,MAXY),
+       main="Density difference - (NE-EN)",
+       xlab="Interaction distance",
+       ylab="NE minus EN",
+       pch=21,
+       col=BAR_COLOR,
+       bg=twisted_color)
+  abline(h=0, col="gray")
+  abline(v=270600, col="gray", lwd=0.3)
+  abline(v=270600*2, col="gray", lwd=0.3)
+  abline(v=270600*3, col="gray", lwd=0.3)
+  abline(v=270600*4, col="gray", lwd=0.3)
+  function.add_spline_curve(
+    density_diff_list_ne_en_t$bin_centers,
+    density_diff_list_ne_en_t$density_diff 
+  )
+  
   # Get density differences of DI simple and DI twisted
   density_diff_list_ee_di_s_t <- function.get_density_diff(EE_S,EE_T, BREAKS)
   density_diff_list_ne_di_s_t <- function.get_density_diff(NE_S,NE_T, BREAKS)
@@ -202,8 +256,18 @@ function.plot_histograms_i_ee_ne_en_nn <- function(
        main="Density difference - EE",
        xlab="Interaction distance",
        ylab="Simple minus twisted",
-       pch=20)
+       pch=21,
+       col=simple_color,
+       bg=twisted_color)
   abline(h=0, col="gray")
+  abline(v=270600, col="gray", lwd=0.3)
+  abline(v=270600*2, col="gray", lwd=0.3)
+  abline(v=270600*3, col="gray", lwd=0.3)
+  abline(v=270600*4, col="gray", lwd=0.3)
+  function.add_spline_curve(
+    density_diff_list_ee_di_s_t$bin_centers,
+    density_diff_list_ee_di_s_t$density_diff 
+  )
   
   plot(density_diff_list_ne_di_s_t$bin_centers,
        density_diff_list_ne_di_s_t$density_diff,
@@ -212,8 +276,18 @@ function.plot_histograms_i_ee_ne_en_nn <- function(
        main="Density difference - NE",
        xlab="Interaction distance",
        ylab="Simple minus twisted",
-       pch=20)
+       pch=21,
+       col=simple_color,
+       bg=twisted_color)
   abline(h=0, col="gray")
+  abline(v=-270600, col="gray", lwd=0.3)
+  abline(v=-270600*2, col="gray", lwd=0.3)
+  abline(v=-270600*3, col="gray", lwd=0.3)
+  abline(v=-270600*4, col="gray", lwd=0.3)
+  function.add_spline_curve(
+    density_diff_list_ne_di_s_t$bin_centers,
+    density_diff_list_ne_di_s_t$density_diff 
+  )
   
   plot(density_diff_list_en_di_s_t$bin_centers,
        density_diff_list_en_di_s_t$density_diff,
@@ -222,8 +296,18 @@ function.plot_histograms_i_ee_ne_en_nn <- function(
        main="Density difference - EN",
        xlab="Interaction distance",
        ylab="Simple minus twisted",
-       pch=20)
+       pch=21,
+       col=simple_color,
+       bg=twisted_color)
   abline(h=0, col="gray")
+  abline(v=270600, col="gray", lwd=0.3)
+  abline(v=270600*2, col="gray", lwd=0.3)
+  abline(v=270600*3, col="gray", lwd=0.3)
+  abline(v=270600*4, col="gray", lwd=0.3)
+  function.add_spline_curve(
+    density_diff_list_en_di_s_t$bin_centers,
+    density_diff_list_en_di_s_t$density_diff 
+  )
   
   plot(density_diff_list_nn_di_s_t$bin_centers,
        density_diff_list_nn_di_s_t$density_diff,
@@ -232,8 +316,72 @@ function.plot_histograms_i_ee_ne_en_nn <- function(
        main="Density difference - NN",
        xlab="Interaction distance",
        ylab="Simple minus twisted",
-       pch=20)
+       pch=21,
+       col=simple_color,
+       bg=twisted_color)
   abline(h=0, col="gray")
+  abline(v=270600, col="gray", lwd=0.3)
+  abline(v=270600*2, col="gray", lwd=0.3)
+  abline(v=270600*3, col="gray", lwd=0.3)
+  abline(v=270600*4, col="gray", lwd=0.3)
+  function.add_spline_curve(
+    density_diff_list_nn_di_s_t$bin_centers,
+    density_diff_list_nn_di_s_t$density_diff 
+  )
+  
+  plot.new()
+  plot.new()
+  
+  # Plot dennsity different for NE and EN again with other ylim
+  MINY <- min(density_diff_list_ne_di_s_t$density_diff,
+              density_diff_list_en_di_s_t$density_diff
+  )
+  
+  MAXY <- max(density_diff_list_ne_di_s_t$density_diff,
+              density_diff_list_en_di_s_t$density_diff
+  )
+  
+  plot(density_diff_list_ne_di_s_t$bin_centers,
+       density_diff_list_ne_di_s_t$density_diff,
+       xlim=c(-XMAX,0),
+       ylim=c(MINY,MAXY),
+       main="Density difference - NE",
+       xlab="Interaction distance",
+       ylab="Simple minus twisted",
+       pch=21,
+       col=simple_color,
+       bg=twisted_color)
+  abline(h=0, col="gray")
+  abline(v=-270600, col="gray", lwd=0.3)
+  abline(v=-270600*2, col="gray", lwd=0.3)
+  abline(v=-270600*3, col="gray", lwd=0.3)
+  abline(v=-270600*4, col="gray", lwd=0.3)
+  function.add_spline_curve(
+    density_diff_list_ne_di_s_t$bin_centers,
+    density_diff_list_ne_di_s_t$density_diff 
+  )
+  
+  plot(density_diff_list_en_di_s_t$bin_centers,
+       density_diff_list_en_di_s_t$density_diff,
+       xlim=c(0,XMAX),
+       ylim=c(MINY,MAXY),
+       main="Density difference - EN",
+       xlab="Interaction distance",
+       ylab="Simple minus twisted",
+       pch=21,
+       col=simple_color,
+       bg=twisted_color)
+  abline(h=0, col="gray")
+  abline(v=270600, col="gray", lwd=0.3)
+  abline(v=270600*2, col="gray", lwd=0.3)
+  abline(v=270600*3, col="gray", lwd=0.3)
+  abline(v=270600*4, col="gray", lwd=0.3)
+  function.add_spline_curve(
+    density_diff_list_en_di_s_t$bin_centers,
+    density_diff_list_en_di_s_t$density_diff 
+  )
+  
+  plot.new()
   
   # Add main title
   mtext(MAIN_MAIN_TITLE, outer = TRUE, cex = 1)
@@ -700,8 +848,8 @@ function.write_statistics_to_file <- function(
 
 PDF_NAME <- paste(OUT_DIR, OUT_PREFIX,"_di_distance_histograms_st_ee_ne_en_nn.pdf",sep="")
 MM_TITLE <- paste(OUT_PREFIX," - Distances of simple and twisted interactions",sep="")
-PDF_W <- 10
-PDF_H <- 8.25
+PDF_W <- 12.5
+PDF_H <- 11
 BAR_COLOR <- directed_color
 function.plot_histograms_i_ee_ne_en_nn(
   PDF_NAME,
@@ -723,8 +871,8 @@ function.plot_histograms_i_ee_ne_en_nn(
 
 PDF_NAME <- paste(OUT_DIR, OUT_PREFIX,"_di_rp_distance_histograms_st_ee_ne_en_nn.pdf",sep="")
 MM_TITLE <- paste(OUT_PREFIX," - Distances of simple and twisted read pairs in directed interactions",sep="")
-PDF_W <- 10
-PDF_H <- 8.25
+PDF_W <- 12.5
+PDF_H <- 11
 BAR_COLOR <- directed_color
 function.plot_histograms_i_ee_ne_en_nn(
   PDF_NAME,
@@ -746,8 +894,8 @@ function.plot_histograms_i_ee_ne_en_nn(
 
 PDF_NAME <- paste(OUT_DIR, OUT_PREFIX,"_uir_rp_distance_histograms_st_ee_ne_en_nn.pdf",sep="")
 MM_TITLE <- paste(OUT_PREFIX," - Distances of simple and twisted read pairs in undirected reference interactions",sep="")
-PDF_W <- 10
-PDF_H <- 8.25
+PDF_W <- 12.5
+PDF_H <- 11
 BAR_COLOR <- undirected_ref_color
 function.plot_histograms_i_ee_ne_en_nn(
   PDF_NAME,
@@ -769,8 +917,8 @@ function.plot_histograms_i_ee_ne_en_nn(
 
 PDF_NAME <- paste(OUT_DIR, OUT_PREFIX,"_ui_rp_distance_histograms_st_ee_ne_en_nn.pdf",sep="")
 MM_TITLE <- paste(OUT_PREFIX," - Distances of simple and twisted read pairs in undirected interactions",sep="")
-PDF_W <- 10
-PDF_H <- 8.25
+PDF_W <- 12.5
+PDF_H <- 11
 BAR_COLOR <- undirected_color
 function.plot_histograms_i_ee_ne_en_nn(
   PDF_NAME,

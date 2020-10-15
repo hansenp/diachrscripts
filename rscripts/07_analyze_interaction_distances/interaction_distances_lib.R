@@ -11,6 +11,14 @@ undirected_color <- rgb(210/255,210/255,210/255,1)
 simple_color <- rgb(233/255,175/255,175/255,1)
 twisted_color <- rgb(0/255,138/255,138/255,1)
 
+mixed_color_di_uir <- rgb(213/255,189/255,115/255,1)
+mixed_color_di_ui <- rgb(233/255,187/255,105/255,1)
+
+function.add_spline_curve <- function(x,y)
+{
+  lines(spline(x, y, n = 5*length(x), method = "periodic"), col = "black", lwd=0.3)  
+}
+
 function.get_legend_vector <- function(distance_vector)
 {
   # Get interaction numbers

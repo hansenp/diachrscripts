@@ -72,7 +72,7 @@ mkdir -p results/07_analyze_interaction_distances/
 # Run analysis for individual cell types
 #run_for_one_cell_type "MK"
 #run_for_one_cell_type "ERY"
-#run_for_one_cell_type "NEU"
+run_for_one_cell_type "NEU"
 #run_for_one_cell_type "MON"
 #run_for_one_cell_type "MAC_M0"
 #run_for_one_cell_type "MAC_M1"
@@ -89,8 +89,8 @@ mkdir -p results/07_analyze_interaction_distances/
 #run_for_one_cell_type "TCD8"
 
 # Summary - Compare directed and undirected interactions at the level of interactions
-Rscript --vanilla rscripts/07_analyze_interaction_distances/analyze_summary_stats.R \
+#Rscript --vanilla rscripts/07_analyze_interaction_distances/analyze_summary_stats.R \
 
 # Summary - Compare directed and undirected interactions at the level of interactions
-Rscript --vanilla rscripts/07_analyze_interaction_distances/analyze_summary_stats_st.R \
+#Rscript --vanilla rscripts/07_analyze_interaction_distances/analyze_summary_stats_st.R \
 
