@@ -96,16 +96,20 @@ parser = argparse.ArgumentParser(description='Select reference interactions from
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--enhanced-interaction-file', help='Enhanced interaction file created with \'05_define_di_uie_and_uii.py\'. Column 3 contains either \'DI\' or\'UIE\'.', required=True)
 parser.add_argument('--enriched-digests-file', help='BED file with digests selcted for target enrichment.')
+parser.add_argument('--respect-left-right', help='When choosing the reference interactions, treat NE and EN as separate categories.', action='store_true', default=False)
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
 enhanced_interaction_file = args.enhanced_interaction_file
 enriched_digests_file = args.enriched_digests_file
+respect_left_right = args.respect_left_right
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] Analysis for: " + out_prefix)
 print("\t[INFO] Interaction file: " + enhanced_interaction_file)
 print("\t[INFO] --enriched-digests-file: " + str(enriched_digests_file))
+print("\t[INFO] --respect-left-right: " + str(respect_left_right))
+
 
 ### Prepare variables
 #####################
@@ -116,7 +120,9 @@ print("\t[INFO] --enriched-digests-file: " + str(enriched_digests_file))
 
 # Dictionaries for read pair numbers of directed interactions within EE, EN and NN
 di_ee_rp_dict = {}
+di_ne_rp_dict = {} #
 di_en_rp_dict = {}
+di_neen_rp_dict = {}
 di_nn_rp_dict = {}
 
 # Total number of interactions
@@ -280,15 +286,23 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
                     di_en_rp_dict[rp_total] = 1
                 else:
                     di_en_rp_dict[rp_total] +=1
+                if rp_total not in di_neen_rp_dict:
+                    di_neen_rp_dict[rp_total] = 1
+                else:
+                    di_neen_rp_dict[rp_total] += 1
 
             elif enrichment_pair_tag == 'NE':
                 di_ne_num += 1
                 di_ne_rp_array.append(rp_total)
                 ####X Optionally, we could combine the dictionaries for EN and NE, because the only thing that matters is whether there are two, one or no enriched digest for an interaction.
-                if rp_total not in di_en_rp_dict:
-                    di_en_rp_dict[rp_total] = 1
+                if rp_total not in di_ne_rp_dict: #
+                    di_ne_rp_dict[rp_total] = 1 #
                 else:
-                    di_en_rp_dict[rp_total] +=1
+                    di_ne_rp_dict[rp_total] +=1 #
+                if rp_total not in di_neen_rp_dict:
+                    di_neen_rp_dict[rp_total] = 1
+                else:
+                    di_neen_rp_dict[rp_total] += 1
 
             elif enrichment_pair_tag == 'NN':
                 di_nn_num += 1
@@ -400,19 +414,43 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
                 uir_ee_num += 1
                 interaction_category_tag = 'UIR'
 
-            elif (enrichment_pair_tag == 'EN') and rp_total in di_en_rp_dict and 0 < di_en_rp_dict[rp_total]:
-                di_en_rp_dict[rp_total] -= 1
-                uir_en_rp_array.append(rp_total)
-                uir_num += 1
-                uir_en_num += 1
-                interaction_category_tag = 'UIR'
+            elif (enrichment_pair_tag == 'EN') or (enrichment_pair_tag == 'NE'):
 
-            elif (enrichment_pair_tag == 'NE') and rp_total in di_en_rp_dict and 0 < di_en_rp_dict[rp_total]:
-                di_en_rp_dict[rp_total] -= 1
-                uir_ne_rp_array.append(rp_total)
-                uir_num += 1
-                uir_ne_num += 1
-                interaction_category_tag = 'UIR'
+                if respect_left_right:
+
+                    if (enrichment_pair_tag == 'EN') and rp_total in di_en_rp_dict and 0 < di_en_rp_dict[rp_total]:
+                        di_en_rp_dict[rp_total] -= 1
+                        uir_en_rp_array.append(rp_total)
+                        uir_num += 1
+                        uir_en_num += 1
+                        interaction_category_tag = 'UIR'
+
+                    elif (enrichment_pair_tag == 'NE') and rp_total in di_ne_rp_dict and 0 < di_ne_rp_dict[rp_total]:
+                        di_ne_rp_dict[rp_total] -= 1
+                        uir_ne_rp_array.append(rp_total)
+                        uir_num += 1
+                        uir_ne_num += 1
+                        interaction_category_tag = 'UIR'
+
+                else:
+
+                    if (enrichment_pair_tag == 'EN'):
+
+                        if rp_total in di_neen_rp_dict and 0 < di_neen_rp_dict[rp_total]:
+                            di_neen_rp_dict[rp_total] -= 1
+                            uir_en_rp_array.append(rp_total)
+                            uir_num += 1
+                            uir_en_num += 1
+                            interaction_category_tag = 'UIR'
+
+                    elif (enrichment_pair_tag == 'NE'):
+
+                        if rp_total in di_neen_rp_dict and 0 < di_neen_rp_dict[rp_total]:
+                            di_neen_rp_dict[rp_total] -= 1
+                            uir_ne_rp_array.append(rp_total)
+                            uir_num += 1
+                            uir_ne_num += 1
+                            interaction_category_tag = 'UIR'
 
             elif enrichment_pair_tag == 'NN' and rp_total in di_nn_rp_dict and 0 < di_nn_rp_dict[rp_total]:
                 di_nn_rp_dict[rp_total] -= 1
