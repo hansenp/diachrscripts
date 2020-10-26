@@ -76,7 +76,7 @@ rm $OUT_DIR/*tab
 mkdir -p results/07_analyze_interaction_distances/
 
 # Run analysis for individual cell types
-run_for_one_cell_type "MK"
+#run_for_one_cell_type "MK"
 #run_for_one_cell_type "ERY"
 #run_for_one_cell_type "NEU"
 #run_for_one_cell_type "MON"
