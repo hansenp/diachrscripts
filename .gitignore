@@ -113,3 +113,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+*.bedgraph
+tmp_data/README~
+tmp_data/homo_sapiens.GRCh38.Regulatory_Build.regulatory_features.20190329.gff.gz
