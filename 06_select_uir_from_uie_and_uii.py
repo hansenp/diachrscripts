@@ -76,6 +76,8 @@ and enrichment states (column 6):
 
    '<OUT_PREFIX>_enhanced_interaction_file_with_di_ui_and_uir.tsv.gz
 
+Explain option '--respect-left-right'
+
 """
 
 
