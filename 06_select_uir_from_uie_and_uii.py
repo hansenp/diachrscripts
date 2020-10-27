@@ -84,6 +84,7 @@ Explain option '--respect-left-right'
 import argparse
 import gzip
 import diachrscripts_toolkit
+from diachr2 import EnhancedInteraction, EnhancedInteractionParser
 import numpy
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -218,30 +219,39 @@ pdf_name_barplots_interaction_enrichment_pair_tags = out_prefix + "_interaction_
 
 print("[INFO] 1st pass: Collect information about DI ...")
 
-print("\t[INFO] Iterating enhanced interaction file ...")
-with gzip.open(enhanced_interaction_file, 'rt') as fp:
+print("\t[INFO] Reading enhanced interaction file ...")
+#with gzip.open(enhanced_interaction_file, 'rt') as fp:
+ie_parser = EnhancedInteractionParser(input_path)
+ei_list = ie_parser.parse()
+print("[INFO] Extracted %d interaction lines" % len(ei_list))
 
-    n_interaction_total = 0
-    for line in fp:
+n_interaction_total = 0
+#    for line in fp:
+for ei in ei_list:
 
-        # Report progress
-        n_interaction_total += 1
-        if n_interaction_total % 1000000 == 0:
-            print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
+    # Report progress
+    n_interaction_total += 1
+    if n_interaction_total % 1000000 == 0:
+        print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
 
-        # Parse enhanced interactions line
-        chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
-            diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
+    # Parse enhanced interactions line
+    #chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
+    #    diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
+    enrichment_pair_tag = ei.enrichment_pair_tag
+    interaction_category = ei.interaction_category
+    rp_total = ei.rp_total
 
-        # Get digest coordinates from enhanced interaction file
-        coord_key_da = chr_a + '\t' + str(sta_a) + '\t' + str(end_a)
-        coord_key_db = chr_b + '\t' + str(sta_b) + '\t' + str(end_b)
+    # Get digest coordinates from enhanced interaction file
+    #coord_key_da = chr_a + '\t' + str(sta_a) + '\t' + str(end_a)
+    #coord_key_db = chr_b + '\t' + str(sta_b) + '\t' + str(end_b)
+    coord_key_da = ei.coordinate_key_a
+    coord_key_db = ei.coordinate_key_b
 
-        # Get enrichment status of digests from file for enriched digests
-        if coord_key_da in enriched_digests_set:
-            enrichment_tag_dig_1 = 'E'
-        else:
-            enrichment_tag_dig_1 = 'N'
+    # Get enrichment status of digests from file for enriched digests
+    if coord_key_da in enriched_digests_set:
+        enrichment_tag_dig_1 = 'E'
+    else:
+        enrichment_tag_dig_1 = 'N'
 
         if coord_key_db in enriched_digests_set:
             enrichment_tag_dig_2 = 'E'
@@ -251,74 +261,74 @@ with gzip.open(enhanced_interaction_file, 'rt') as fp:
         enrichment_pair_tag = enrichment_tag_dig_1 + enrichment_tag_dig_2
 
         # Collect read pair numbers for DI, UIE and UII
-        if interaction_category == 'DI':
+    if interaction_category == 'DI':
 
-            di_num += 1
+        di_num += 1
 
-            if enrichment_pair_tag == 'EE':
-                di_ee_num +=1
-                di_ee_rp_array.append(rp_total)
-                if rp_total not in di_ee_rp_dict:
-                    di_ee_rp_dict[rp_total] = 1
-                else:
-                    di_ee_rp_dict[rp_total] +=1
+        if enrichment_pair_tag == 'EE':
+            di_ee_num +=1
+            di_ee_rp_array.append(rp_total)
+            if rp_total not in di_ee_rp_dict:
+                di_ee_rp_dict[rp_total] = 1
+            else:
+                di_ee_rp_dict[rp_total] +=1
 
-            elif enrichment_pair_tag == 'EN':
-                di_en_num += 1
-                di_en_rp_array.append(rp_total)
-                if rp_total not in di_en_rp_dict:
-                    di_en_rp_dict[rp_total] = 1
-                else:
-                    di_en_rp_dict[rp_total] +=1
-                if rp_total not in di_neen_rp_dict:
-                    di_neen_rp_dict[rp_total] = 1
-                else:
-                    di_neen_rp_dict[rp_total] += 1
+        elif enrichment_pair_tag == 'EN':
+            di_en_num += 1
+            di_en_rp_array.append(rp_total)
+            if rp_total not in di_en_rp_dict:
+                di_en_rp_dict[rp_total] = 1
+            else:
+                di_en_rp_dict[rp_total] +=1
+            if rp_total not in di_neen_rp_dict:
+                di_neen_rp_dict[rp_total] = 1
+            else:
+                di_neen_rp_dict[rp_total] += 1
 
-            elif enrichment_pair_tag == 'NE':
-                di_ne_num += 1
-                di_ne_rp_array.append(rp_total)
-                if rp_total not in di_ne_rp_dict: #
-                    di_ne_rp_dict[rp_total] = 1 #
-                else:
-                    di_ne_rp_dict[rp_total] +=1 #
-                if rp_total not in di_neen_rp_dict:
-                    di_neen_rp_dict[rp_total] = 1
-                else:
-                    di_neen_rp_dict[rp_total] += 1
+        elif enrichment_pair_tag == 'NE':
+            di_ne_num += 1
+            di_ne_rp_array.append(rp_total)
+            if rp_total not in di_ne_rp_dict: #
+                di_ne_rp_dict[rp_total] = 1 #
+            else:
+                di_ne_rp_dict[rp_total] +=1 #
+            if rp_total not in di_neen_rp_dict:
+                di_neen_rp_dict[rp_total] = 1
+            else:
+                di_neen_rp_dict[rp_total] += 1
 
-            elif enrichment_pair_tag == 'NN':
-                di_nn_num += 1
-                di_nn_rp_array.append(rp_total)
-                if rp_total not in di_nn_rp_dict:
-                    di_nn_rp_dict[rp_total] = 1
-                else:
-                    di_nn_rp_dict[rp_total] +=1
+        elif enrichment_pair_tag == 'NN':
+            di_nn_num += 1
+            di_nn_rp_array.append(rp_total)
+            if rp_total not in di_nn_rp_dict:
+                di_nn_rp_dict[rp_total] = 1
+            else:
+                di_nn_rp_dict[rp_total] +=1
 
-        # Count all undirected interactions and collect read pair numbers
-        elif interaction_category == 'UIE' or interaction_category == 'UII':
+    # Count all undirected interactions and collect read pair numbers
+    elif interaction_category == 'UIE' or interaction_category == 'UII':
 
-            ui_num += 1
+        ui_num += 1
 
-            if enrichment_pair_tag == 'EE':
-                ui_ee_num +=1
-                ui_ee_rp_array.append(rp_total)
+        if enrichment_pair_tag == 'EE':
+            ui_ee_num +=1
+            ui_ee_rp_array.append(rp_total)
 
-            elif enrichment_pair_tag == 'EN':
-                ui_en_num += 1
-                ui_en_rp_array.append(rp_total)
+        elif enrichment_pair_tag == 'EN':
+            ui_en_num += 1
+            ui_en_rp_array.append(rp_total)
 
-            elif enrichment_pair_tag == 'NE':
-                ui_ne_num += 1
-                ui_ne_rp_array.append(rp_total)
+        elif enrichment_pair_tag == 'NE':
+            ui_ne_num += 1
+            ui_ne_rp_array.append(rp_total)
 
-            elif enrichment_pair_tag == 'NN':
-                ui_nn_num += 1
-                ui_nn_rp_array.append(rp_total)
+        elif enrichment_pair_tag == 'NN':
+            ui_nn_num += 1
+            ui_nn_rp_array.append(rp_total)
 
-        else:
-            print("[Error] Interaction category must be either \'DI\', \'UIE\' or \'UII\'!")
-            exit(1)
+    else:
+        print("[Error] Interaction category must be either \'DI\', \'UIE\' or \'UII\'!")
+        exit(1)
 
 print("\t[INFO] done ...")
 
@@ -340,104 +350,112 @@ if di_ee_num < 3 or di_en_num < 3 or di_nn_num < 3:
 print("[INFO] 2nd pass: Select undirected reference interactions ...")
 
 print("\t[INFO] Iterating enhanced interaction file ...")
-with gzip.open(enhanced_interaction_file, 'rt') as fp:
+#with gzip.open(enhanced_interaction_file, 'rt') as fp:
+ie_parser = EnhancedInteractionParser(input_path)
+ei_list = ie_parser.parse()
+print("[INFO] 2nd pass Extracted %d interaction lines" % len(ei_list))
 
-    n_interaction_total = 0
-    for line in fp:
+n_interaction_total = 0
+#for line in fp:
+for ei in ei_list:
+    n_interaction_total += 1
+    if n_interaction_total % 1000000 == 0:
+        print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
 
-        # Report progress
-        n_interaction_total += 1
-        if n_interaction_total % 1000000 == 0:
-            print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
+    # Parse enhanced interactions line
+    # chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
+    #        diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
+    enrichment_pair_tag = ei.enrichment_pair_tag
+    interaction_category = ei.interaction_category
+    rp_total = ei.rp_total
+    # Get digest coordinates from enhanced interaction file
+    # coord_key_da = chr_a + '\t' + str(sta_a) + '\t' + str(end_a)
+    # coord_key_db = chr_b + '\t' + str(sta_b) + '\t' + str(end_b)
+    coord_key_da = ei.coordinate_key_a
+    coord_key_db = ei.coordinate_key_b
 
-        # Parse enhanced interactions line
-        chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
-            diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
+    # Get enrichment status of digests from file for enriched digests
+    if coord_key_da in enriched_digests_set:
+        enrichment_tag_dig_1 = 'E'
+    else:
+        enrichment_tag_dig_1 = 'N'
 
-        # Get digest coordinates from enhanced interaction file
-        coord_key_da = chr_a + '\t' + str(sta_a) + '\t' + str(end_a)
-        coord_key_db = chr_b + '\t' + str(sta_b) + '\t' + str(end_b)
+    if coord_key_db in enriched_digests_set:
+        enrichment_tag_dig_2 = 'E'
+    else:
+        enrichment_tag_dig_2 = 'N'
 
-        # Get enrichment status of digests from file for enriched digests
-        if coord_key_da in enriched_digests_set:
-            enrichment_tag_dig_1 = 'E'
-        else:
-            enrichment_tag_dig_1 = 'N'
+    enrichment_pair_tag = enrichment_tag_dig_1 + enrichment_tag_dig_2
 
-        if coord_key_db in enriched_digests_set:
-            enrichment_tag_dig_2 = 'E'
-        else:
-            enrichment_tag_dig_2 = 'N'
+    # Set tag for interaction category
+    if interaction_category == 'DI':
+        interaction_category_tag = 'DI'
 
-        enrichment_pair_tag = enrichment_tag_dig_1 + enrichment_tag_dig_2
+    # Select undirected reference interactions from UII and UIE using dictionaries for read pair numbers in DI
+    if interaction_category == 'UIE' or interaction_category == 'UII':
 
-        # Set tag for interaction category
-        if interaction_category == 'DI':
-            interaction_category_tag = 'DI'
+        interaction_category_tag = 'UI'
 
-        # Select undirected reference interactions from UII and UIE using dictionaries for read pair numbers in DI
-        if interaction_category == 'UIE' or interaction_category == 'UII':
+        if enrichment_pair_tag == 'EE' and rp_total in di_ee_rp_dict and 0 < di_ee_rp_dict[rp_total]:
+            di_ee_rp_dict[rp_total] -= 1
+            uir_ee_rp_array.append(rp_total)
+            uir_num +=1
+            uir_ee_num += 1
+            interaction_category_tag = 'UIR'
 
-            interaction_category_tag = 'UI'
+        elif (enrichment_pair_tag == 'EN') or (enrichment_pair_tag == 'NE'):
 
-            if enrichment_pair_tag == 'EE' and rp_total in di_ee_rp_dict and 0 < di_ee_rp_dict[rp_total]:
-                di_ee_rp_dict[rp_total] -= 1
-                uir_ee_rp_array.append(rp_total)
-                uir_num +=1
-                uir_ee_num += 1
-                interaction_category_tag = 'UIR'
+            if respect_left_right:
 
-            elif (enrichment_pair_tag == 'EN') or (enrichment_pair_tag == 'NE'):
+                if (enrichment_pair_tag == 'EN') and rp_total in di_en_rp_dict and 0 < di_en_rp_dict[rp_total]:
+                    di_en_rp_dict[rp_total] -= 1
+                    uir_en_rp_array.append(rp_total)
+                    uir_num += 1
+                    uir_en_num += 1
+                    interaction_category_tag = 'UIR'
 
-                if respect_left_right:
+                elif (enrichment_pair_tag == 'NE') and rp_total in di_ne_rp_dict and 0 < di_ne_rp_dict[rp_total]:
+                    di_ne_rp_dict[rp_total] -= 1
+                    uir_ne_rp_array.append(rp_total)
+                    uir_num += 1
+                    uir_ne_num += 1
+                    interaction_category_tag = 'UIR'
 
-                    if (enrichment_pair_tag == 'EN') and rp_total in di_en_rp_dict and 0 < di_en_rp_dict[rp_total]:
-                        di_en_rp_dict[rp_total] -= 1
+            else:
+
+                if (enrichment_pair_tag == 'EN'):
+
+                    if rp_total in di_neen_rp_dict and 0 < di_neen_rp_dict[rp_total]:
+                        di_neen_rp_dict[rp_total] -= 1
                         uir_en_rp_array.append(rp_total)
                         uir_num += 1
                         uir_en_num += 1
                         interaction_category_tag = 'UIR'
 
-                    elif (enrichment_pair_tag == 'NE') and rp_total in di_ne_rp_dict and 0 < di_ne_rp_dict[rp_total]:
-                        di_ne_rp_dict[rp_total] -= 1
+                elif (enrichment_pair_tag == 'NE'):
+
+                    if rp_total in di_neen_rp_dict and 0 < di_neen_rp_dict[rp_total]:
+                        di_neen_rp_dict[rp_total] -= 1
                         uir_ne_rp_array.append(rp_total)
                         uir_num += 1
                         uir_ne_num += 1
                         interaction_category_tag = 'UIR'
 
-                else:
+        elif enrichment_pair_tag == 'NN' and rp_total in di_nn_rp_dict and 0 < di_nn_rp_dict[rp_total]:
+            di_nn_rp_dict[rp_total] -= 1
+            uir_nn_rp_array.append(rp_total)
+            uir_num += 1
+            uir_nn_num += 1
+            interaction_category_tag = 'UIR'
 
-                    if (enrichment_pair_tag == 'EN'):
-
-                        if rp_total in di_neen_rp_dict and 0 < di_neen_rp_dict[rp_total]:
-                            di_neen_rp_dict[rp_total] -= 1
-                            uir_en_rp_array.append(rp_total)
-                            uir_num += 1
-                            uir_en_num += 1
-                            interaction_category_tag = 'UIR'
-
-                    elif (enrichment_pair_tag == 'NE'):
-
-                        if rp_total in di_neen_rp_dict and 0 < di_neen_rp_dict[rp_total]:
-                            di_neen_rp_dict[rp_total] -= 1
-                            uir_ne_rp_array.append(rp_total)
-                            uir_num += 1
-                            uir_ne_num += 1
-                            interaction_category_tag = 'UIR'
-
-            elif enrichment_pair_tag == 'NN' and rp_total in di_nn_rp_dict and 0 < di_nn_rp_dict[rp_total]:
-                di_nn_rp_dict[rp_total] -= 1
-                uir_nn_rp_array.append(rp_total)
-                uir_num += 1
-                uir_nn_num += 1
-                interaction_category_tag = 'UIR'
-
-        # Override interaction category tag in column 3 and write interaction to files
-        line = diachrscripts_toolkit.set_column_in_enhanced_interaction_line(line, 6, enrichment_pair_tag)
-        line = diachrscripts_toolkit.set_column_in_enhanced_interaction_line(line, 3, interaction_category_tag)
-        di_ui_uir_enhanced_interaction_stream_output.write(line + "\n")
-        if interaction_category_tag == 'DI' or interaction_category_tag == 'UIR':
-            di_uir_enhanced_interaction_stream_output.write(line + "\n")
+    # Override interaction category tag in column 3 and write interaction to files
+    #line = diachrscripts_toolkit.set_column_in_enhanced_interaction_line(line, 6, enrichment_pair_tag)
+    #line = diachrscripts_toolkit.set_column_in_enhanced_interaction_line(line, 3, interaction_category_tag)
+    ei.set_enrichment_pair_tag(enrichment_pair_tag)
+    ei.set_interaction_category(interaction_category_tag)
+    di_ui_uir_enhanced_interaction_stream_output.write(line + "\n")
+    if interaction_category_tag == 'DI' or interaction_category_tag == 'UIR':
+        di_uir_enhanced_interaction_stream_output.write(line + "\n")
 
 
 di_uir_enhanced_interaction_stream_output.close()

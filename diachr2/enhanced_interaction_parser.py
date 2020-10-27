@@ -82,8 +82,6 @@ class EnhancedInteractionParser:
         neg_log_p_value = float(field[6])
         read_pair_left = int(field[4].split(":")[0])
         read_pair_right = int(field[4].split(":")[1])
-        # Get total number of read pairs
-        #rp_total = int(field[4].split(":")[0]) + int(field[4].split(":")[1])
         i_dist = int(field[1])        
 
         enh_int = EnhancedInteraction(chrA=chr_a, staA=sta_a, endA=end_a, symsA=syms_a,tsssA=tsss_a,
