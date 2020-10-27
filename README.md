@@ -315,7 +315,7 @@ in the 12 subcategories.
 
 ![Interaction histograms](doc/07_analyze_interaction_distances/MK_i_distance_histograms_ee_ne_en_nn.png)
 
-The first line of this fileds contains the histograms for DI (orange) and `EE`, `NE`, `EN` and `NN`.
+The first line of this field contains the histograms for DI (orange) and `EE`, `NE`, `EN` and `NN`.
 The following two lines have the same structure and are for UIR (light blue) and UI (gray).
 The axes of all histograms have the same range. Therefore, the histograms can be compared
 with each other. Three summary statistics are determined for each subcategory:
@@ -344,9 +344,98 @@ MK	9343	97187	100013	2652	9157	99138	97917	2606	190206	2263030	2261998	116260	11
 The TSV files will later be used to perform a combined analysis for all cell types.
 
 ### Comparison of simple and twisted interactions
-XXX
 
+The seconnd R script is for comparing the distances between simple and twisted interactions
+and is executed as follows:
+```
+Rscript --vanilla rscripts/07_analyze_interaction_distances/interaction_distances_st.r \
+$OUT_DIR/ \
+OUT_PREFIX \
+<OUT_PREFIX>_di_ee_s_dist_array.tab \ # Directed interactions
+<OUT_PREFIX>_di_ne_s_dist_array.tab \
+<OUT_PREFIX>_di_en_s_dist_array.tab \
+<OUT_PREFIX>_di_nn_s_dist_array.tab \
+<OUT_PREFIX>_di_ee_t_dist_array.tab \
+<OUT_PREFIX>_di_ne_t_dist_array.tab \
+<OUT_PREFIX>_di_en_t_dist_array.tab \
+<OUT_PREFIX>_di_nn_t_dist_array.tab \
+<OUT_PREFIX>_di_ee_s_rp_dist_array.tab \ # Read pairs from directed interactions
+<OUT_PREFIX>_di_ne_s_rp_dist_array.tab \
+<OUT_PREFIX>_di_en_s_rp_dist_array.tab \
+<OUT_PREFIX>_di_nn_s_rp_dist_array.tab \
+<OUT_PREFIX>_di_ee_t_rp_dist_array.tab \
+<OUT_PREFIX>_di_ne_t_rp_dist_array.tab \
+<OUT_PREFIX>_di_en_t_rp_dist_array.tab \
+<OUT_PREFIX>_di_nn_t_rp_dist_array.tab \
+<OUT_PREFIX>_uir_ee_s_rp_dist_array.tab \ # Read pairs from undirected reference interactions
+<OUT_PREFIX>_uir_ne_s_rp_dist_array.tab \
+<OUT_PREFIX>_uir_en_s_rp_dist_array.tab \
+<OUT_PREFIX>_uir_nn_s_rp_dist_array.tab \
+<OUT_PREFIX>_uir_ee_t_rp_dist_array.tab \
+<OUT_PREFIX>_uir_ne_t_rp_dist_array.tab \
+<OUT_PREFIX>_uir_en_t_rp_dist_array.tab \
+<OUT_PREFIX>_uir_nn_t_rp_dist_array.tab \
+<OUT_PREFIX>_ui_ee_s_rp_dist_array.tab \ # Read pairs from undirected interactions
+<OUT_PREFIX>_ui_ne_s_rp_dist_array.tab \
+<OUT_PREFIX>_ui_en_s_rp_dist_array.tab \
+<OUT_PREFIX>_ui_nn_s_rp_dist_array.tab \
+<OUT_PREFIX>_ui_ee_t_rp_dist_array.tab \
+<OUT_PREFIX>_ui_ne_t_rp_dist_array.tab \
+<OUT_PREFIX>_ui_en_t_rp_dist_array.tab \
+<OUT_PREFIX>_ui_nn_t_rp_dist_array.tab \
+```
+As with the first R script, the first argument (`<OUT_DIR>/`) is the directory to which the results will be written,
+and the second argument (`<OUT_PREFIX>`) is used as prefix for the names of the generated files.
+This is followed by 32 files that contain the distances of:
 
+1. Directed interactions
+2. Read pairs from directed interactions
+3. Read pairs from undirected reference interactions
+4. Read pairs from undirected interactions
+
+There are eight files for each of these four categories
+(`EE`, `NE`, `EN` and `NN` each for simple and twisted).
+And for each of these categories, a PDF file,
+similarly structured to the one for the comparison of DI, UIR and UI,
+will be generated.
+
+The first PDF file
+```
+<OUT_PREFIX>_di_distance_histograms_st_ee_ne_en_nn.pdf
+```
+contains histograms for the distances of directed interactions.
+
+![Interaction histograms - DI - ST](doc/07_analyze_interaction_distances/MK_di_distance_histograms_st_ee_ne_en_nn.png)
+
+The first line is for simple and the second line for twisted interactions.
+The four columns correspond to the enrichment categories `EE`, `NE`, `EN` and `NN`.
+The bars of the histograms have pink borders for simple and green borders for twisted interactions.
+
+The second PDF file
+```
+<OUT_PREFIX>_di_rp_distance_histograms_st_ee_ne_en_nn.pdf
+```
+looks very similar to the first PDF file,
+but is for the distances of simple and twisted *read pairs* from directed interactions
+(compare the values for n in the legends).
+
+![Interaction histograms - DI - RP - ST](doc/07_analyze_interaction_distances/MK_di_rp_distance_histograms_st_ee_ne_en_nn.png)
+
+The third PDF file
+```
+<OUT_PREFIX>_uir_rp_distance_histograms_st_ee_ne_en_nn.pdf
+```
+is for the distances of simple and twisted *read pairs* from undirected reference interactions.
+
+![Interaction histograms - UIR - RP - ST](doc/07_analyze_interaction_distances/MK_uir_rp_distance_histograms_st_ee_ne_en_nn.png)
+
+And the fourth PDF file
+```
+<OUT_PREFIX>_ui_rp_distance_histograms_st_ee_ne_en_nn.pdf
+```
+is for the distances of simple and twisted *read pairs* from undirected interactions.
+
+![Interaction histograms - UI - RP - ST](doc/07_analyze_interaction_distances/MK_ui_rp_distance_histograms_st_ee_ne_en_nn.png)
 
 
 ## Analysis of interaction profiles
