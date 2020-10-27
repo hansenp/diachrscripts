@@ -93,7 +93,8 @@ mkdir -p results/07_analyze_interaction_distances/
 #run_for_one_cell_type "ACD4"
 #run_for_one_cell_type "NCD8"
 #run_for_one_cell_type "TCD8"
-  
+
+
 # Summary - Compare directed and undirected interactions at the level of interactions
 Rscript --vanilla rscripts/07_analyze_interaction_distances/analyze_summary_stats.R \
 results/07_analyze_interaction_distances/RLR/ \
