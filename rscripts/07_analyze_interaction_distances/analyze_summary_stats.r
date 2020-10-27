@@ -1,25 +1,32 @@
 source("rscripts/07_analyze_interaction_distances/interaction_distances_lib.r")
 
-OUT_DIR <- "results/07_analyze_interaction_distances/"
+# Read commannd line arguments
+args = commandArgs(trailingOnly=TRUE)
+for(arg in args){
+  print(arg)
+}
 
-# Create table for all 17 cell types
-MK_TAB <- read.table("results/07_analyze_interaction_distances/MK/MK_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-ERY_TAB <- read.table("results/07_analyze_interaction_distances/ERY/ERY_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-NEU_TAB <- read.table("results/07_analyze_interaction_distances/NEU/NEU_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-MON_TAB <- read.table("results/07_analyze_interaction_distances/MON/MON_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-MAC_M0_TAB <- read.table("results/07_analyze_interaction_distances/MAC_M0/MAC_M0_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-MAC_M1_TAB <- read.table("results/07_analyze_interaction_distances/MAC_M1/MAC_M1_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-MAC_M2_TAB <- read.table("results/07_analyze_interaction_distances/MAC_M2/MAC_M2_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-EP_TAB <- read.table("results/07_analyze_interaction_distances/EP/EP_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-NB_TAB <- read.table("results/07_analyze_interaction_distances/NB/NB_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-TB_TAB <- read.table("results/07_analyze_interaction_distances/TB/TB_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-FOET_TAB <- read.table("results/07_analyze_interaction_distances/FOET/FOET_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-NCD4_TAB <- read.table("results/07_analyze_interaction_distances/NCD4/NCD4_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-TCD4_TAB <- read.table("results/07_analyze_interaction_distances/TCD4/TCD4_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-NACD4_TAB <- read.table("results/07_analyze_interaction_distances/NACD4/NACD4_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-ACD4_TAB <- read.table("results/07_analyze_interaction_distances/ACD4/ACD4_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-NCD8_TAB <- read.table("results/07_analyze_interaction_distances/NCD8/NCD8_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-TCD8_TAB <- read.table("results/07_analyze_interaction_distances/TCD8/TCD8_i_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
+OUT_DIR <- args[1]
+OUT_PREFIX <- args[2]
+MM_TITLE_SUFFIX <- args[3]
+
+MK_TAB <- read.table(args[4], header=TRUE)
+ERY_TAB <- read.table(args[5], header=TRUE)
+NEU_TAB <- read.table(args[6], header=TRUE)
+MON_TAB <- read.table(args[7], header=TRUE)
+MAC_M0_TAB <- read.table(args[8], header=TRUE)
+MAC_M1_TAB <- read.table(args[9], header=TRUE)
+MAC_M2_TAB <- read.table(args[10], header=TRUE)
+EP_TAB <- read.table(args[11], header=TRUE)
+NB_TAB <- read.table(args[12], header=TRUE)
+TB_TAB <- read.table(args[13], header=TRUE)
+FOET_TAB <- read.table(args[14], header=TRUE)
+NCD4_TAB <- read.table(args[15], header=TRUE)
+TCD4_TAB <- read.table(args[16], header=TRUE)
+NACD4_TAB <- read.table(args[17], header=TRUE)
+ACD4_TAB <- read.table(args[18], header=TRUE)
+NCD8_TAB <- read.table(args[19], header=TRUE)
+TCD8_TAB <- read.table(args[20], header=TRUE)
 
 ALL_TAB <- rbind(
   MK_TAB,
@@ -41,6 +48,25 @@ ALL_TAB <- rbind(
   TCD8_TAB
 )
 
+rownames(ALL_TAB) <- c("MK",
+                       "ERY",
+                       "NEU",
+                       "MON",
+                       "MAC_M0",
+                       "MAC_M1",
+                       "MAC_M2",
+                       "EP",
+                       "NB",
+                       "TB",
+                       "FOET",
+                       "NCD4",
+                       "TCD4",
+                       "NACD4",
+                       "ACD4",
+                       "NCD8",
+                       "TCD8")
+
+
 function.get_pdf_for_n_med_or_iqr <- function(
   PDF_NAME,
   MM_TITLE,
@@ -57,8 +83,8 @@ function.get_pdf_for_n_med_or_iqr <- function(
   colnames(UI_TAB) <- c("UI_EE","UI_NE","UI_EN","UI_NN")
   
   # Init PDF file
-  cairo_pdf(PDF_NAME, width=24, height=24)
-  par(mfrow=c(6,4), oma = c(0, 0, 3, 0))
+  cairo_pdf(PDF_NAME, width=18, height=21)
+  par(mfrow=c(7,4), oma = c(0, 0, 3, 0))
   
   # Create one boxplot for each interaction category
   boxplot(
@@ -219,10 +245,52 @@ function.get_pdf_for_n_med_or_iqr <- function(
     col=c(undirected_ref_color,undirected_ref_color),
     names=c("NE", "EN")
   )
+  boxplot(
+    ALL_TAB[,c("UI_NE","UI_EN")],
+    main="Undirected interactions - NE and EN",
+    xlab="Enrichment status",
+    ylab=YLAB_1,  
+    col=c(undirected_color,undirected_color),
+    names=c("NE", "EN")
+  )
   
   plot.new()
-  plot.new()
   
+  plot(
+    ALL_TAB[,"DI_EN"]~ALL_TAB[,"DI_NE"],
+    main="Directed interactions - NE vs. EN",
+    col=directed_color,
+    xlim=c(min(ALL_TAB[,"DI_NE"],ALL_TAB[,"DI_EN"]),max(ALL_TAB[,"DI_NE"],ALL_TAB[,"DI_EN"])),
+    xlab="EN",
+    ylab="NE"
+    )
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"DI_EN"]~ALL_TAB[,"DI_NE"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+  
+  plot(
+    ALL_TAB[,"UIR_EN"]~ALL_TAB[,"UIR_NE"],
+    main="Undirected reference interactions - NE vs. EN",
+    col=undirected_ref_color,
+    xlim=c(min(ALL_TAB[,"UIR_NE"],ALL_TAB[,"UIR_EN"]),max(ALL_TAB[,"UIR_NE"],ALL_TAB[,"UIR_EN"])),
+    xlab="EN",
+    ylab="NE"
+  )
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"UIR_EN"]~ALL_TAB[,"UIR_NE"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+
+  plot(
+    ALL_TAB[,"UI_EN"]~ALL_TAB[,"UI_NE"],
+    main="Undirected interactions - NE vs. EN",
+    col=undirected_color,
+    xlim=c(min(ALL_TAB[,"UI_NE"],ALL_TAB[,"UI_EN"]),max(ALL_TAB[,"UI_NE"],ALL_TAB[,"UI_EN"])),
+    xlab="EN",
+    ylab="NE"
+  )
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"UI_EN"]~ALL_TAB[,"UI_NE"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+
+  plot.new()
+
   # Get differences of NE and EN for different interaction categories
   DIFF_NE_EN_DI <- ALL_TAB[,"DI_NE"]-ALL_TAB[,"DI_EN"]
   DIFF_NE_EN_UIR <- ALL_TAB[,"UIR_NE"]-ALL_TAB[,"UIR_EN"]
@@ -275,8 +343,8 @@ N_TAB_DI <- ALL_TAB[,c("DI_EE_N","DI_NE_N","DI_EN_N","DI_NN_N")]
 N_TAB_UIR <- ALL_TAB[,c("UIR_EE_N","UIR_NE_N","UIR_EN_N","UIR_NN_N")]
 N_TAB_UI <- ALL_TAB[,c("UI_EE_N","UI_NE_N","UI_EN_N","UI_NN_N")]
 function.get_pdf_for_n_med_or_iqr(
-  paste(OUT_DIR,"interaction_distance_summary_stats_n.pdf"),
-  "Interaction numbers",
+  paste(OUT_DIR,OUT_PREFIX,"interaction_distance_summary_stats_n.pdf",sep=""),
+  paste("Interaction numbers",MM_TITLE_SUFFIX,sep=""),
   "Interaction number",
   "Difference of interaction numbers",
   N_TAB_DI,
@@ -288,8 +356,8 @@ MED_TAB_DI <- ALL_TAB[,c("DI_EE_MED","DI_NE_MED","DI_EN_MED","DI_NN_MED")]
 MED_TAB_UIR <- ALL_TAB[,c("UIR_EE_MED","UIR_NE_MED","UIR_EN_MED","UIR_NN_MED")]
 MED_TAB_UI <- ALL_TAB[,c("UI_EE_MED","UI_NE_MED","UI_EN_MED","UI_NN_MED")]
 function.get_pdf_for_n_med_or_iqr(
-  paste(OUT_DIR,"interaction_distance_summary_stats_median.pdf"),
-  "Median distances",
+  paste(OUT_DIR,OUT_PREFIX,"interaction_distance_summary_stats_median.pdf",sep=""),
+  paste("Median distances",MM_TITLE_SUFFIX,sep=""),
   "Median distance",
   "Difference of median distances",
   MED_TAB_DI,
@@ -301,8 +369,8 @@ IQR_TAB_DI <- ALL_TAB[,c("DI_EE_IQR","DI_NE_IQR","DI_EN_IQR","DI_NN_IQR")]
 IQR_TAB_UIR <- ALL_TAB[,c("UIR_EE_IQR","UIR_NE_IQR","UIR_EN_IQR","UIR_NN_IQR")]
 IQR_TAB_UI <- ALL_TAB[,c("UI_EE_IQR","UI_NE_IQR","UI_EN_IQR","UI_NN_IQR")]
 function.get_pdf_for_n_med_or_iqr(
-  paste(OUT_DIR,"interaction_distance_summary_stats_iqr.pdf"),
-  "Interquartile ranges",
+  paste(OUT_DIR,OUT_PREFIX,"interaction_distance_summary_stats_iqr.pdf",sep=""),
+  paste("Interquartile ranges",MM_TITLE_SUFFIX,sep=""),
   "Interquartile range",
   "Difference of interquartile ranges",
   IQR_TAB_DI,
