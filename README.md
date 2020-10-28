@@ -336,7 +336,8 @@ a TSV file with the name:
 <OUT_PREFIX>_i_distance_statistics_ee_ne_en_nn.tsv
 ```
 
-This file contains only one header line and one line with the corresponding 36 values.
+This file contains only one header line and one line with the corresponding 36 values
+(12 each for *n*, *median* and *IQR*).
 ```
 OUT_PREFIX	DI_EE_N	DI_NE_N	DI_EN_N	DI_NN_N	UIR_EE_N	UIR_NE_N	UIR_EN_N	UIR_NN_N	UI_EE_N	UI_NE_N	UI_EN_N	UI_NN_N	DI_EE_MED	DI_NE_MED	DI_EN_MED	DI_NN_MED	UIR_EE_MED	UIR_NE_MED	UIR_EN_MED	UIR_NN_MED	UI_EE_MED	UI_NE_MED	UI_EN_MED	UI_NN_MED	DI_EE_IQR	DI_NE_IQR	DI_EN_IQR	DI_NN_IQR	UIR_EE_IQR	UIR_NE_IQR	UIR_EN_IQR	UIR_NN_IQR	UI_EE_IQR	UI_NE_IQR	UI_EN_IQR	UI_NN_IQR
 MK	9343	97187	100013	2652	9157	99138	97917	2606	190206	2263030	2261998	116260	117502	113607	109861	81096	173721	187142	190400	59266	453700	348054	348125	39831	194838	186641	180064	140207	287543	318649	315731	116242	630739	467046	467140	74126
@@ -345,7 +346,7 @@ The TSV files will later be used to perform a combined analysis for all cell typ
 
 ### Comparison of simple and twisted interactions
 
-The seconnd R script is for comparing the distances between simple and twisted interactions
+The second R script is for comparing the distances between simple and twisted interactions
 and is executed as follows:
 ```
 Rscript --vanilla rscripts/07_analyze_interaction_distances/interaction_distances_st.r \
@@ -438,6 +439,114 @@ is for the distances of simple and twisted *read pairs* from undirected interact
 ![Interaction histograms - UI - RP - ST](doc/07_analyze_interaction_distances/MK_ui_rp_distance_histograms_st_ee_ne_en_nn.png)
 
 
+As with the comparison of DI, UIR and UI,
+the values from the legends are written to a TSV file
+```
+<OUT_PREFIX>_st_distance_statistics_ee_ne_en_nn.tsv
+```
+so as they can be used for a subsequent higher-level analysis across all cell types.
+This file contains only one header line and one line with the corresponding 96 values
+(32 each for *n*, *median* and *IQR*).
+```
+OUT_PREFIX	DI_EE_S_N	DI_NE_S_N	DI_EN_S_N	DI_NN_S_N	DI_EE_T_N	DI_NE_T_N	DI_EN_T_N	DI_NN_T_N	DI_EE_S_RP_N	DI_NE_S_RP_N	DI_EN_S_RP_N	DI_NN_S_RP_N	DI_EE_T_RP_N	DI_NE_T_RP_N	DI_EN_T_RP_N	DI_NN_T_RP_N	UIR_EE_S_RP_N	UIR_NE_S_RP_N	UIR_EN_S_RP_N	UIR_NN_S_RP_N	UIR_EE_T_RP_N	UIR_NE_T_RP_N	UIR_EN_T_RP_N	UIR_NN_T_RP_N	UI_EE_S_RP_N	UI_NE_S_RP_N	UI_EN_S_RP_N	UI_NN_S_RP_N	UI_EE_T_RP_N	UI_NE_T_RP_N	UI_EN_T_RP_N	UI_NN_T_RP_N	DI_EE_S_MED	DI_NE_S_MED	DI_EN_S_MED	DI_NN_S_MED	DI_EE_T_MED	DI_NE_T_MED	DI_EN_T_MED	DI_NN_T_MED	DI_EE_S_RP_MED	DI_NE_S_RP_MED	DI_EN_S_RP_MED	DI_NN_S_RP_MED	DI_EE_T_RP_MED	DI_NE_T_RP_MED	DI_EN_T_RP_MED	DI_NN_T_RP_MED	UIR_EE_S_RP_MED	UIR_NE_S_RP_MED	UIR_EN_S_RP_MED	UIR_NN_S_RP_MED	UIR_EE_T_RP_MED	UIR_NE_T_RP_MED	UIR_EN_T_RP_MED	UIR_NN_T_RP_MED	UI_EE_S_RP_MED	UI_NE_S_RP_MED	UI_EN_S_RP_MED	UI_NN_S_RP_MED	UI_EE_T_RP_MED	UI_NE_T_RP_MED	UI_EN_T_RP_MED	UI_NN_T_RP_MED	DI_EE_S_IQR	DI_NE_S_IQR	DI_EN_S_IQR	DI_NN_S_IQR	DI_EE_T_IQR	DI_NE_T_IQR	DI_EN_T_IQR	DI_NN_T_IQR	DI_EE_S_RP_IQR	DI_NE_S_RP_IQR	DI_EN_S_RP_IQR	DI_NN_S_RP_IQR	DI_EE_T_RP_IQR	DI_NE_T_RP_IQR	DI_EN_T_RP_IQR	DI_NN_T_RP_IQR	UIR_EE_S_RP_IQR	UIR_NE_S_RP_IQR	UIR_EN_S_RP_IQR	UIR_NN_S_RP_IQR	UIR_EE_T_RP_IQR	UIR_NE_T_RP_IQR	UIR_EN_T_RP_IQR	UIR_NN_T_RP_IQR	UI_EE_S_RP_IQR	UI_NE_S_RP_IQR	UI_EN_S_RP_IQR	UI_NN_S_RP_IQR	UI_EE_T_RP_IQR	UI_NE_T_RP_IQR	UI_EN_T_RP_IQR	UI_NN_T_RP_IQR
+MK	4263	49149	50726	1266	5080	48038	49287	1386	677024	3648917	3964091	56299	706914	3570360	3816815	60540	605237	3729742	3708689	52070	620698	3720587	3684581	51962	4101155	38894907	39127707	878728	4224855	38827602	38967036	874600	107008	-111296	107196	79886	126864	-115881	112371	82482	60304	-61865	58347	54919	64964	-63467	60145	55844	81240	-79936	82989	61980	82564	-80343	83570	62692	178981	-167918	167406	45328	182186	-168217	167960	45586	182042	184093	178944	139488	201151	188876	181188	144657	88053	99689	92831	81858	95956	101086	95220	82630	127965	142298	146812	100989	130375	142177	147594	103489	331292	304668	301805	89597	335095	304432	301913	90947
+```
+
+The TSV files will later be used to perform a combined analysis for all cell types.
+
+### Subordinate analysis of DI, UIR and UI
+
+The previous analyzes were for the individual cell types.
+In each of these analyzes, the following three summary statistics were calculated for each subcategory of interactions:
+
+1. Number of interactions (**n**)
+2. Median interaction distance (**median**)
+3. Interquartile ranges (**IQR**)
+
+For each cell type, these satistics were written to the following TSV file:
+```
+<OUT_PREFIX>_i_distance_statistics_ee_ne_en_nn.tsv
+```
+
+In this subordinate analysis,
+the summary statistics for all 17 cell types are read from the TSV files
+into an R script for a combined analysis.
+
+The R script is executed as follows:
+
+
+```
+Rscript --vanilla rscripts/07_analyze_interaction_distances/analyze_summary_stats.R \
+<OUT_DIR>/ \
+<OUT_PREFIX> \
+<MM_TITLE_SUFFIX> \
+"MK_i_distance_statistics_ee_ne_en_nn.tsv" \
+"ERY_i_distance_statistics_ee_ne_en_nn.tsv" \
+"NEU_i_distance_statistics_ee_ne_en_nn.tsv" \
+"MON_i_distance_statistics_ee_ne_en_nn.tsv" \
+"MAC_M0_i_distance_statistics_ee_ne_en_nn.tsv" \
+"MAC_M1_i_distance_statistics_ee_ne_en_nn.tsv" \
+"MAC_M2_i_distance_statistics_ee_ne_en_nn.tsv" \
+"EP_i_distance_statistics_ee_ne_en_nn.tsv" \
+"NB_i_distance_statistics_ee_ne_en_nn.tsv" \
+"TB_i_distance_statistics_ee_ne_en_nn.tsv" \
+"FOET_i_distance_statistics_ee_ne_en_nn.tsv" \
+"NCD4_i_distance_statistics_ee_ne_en_nn.tsv" \
+"TCD4_i_distance_statistics_ee_ne_en_nn.tsv" \
+"NACD4_i_distance_statistics_ee_ne_en_nn.tsv" \
+"ACD4_i_distance_statistics_ee_ne_en_nn.tsv" \
+"NCD8_i_distance_statistics_ee_ne_en_nn.tsv" \
+"TCD8_i_distance_statistics_ee_ne_en_nn.tsv"
+```
+
+As with the other R scripts, the first argument (`<OUT_DIR>/`) is the directory to which the results will be written,
+and the second argument (`<OUT_PREFIX>`) is used as prefix for the names of the generated files.
+As a third argument (`<MM_TITLE_SUFFIX>`),
+a short label can be given that appears in the heading of the plot that will be generated.
+This is followed by 17 TSV files that contain the summary statistics for the individual cell types.
+
+#### Generated plots
+
+The R script creates one PDF files for each of the three summary statistics *n*, *median* and *IQR*.
+```
+interaction_distance_summary_stats_n.pdf
+interaction_distance_summary_stats_median.pdf
+interaction_distance_summary_stats_iqr.pdf
+```
+These files are intended to provide an overview.
+Each file contains the same plots in the same order.
+
+##### Interaction numbers (n)
+
+In the following,
+the structure of the PDF files is described using the file for the interaction numbers as an example.
+
+In the top four rows, DI, UIR and UI are compared with one another.
+
+![Distance summary - N - 1 - ST](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_n_1.png)
+
+The first row contains three boxplots for DI, UIR and UI.
+Within the individual plots, the distributions of interaction numbers from the 17 cell types
+are shown separately for `EE`, `NE`, `EN` annd `NN`.
+In the second row,
+the distributions for DI, UIR and UI are shown together in one plot so that they can be compared with one another.
+The first plot in this row contains the distribution for DI, UIR and UI,
+while the second plot contains the distributions for DI and UIR only.
+The third row contains an alternative representation of the data for DI and UIR,
+with the interaction numbers for DI and UIR are shown as scatterplots
+separately for `EE`, `NE`, `EN` annd `NN`.
+The fourth row contains another alternative representation of the data for DI and UIR.
+In this representation, the differences of interaction numbers for DI aand UIR
+are shown separately for `EE`, `NE`, `EN` annd `NN`.
+Under the null hypothesis that DI and UIR do not differ,
+these differences should be evenly distributed around zero.
+The corresponding P-values are shown above the top whiskers.
+
+![Distance summary - N - 2 - ST](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_n_2.png)
+
+
+### Subordinate analysis of simple and twisted interactions and read pairs
+ XXX
 ## Analysis of interaction profiles
 
 xxx

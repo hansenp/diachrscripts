@@ -83,8 +83,8 @@ function.get_pdf_for_n_med_or_iqr <- function(
   colnames(UI_TAB) <- c("UI_EE","UI_NE","UI_EN","UI_NN")
   
   # Init PDF file
-  cairo_pdf(PDF_NAME, width=18, height=21)
-  par(mfrow=c(7,4), oma = c(0, 0, 3, 0))
+  cairo_pdf(PDF_NAME, width=18, height=24)
+  par(mfrow=c(8,4), oma = c(0, 0, 3, 0))
   
   # Create one boxplot for each interaction category
   boxplot(
@@ -141,43 +141,61 @@ function.get_pdf_for_n_med_or_iqr <- function(
   plot.new()
   plot.new()
   
-  # Create boxplots for interaction categories DI and UIR only and for individal enrichment categories
-  TMP_TAB <- ALL_TAB[,c("DI_EE","UIR_EE")]
-  boxplot(
-    TMP_TAB,
-    main="Directed and undirected reference interactions (EE)",
-    xlab="Enrichment status",
-    ylab=YLAB_1,  
-    col=c(directed_color,undirected_ref_color),
-    names=c("EE", "EE")
+  # Compare DI with UIR using scatterplots
+  
+  YMIN <- min(ALL_TAB[,c("DI_EE","DI_NE","DI_EN","DI_NN","UIR_EE","UIR_NE","UIR_EN","UIR_NN")])
+  YMAX <- max(ALL_TAB[,c("DI_EE","DI_NE","DI_EN","DI_NN","UIR_EE","UIR_NE","UIR_EN","UIR_NN")])
+  XMIN<-YMIN
+  XMAX<-YMAX
+  
+  plot(
+    ALL_TAB[,"DI_EE"]~ALL_TAB[,"UIR_EE"],
+    main="Directed interactions - DI vs. UIR - EE",
+    col=mixed_color_di_uir,
+    xlim=c(XMIN,XMAX),
+    ylim=c(YMIN,YMAX),
+    xlab="UIR - EE",
+    ylab="DI - EE"
   )
-  TMP_TAB <- ALL_TAB[,c("DI_NE","UIR_NE")]
-  boxplot(
-    TMP_TAB,
-    main="Directed and undirected reference interactions (NE)",
-    xlab="Enrichment status",
-    ylab=YLAB_1,  
-    col=c(directed_color,undirected_ref_color),
-    names=c("NE", "NE")
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"DI_EE"]~ALL_TAB[,"UIR_EE"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+  
+  plot(
+    ALL_TAB[,"DI_NE"]~ALL_TAB[,"UIR_NE"],
+    main="Directed interactions - DI vs. UIR - NE",
+    col=mixed_color_di_uir,
+    xlim=c(XMIN,XMAX),
+    ylim=c(YMIN,YMAX),
+    xlab="UIR - NE",
+    ylab="DI - NE"
   )
-  TMP_TAB <- ALL_TAB[,c("DI_EN","UIR_EN")]
-  boxplot(
-    TMP_TAB,
-    main="Directed and undirected reference interactions (EN)",
-    xlab="Enrichment status",
-    ylab=YLAB_1,  
-    col=c(directed_color,undirected_ref_color),
-    names=c("EN", "EN")
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"DI_NE"]~ALL_TAB[,"UIR_NE"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+  
+  plot(
+    ALL_TAB[,"DI_EN"]~ALL_TAB[,"UIR_EN"],
+    main="Directed interactions - DI vs. UIR - EN",
+    col=mixed_color_di_uir,
+    xlim=c(XMIN,XMAX),
+    ylim=c(YMIN,YMAX),
+    xlab="UIR - EN",
+    ylab="DI - EN"
   )
-  TMP_TAB <- ALL_TAB[,c("DI_NN","UIR_NN")]
-  boxplot(
-    TMP_TAB,
-    main="Directed and undirected reference interactions (NN)",
-    xlab="Enrichment status",
-    ylab=YLAB_1,  
-    col=c(directed_color,undirected_ref_color),
-    names=c("NN", "NN")
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"DI_EN"]~ALL_TAB[,"UIR_EN"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+  
+  plot(
+    ALL_TAB[,"DI_NN"]~ALL_TAB[,"UIR_NN"],
+    main="Directed interactions - DI vs. UIR - NN",
+    col=mixed_color_di_uir,
+    xlim=c(XMIN,XMAX),
+    ylim=c(YMIN,YMAX),
+    xlab="UIR - NN",
+    ylab="DI - NN"
   )
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"DI_NN"]~ALL_TAB[,"UIR_NN"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+  
   
   # Get differences of DI and UIR in different enrichment categories
   DIFF_DI_UIR_EE <- ALL_TAB[,"DI_EE"]-ALL_TAB[,"UIR_EE"]
@@ -257,37 +275,40 @@ function.get_pdf_for_n_med_or_iqr <- function(
   plot.new()
   
   plot(
-    ALL_TAB[,"DI_EN"]~ALL_TAB[,"DI_NE"],
+    ALL_TAB[,"DI_NE"]~ALL_TAB[,"DI_EN"],
     main="Directed interactions - NE vs. EN",
     col=directed_color,
     xlim=c(min(ALL_TAB[,"DI_NE"],ALL_TAB[,"DI_EN"]),max(ALL_TAB[,"DI_NE"],ALL_TAB[,"DI_EN"])),
+    ylim=c(min(ALL_TAB[,"DI_NE"],ALL_TAB[,"DI_EN"]),max(ALL_TAB[,"DI_NE"],ALL_TAB[,"DI_EN"])),
     xlab="EN",
     ylab="NE"
     )
   abline(0,1,col="gray")
-  text(ALL_TAB[,"DI_EN"]~ALL_TAB[,"DI_NE"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+  text(ALL_TAB[,"DI_NE"]~ALL_TAB[,"DI_EN"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
   
   plot(
-    ALL_TAB[,"UIR_EN"]~ALL_TAB[,"UIR_NE"],
+    ALL_TAB[,"UIR_NE"]~ALL_TAB[,"UIR_EN"],
     main="Undirected reference interactions - NE vs. EN",
     col=undirected_ref_color,
     xlim=c(min(ALL_TAB[,"UIR_NE"],ALL_TAB[,"UIR_EN"]),max(ALL_TAB[,"UIR_NE"],ALL_TAB[,"UIR_EN"])),
+    ylim=c(min(ALL_TAB[,"UIR_NE"],ALL_TAB[,"UIR_EN"]),max(ALL_TAB[,"UIR_NE"],ALL_TAB[,"UIR_EN"])),
     xlab="EN",
     ylab="NE"
   )
   abline(0,1,col="gray")
-  text(ALL_TAB[,"UIR_EN"]~ALL_TAB[,"UIR_NE"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+  text(ALL_TAB[,"UIR_NE"]~ALL_TAB[,"UIR_EN"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
 
   plot(
-    ALL_TAB[,"UI_EN"]~ALL_TAB[,"UI_NE"],
+    ALL_TAB[,"UI_NE"]~ALL_TAB[,"UI_EN"],
     main="Undirected interactions - NE vs. EN",
     col=undirected_color,
     xlim=c(min(ALL_TAB[,"UI_NE"],ALL_TAB[,"UI_EN"]),max(ALL_TAB[,"UI_NE"],ALL_TAB[,"UI_EN"])),
+    ylim=c(min(ALL_TAB[,"UI_NE"],ALL_TAB[,"UI_EN"]),max(ALL_TAB[,"UI_NE"],ALL_TAB[,"UI_EN"])),
     xlab="EN",
     ylab="NE"
   )
   abline(0,1,col="gray")
-  text(ALL_TAB[,"UI_EN"]~ALL_TAB[,"UI_NE"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+  text(ALL_TAB[,"UI_NE"]~ALL_TAB[,"UI_EN"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
 
   plot.new()
 
