@@ -527,7 +527,7 @@ In the top four rows, DI, UIR and UI are compared with one another.
 
 The first row contains three boxplots for DI, UIR and UI.
 Within the individual plots, the distributions of interaction numbers from the 17 cell types
-are shown separately for `EE`, `NE`, `EN` annd `NN`.
+are shown separately for `EE`, `NE`, `EN` and `NN`.
 In the second row,
 the distributions for DI, UIR and UI are shown together in one plot so that they can be compared with one another.
 The first plot in this row contains the distribution for DI, UIR and UI,
@@ -540,9 +540,26 @@ In this representation, the differences of interaction numbers for DI aand UIR
 are shown separately for `EE`, `NE`, `EN` annd `NN`.
 Under the null hypothesis that DI and UIR do not differ,
 these differences should be evenly distributed around zero.
+We use a t-test to test this hypothesis.
 The corresponding P-values are shown above the top whiskers.
 
+In the lower four rows, the enrichment categories NE and EN are compared within DI, UIR and UI.
+
 ![Distance summary - N - 2 - ST](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_n_2.png)
+
+The first row contains three boxplots for DI, UIR and UI.
+Within the individual plots, the distributions of interaction numbers from the 17 cell types
+are shown separately for `NE` and `EN`.
+The second row contains an alternative representation of the data for `NE` and `EN`,
+with the interaction numbers for `NE` and `EN` are shown as scatterplots
+separately for DI, UIR and UI.
+The third row contains another alternative representation of the data for `NE` and `EN`.
+In this representation, the differences of interaction numbers for `NE` and `EN`
+are shown separately for DI, UIR and UI.
+Under the null hypothesis that `NE` and `EN` do not differ,
+these differences should be evenly distributed around zero.
+We use a t-test to test this hypothesis.
+The corresponding P-values are shown above the top whiskers.
 
 
 ### Subordinate analysis of simple and twisted interactions and read pairs
