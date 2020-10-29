@@ -1,25 +1,32 @@
 source("rscripts/07_analyze_interaction_distances/interaction_distances_lib.r")
 
-OUT_DIR <- "results/07_analyze_interaction_distances/"
+# Read commannd line arguments
+args = commandArgs(trailingOnly=TRUE)
+for(arg in args){
+  print(arg)
+}
 
-# Create table for all 17 cell types
-MK_TAB <- read.table("results/07_analyze_interaction_distances/MK/MK_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-ERY_TAB <- read.table("results/07_analyze_interaction_distances/ERY/ERY_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-NEU_TAB <- read.table("results/07_analyze_interaction_distances/NEU/NEU_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-MON_TAB <- read.table("results/07_analyze_interaction_distances/MON/MON_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-MAC_M0_TAB <- read.table("results/07_analyze_interaction_distances/MAC_M0/MAC_M0_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-MAC_M1_TAB <- read.table("results/07_analyze_interaction_distances/MAC_M1/MAC_M1_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-MAC_M2_TAB <- read.table("results/07_analyze_interaction_distances/MAC_M2/MAC_M2_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-EP_TAB <- read.table("results/07_analyze_interaction_distances/EP/EP_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-NB_TAB <- read.table("results/07_analyze_interaction_distances/NB/NB_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-TB_TAB <- read.table("results/07_analyze_interaction_distances/TB/TB_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-FOET_TAB <- read.table("results/07_analyze_interaction_distances/FOET/FOET_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-NCD4_TAB <- read.table("results/07_analyze_interaction_distances/NCD4/NCD4_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-TCD4_TAB <- read.table("results/07_analyze_interaction_distances/TCD4/TCD4_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-NACD4_TAB <- read.table("results/07_analyze_interaction_distances/NACD4/NACD4_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-ACD4_TAB <- read.table("results/07_analyze_interaction_distances/ACD4/ACD4_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-NCD8_TAB <- read.table("results/07_analyze_interaction_distances/NCD8/NCD8_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
-TCD8_TAB <- read.table("results/07_analyze_interaction_distances/TCD8/TCD8_st_distance_statistics_ee_ne_en_nn.tsv", header=TRUE)
+OUT_DIR <- args[1]
+OUT_PREFIX <- args[2]
+MM_TITLE_SUFFIX <- args[3]
+
+MK_TAB <- read.table(args[4], header=TRUE)
+ERY_TAB <- read.table(args[5], header=TRUE)
+NEU_TAB <- read.table(args[6], header=TRUE)
+MON_TAB <- read.table(args[7], header=TRUE)
+MAC_M0_TAB <- read.table(args[8], header=TRUE)
+MAC_M1_TAB <- read.table(args[9], header=TRUE)
+MAC_M2_TAB <- read.table(args[10], header=TRUE)
+EP_TAB <- read.table(args[11], header=TRUE)
+NB_TAB <- read.table(args[12], header=TRUE)
+TB_TAB <- read.table(args[13], header=TRUE)
+FOET_TAB <- read.table(args[14], header=TRUE)
+NCD4_TAB <- read.table(args[15], header=TRUE)
+TCD4_TAB <- read.table(args[16], header=TRUE)
+NACD4_TAB <- read.table(args[17], header=TRUE)
+ACD4_TAB <- read.table(args[18], header=TRUE)
+NCD8_TAB <- read.table(args[19], header=TRUE)
+TCD8_TAB <- read.table(args[20], header=TRUE)
 
 ALL_TAB <- rbind(
   MK_TAB,
@@ -136,7 +143,7 @@ function.get_simple_twisted_diff_boxplot <- function(M_TITLE, YLAB, BOX_COLOR, T
 
 # Interaction and read pair numbers
 # ---------------------------------
-cairo_pdf(paste(OUT_DIR,"interaction_distance_summary_stats_st_n.pdf",sep=""), width=24, height=16)
+cairo_pdf(paste(OUT_DIR,OUT_PREFIX,"interaction_distance_summary_stats_st_n.pdf",sep=""), width=24, height=16)
 par(mfrow=c(4,4), oma = c(0, 0, 3, 0))
   
   # Directed interactions
@@ -313,7 +320,7 @@ par(mfrow=c(4,4), oma = c(0, 0, 3, 0))
       N_TAB_UI_RP,
       YL)
     
-    mtext("Interaction numbers", outer = TRUE, cex = 2)
+    mtext(paste("Interaction numbers",MM_TITLE_SUFFIX,sep=""), outer = TRUE, cex = 2)
     
   
 dev.off()
@@ -322,7 +329,7 @@ dev.off()
 # Median interaction and read pair distances
 # ------------------------------------------
 
-cairo_pdf(paste(OUT_DIR,"interaction_distance_summary_stats_st_median.pdf",sep=""), width=24, height=16)
+cairo_pdf(paste(OUT_DIR,OUT_PREFIX,"interaction_distance_summary_stats_st_median.pdf",sep=""), width=24, height=16)
 par(mfrow=c(4,4), oma = c(0, 0, 3, 0))
 
 # Directed interactions
@@ -486,7 +493,7 @@ DIFF_VEC_MED_UI_RP <- function.get_simple_twisted_diff_boxplot(
   MED_TAB_UI_RP,
   YL)
 
-  mtext("Median distances", outer = TRUE, cex = 2)
+  mtext(paste("Median distances",MM_TITLE_SUFFIX,sep=""), outer = TRUE, cex = 2)
 
 dev.off()
 
@@ -494,7 +501,7 @@ dev.off()
 # Interquartile ranges of interaction and read pair distances
 # ------------------------------------------
 
-cairo_pdf(paste(OUT_DIR,"interaction_distance_summary_stats_st_iqr.pdf",sep=""), width=24, height=16)
+cairo_pdf(paste(OUT_DIR,OUT_PREFIX,"interaction_distance_summary_stats_st_iqr.pdf",sep=""), width=24, height=16)
 par(mfrow=c(4,4), oma = c(0, 0, 3, 0))
 
 # Directed interactions
@@ -650,6 +657,6 @@ DIFF_VEC_IQR_UI_RP <- function.get_simple_twisted_diff_boxplot(
   IQR_TAB_UI_RP,
   YL)
 
-  mtext("Interquartile ranges", outer = TRUE, cex = 2)
+  mtext(paste("Interquartile ranges",MM_TITLE_SUFFIX,sep=""), outer = TRUE, cex = 2)
 
 dev.off()
