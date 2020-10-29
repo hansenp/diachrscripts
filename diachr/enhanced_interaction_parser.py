@@ -100,7 +100,7 @@ class EnhancedInteractionParser:
                 for line in fp:
                     n_progress += 1
                     if n_progress % 1000000 == 0:
-                        print("\tProcessed " + str(n_progress) + " interactions ...")
+                        print("\t\t[INFO] Processed " + str(n_progress) + " interactions ...")
                     enh_int = self.parse_line(line)
                     ei_list.append(enh_int)
             return ei_list
@@ -110,7 +110,7 @@ class EnhancedInteractionParser:
                 for line in fp:
                     n_progress += 1
                     if n_progress % 1000000 == 0:
-                        print("\tProcessed " + str(n_progress) + " interactions ...")
+                        print("\t\t[INFO] Processed " + str(n_progress) + " interactions ...")
                     enh_int = EnhancedInteractionParser.parse_line(line)
                     ei_list.append(enh_int)
             return ei_list

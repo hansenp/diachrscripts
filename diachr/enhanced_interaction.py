@@ -118,10 +118,10 @@ class EnhancedInteraction:
         return "%s\t%d\t%d" % (self._chr_b, self._start_b, self._end_b)
 
     def set_enrichment_pair_tag(self, tag):
-        self.enrichment_pair_tag = tag
+        self._enrichment_pair_tag = tag
 
     def set_interaction_category(self, cat):
-        self.interaction_category = cat
+        self._interaction_category = cat
 
     def get_line(self):
         """

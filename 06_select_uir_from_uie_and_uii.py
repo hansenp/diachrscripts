@@ -222,8 +222,9 @@ print("[INFO] 1st pass: Collect information about DI ...")
 print("\t[INFO] Reading enhanced interaction file ...")
 ie_parser = EnhancedInteractionParser(enhanced_interaction_file)
 ei_list = ie_parser.parse()
-print("[INFO] Extracted %d interaction lines" % len(ei_list))
+print("\t[INFO] Extracted %d interaction lines" % len(ei_list))
 
+print("\t[INFO] Iterating list of enhanced interaction objects ...")
 n_interaction_total = 0
 
 for ei in ei_list:
@@ -251,14 +252,14 @@ for ei in ei_list:
     else:
         enrichment_tag_dig_1 = 'N'
 
-        if coord_key_db in enriched_digests_set:
-            enrichment_tag_dig_2 = 'E'
-        else:
-            enrichment_tag_dig_2 = 'N'
+    if coord_key_db in enriched_digests_set:
+        enrichment_tag_dig_2 = 'E'
+    else:
+        enrichment_tag_dig_2 = 'N'
 
-        enrichment_pair_tag = enrichment_tag_dig_1 + enrichment_tag_dig_2
+    enrichment_pair_tag = enrichment_tag_dig_1 + enrichment_tag_dig_2
 
-        # Collect read pair numbers for DI, UIE and UII
+    # Collect read pair numbers for DI
     if interaction_category == 'DI':
 
         di_num += 1
@@ -352,7 +353,7 @@ print("\t[INFO] Iterating enhanced interaction file ...")
 ### a second parse!
 # ie_parser = EnhancedInteractionParser(enhanced_interaction_file)
 # ei_list = ie_parser.parse()
-print("[INFO] 2nd pass Extracted %d interaction lines" % len(ei_list))
+print("[INFO] Extracted %d interaction lines" % len(ei_list))
 
 n_interaction_total = 0
 #for line in fp:
@@ -452,12 +453,11 @@ for ei in ei_list:
     #line = diachrscripts_toolkit.set_column_in_enhanced_interaction_line(line, 3, interaction_category_tag)
 
     # TODO is the following indentation correct?
-    
-        ei.set_enrichment_pair_tag(enrichment_pair_tag)
-        ei.set_interaction_category(interaction_category_tag)
-        di_ui_uir_enhanced_interaction_stream_output.write(ei.get_line() + "\n")
-        if interaction_category_tag == 'DI' or interaction_category_tag == 'UIR':
-            di_uir_enhanced_interaction_stream_output.write(ei.get_line()  + "\n")
+    ei.set_enrichment_pair_tag(enrichment_pair_tag)
+    ei.set_interaction_category(interaction_category_tag)
+    di_ui_uir_enhanced_interaction_stream_output.write(ei.get_line() + "\n")
+    if interaction_category_tag == 'DI' or interaction_category_tag == 'UIR':
+        di_uir_enhanced_interaction_stream_output.write(ei.get_line()  + "\n")
 
 
 di_uir_enhanced_interaction_stream_output.close()
