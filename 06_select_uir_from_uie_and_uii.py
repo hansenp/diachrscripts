@@ -348,8 +348,10 @@ print("[INFO] 2nd pass: Select undirected reference interactions ...")
 
 print("\t[INFO] Iterating enhanced interaction file ...")
 #with gzip.open(enhanced_interaction_file, 'rt') as fp:
-ie_parser = EnhancedInteractionParser(input_path)
-ei_list = ie_parser.parse()
+### Note the above does not change the ei_list so we can just iterate through the list again without
+### a second parse!
+# ie_parser = EnhancedInteractionParser(enhanced_interaction_file)
+# ei_list = ie_parser.parse()
 print("[INFO] 2nd pass Extracted %d interaction lines" % len(ei_list))
 
 n_interaction_total = 0
@@ -448,11 +450,14 @@ for ei in ei_list:
     # Override interaction category tag in column 3 and write interaction to files
     #line = diachrscripts_toolkit.set_column_in_enhanced_interaction_line(line, 6, enrichment_pair_tag)
     #line = diachrscripts_toolkit.set_column_in_enhanced_interaction_line(line, 3, interaction_category_tag)
-    ei.set_enrichment_pair_tag(enrichment_pair_tag)
-    ei.set_interaction_category(interaction_category_tag)
-    di_ui_uir_enhanced_interaction_stream_output.write(line + "\n")
-    if interaction_category_tag == 'DI' or interaction_category_tag == 'UIR':
-        di_uir_enhanced_interaction_stream_output.write(line + "\n")
+
+    # TODO is the following indentation correct?
+    
+        ei.set_enrichment_pair_tag(enrichment_pair_tag)
+        ei.set_interaction_category(interaction_category_tag)
+        di_ui_uir_enhanced_interaction_stream_output.write(ei.get_line() + "\n")
+        if interaction_category_tag == 'DI' or interaction_category_tag == 'UIR':
+            di_uir_enhanced_interaction_stream_output.write(ei.get_line()  + "\n")
 
 
 di_uir_enhanced_interaction_stream_output.close()
