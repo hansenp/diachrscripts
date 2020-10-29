@@ -83,8 +83,8 @@ Explain option '--respect-left-right'
 
 import argparse
 import gzip
-import diachrscripts_toolkit
-from diachr2 import EnhancedInteraction, EnhancedInteractionParser
+#import diachrscripts_toolkit
+from diachr import EnhancedInteraction, EnhancedInteractionParser
 import numpy
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -97,7 +97,7 @@ import matplotlib.backends.backend_pdf
 parser = argparse.ArgumentParser(description='Select reference interactions from exclusive undirected interactions.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('--enhanced-interaction-file', help='Enhanced interaction file created with \'05_define_di_uie_and_uii.py\'. Column 3 contains either \'DI\' or\'UIE\'.', required=True)
-parser.add_argument('--enriched-digests-file', help='BED file with digests selcted for target enrichment.')
+parser.add_argument('--enriched-digests-file', help='BED file with digests selcted for target enrichment.', required=True)
 parser.add_argument('--respect-left-right', help='When choosing the reference interactions, treat NE and EN as separate categories.', action='store_true', default=False)
 
 args = parser.parse_args()
@@ -221,7 +221,7 @@ print("[INFO] 1st pass: Collect information about DI ...")
 
 print("\t[INFO] Reading enhanced interaction file ...")
 #with gzip.open(enhanced_interaction_file, 'rt') as fp:
-ie_parser = EnhancedInteractionParser(input_path)
+ie_parser = EnhancedInteractionParser(enhanced_interaction_file)
 ei_list = ie_parser.parse()
 print("[INFO] Extracted %d interaction lines" % len(ei_list))
 
@@ -327,7 +327,7 @@ for ei in ei_list:
             ui_nn_rp_array.append(rp_total)
 
     else:
-        print("[Error] Interaction category must be either \'DI\', \'UIE\' or \'UII\'!")
+        print("[Error] Interaction category must be either \'DI\', \'UIE\' or \'UII\'! but we got ", interaction_category)
         exit(1)
 
 print("\t[INFO] done ...")
