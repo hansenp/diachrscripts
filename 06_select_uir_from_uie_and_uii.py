@@ -220,16 +220,14 @@ pdf_name_barplots_interaction_enrichment_pair_tags = out_prefix + "_interaction_
 print("[INFO] 1st pass: Collect information about DI ...")
 
 print("\t[INFO] Reading enhanced interaction file ...")
-#with gzip.open(enhanced_interaction_file, 'rt') as fp:
 ie_parser = EnhancedInteractionParser(enhanced_interaction_file)
 ei_list = ie_parser.parse()
 print("[INFO] Extracted %d interaction lines" % len(ei_list))
 
 n_interaction_total = 0
-#    for line in fp:
+
 for ei in ei_list:
 
-    # Report progress
     n_interaction_total += 1
     if n_interaction_total % 1000000 == 0:
         print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
@@ -327,8 +325,7 @@ for ei in ei_list:
             ui_nn_rp_array.append(rp_total)
 
     else:
-        print("[Error] Interaction category must be either \'DI\', \'UIE\' or \'UII\'! but we got ", interaction_category)
-        exit(1)
+        raise ValueError("[Error] Interaction category must be either \'DI\', \'UIE\' or \'UII\'! but we got ", interaction_category)
 
 print("\t[INFO] done ...")
 
