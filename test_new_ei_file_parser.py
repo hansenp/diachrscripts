@@ -1,10 +1,11 @@
 import os
 import sys
 import gzip
+import math
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
-from diachr2 import EnhancedInteraction, EnhancedInteractionParser
+from diachr import EnhancedInteraction, EnhancedInteractionParser
 import diachrscripts_toolkit
 
 # The purpose of this file is to demonstrate that we can switch to using the EnhancedInteractionParser in the diachr2 package
@@ -35,6 +36,19 @@ def raise_error(line, msg, item_n, item_o):
     raise ValueError(msg)
 
 
+def check_dif(line1, line2):
+    fields1 = line1.split('\t')
+    fields2 = line2.split('\t')
+    if len(fields1) != len(fields2):
+        raise ValueError("Fields1 len=x and field2 len=y")
+    for i in range(len(fields2)):
+        if fields1[i] != fields2[i]:
+            if isinstance(fields1[i], float):
+                if float(fields1[i]) == float(fields2[i]):
+                    continue
+                else:
+                    raise ValueError("i=%d f1=%s f2=%s" % (i, fields1[i], fields2[i]))
+
 i = 0
 with gzip.open(input_path, 'rt') as fp:
     for line in fp:
@@ -43,6 +57,10 @@ with gzip.open(input_path, 'rt') as fp:
         chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
             diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
         ei = ei_list[i]
+        my_newline = ei.get_line()
+        check_dif(line, my_newline)
+        
+            #raise ValueError("Lines did not match")
         i += 1
         if ei.chr_a != chr_a:
             raise ValueError("chr_a did not match at (%d)" % i)
