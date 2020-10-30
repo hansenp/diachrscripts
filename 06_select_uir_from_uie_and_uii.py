@@ -195,11 +195,11 @@ print("[INFO] ... done.")
 ### Prepare output files
 ########################
 
-# EI file with interaction categories: DI and UIR only
-di_uir_enhanced_interaction_stream_output = gzip.open(out_prefix + "_enhanced_interaction_file_with_di_and_uir.tsv.gz", 'wt')
-
 # EI file with all input interactions, but with overwritten tags for interaction categories (column 3) and enrichment states (column 6)
 di_ui_uir_enhanced_interaction_stream_output = gzip.open(out_prefix + "_enhanced_interaction_file_with_di_ui_and_uir.tsv.gz", 'wt')
+
+# EI file with interaction categories: DI and UIR only
+di_uir_enhanced_interaction_stream_output = gzip.open(out_prefix + "_enhanced_interaction_file_with_di_and_uir.tsv.gz", 'wt')
 
 # Prepare stream for output of statistics
 tab_stream_stats_output = open(out_prefix + "_stats.tsv", 'wt')
@@ -217,16 +217,15 @@ pdf_name_barplots_interaction_enrichment_pair_tags = out_prefix + "_interaction_
 ### 1st pass: Determine distribution of read pairs per interaction for DI
 #########################################################################
 
-print("[INFO] 1st pass: Collect information about DI ...")
-
-print("\t[INFO] Reading enhanced interaction file ...")
+print("[INFO] Reading enhanced interaction file ...")
 ie_parser = EnhancedInteractionParser(enhanced_interaction_file)
 ei_list = ie_parser.parse()
-print("\t[INFO] Extracted %d interaction lines" % len(ei_list))
+print("\t[INFO] Extracted %d interaction lines." % len(ei_list))
+print("[INFO] ... done.")
 
+print("[INFO] 1st pass: Collect information about DI ...")
 print("\t[INFO] Iterating list of enhanced interaction objects ...")
 n_interaction_total = 0
-
 for ei in ei_list:
 
     n_interaction_total += 1
@@ -234,15 +233,11 @@ for ei in ei_list:
         print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
 
     # Parse enhanced interactions line
-    #chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
-    #    diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
     enrichment_pair_tag = ei.enrichment_pair_tag
     interaction_category = ei.interaction_category
     rp_total = ei.rp_total
 
     # Get digest coordinates from enhanced interaction file
-    #coord_key_da = chr_a + '\t' + str(sta_a) + '\t' + str(end_a)
-    #coord_key_db = chr_b + '\t' + str(sta_b) + '\t' + str(end_b)
     coord_key_da = ei.coordinate_key_a
     coord_key_db = ei.coordinate_key_b
 
@@ -328,7 +323,7 @@ for ei in ei_list:
     else:
         raise ValueError("[Error] Interaction category must be either \'DI\', \'UIE\' or \'UII\'! but we got ", interaction_category)
 
-print("\t[INFO] done ...")
+print("\t[INFO] ... done.")
 
 if di_ee_num < 3 or di_en_num < 3 or di_nn_num < 3:
 
@@ -342,35 +337,26 @@ if di_ee_num < 3 or di_en_num < 3 or di_nn_num < 3:
 
     exit(0)
 
+print("[INFO] ... done.")
+
 
 ### 2nd pass: Select undirected reference interactions
 ######################################################
 print("[INFO] 2nd pass: Select undirected reference interactions ...")
 
-print("\t[INFO] Iterating enhanced interaction file ...")
-#with gzip.open(enhanced_interaction_file, 'rt') as fp:
-### Note the above does not change the ei_list so we can just iterate through the list again without
-### a second parse!
-# ie_parser = EnhancedInteractionParser(enhanced_interaction_file)
-# ei_list = ie_parser.parse()
-print("[INFO] Extracted %d interaction lines" % len(ei_list))
-
+print("\t[INFO] Iterating list of enhanced interaction objects ...")
 n_interaction_total = 0
-#for line in fp:
 for ei in ei_list:
     n_interaction_total += 1
     if n_interaction_total % 1000000 == 0:
         print("\t\t[INFO]", n_interaction_total, "interactions processed ...")
 
     # Parse enhanced interactions line
-    # chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
-    #        diachrscripts_toolkit.parse_enhanced_interaction_line_with_gene_symbols(line)
     enrichment_pair_tag = ei.enrichment_pair_tag
     interaction_category = ei.interaction_category
     rp_total = ei.rp_total
+
     # Get digest coordinates from enhanced interaction file
-    # coord_key_da = chr_a + '\t' + str(sta_a) + '\t' + str(end_a)
-    # coord_key_db = chr_b + '\t' + str(sta_b) + '\t' + str(end_b)
     coord_key_da = ei.coordinate_key_a
     coord_key_db = ei.coordinate_key_b
 
@@ -448,22 +434,21 @@ for ei in ei_list:
             uir_nn_num += 1
             interaction_category_tag = 'UIR'
 
-    # Override interaction category tag in column 3 and write interaction to files
-    #line = diachrscripts_toolkit.set_column_in_enhanced_interaction_line(line, 6, enrichment_pair_tag)
-    #line = diachrscripts_toolkit.set_column_in_enhanced_interaction_line(line, 3, interaction_category_tag)
-
-    # TODO is the following indentation correct?
+    # Override interaction and enrichment category tag in column 3 and 6
     ei.set_enrichment_pair_tag(enrichment_pair_tag)
     ei.set_interaction_category(interaction_category_tag)
+
+    #  Write interaction to files
     di_ui_uir_enhanced_interaction_stream_output.write(ei.get_line() + "\n")
     if interaction_category_tag == 'DI' or interaction_category_tag == 'UIR':
         di_uir_enhanced_interaction_stream_output.write(ei.get_line()  + "\n")
 
+print("\t[INFO] ... done.")
 
 di_uir_enhanced_interaction_stream_output.close()
 di_ui_uir_enhanced_interaction_stream_output.close()
 
-print("\t[INFO] done ...")
+print("[INFO] ... done.")
 
 print("[INFO] Checking whether reference interactions are missing for some n")
 
@@ -491,13 +476,12 @@ for x in di_nn_rp_dict:
         n_missing_nn += di_nn_rp_dict[x]
         tab_stream_warnings_output.write(str(x) + "\t" + str(di_nn_rp_dict[x]) + "\n")
 
-print("\t[INFO] Summary for EE, EN and NN")
-print("\t\t[WARNING] For " + str(n_missing_ee) + " out of " + str(di_ee_num) + " directed EE interactions no undirected reference interaction could be selected.")
-print("\t\t[WARNING] For " + str(n_missing_en) + " out of " + str(di_en_num) + " directed EN or NE interactions no undirected reference interaction could be selected.")
-print("\t\t[WARNING] For " + str(n_missing_nn) + " out of " + str(di_nn_num) + " directed NN interactions no undirected reference interaction could be selected.")
+print("\t[WARNING] For " + str(n_missing_ee) + " out of " + str(di_ee_num) + " directed EE interactions no undirected reference interaction could be selected.")
+print("\t[WARNING] For " + str(n_missing_en) + " out of " + str(di_en_num) + " directed EN or NE interactions no undirected reference interaction could be selected.")
+print("\t[WARNING] For " + str(n_missing_nn) + " out of " + str(di_nn_num) + " directed NN interactions no undirected reference interaction could be selected.")
 
 tab_stream_warnings_output.close()
-print("\t[INFO] done ...")
+print("[INFO] ... done.")
 
 
 ### Output some statistics
