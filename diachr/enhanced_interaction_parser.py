@@ -3,7 +3,6 @@ import os
 from typing import Tuple, List
 from .enhanced_interaction import EnhancedInteraction
 
-
 class EnhancedInteractionParser:
     """
     This class coordinates the parsing of enhancer interaction file-format files.
@@ -82,8 +81,6 @@ class EnhancedInteractionParser:
         neg_log_p_value = float(field[6])
         read_pair_left = int(field[4].split(":")[0])
         read_pair_right = int(field[4].split(":")[1])
-        # Get total number of read pairs
-        #rp_total = int(field[4].split(":")[0]) + int(field[4].split(":")[1])
         i_dist = int(field[1])        
 
         enh_int = EnhancedInteraction(chrA=chr_a, staA=sta_a, endA=end_a, symsA=syms_a,tsssA=tsss_a,
@@ -102,7 +99,7 @@ class EnhancedInteractionParser:
                 for line in fp:
                     n_progress += 1
                     if n_progress % 1000000 == 0:
-                        print("\tProcessed " + str(n_progress) + " interactions ...")
+                        print("\t[INFO] Processed " + str(n_progress) + " interactions ...")
                     enh_int = self.parse_line(line)
                     ei_list.append(enh_int)
             return ei_list
@@ -112,7 +109,7 @@ class EnhancedInteractionParser:
                 for line in fp:
                     n_progress += 1
                     if n_progress % 1000000 == 0:
-                        print("\tProcessed " + str(n_progress) + " interactions ...")
+                        print("\t[INFO] Processed " + str(n_progress) + " interactions ...")
                     enh_int = EnhancedInteractionParser.parse_line(line)
                     ei_list.append(enh_int)
             return ei_list
