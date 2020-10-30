@@ -19,6 +19,7 @@ The two tab separated output text files can be used to reproduce Figure S1 in R.
 
 from collections import defaultdict
 import argparse
+from diachr.binomial_interaction_model import BinomialInteractionModel
 from scipy.stats import binom
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,8 +31,8 @@ import diachrscripts_toolkit as dclass
 
 parser = argparse.ArgumentParser(description='Explore binomial model using simuated and real interactions.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-parser.add_argument('--i-num', help='Number of simulated interactions')
-parser.add_argument('--n-max', help='Simulate interactions with 1 to n read pairs.')
+parser.add_argument('--i-num', help='Number of simulated interactions', default=10000)
+parser.add_argument('--n-max', help='Simulate interactions with 1 to n read pairs.',default=500)
 parser.add_argument('--p-value-cutoff', help='P-value threshold used for the classification of directed and undirected interactions.', default=0.05)
 parser.add_argument('--diachromatic-interaction-file', help='Diachromatic interaction file.')
 
@@ -50,6 +51,21 @@ print("\t[INFO] --n-max: " + str(n_max))
 print("\t[INFO] --p-value-cutoff: " + str(p_value_cutoff))
 if diachromatic_interaction_file != None:
     print("\t[INFO] --diachromatic-interaction-file: " + diachromatic_interaction_file)
+
+
+##########  NEW VERSION HERE
+
+bim = BinomialInteractionModel(n_max=n_max, 
+            i_num=i_num, 
+            p_value_cutoff=p_value_cutoff, 
+            out_prefix=out_prefix, 
+            diachromatic_interaction_file=diachromatic_interaction_file)
+
+bim.do_simulation()
+
+print("******** Done new version **********")
+###### End
+
 
 
 ### Define auxiliary functions
