@@ -523,7 +523,7 @@ the structure of the PDF files is described using the file for the interaction n
 
 In the top four rows, DI, UIR and UI are compared with one another.
 
-![Distance summary - N - 1 - ST](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_n_1.png)
+![Distance summary - N - 1](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_n_1.png)
 
 The first row contains three boxplots for DI, UIR and UI.
 Within the individual plots, the distributions of interaction numbers from the 17 cell types
@@ -545,7 +545,7 @@ The corresponding P-values are shown above the top whiskers.
 
 In the lower four rows, the enrichment categories NE and EN are compared within DI, UIR and UI.
 
-![Distance summary - N - 2 - ST](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_n_2.png)
+![Distance summary - N - 2](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_n_2.png)
 
 The first row contains three boxplots for DI, UIR and UI.
 Within the individual plots, the distributions of interaction numbers from the 17 cell types
@@ -563,7 +563,15 @@ The corresponding P-values are shown above the top whiskers.
 
 
 ### Subordinate analysis of simple and twisted interactions and read pairs
- XXX
+
+X
+
+![Distance summary - ST - N - 1](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_st_n_1.png)
+X
+![Distance summary - ST - N - 2](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_st_n_2.png)
+X
+![Distance summary - ST - N - 3](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_st_n_3.png)
+
 ## Analysis of interaction profiles
 
 xxx
