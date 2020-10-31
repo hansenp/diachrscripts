@@ -2,7 +2,7 @@ from typing import Dict, List
 from collections import defaultdict
 from scipy.stats import binom
 import numpy as np
-from .diachr_util import calculate_binomial_p_value, find_indefinable_n
+from .diachr_util import calculate_binomial_p_value, find_indefinable_n, get_n_dict, get_n_dict_definable
 
 class BinomialInteractionModel:
     """
@@ -103,7 +103,7 @@ class BinomialInteractionModel:
         if self._diachromatic_interaction_file is not None:
         # Name for text file with significant empirical interactions for each n
             emp_tab_file_name = self._out_prefix + "_sig_interactions_vs_empirical_n.tab"
-            emp_tab_stream_name = open(emp_tab_file_name, 'wt')
+            #emp_tab_stream_name = open(emp_tab_file_name, 'wt')
         ### Start execution
         print("[INFO] " + "Generating random numbers of simple and twisted read pairs ...")
         # Determine indefinable cutoff for given P-value
@@ -153,7 +153,7 @@ class BinomialInteractionModel:
         N_DEF_DICT_EMP = get_n_dict_definable(self._diachromatic_interaction_file, 'ALL', 20000, n_indef)
 
         print("[INFO] " + "Writing numbers of significant empirical interactions for each n to text file ...")
-        with open(emp_tab_file_name, 'rt') as fh:
+        with open(emp_tab_file_name, 'wt') as fh:
             for n in range(1, 2000):
                 n_def = N_DEF_DICT_EMP.get(n,0)
                 n_sig = N_SIG_DICT_EMP.get(n,0)

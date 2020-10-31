@@ -29,6 +29,8 @@ class EnhancedInteraction:
         self._symbols_b = symsB.split(",")
         self._tsss_b = tsssB
         self._trans_starts_b = tsssB.split(",")
+        if len(enr_pair_tag) != 2:
+            raise ValueError("Malformed enrichment pair tag (length is not 2): '%s'" % enr_pair_tag)
         self._enrichment_pair_tag = enr_pair_tag
         self._strand_pair_tag = strand_pair_tag
         self._interaction_category = intera_cat
@@ -79,7 +81,16 @@ class EnhancedInteraction:
 
     @property
     def enrichment_pair_tag(self) -> str:
+        """
+        A string such as AA (enriched/enriched) or AI (enriched, unenriched)
+        """
         return self._enrichment_pair_tag
+
+    def digest_a_enriched(self) -> bool:
+        return self._enrichment_pair_tag[0] == 'A'
+
+    def digest_b_enriched(self) -> bool:
+        return self._enrichment_pair_tag[1] == 'A'
 
     @property
     def strand_pair_tag(self):
@@ -95,10 +106,27 @@ class EnhancedInteraction:
 
     @property
     def read_pair_left(self) -> int:
+        """
+        these are the simple read pairs
+        TODO -- deprecate this and replace by simple_count
+        """
         return self._read_pair_left
 
     @property
+    def simple_count(self) -> int:
+        return self._read_pair_left
+
+
+    @property
     def read_pair_right(self) -> int:
+        """
+        these are the twisted read pairs
+        TODO -- deprecate this and replace by simple_count
+        """
+        return self._read_pair_right
+
+    @property
+    def twisted_count(self) -> int:
         return self._read_pair_right
 
     @property
@@ -110,11 +138,11 @@ class EnhancedInteraction:
         return self._read_pair_right + self._read_pair_left
 
     @property
-    def coordinate_key_a(self):
+    def coordinate_key_a(self) -> str:
         return "%s\t%d\t%d" % (self._chr_a, self._start_a, self._end_a)
 
     @property
-    def coordinate_key_b(self):
+    def coordinate_key_b(self) -> str:
         return "%s\t%d\t%d" % (self._chr_b, self._start_b, self._end_b)
 
     def set_enrichment_pair_tag(self, tag):
@@ -122,6 +150,12 @@ class EnhancedInteraction:
 
     def set_interaction_category(self, cat):
         self._interaction_category = cat
+
+    def in_cis(self) -> bool:
+        """
+        return true iff both interactions are on the same chromosome.
+        """
+        return self._chr_a == self._chr_b
 
     def get_line(self):
         """
