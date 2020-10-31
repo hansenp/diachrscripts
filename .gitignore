@@ -116,3 +116,10 @@ venv.bak/
 *.bedgraph
 tmp_data/README~
 tmp_data/homo_sapiens.GRCh38.Regulatory_Build.regulatory_features.20190329.gff.gz
+
+#venv
+p38/
+# vscode
+.vscode/
+# output of package
+OUTPREFIX*

@@ -99,8 +99,9 @@ class BinomialInteractionModel:
         # Dictionary stores the numbers of significant interactions for each n
         N_SIG_DICT_SIM = defaultdict(int)
         # List containing counts of significant simple and twisted interactions for each n
-        signum_list = [0] * (self._n_max + 1)
+        signum_list = [0 for _ in range(self._n_max + 1)]
         print("[INFO] " + "Generating random numbers of simple and twisted read pairs ...")
+       
         random_n_vec = np.random.randint(low = self._n_indef, high = self._n_max  + 1, size = self._i_num)
         for n in random_n_vec:
             N_SIG_DICT_SIM[n] += 1
@@ -119,24 +120,23 @@ class BinomialInteractionModel:
         
     
 
-    def write_simulated_interaction_counts(self, outprefix:str="OUTPREFIX"):
+    def write_simulated_interaction_counts(self):
         """
         Get the counts of significant interactions in simulated data, and write to file
         Write a text file with significant empirical interactions for each n
         If no value for n can be found, write 0.
         Uses count_simulated_interactions()
+        Writes to file "{OUTPREFIX}_sig_interactions_vs_uniform_n.tab"
         Parameters
         ----------------------------
         signum_list: List,
             a list containing counts of significant simple and twisted interactions for each n
         sim_dict: Dict,
             a dictionary with ?
-        outprefix: str,
-            Prefix for outfile, "{OUTPREFIX}_sig_interactions_vs_uniform_n.tab"
         Returns
         ----------------------------
         """
-        sim_tab_file_name = outprefix + "_sig_interactions_vs_uniform_n.tab"
+        sim_tab_file_name = self._outprefix + "_sig_interactions_vs_uniform_n.tab"
         signum_list, sim_dict = self.count_simulated_interactions()
         N = len(signum_list)
         with open(sim_tab_file_name, 'wt') as fh:
@@ -173,7 +173,7 @@ class BinomialInteractionModel:
         return n_def_list, n_sig_list
 
 
-    def write_significant_empirical_interactions(self, ei_file:str, n_indef:int, outprefix: str="OUTPREFIX"):
+    def write_significant_empirical_interactions(self, ei_file:str):
         """
         Get the counts of significant interactions in emprical data for the 
         diachromatic extended interaction file (iefile) and write the to file.
