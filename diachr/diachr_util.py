@@ -434,9 +434,9 @@ def get_interaction_pvalue(n_simple, n_twisted):
     else:
         return 1 - binom.cdf(n_simple-1, n_simple + n_twisted, 0.5)
 
-def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist, p_value_cutoff):
+def get_n_dict(ei_file, status_pair_flag, min_digest_dist, p_value_cutoff):
     """
-    :param diachromatic_interaction_file: Interaction file in Diachromatic format
+    :param ei_file -- diachromatic_interaction_file: Interaction file in Diachromatic format
     :param status_pair_flag: ALL, AA, AI or II
     :param min_digest_dist: Minimal allowed distance between interacting digests, typically 10,000
     :return: Dictionary with total read pair numbers (n) as keys and the corresponding numbers interactions with n read pairs
@@ -448,7 +448,7 @@ def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist,
 
 
 
-    parser = EnhancedInteractionParser(diachromatic_interaction_file)
+    parser = EnhancedInteractionParser(ei_file)
     ei_list = parser.parse()
     for ei in ei_list:
         interaction = Interaction(ei)
@@ -487,9 +487,9 @@ def get_n_dict(diachromatic_interaction_file, status_pair_flag, min_digest_dist,
     return n_dict
 
 
-def get_n_dict_definable(diachromatic_interaction_file, status_pair_flag, min_digest_dist, n_indef):
+def get_n_dict_definable(ei_file, status_pair_flag, min_digest_dist, n_indef):
     """
-    :param diachromatic_interaction_file: Interaction file in Diachromatic format
+    :param ei_file -- diachromatic_interaction_file: Interaction file in Diachromatic format
     :param status_pair_flag: ALL, AA, AI or II
     :param min_digest_dist: Minimal allowed distance between interacting digests, typically 10,000
     :return: Dictionary with total read pair numbers (n) as keys and the corresponding numbers interactions with n read pairs
@@ -499,7 +499,7 @@ def get_n_dict_definable(diachromatic_interaction_file, status_pair_flag, min_di
     n_dict = {}  # dictionary that stores the numbers of interactions with n read pairs
     digest_distances = []
 
-    parser = EnhancedInteractionParser(diachromatic_interaction_file)
+    parser = EnhancedInteractionParser(ei_file)
     ei_list = parser.parse()
     for ei in ei_list:
         # restrict analysis to interactions between targeted promoters

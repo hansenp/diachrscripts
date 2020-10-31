@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from collections import defaultdict
 from scipy.stats import binom
 import numpy as np
@@ -24,8 +24,7 @@ class BinomialInteractionModel:
         n_max: int=10000, 
         i_num: int=500, 
         p_value_cutoff: float=0.05, 
-        out_prefix: str = "OUTPREFIX",
-        diachromatic_interaction_file: str=None) -> None:
+        out_prefix: str = "OUTPREFIX") -> None:
         """Create new BinomialInteractionModel object.
 
         Parameters
@@ -43,7 +42,8 @@ class BinomialInteractionModel:
         self._i_num = i_num
         self._p_value_cutoff = p_value_cutoff
         self._out_prefix = out_prefix
-        self._diachromatic_interaction_file = diachromatic_interaction_file
+        # Determine indefinable cutoff for given P-value
+        self._n_indef, self._pv_indef = find_indefinable_n(self._p_value_cutoff)
         # Dictionary that keeps track of already calculated P-values
         #    key - a string like 2-7
         #    value - our corresponding binomial p-value
@@ -57,10 +57,8 @@ class BinomialInteractionModel:
         print("\t[INFO] --i-num: " + str(self._i_num))
         print("\t[INFO] --n-max: " + str(self._n_max))
         print("\t[INFO] --p-value-cutoff: " + str(self._p_value_cutoff))
-        if self._diachromatic_interaction_file is not None:
-            print("\t[INFO] --diachromatic-interaction-file: " + self._diachromatic_interaction_file )
+        
 
-    
     def binomial_p_value(self, simple_count: int, twisted_count: int):
         """
         Locally defined method for the calculation of the binomial P-value that uses a dictionary that keeps track of
@@ -88,32 +86,24 @@ class BinomialInteractionModel:
             self._pval_memo [key] = p_value
             return p_value
 
-    def do_simulation(self):
-        # Dictionaries that store the numbers of significant interactions for each n
-        N_SIG_DICT_SIM = {}
-        N_SIG_DICT_EMP = {}
-        N_DEF_DICT_EMP = {}
+    def count_simulated_interactions(self) -> Tuple[List, Dict]:
+        """
+        Get the counts of significant interactions in simulated data 
+        Parameters
+        ----------------------------
+
+        Returns
+        ----------------------------
+        A tuple of a list with interaction counts and a dictionary with corresponding p values.
+        """
+        # Dictionary stores the numbers of significant interactions for each n
+        N_SIG_DICT_SIM = defaultdict(int)
         # List containing counts of significant simple and twisted interactions for each n
         signum_list = [0] * (self._n_max + 1)
-        # PDF file with significant simulated interactions versus n plot
-        pdf_name = self._out_prefix  + "_sig_interactions_vs_uniform_n.pdf"
-       
-       
-     
-        if self._diachromatic_interaction_file is not None:
-        # Name for text file with significant empirical interactions for each n
-            emp_tab_file_name = self._out_prefix + "_sig_interactions_vs_empirical_n.tab"
-            #emp_tab_stream_name = open(emp_tab_file_name, 'wt')
-        ### Start execution
         print("[INFO] " + "Generating random numbers of simple and twisted read pairs ...")
-        # Determine indefinable cutoff for given P-value
-        n_indef, pv_indef = find_indefinable_n(self._p_value_cutoff)
-        random_n_vec = np.random.randint(low = n_indef, high = self._n_max  + 1, size = self._i_num)
+        random_n_vec = np.random.randint(low = self._n_indef, high = self._n_max  + 1, size = self._i_num)
         for n in random_n_vec:
-            if n in N_SIG_DICT_SIM:
-                N_SIG_DICT_SIM[n] += 1
-            else:
-                N_SIG_DICT_SIM[n] = 1
+            N_SIG_DICT_SIM[n] += 1
         print("[INFO] " + "Counting significant interactions for each n ...")
         # Iterate dictionary with numbers of interactions for each read pair number n
         for n, i in N_SIG_DICT_SIM.items():
@@ -125,39 +115,90 @@ class BinomialInteractionModel:
                 # Count significant interactions for current n
                 if pv <= self._p_value_cutoff:
                     signum_list[n] += 1
-        self._write_simulated_interaction_counts(signum_list=signum_list, sim_dict=N_SIG_DICT_SIM)
-        if self._diachromatic_interaction_file is not None:
-            self._write_significant_empirical_interactions(n_indef=n_indef)
+        return signum_list, N_SIG_DICT_SIM
         
+    
 
-    def _write_simulated_interaction_counts(self, signum_list: List, sim_dict: Dict):
+    def write_simulated_interaction_counts(self, outprefix:str="OUTPREFIX"):
         """
+        Get the counts of significant interactions in simulated data, and write to file
         Write a text file with significant empirical interactions for each n
+        If no value for n can be found, write 0.
+        Uses count_simulated_interactions()
+        Parameters
+        ----------------------------
+        signum_list: List,
+            a list containing counts of significant simple and twisted interactions for each n
+        sim_dict: Dict,
+            a dictionary with ?
+        outprefix: str,
+            Prefix for outfile, "{OUTPREFIX}_sig_interactions_vs_uniform_n.tab"
+        Returns
+        ----------------------------
         """
-        sim_tab_file_name = self._out_prefix + "_sig_interactions_vs_uniform_n.tab"
+        sim_tab_file_name = outprefix + "_sig_interactions_vs_uniform_n.tab"
+        signum_list, sim_dict = self.count_simulated_interactions()
+        N = len(signum_list)
         with open(sim_tab_file_name, 'wt') as fh:
             print("[INFO] " + "Writing numbers of significant simulated interactions for each n to text file ...")
-            for n in range(1, self._n_max + 1):
-                try:
-                    fh.write(str(n) + "\t" + str(signum_list[n]) + "\t" + str(sim_dict[n]) + "\n")
-                except KeyError:
-                    fh.write(str(n) + "\t" + str(signum_list[n]) + "\t" + str(0) + "\n")
+            for i in range(1, N):
+                fh.write(str(i) + "\t" + str(signum_list[i]) + "\t" + str(sim_dict.get(i,0)) + "\n")
+                
 
-    def _write_significant_empirical_interactions(self, n_indef:int):
+    def count_significant_empirical_interactions(self, eifile: str, min_dist=20000) -> Tuple[List, List]:
         """
-        Writing counts of significant empirical interactions for each n to text file
+        Get the counts of significant interactions in emprical data for the 
+        diachromatic extended interaction file (iefile).
+        Parameters
+        ----------------------------
+        iefile: str,
+            path to a diachromatic extended interaction file .
+        min_dist: int,
+            minimum distance between digests in a digest pair to be counted.
+
+        Returns
+        ----------------------------
+        A tuple of two lists, n_def and n_sig.
         """
+        n_def_list = []
+        n_sig_list = []
+        # Count significant interactions in empirical data for each n
+        N_SIG_DICT_EMP = get_n_dict(ei_file=eifile, status_pair_flag='ALL', min_digest_dist=min_dist, p_value_cutoff=self._p_value_cutoff)
+        N_DEF_DICT_EMP = get_n_dict_definable(ei_file=eifile, status_pair_flag='ALL', min_digest_dist=min_dist, n_indef=self._n_indef)
+        for n in range(1, 2000):
+            n_def = N_DEF_DICT_EMP.get(n,0)
+            n_sig = N_SIG_DICT_EMP.get(n,0)
+            n_def_list.append(n_def)
+            n_sig_list.append(n_sig)
+        return n_def_list, n_sig_list
+
+
+    def write_significant_empirical_interactions(self, ei_file:str, n_indef:int, outprefix: str="OUTPREFIX"):
+        """
+        Get the counts of significant interactions in emprical data for the 
+        diachromatic extended interaction file (iefile) and write the to file.
+        Uses count_significant_empirical_interactions().
+        Parameters
+        ----------------------------
+        ei_file: str,
+            path to a diachromatic extended interaction file .
+        n_indef: int,
+            todo add definition.
+        outprefix: str,
+            Prefix for outfile, "{OUTPREFIX}_sig_interactions_vs_empirical_n.tab"
+        """
+        n_def_list, n_sig_list = self.count_significant_empirical_interactions(eifile=ei_file)
+        if len(n_def_list) != len(n_sig_list):
+            # should never happen
+            raise ValueError("Lengths of n_def_list and n_sig_list do not match")
+        N = len(n_def_list)
         emp_tab_file_name = self._out_prefix + "_sig_interactions_vs_empirical_n.tab"
-         # Count significant interactions in empirical data for each n
-        N_SIG_DICT_EMP = get_n_dict(self._diachromatic_interaction_file, 'ALL', 20000, self._p_value_cutoff)
-        N_DEF_DICT_EMP = get_n_dict_definable(self._diachromatic_interaction_file, 'ALL', 20000, n_indef)
-
         print("[INFO] " + "Writing numbers of significant empirical interactions for each n to text file ...")
         with open(emp_tab_file_name, 'wt') as fh:
-            for n in range(1, 2000):
-                n_def = N_DEF_DICT_EMP.get(n,0)
-                n_sig = N_SIG_DICT_EMP.get(n,0)
-                fh.write(str(n) + "\t" + str(n_def) + "\t" + str(n_sig) + "\n")
+            for i in range(N):
+                n_def = n_def_list[i]
+                n_sig = n_sig_list[i]
+                fh.write(str(i) + "\t" + str(n_def) + "\t" + str(n_sig) + "\n")
        
     
 

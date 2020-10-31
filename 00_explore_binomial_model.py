@@ -52,22 +52,6 @@ print("\t[INFO] --p-value-cutoff: " + str(p_value_cutoff))
 if diachromatic_interaction_file != None:
     print("\t[INFO] --diachromatic-interaction-file: " + diachromatic_interaction_file)
 
-
-##########  NEW VERSION HERE
-
-bim = BinomialInteractionModel(n_max=n_max, 
-            i_num=i_num, 
-            p_value_cutoff=p_value_cutoff, 
-            out_prefix=out_prefix, 
-            diachromatic_interaction_file=diachromatic_interaction_file)
-
-bim.do_simulation()
-
-print("******** Done new version **********")
-###### End
-
-
-
 ### Define auxiliary functions
 ##############################
 

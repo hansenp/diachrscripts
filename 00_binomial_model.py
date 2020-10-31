@@ -20,15 +20,18 @@ print("\t[INFO] --out_prefix: " + out_prefix)
 print("\t[INFO] --i-num: " + str(i_num))
 print("\t[INFO] --n-max: " + str(n_max))
 print("\t[INFO] --p-value-cutoff: " + str(p_value_cutoff))
-if diachromatic_interaction_file != None:
-    print("\t[INFO] --diachromatic-interaction-file: " + diachromatic_interaction_file)
+
 
 bim = BinomialInteractionModel(n_max=n_max, 
             i_num=i_num, 
             p_value_cutoff=p_value_cutoff, 
-            out_prefix=out_prefix, 
-            diachromatic_interaction_file=diachromatic_interaction_file)
+            out_prefix=out_prefix)
 
-bim.do_simulation()
+bim.write_simulated_interaction_counts(outprefix=out_prefix)
+
+bim.write_simulated_interaction_counts()
+if diachromatic_interaction_file != None:
+    print("\t[INFO] --diachromatic-interaction-file: " + diachromatic_interaction_file)
+    bim.write_significant_empirical_interactions(ei_file=diachromatic_interaction_file, n_indef=n_max)
 
 print("******** Done new version **********")
