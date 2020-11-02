@@ -507,7 +507,7 @@ This is followed by 17 TSV files that contain the summary statistics for the ind
 
 #### Generated plots
 
-The R script creates one PDF files for each of the three summary statistics *n*, *median* and *IQR*.
+The R script creates one PDF files for each of the three summary statistics *n*, *median* and *IQR*:
 ```
 interaction_distance_summary_stats_n.pdf
 interaction_distance_summary_stats_median.pdf
@@ -564,12 +564,100 @@ The corresponding P-values are shown above the top whiskers.
 
 ### Subordinate analysis of simple and twisted interactions and read pairs
 
-X
+As with the comparison of directed and undirected interactions,
+TSV files with interaction numbers and medians and interquartile ranges
+of interaction distances are also generated for the simple/twisted comparison:
+```
+<OUT_PREFIX>_st_distance_statistics_ee_ne_en_nn.tsv
+```
+
+In this subordinate analysis of simple and twisted interactions and
+read pairs, the summary statistics for all 17 cell types are read
+from the TSV files into an R script for a combined analysis.
+
+The R script is executed as follows:
+```
+Rscript --vanilla rscripts/07_analyze_interaction_distances/analyze_summary_stats_st.R \
+<OUT_DIR>/ \
+<OUT_PREFIX> \
+<MM_TITLE_SUFFIX> \
+"MK_st_distance_statistics_ee_ne_en_nn.tsv" \
+"ERY_st_distance_statistics_ee_ne_en_nn.tsv" \
+"NEU_st_distance_statistics_ee_ne_en_nn.tsv" \
+"MON_st_distance_statistics_ee_ne_en_nn.tsv" \
+"MAC_M0_st_distance_statistics_ee_ne_en_nn.tsv" \
+"MAC_M1_st_distance_statistics_ee_ne_en_nn.tsv" \
+"MAC_M2_st_distance_statistics_ee_ne_en_nn.tsv" \
+"EP_st_distance_statistics_ee_ne_en_nn.tsv" \
+"NB_st_distance_statistics_ee_ne_en_nn.tsv" \
+"TB_st_distance_statistics_ee_ne_en_nn.tsv" \
+"FOET_st_distance_statistics_ee_ne_en_nn.tsv" \
+"NCD4_st_distance_statistics_ee_ne_en_nn.tsv" \
+"TCD4_st_distance_statistics_ee_ne_en_nn.tsv" \
+"NACD4_st_distance_statistics_ee_ne_en_nn.tsv" \
+"ACD4_st_distance_statistics_ee_ne_en_nn.tsv" \
+"NCD8_st_distance_statistics_ee_ne_en_nn.tsv" \
+"TCD8_st_distance_statistics_ee_ne_en_nn.tsv" \
+```
+As with the other R scripts, the first argument (`<OUT_DIR>/`) is the directory to which the results will be written,
+and the second argument (`<OUT_PREFIX>`) is used as prefix for the names of the generated files.
+As a third argument (`<MM_TITLE_SUFFIX>`),
+a short label can be given that appears in the heading of the plot that will be generated.
+This is followed by 17 TSV files that contain the summary statistics for the individual cell types.
+
+#### Generated plots
+
+The R script creates one PDF files for each of the three summary statistics n, median and IQR:
+
+```
+interaction_distance_summary_stats_st_n.pdf
+interaction_distance_summary_stats_st_median.pdf
+interaction_distance_summary_stats_st_iqr.pdf
+```
+These files are intended to provide an overview.
+Each file contains the same plots in the same order.
+
+##### Interaction numbers (n)
+
+In the following, the structure of the PDF files is described using the file for the interaction numbers as an example.
+
+In the top three rows, simple and twisted interactions and read pairs
+are compared using boxplots.
 
 ![Distance summary - ST - N - 1](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_st_n_1.png)
-X
+
+The first row has four columns.
+The first column is for directed interactions (DI; orange), the second through fourth column
+are for read pairs from directed (DI; orange), undirected reference (UIR; light blue)
+and undirected interactions (UI; gray).
+The colors of the borders around the boxes indicate whether the interactions
+or read pairs are simple (pink) or twisted (green).
+The 2nd row shows the same data as the first row,
+but the y-axes are uniform so that the plots of this row can be compared
+with one another.
+Because of high counts or distances in the outer two columns,
+the boxplots for read pairs from DI and UIR can be very compressed.
+In order to be able to compare these categories better,
+the are shown again in the 3rd row with a common y-axis.
+
+With the boxplots, the counts or distances for *simple* and *twisted* are
+shown independently of each other. In the following four rows (rows 4 to 7 in the entire plot)
+the values for simple and twisted in the various subcategories are plotted against each other.
+
 ![Distance summary - ST - N - 2](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_st_n_2.png)
-X
+
+The columns 1 to 4 contain the plots for the enrichment categories EE, NE, EN aand NN.
+The first row contains the plots for directed interactions
+and the rows 2 to 4 contain the plots for read pairs from directed (DI; orange),
+undirected reference (UIR; light blue) and undirected interactions (UI; gray).
+The y-axes within each row are comparable.
+Under the null hypothesis that the values (counts or distances) are independent
+of whether interactions are simple or twisted, the points in the scatterplots
+should lie around the diagonal shown in gray (sometimes below, sometimes above). 
+
+The last three rows (rows 8 to 10 in the entire plot) contain an alternative representation
+of the relationship between *simple* and *twisted*.
+
 ![Distance summary - ST - N - 3](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_st_n_3.png)
 
 ## Analysis of interaction profiles
