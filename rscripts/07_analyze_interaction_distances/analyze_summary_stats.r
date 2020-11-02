@@ -83,8 +83,8 @@ function.get_pdf_for_n_med_or_iqr <- function(
   colnames(UI_TAB) <- c("UI_EE","UI_NE","UI_EN","UI_NN")
   
   # Init PDF file
-  cairo_pdf(PDF_NAME, width=18, height=24)
-  par(mfrow=c(8,4), oma = c(0, 0, 3, 0))
+  cairo_pdf(PDF_NAME, width=18, height=21)
+  par(mfrow=c(7,4), oma = c(0, 0, 3, 0))
   
   # Create one boxplot for each interaction category
   boxplot(

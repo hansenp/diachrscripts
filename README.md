@@ -148,7 +148,7 @@ Note that the distinction between *NE* and *EN* is also a distinction with regar
 i.e. whether an interaction, viewed from the enriched digest, goes to the left or right.
 
 For undirected interactions, a distinction between *simple* and *twisted* is not possible,
-as neither of the two read types predominates.
+as neither of the two read pair types predominates.
 In order to extend our comparison between *simple* and *twisted* to undirected interactions,
 we made an additional analysis at the level of read pairs.
 For this purpose, we keep the division into *DI*, *UIR* and *UI*,
@@ -168,8 +168,8 @@ status of the digests involved (*EE*, *NE*, *EN* or *NN*). This results in 12 ca
 2. **Undirected reference interactions** cannot be decomposed into simple and twisted interactions
 and are decomposed according the enrichment status, resulting in four categories.
 
-3. **Undirected interactions** cannot be decomposed into simple annd twisted innteractions either,
-and there are only four caategories for the enrichment states of involved digests.
+3. **Undirected interactions** cannot be decomposed into simple and twisted interactions either,
+and there are only four categories for the enrichment states of involved digests.
 
 ![Decompose interactions](doc/07_analyze_interaction_distances/interaction_decomposition.png)
 
@@ -195,13 +195,16 @@ which can also contain the path to an already existing directory.
 ```
 A file in enhanced interaction format that was created with the script `06_select_uir_from_uie_and_uii.py`.
 The interaction distances are taken from the second column of this file.
+The interaction distance is defined as the distance between the end of the first
+and the beginning of the first digest (in sequential order).
+The distance is currently calculated in the script `04_extract_gene_symbols_and_tss.py`.
 The third column contains the tag for the interaction category that
 is either `DI`, `UIR` or `UI`.
-Whether an interaction is *simple* or *twisted* in decided on the basis of the read
+Whether an interaction is *simple* or *twisted* is decided on the basis of the read
 pair counts in the fifth column.
 The enrichment states are taken from the sixth column.
 
-For each of the 44 subcategories, the script creates aa text file that contains an
+For each of the 44 subcategories, the script creates a text file that contains an
 interaction distance in each line. For the analysis at the interaction level,
 the following files will be created:
 ```
@@ -275,7 +278,19 @@ For the analysis at the read pair level, the following files will be created:
 <OUT_PREFIX>_ui_nn_t_rp_dist_array.tab
 ``` 
 
-The files generated are read in by four R scripts for further analysis.
+The files generated are read in by following four R scripts for further analysis:
+``` 
+rscripts/07_analyze_interaction_distances/analyze_summary_stats.r
+rscripts/07_analyze_interaction_distances/analyze_summary_stats_st.r
+rscripts/07_analyze_interaction_distances/interaction_distances.r
+rscripts/07_analyze_interaction_distances/interaction_distances_lib.R
+rscripts/07_analyze_interaction_distances/interaction_distances_st.r
+``` 
+Variables and functions that are used in more than one R script are in
+the following file: 
+``` 
+rscripts/07_analyze_interaction_distances/interaction_distances_lib.R
+``` 
 
 ### Comparison of DI, UIR and UI interactions
 
@@ -534,10 +549,10 @@ The first plot in this row contains the distribution for DI, UIR and UI,
 while the second plot contains the distributions for DI and UIR only.
 The third row contains an alternative representation of the data for DI and UIR,
 with the interaction numbers for DI and UIR are shown as scatterplots
-separately for `EE`, `NE`, `EN` annd `NN`.
+separately for `EE`, `NE`, `EN` and `NN`.
 The fourth row contains another alternative representation of the data for DI and UIR.
-In this representation, the differences of interaction numbers for DI aand UIR
-are shown separately for `EE`, `NE`, `EN` annd `NN`.
+In this representation, the differences of interaction numbers for DI and UIR
+are shown separately for `EE`, `NE`, `EN` and `NN`.
 Under the null hypothesis that DI and UIR do not differ,
 these differences should be evenly distributed around zero.
 We use a t-test to test this hypothesis.
@@ -560,6 +575,23 @@ Under the null hypothesis that `NE` and `EN` do not differ,
 these differences should be evenly distributed around zero.
 We use a t-test to test this hypothesis.
 The corresponding P-values are shown above the top whiskers.
+
+##### Median interaction distances (median)
+
+The following plot has the same structure as the one for
+interaction and read pair numbers just described.
+But this plot is for medians of interaction distances.
+
+![Distance summary - MEDIAN](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_median.png)
+
+
+##### Interquartile ranges (IQR)
+
+The following plot has the same structure as the one for
+interaction and read pair numbers just described.
+But this plot is for interquartile ranges of interaction distances.
+
+![Distance summary - IQR](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_iqr.png)
 
 
 ### Subordinate analysis of simple and twisted interactions and read pairs
@@ -614,20 +646,19 @@ interaction_distance_summary_stats_st_n.pdf
 interaction_distance_summary_stats_st_median.pdf
 interaction_distance_summary_stats_st_iqr.pdf
 ```
-These files are intended to provide an overview.
 Each file contains the same plots in the same order.
 
 ##### Interaction numbers (n)
 
-In the following, the structure of the PDF files is described using the file for the interaction numbers as an example.
+In the following, the structure of the PDF files is described using the file
+for the interaction and read pair numbers as an example.
 
 In the top three rows, simple and twisted interactions and read pairs
 are compared using boxplots.
 
 ![Distance summary - ST - N - 1](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_st_n_1.png)
 
-The first row has four columns.
-The first column is for directed interactions (DI; orange), the second through fourth column
+The first column is for directed interactions (DI; orange) and the second through fourth column
 are for read pairs from directed (DI; orange), undirected reference (UIR; light blue)
 and undirected interactions (UI; gray).
 The colors of the borders around the boxes indicate whether the interactions
@@ -638,27 +669,55 @@ with one another.
 Because of high counts or distances in the outer two columns,
 the boxplots for read pairs from DI and UIR can be very compressed.
 In order to be able to compare these categories better,
-the are shown again in the 3rd row with a common y-axis.
+they are shown again in the 3rd row with a common y-axis.
 
 With the boxplots, the counts or distances for *simple* and *twisted* are
 shown independently of each other. In the following four rows (rows 4 to 7 in the entire plot)
 the values for simple and twisted in the various subcategories are plotted against each other.
+We use a t-test to test this hypothesis. The corresponding P-values are shown above the top whiskers.
 
 ![Distance summary - ST - N - 2](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_st_n_2.png)
 
-The columns 1 to 4 contain the plots for the enrichment categories EE, NE, EN aand NN.
+The columns 1 to 4 contain the plots for the enrichment categories EE, NE, EN and NN.
 The first row contains the plots for directed interactions
 and the rows 2 to 4 contain the plots for read pairs from directed (DI; orange),
-undirected reference (UIR; light blue) and undirected interactions (UI; gray).
+undirected reference (UIR; light blue) and undirected interactions c.
 The y-axes within each row are comparable.
-Under the null hypothesis that the values (counts or distances) are independent
-of whether interactions are simple or twisted, the points in the scatterplots
+Under the null hypothesis that the values (n, median or IQR) are independent
+of whether interactions or read pairs are simple or twisted, the points in the scatterplots
 should lie around the diagonal shown in gray (sometimes below, sometimes above). 
 
 The last three rows (rows 8 to 10 in the entire plot) contain an alternative representation
 of the relationship between *simple* and *twisted*.
+In this representation, the distribution of differences between simple and twisted
+for the 17 cell types are shown in boxplots.
 
 ![Distance summary - ST - N - 3](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_st_n_3.png)
+
+Column 1 contains the plots for directed interactions (DI; orange) and
+columns 2 to 4 contain the plots for read pairs from
+directed (DI; orange), undirected reference (UIR; light blue)
+and undirected interactions (UIR; light blue).
+In this representation, the differences should be evenly distributed
+around zero (indicated by a gray horizontal line) if the plotted values
+are independent of whether interactions (or read pairs) are simple or twisted.
+
+##### Median interaction distances (median)
+
+The following plot has the same structure as the one for
+interaction and read pair numbers just described.
+But this plot is for medians of interaction distances.
+
+![Distance summary - ST - MEDIAN](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_st_median.png)
+
+##### Interquartile ranges (IQR)
+
+The following plot has the same structure as the one for
+interaction and read pair numbers just described.
+But this plot is for interquartile ranges of interaction distances.
+
+![Distance summary - ST - IQR](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_st_iqr.png)
+
 
 ## Analysis of interaction profiles
 
