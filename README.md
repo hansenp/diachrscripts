@@ -283,7 +283,6 @@ The files generated are read in by following four R scripts for further analysis
 rscripts/07_analyze_interaction_distances/analyze_summary_stats.r
 rscripts/07_analyze_interaction_distances/analyze_summary_stats_st.r
 rscripts/07_analyze_interaction_distances/interaction_distances.r
-rscripts/07_analyze_interaction_distances/interaction_distances_lib.R
 rscripts/07_analyze_interaction_distances/interaction_distances_st.r
 ``` 
 Variables and functions that are used in more than one R script are in
@@ -333,7 +332,21 @@ in the 12 subcategories.
 The first line of this field contains the histograms for DI (orange) and `EE`, `NE`, `EN` and `NN`.
 The following two lines have the same structure and are for UIR (light blue) and UI (gray).
 The axes of all histograms have the same range. Therefore, the histograms can be compared
-with each other. Three summary statistics are determined for each subcategory:
+with each other. To compare at which distances the distributions for NE and EN differ,
+we subtract the densities within each bin of the histograms for NE and EN.
+The differences are shown to the right of the histograms for DI, UIR and UI.
+
+Below the histograms, further plots with density differences are shown,
+in which the densities of the interactionn categories DI, UIR and UI
+are compared.
+
+![Interaction histograms - DD](doc/07_analyze_interaction_distances/MK_i_distance_histograms_ee_ne_en_nn_dd.png)
+
+As with the histograms, the columns are in the order EE, NE, EN, NN.
+In row 1 (row 4 in the full plot) are the density differences DI minus UIR.
+Rows 2 and 3 contain the density differences DI minus UI and UIR minus UI.
+
+Three summary statistics are determined for each subcategory:
 
 1. Number of interactions (**n**)
 
@@ -426,6 +439,11 @@ contains histograms for the distances of directed interactions.
 The first line is for simple and the second line for twisted interactions.
 The four columns correspond to the enrichment categories `EE`, `NE`, `EN` and `NN`.
 The bars of the histograms have pink borders for simple and green borders for twisted interactions.
+As with the histograms for the comparison of DI, UIR and UI,
+the density differences of NE and EN within the individual bins
+are shown to the left of the histograms.
+The density differences between *simple* and *twisted* interaactions
+are shown below the histograms.
 
 The second PDF file
 ```
@@ -448,7 +466,7 @@ is for the distances of simple and twisted *read pairs* from undirected referenc
 And the fourth PDF file
 ```
 <OUT_PREFIX>_ui_rp_distance_histograms_st_ee_ne_en_nn.pdf
-```
+``` 
 is for the distances of simple and twisted *read pairs* from undirected interactions.
 
 ![Interaction histograms - UI - RP - ST](doc/07_analyze_interaction_distances/MK_ui_rp_distance_histograms_st_ee_ne_en_nn.png)
