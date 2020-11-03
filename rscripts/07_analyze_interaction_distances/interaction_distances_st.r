@@ -847,7 +847,7 @@ function.write_statistics_to_file <- function(
 
 
 PDF_NAME <- paste(OUT_DIR, OUT_PREFIX,"_di_distance_histograms_st_ee_ne_en_nn.pdf",sep="")
-MM_TITLE <- paste(OUT_PREFIX," - Distances of simple and twisted interactions",sep="")
+MM_TITLE <- paste(OUT_PREFIX," - Distances of simple and twisted interactions (DI)",sep="")
 PDF_W <- 12.5
 PDF_H <- 11
 BAR_COLOR <- directed_color
@@ -870,7 +870,7 @@ function.plot_histograms_i_ee_ne_en_nn(
 )
 
 PDF_NAME <- paste(OUT_DIR, OUT_PREFIX,"_di_rp_distance_histograms_st_ee_ne_en_nn.pdf",sep="")
-MM_TITLE <- paste(OUT_PREFIX," - Distances of simple and twisted read pairs in directed interactions",sep="")
+MM_TITLE <- paste(OUT_PREFIX," - Distances of simple and twisted read pairs in directed interactions (DI)",sep="")
 PDF_W <- 12.5
 PDF_H <- 11
 BAR_COLOR <- directed_color
@@ -893,7 +893,7 @@ function.plot_histograms_i_ee_ne_en_nn(
 )
 
 PDF_NAME <- paste(OUT_DIR, OUT_PREFIX,"_uir_rp_distance_histograms_st_ee_ne_en_nn.pdf",sep="")
-MM_TITLE <- paste(OUT_PREFIX," - Distances of simple and twisted read pairs in undirected reference interactions",sep="")
+MM_TITLE <- paste(OUT_PREFIX," - Distances of simple and twisted read pairs in undirected reference interactions (UIR)",sep="")
 PDF_W <- 12.5
 PDF_H <- 11
 BAR_COLOR <- undirected_ref_color
@@ -916,7 +916,7 @@ function.plot_histograms_i_ee_ne_en_nn(
 )
 
 PDF_NAME <- paste(OUT_DIR, OUT_PREFIX,"_ui_rp_distance_histograms_st_ee_ne_en_nn.pdf",sep="")
-MM_TITLE <- paste(OUT_PREFIX," - Distances of simple and twisted read pairs in undirected interactions",sep="")
+MM_TITLE <- paste(OUT_PREFIX," - Distances of simple and twisted read pairs in undirected interactions (UI)",sep="")
 PDF_W <- 12.5
 PDF_H <- 11
 BAR_COLOR <- undirected_color
