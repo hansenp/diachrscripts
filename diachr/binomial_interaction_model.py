@@ -21,25 +21,17 @@ class BinomialInteractionModel:
     """
     def __init__(
         self, 
-        n_max: int=10000, 
-        i_num: int=500, 
         p_value_cutoff: float=0.05, 
         out_prefix: str = "OUTPREFIX") -> None:
         """Create new BinomialInteractionModel object.
 
         Parameters
         ----------------------------
-        n_max: int = 10000,
-            Causes the class to simulate interactions with 1 to n_max read pairs.
-        i_num: int = 500,
-            Number of simulated interactions.
         p_value_cutoff: float=0.05, 
             P-value threshold used for the classification of directed and undirected interactions.
         diachromatic_interaction_file: str=None,
             Diachromatic interaction file.
         """
-        self._n_max = n_max
-        self._i_num = i_num
         self._p_value_cutoff = p_value_cutoff
         self._out_prefix = out_prefix
         # Determine indefinable cutoff for given P-value
@@ -54,8 +46,6 @@ class BinomialInteractionModel:
     def _print_params(self):
         print("[INFO] " + "Input parameters")
         print("\t[INFO] --out_prefix: " + self._out_prefix)
-        print("\t[INFO] --i-num: " + str(self._i_num))
-        print("\t[INFO] --n-max: " + str(self._n_max))
         print("\t[INFO] --p-value-cutoff: " + str(self._p_value_cutoff))
         
 
@@ -86,12 +76,15 @@ class BinomialInteractionModel:
             self._pval_memo [key] = p_value
             return p_value
 
-    def count_simulated_interactions(self) -> Tuple[List, Dict]:
+    def count_simulated_interactions(self, n_max: int=500,  i_num: int=100000) -> Tuple[List, Dict]:
         """
         Get the counts of significant interactions in simulated data 
         Parameters
         ----------------------------
-
+        n_max: int = 500,
+            Simulate interactions with 1 to n_max read pairs.
+        i_num: int = 100000,
+            Number of simulated interactions.
         Returns
         ----------------------------
         A tuple of a list with interaction counts and a dictionary with corresponding p values.
@@ -99,10 +92,10 @@ class BinomialInteractionModel:
         # Dictionary stores the numbers of significant interactions for each n
         N_SIG_DICT_SIM = defaultdict(int)
         # List containing counts of significant simple and twisted interactions for each n
-        signum_list = [0 for _ in range(self._n_max + 1)]
+        signum_list = [0 for _ in range(n_max + 1)]
         print("[INFO] " + "Generating random numbers of simple and twisted read pairs ...")
        
-        random_n_vec = np.random.randint(low = self._n_indef, high = self._n_max  + 1, size = self._i_num)
+        random_n_vec = np.random.randint(low = self._n_indef, high = n_max  + 1, size = i_num)
         for n in random_n_vec:
             N_SIG_DICT_SIM[n] += 1
         print("[INFO] " + "Counting significant interactions for each n ...")
