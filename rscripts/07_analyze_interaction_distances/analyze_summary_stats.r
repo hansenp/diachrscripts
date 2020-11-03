@@ -83,13 +83,13 @@ function.get_pdf_for_n_med_or_iqr <- function(
   colnames(UI_TAB) <- c("UI_EE","UI_NE","UI_EN","UI_NN")
   
   # Init PDF file
-  cairo_pdf(PDF_NAME, width=18, height=21)
-  par(mfrow=c(7,4), oma = c(0, 0, 3, 0))
+  cairo_pdf(PDF_NAME, width=18, height=36)
+  par(mfrow=c(12,4), oma = c(0, 0, 3, 0))
   
   # Create one boxplot for each interaction category
   boxplot(
     DI_TAB,
-    main="Directed interactions",
+    main="Directed interactions (DI)",
     xlab="Enrichment status",
     ylab=YLAB_1,
     col=directed_color,
@@ -97,7 +97,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   )
   boxplot(
     UIR_TAB,
-    main="Directed interactions",
+    main="Undirected reference interactions (UIR)",
     xlab="Enrichment status",
     ylab=YLAB_1,
     col=undirected_ref_color,
@@ -105,7 +105,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   )
   boxplot(
     UI_TAB,
-    main="Directed interactions",
+    main="Undirected interactions (UI)",
     xlab="Enrichment status",
     ylab=YLAB_1,
     col=undirected_color,
@@ -118,7 +118,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   ALL_TAB <- cbind(DI_TAB,UIR_TAB,UI_TAB)
   boxplot(
     ALL_TAB,
-    main="Directed, undirected reference and undirected interactions",
+    main="DI, UIR and UI",
     xlab="Enrichment status",
     ylab=YLAB_1,  
     col=c(directed_color,directed_color,directed_color,directed_color,
@@ -131,7 +131,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   TMP_TAB <- ALL_TAB[,c("DI_EE","UIR_EE","DI_NE","UIR_NE","DI_EN","UIR_EN","DI_NN","UIR_NN")]
   boxplot(
     TMP_TAB,
-    main="Directed and undirected reference interactions",
+    main="DI and UIR",
     xlab="Enrichment status",
     ylab=YLAB_1,
     col=c(directed_color,undirected_ref_color),
@@ -150,7 +150,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   
   plot(
     ALL_TAB[,"DI_EE"]~ALL_TAB[,"UIR_EE"],
-    main="Directed interactions - DI vs. UIR - EE",
+    main="DI vs. UIR - EE",
     col=mixed_color_di_uir,
     xlim=c(XMIN,XMAX),
     ylim=c(YMIN,YMAX),
@@ -162,7 +162,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   
   plot(
     ALL_TAB[,"DI_NE"]~ALL_TAB[,"UIR_NE"],
-    main="Directed interactions - DI vs. UIR - NE",
+    main="DI vs. UIR - NE",
     col=mixed_color_di_uir,
     xlim=c(XMIN,XMAX),
     ylim=c(YMIN,YMAX),
@@ -174,7 +174,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   
   plot(
     ALL_TAB[,"DI_EN"]~ALL_TAB[,"UIR_EN"],
-    main="Directed interactions - DI vs. UIR - EN",
+    main="DI vs. UIR - EN",
     col=mixed_color_di_uir,
     xlim=c(XMIN,XMAX),
     ylim=c(YMIN,YMAX),
@@ -186,7 +186,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   
   plot(
     ALL_TAB[,"DI_NN"]~ALL_TAB[,"UIR_NN"],
-    main="Directed interactions - DI vs. UIR - NN",
+    main="DI vs. UIR - NN",
     col=mixed_color_di_uir,
     xlim=c(XMIN,XMAX),
     ylim=c(YMIN,YMAX),
@@ -213,7 +213,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   # Create boxplot for differences
   boxplot(
     cbind(DIFF_DI_UIR_EE,DIFF_DI_UIR_NE,DIFF_DI_UIR_EN,DIFF_DI_UIR_NN),
-    main="Differences of DI and UIR interactions",
+    main="Differences of DI and UIR",
     xlab="Interaction category",
     ylab=YLAB_2, 
     col=c(mixed_color_di_uir,mixed_color_di_uir,mixed_color_di_uir,mixed_color_di_uir),
@@ -246,10 +246,309 @@ function.get_pdf_for_n_med_or_iqr <- function(
   plot.new()
   plot.new()
   
+  ###########
+  ###########
+  ###########
+  
+  # Compare DI with UI using scatterplots
+  
+  YMIN <- min(ALL_TAB[,c("DI_EE","DI_NE","DI_EN","DI_NN","UI_EE","UI_NE","UI_EN","UI_NN")])
+  YMAX <- max(ALL_TAB[,c("DI_EE","DI_NE","DI_EN","DI_NN","UI_EE","UI_NE","UI_EN","UI_NN")])
+  XMIN<-YMIN
+  XMAX<-YMAX
+  
+  plot(
+    ALL_TAB[,"DI_EE"]~ALL_TAB[,"UI_EE"],
+    main="DI vs. UI - EE",
+    col=mixed_color_di_uir,
+    xlim=c(XMIN,XMAX),
+    ylim=c(YMIN,YMAX),
+    xlab="UI - EE",
+    ylab="DI - EE"
+  )
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"DI_EE"]~ALL_TAB[,"UI_EE"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+
+  plot(
+    ALL_TAB[,"DI_NE"]~ALL_TAB[,"UI_NE"],
+    main="DI vs. UI - NE",
+    col=mixed_color_di_uir,
+    xlim=c(XMIN,XMAX),
+    ylim=c(YMIN,YMAX),
+    xlab="UI - NE",
+    ylab="DI - NE"
+  )
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"DI_NE"]~ALL_TAB[,"UI_NE"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+
+  plot(
+    ALL_TAB[,"DI_EN"]~ALL_TAB[,"UI_EN"],
+    main="DI vs. UI - EN",
+    col=mixed_color_di_uir,
+    xlim=c(XMIN,XMAX),
+    ylim=c(YMIN,YMAX),
+    xlab="UI - EN",
+    ylab="DI - EN"
+  )
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"DI_EN"]~ALL_TAB[,"UI_EN"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+
+  plot(
+    ALL_TAB[,"DI_NN"]~ALL_TAB[,"UI_NN"],
+    main="DI vs. UI - NN",
+    col=mixed_color_di_uir,
+    xlim=c(XMIN,XMAX),
+    ylim=c(YMIN,YMAX),
+    xlab="UI - NN",
+    ylab="DI - NN"
+  )
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"DI_NN"]~ALL_TAB[,"UI_NN"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+  
+  # Get differences of DI and UIR in different enrichment categories
+  DIFF_DI_UI_EE <- ALL_TAB[,"DI_EE"]-ALL_TAB[,"UI_EE"]
+  DIFF_DI_UI_NE <- ALL_TAB[,"DI_NE"]-ALL_TAB[,"UI_NE"]
+  DIFF_DI_UI_EN <- ALL_TAB[,"DI_EN"]-ALL_TAB[,"UI_EN"]
+  DIFF_DI_UI_NN <- ALL_TAB[,"DI_NN"]-ALL_TAB[,"UI_NN"]
+  
+  # Get minimum and maximum values required for postioning of P-values
+  y_min <- min(DIFF_DI_UI_EE,DIFF_DI_UI_NE,DIFF_DI_UI_EN,DIFF_DI_UI_NN)
+  y_max <- max(DIFF_DI_UI_EE,DIFF_DI_UI_NE,DIFF_DI_UI_EN,DIFF_DI_UI_NN)
+  y_range <- abs(y_min-y_max)
+  YMIN <- y_min
+  YMAX <- y_max + y_range/10
+  
+  # Create boxplot for differences
+  boxplot(
+    cbind(DIFF_DI_UI_EE,DIFF_DI_UI_NE,DIFF_DI_UI_EN,DIFF_DI_UI_NN),
+    main="Differences of DI and UI",
+    xlab="Interaction category",
+    ylab=YLAB_2, 
+    col=c(mixed_color_di_uir,mixed_color_di_uir,mixed_color_di_uir,mixed_color_di_uir),
+    names=c("EE", "NE", "EN", "NN"),
+    ylim=c(YMIN,YMAX)
+  )
+  abline(h=0,col="grey")
+  
+  # Perform t-tests on differences
+  DIFF_DI_UI_EE_TT <- t.test(DIFF_DI_UI_EE)
+  DIFF_DI_UI_NE_TT <- t.test(DIFF_DI_UI_NE)
+  DIFF_DI_UI_EN_TT <- t.test(DIFF_DI_UI_EN)
+  DIFF_DI_UI_NN_TT <- t.test(DIFF_DI_UI_NN)
+  
+  # Add P-values to boxplot
+  v_space <- y_range/20
+  text(c(1:4),
+       c(max(DIFF_DI_UI_EE)+v_space,
+         max(DIFF_DI_UI_NE)+v_space,
+         max(DIFF_DI_UI_EN)+v_space,
+         max(DIFF_DI_UI_NN)+v_space),
+       c(paste("p = ", formatC(DIFF_DI_UI_EE_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_DI_UI_NE_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_DI_UI_EN_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_DI_UI_NN_TT$p.value, format = "e", digits = 2), sep="")
+       )
+  )
+  
+  plot.new()
+  plot.new()
+  plot.new()
+  
+  YMIN <- min(ALL_TAB[,c("UIR_EE","UIR_NE","UIR_EN","UIR_NN","UI_EE","UI_NE","UI_EN","UI_NN")])
+  YMAX <- max(ALL_TAB[,c("UIR_EE","UIR_NE","UIR_EN","UIR_NN","UI_EE","UI_NE","UI_EN","UI_NN")])
+  XMIN<-YMIN
+  XMAX<-YMAX
+  
+  plot(
+    ALL_TAB[,"UIR_EE"]~ALL_TAB[,"UI_EE"],
+    main="UIR vs. UI - EE",
+    col=mixed_color_di_uir,
+    xlim=c(XMIN,XMAX),
+    ylim=c(YMIN,YMAX),
+    xlab="UI - EE",
+    ylab="UIR - EE"
+  )
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"UIR_EE"]~ALL_TAB[,"UI_EE"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+
+  plot(
+    ALL_TAB[,"UIR_NE"]~ALL_TAB[,"UI_NE"],
+    main="UIR vs. UI - NE",
+    col=mixed_color_di_uir,
+    xlim=c(XMIN,XMAX),
+    ylim=c(YMIN,YMAX),
+    xlab="UI - NE",
+    ylab="UIR - NE"
+  )
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"UIR_NE"]~ALL_TAB[,"UI_NE"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+  
+  plot(
+    ALL_TAB[,"UIR_EN"]~ALL_TAB[,"UI_EN"],
+    main="UIR vs. UI - EN",
+    col=mixed_color_di_uir,
+    xlim=c(XMIN,XMAX),
+    ylim=c(YMIN,YMAX),
+    xlab="UI - EN",
+    ylab="UIR - EN"
+  )
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"UIR_EN"]~ALL_TAB[,"UI_EN"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+  
+  plot(
+    ALL_TAB[,"UIR_NN"]~ALL_TAB[,"UI_NN"],
+    main="UIR vs. UI - NN",
+    col=mixed_color_di_uir,
+    xlim=c(XMIN,XMAX),
+    ylim=c(YMIN,YMAX),
+    xlab="UI - NN",
+    ylab="UIR - NN"
+  )
+  abline(0,1,col="gray")
+  text(ALL_TAB[,"UIR_NN"]~ALL_TAB[,"UI_NN"], labels=rownames(ALL_TAB),data=ALL_TAB, cex=0.3)
+  
+  # Get differences of DI and UIR in different enrichment categories
+  DIFF_UIR_UI_EE <- ALL_TAB[,"UIR_EE"]-ALL_TAB[,"UI_EE"]
+  DIFF_UIR_UI_NE <- ALL_TAB[,"UIR_NE"]-ALL_TAB[,"UI_NE"]
+  DIFF_UIR_UI_EN <- ALL_TAB[,"UIR_EN"]-ALL_TAB[,"UI_EN"]
+  DIFF_UIR_UI_NN <- ALL_TAB[,"UIR_NN"]-ALL_TAB[,"UI_NN"]
+  
+  # Get minimum and maximum values required for postioning of P-values
+  y_min <- min(DIFF_UIR_UI_EE,DIFF_UIR_UI_NE,DIFF_UIR_UI_EN,DIFF_UIR_UI_NN)
+  y_max <- max(DIFF_UIR_UI_EE,DIFF_UIR_UI_NE,DIFF_UIR_UI_EN,DIFF_UIR_UI_NN)
+  y_range <- abs(y_min-y_max)
+  YMIN <- y_min
+  YMAX <- y_max + y_range/10
+  
+  # Create boxplot for differences
+  boxplot(
+    cbind(DIFF_UIR_UI_EE,DIFF_UIR_UI_NE,DIFF_UIR_UI_EN,DIFF_UIR_UI_NN),
+    main="Differences of UIR and UI",
+    xlab="Interaction category",
+    ylab=YLAB_2, 
+    col=c(mixed_color_di_uir,mixed_color_di_uir,mixed_color_di_uir,mixed_color_di_uir),
+    names=c("EE", "NE", "EN", "NN"),
+    ylim=c(YMIN,YMAX)
+  )
+  abline(h=0,col="grey")
+  
+  # Perform t-tests on differences
+  DIFF_UIR_UI_EE_TT <- t.test(DIFF_UIR_UI_EE)
+  DIFF_UIR_UI_NE_TT <- t.test(DIFF_UIR_UI_NE)
+  DIFF_UIR_UI_EN_TT <- t.test(DIFF_UIR_UI_EN)
+  DIFF_UIR_UI_NN_TT <- t.test(DIFF_UIR_UI_NN)
+  
+  # Add P-values to boxplot
+  v_space <- y_range/20
+  text(c(1:4),
+       c(max(DIFF_UIR_UI_EE)+v_space,
+         max(DIFF_UIR_UI_NE)+v_space,
+         max(DIFF_UIR_UI_EN)+v_space,
+         max(DIFF_UIR_UI_NN)+v_space),
+       c(paste("p = ", formatC(DIFF_UIR_UI_EE_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_UIR_UI_NE_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_UIR_UI_EN_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_UIR_UI_NN_TT$p.value, format = "e", digits = 2), sep="")
+       )
+  )
+  plot.new()
+  plot.new()
+  plot.new()
+  
+  # Get minimum and maximum values required for postioning of P-values
+  y_min <- min(
+    DIFF_DI_UIR_EE,DIFF_DI_UIR_NE,DIFF_DI_UIR_EN,DIFF_DI_UIR_NN,
+    DIFF_DI_UI_EE,DIFF_DI_UI_NE,DIFF_DI_UI_EN,DIFF_DI_UI_NN,
+    DIFF_UIR_UI_EE,DIFF_UIR_UI_NE,DIFF_UIR_UI_EN,DIFF_UIR_UI_NN
+    )
+  y_max <- max(
+    DIFF_DI_UIR_EE,DIFF_DI_UIR_NE,DIFF_DI_UIR_EN,DIFF_DI_UIR_NN,
+    DIFF_DI_UI_EE,DIFF_DI_UI_NE,DIFF_DI_UI_EN,DIFF_DI_UI_NN,
+    DIFF_UIR_UI_EE,DIFF_UIR_UI_NE,DIFF_UIR_UI_EN,DIFF_UIR_UI_NN
+    )
+  y_range <- abs(y_min-y_max)
+  YMIN <- y_min
+  YMAX <- y_max + y_range/10
+  v_space <- y_range/20
+  
+  # Create boxplot for differences
+  
+  boxplot(
+    cbind(DIFF_DI_UIR_EE,DIFF_DI_UIR_NE,DIFF_DI_UIR_EN,DIFF_DI_UIR_NN),
+    main="Differences of DI and UIR",
+    xlab="Interaction category",
+    ylab=YLAB_2, 
+    col=c(mixed_color_di_uir,mixed_color_di_uir,mixed_color_di_uir,mixed_color_di_uir),
+    names=c("EE", "NE", "EN", "NN"),
+    ylim=c(YMIN,YMAX)
+  )
+  abline(h=0,col="grey")
+  text(c(1:4),
+       c(max(DIFF_DI_UIR_EE)+v_space,
+         max(DIFF_DI_UIR_NE)+v_space,
+         max(DIFF_DI_UIR_EN)+v_space,
+         max(DIFF_DI_UIR_NN)+v_space),
+       c(paste("p = ", formatC(DIFF_DI_UIR_EE_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_DI_UIR_NE_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_DI_UIR_EN_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_DI_UIR_NN_TT$p.value, format = "e", digits = 2), sep="")
+       )
+  )
+  
+  boxplot(
+    cbind(DIFF_DI_UI_EE,DIFF_DI_UI_NE,DIFF_DI_UI_EN,DIFF_DI_UI_NN),
+    main="Differences of DI and UI",
+    xlab="Interaction category",
+    ylab=YLAB_2, 
+    col=c(mixed_color_di_uir,mixed_color_di_uir,mixed_color_di_uir,mixed_color_di_uir),
+    names=c("EE", "NE", "EN", "NN"),
+    ylim=c(YMIN,YMAX)
+  )
+  abline(h=0,col="grey")
+  text(c(1:4),
+       c(max(DIFF_DI_UI_EE)+v_space,
+         max(DIFF_DI_UI_NE)+v_space,
+         max(DIFF_DI_UI_EN)+v_space,
+         max(DIFF_DI_UI_NN)+v_space),
+       c(paste("p = ", formatC(DIFF_DI_UI_EE_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_DI_UI_NE_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_DI_UI_EN_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_DI_UI_NN_TT$p.value, format = "e", digits = 2), sep="")
+       )
+  )
+  
+  boxplot(
+    cbind(DIFF_UIR_UI_EE,DIFF_UIR_UI_NE,DIFF_UIR_UI_EN,DIFF_UIR_UI_NN),
+    main="Differences of UIR and UI",
+    xlab="Interaction category",
+    ylab=YLAB_2, 
+    col=c(mixed_color_di_uir,mixed_color_di_uir,mixed_color_di_uir,mixed_color_di_uir),
+    names=c("EE", "NE", "EN", "NN"),
+    ylim=c(YMIN,YMAX)
+  )
+  abline(h=0,col="grey")
+  text(c(1:4),
+       c(max(DIFF_UIR_UI_EE)+v_space,
+         max(DIFF_UIR_UI_NE)+v_space,
+         max(DIFF_UIR_UI_EN)+v_space,
+         max(DIFF_UIR_UI_NN)+v_space),
+       c(paste("p = ", formatC(DIFF_UIR_UI_EE_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_UIR_UI_NE_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_UIR_UI_EN_TT$p.value, format = "e", digits = 2), sep=""),
+         paste("p = ", formatC(DIFF_UIR_UI_NN_TT$p.value, format = "e", digits = 2), sep="")
+       )
+  )
+  
+  plot.new()
+  
+  ###########
+  ###########
+  ###########
+  
   # Create boxplot for NE and EN of directed and undirected reference interactions
   boxplot(
     ALL_TAB[,c("DI_NE","DI_EN")],
-    main="Directed interactions - NE and EN",
+    main="DI - NE and EN",
     xlab="Enrichment status",
     ylab=YLAB_1,  
     col=c(directed_color,directed_color),
@@ -257,7 +556,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   )
   boxplot(
     ALL_TAB[,c("UIR_NE","UIR_EN")],
-    main="Undirected reference interactions - NE and EN",
+    main="UIR - NE and EN",
     xlab="Enrichment status",
     ylab=YLAB_1,  
     col=c(undirected_ref_color,undirected_ref_color),
@@ -265,7 +564,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   )
   boxplot(
     ALL_TAB[,c("UI_NE","UI_EN")],
-    main="Undirected interactions - NE and EN",
+    main="UI - NE and EN",
     xlab="Enrichment status",
     ylab=YLAB_1,  
     col=c(undirected_color,undirected_color),
@@ -276,7 +575,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   
   plot(
     ALL_TAB[,"DI_NE"]~ALL_TAB[,"DI_EN"],
-    main="Directed interactions - NE vs. EN",
+    main="DI - NE vs. EN",
     col=directed_color,
     xlim=c(min(ALL_TAB[,"DI_NE"],ALL_TAB[,"DI_EN"]),max(ALL_TAB[,"DI_NE"],ALL_TAB[,"DI_EN"])),
     ylim=c(min(ALL_TAB[,"DI_NE"],ALL_TAB[,"DI_EN"]),max(ALL_TAB[,"DI_NE"],ALL_TAB[,"DI_EN"])),
@@ -288,7 +587,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   
   plot(
     ALL_TAB[,"UIR_NE"]~ALL_TAB[,"UIR_EN"],
-    main="Undirected reference interactions - NE vs. EN",
+    main="UIR - NE vs. EN",
     col=undirected_ref_color,
     xlim=c(min(ALL_TAB[,"UIR_NE"],ALL_TAB[,"UIR_EN"]),max(ALL_TAB[,"UIR_NE"],ALL_TAB[,"UIR_EN"])),
     ylim=c(min(ALL_TAB[,"UIR_NE"],ALL_TAB[,"UIR_EN"]),max(ALL_TAB[,"UIR_NE"],ALL_TAB[,"UIR_EN"])),
@@ -300,7 +599,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
 
   plot(
     ALL_TAB[,"UI_NE"]~ALL_TAB[,"UI_EN"],
-    main="Undirected interactions - NE vs. EN",
+    main="UI - NE vs. EN",
     col=undirected_color,
     xlim=c(min(ALL_TAB[,"UI_NE"],ALL_TAB[,"UI_EN"]),max(ALL_TAB[,"UI_NE"],ALL_TAB[,"UI_EN"])),
     ylim=c(min(ALL_TAB[,"UI_NE"],ALL_TAB[,"UI_EN"]),max(ALL_TAB[,"UI_NE"],ALL_TAB[,"UI_EN"])),
@@ -327,7 +626,7 @@ function.get_pdf_for_n_med_or_iqr <- function(
   # Create boxplot for differences
   boxplot(
     cbind(DIFF_NE_EN_DI,DIFF_NE_EN_UIR,DIFF_NE_EN_UI),
-    main="Differences of NE and EN interactions",
+    main="Differences of NE and EN",
     xlab="Interaction category",
     ylab=YLAB_2, 
     col=c(directed_color,undirected_ref_color,undirected_color),

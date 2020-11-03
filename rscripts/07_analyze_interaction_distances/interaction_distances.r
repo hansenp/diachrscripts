@@ -880,7 +880,7 @@ function.write_statistics_to_file <- function(
 
 # Plot histograms for all interaction categories
 PDF_NAME <- paste(OUT_DIR, OUT_PREFIX,"_i_distance_histograms_ee_ne_en_nn.pdf",sep="")
-MM_TITLE <- paste(OUT_PREFIX," - Interaction distances for EE, NE, EN and NN",sep="")
+MM_TITLE <- paste(OUT_PREFIX," - Interaction distances for DI, UIR and UI",sep="")
 PDF_W <- 12.5
 PDF_H <- 24.75
 function.plot_histograms_ee_ne_en_nn(
