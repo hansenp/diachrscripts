@@ -137,7 +137,7 @@ whereby a separate subdirectory is created for each cell type.
 
 ## Analysis of interaction distances
 
-To compare directed and undirected interactions, we have decomposed the into different categories.
+To compare directed and undirected interactions, we have decomposed the interactions into different categories.
 At the top level, we differentiate between directed (*DI*), undirected reference (*UIR*), and undirected interactions (*UI*).
 We further break down directed interactions into the categories *simple* and *twisted*,
 depending which of the two types of read pairs predominates.
@@ -331,14 +331,13 @@ in the 12 subcategories.
 
 The first line of this field contains the histograms for DI (orange) and `EE`, `NE`, `EN` and `NN`.
 The following two lines have the same structure and are for UIR (light blue) and UI (gray).
-The axes of all histograms have the same range. Therefore, the histograms can be compared
-with each other. To compare at which distances the distributions for NE and EN differ,
+The axes of all histograms have the same range and are therefore comparable.
+To compare at which distances the distributions for NE and EN differ,
 we subtract the densities within each bin of the histograms for NE and EN.
 The differences are shown to the right of the histograms for DI, UIR and UI.
 
-Below the histograms, further plots with density differences are shown,
-in which the densities of the interactionn categories DI, UIR and UI
-are compared.
+Below the histograms, further plots with density differences are shown.
+These plot show the density differences for DI, UIR and UI.
 
 ![Interaction histograms - DD](doc/07_analyze_interaction_distances/MK_i_distance_histograms_ee_ne_en_nn_dd.png)
 
@@ -553,7 +552,6 @@ Each file contains the same plots in the same order.
 
 In the following,
 the structure of the PDF files is described using the file for the interaction numbers as an example.
-
 In the top four rows, DI, UIR and UI are compared with one another.
 
 ![Distance summary - N - 1](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_n_1.png)
@@ -576,7 +574,9 @@ these differences should be evenly distributed around zero.
 We use a t-test to test this hypothesis.
 The corresponding P-values are shown above the top whiskers.
 
-In the lower four rows, the enrichment categories NE and EN are compared within DI, UIR and UI.
+These plots are followed by scatterplots and boxplots of differences for DI vs. UI and UIR vs. UI (not shown).
+
+In the bottom four rows of the entire plot, the enrichment categories NE and EN are compared within DI, UIR and UI.
 
 ![Distance summary - N - 2](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_n_2.png)
 
