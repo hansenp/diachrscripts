@@ -32,8 +32,11 @@ class BinomialInteractionModel:
         diachromatic_interaction_file: str=None,
             Diachromatic interaction file.
         """
+
+
         self._p_value_cutoff = p_value_cutoff
         self._out_prefix = out_prefix
+
         # Determine indefinable cutoff for given P-value
         self._n_indef, self._pv_indef = find_indefinable_n(self._p_value_cutoff)
         # Dictionary that keeps track of already calculated P-values
@@ -44,10 +47,11 @@ class BinomialInteractionModel:
         self._print_params()
 
     def _print_params(self):
-        print("[INFO] " + "Input parameters")
-        print("\t[INFO] --out_prefix: " + self._out_prefix)
-        print("\t[INFO] --p-value-cutoff: " + str(self._p_value_cutoff))
-        
+        print("[INFO] " + "Parameters")
+        print("\t[INFO] _out_prefix: " + self._out_prefix)
+        print("\t[INFO] _p_value_cutoff: " + str(self._p_value_cutoff))
+        print("\t[INFO] _n_indef: " + str(self._n_indef))
+        print("\t[INFO] _pv_indef: " + str(self._pv_indef))
 
     def binomial_p_value(self, simple_count: int, twisted_count: int):
         """
@@ -90,17 +94,24 @@ class BinomialInteractionModel:
         A tuple of a list with interaction counts and a dictionary with corresponding p values.
         """
         # Dictionary stores the numbers of significant interactions for each n
-        N_SIG_DICT_SIM = defaultdict(int)
-        # List containing counts of significant simple and twisted interactions for each n
+        N_DICT_SIM = defaultdict(int)
+
+        # List containing counts of significant interactions for each n
         signum_list = [0 for _ in range(n_max + 1)]
+
         print("[INFO] " + "Generating random numbers of simple and twisted read pairs ...")
-       
+
+        # Get random numbers from uniform distribution
         random_n_vec = np.random.randint(low = self._n_indef, high = n_max  + 1, size = i_num)
+
+        # Count interactions that have the same number of read pairs for each n
         for n in random_n_vec:
-            N_SIG_DICT_SIM[n] += 1
+            N_DICT_SIM[n] += 1
+
         print("[INFO] " + "Counting significant interactions for each n ...")
+
         # Iterate dictionary with numbers of interactions for each read pair number n
-        for n, i in N_SIG_DICT_SIM.items():
+        for n, i in N_DICT_SIM.items():
         # Generate random simple read pair counts for current n
             simple_count_list = list(binom.rvs(n, p = 0.5, size = i))
             for simple_count in simple_count_list:
@@ -109,7 +120,7 @@ class BinomialInteractionModel:
                 # Count significant interactions for current n
                 if pv <= self._p_value_cutoff:
                     signum_list[n] += 1
-        return signum_list, N_SIG_DICT_SIM
+        return signum_list, N_DICT_SIM
         
     
 
@@ -192,10 +203,3 @@ class BinomialInteractionModel:
                 n_def = n_def_list[i]
                 n_sig = n_sig_list[i]
                 fh.write(str(i) + "\t" + str(n_def) + "\t" + str(n_sig) + "\n")
-       
-    
-
-     
-
-
-
