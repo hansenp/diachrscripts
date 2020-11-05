@@ -433,7 +433,7 @@ function.get_pdf_for_n_med_or_iqr_st <- function(
     
     plot(
       UI_RP_TAB[,1]~UI_RP_TAB[,2],
-      main="Simple vs. twisted read pairs from UIR - EE",
+      main="Simple vs. twisted read pairs from UI - EE",
       col=undirected_color,
       xlim=c(XMIN,XMAX),
       ylim=c(YMIN,YMAX),
@@ -445,7 +445,7 @@ function.get_pdf_for_n_med_or_iqr_st <- function(
     
     plot(
       UI_RP_TAB[,3]~UI_RP_TAB[,4],
-      main="Simple vs. twisted read pairs from UIR - NE",
+      main="Simple vs. twisted read pairs from UI - NE",
       col=undirected_color,
       xlim=c(XMIN,XMAX),
       ylim=c(YMIN,YMAX),
@@ -457,7 +457,7 @@ function.get_pdf_for_n_med_or_iqr_st <- function(
     
     plot(
       UI_RP_TAB[,5]~UI_RP_TAB[,6],
-      main="Simple vs. twisted read pairs from UIR - EN",
+      main="Simple vs. twisted read pairs from UI - EN",
       col=undirected_color,
       xlim=c(XMIN,XMAX),
       ylim=c(YMIN,YMAX),
@@ -469,7 +469,7 @@ function.get_pdf_for_n_med_or_iqr_st <- function(
     
     plot(
       UI_RP_TAB[,7]~UI_RP_TAB[,8],
-      main="Simple vs. twisted read pairs from UIR - NN",
+      main="Simple vs. twisted read pairs from UI - NN",
       col=undirected_color,
       xlim=c(XMIN,XMAX),
       ylim=c(YMIN,YMAX),
@@ -496,14 +496,14 @@ function.get_pdf_for_n_med_or_iqr_st <- function(
       FALSE)
     
     DIFF_VEC_UIR_RP <- function.get_simple_twisted_diff_boxplot(
-      "Differences of simple and twisted read pairs from DI",
+      "Differences of simple and twisted read pairs from UIR",
       YLAB_4,
       undirected_ref_color,
         UIR_RP_TAB,
       FALSE)
     
     DIFF_VEC_UI_RP <- function.get_simple_twisted_diff_boxplot(
-      "Differences of simple and twisted read pairs from DI",
+      "Differences of simple and twisted read pairs from UI",
       YLAB_4,
       undirected_color,
       UI_RP_TAB,
@@ -531,14 +531,14 @@ function.get_pdf_for_n_med_or_iqr_st <- function(
       c(YMIN,YMAX))
     
     DIFF_VEC_UIR_RP <- function.get_simple_twisted_diff_boxplot(
-      "Differences of simple and twisted read pairs from DI",
+      "Differences of simple and twisted read pairs from UIR",
       YLAB_4,
       undirected_ref_color,
       UIR_RP_TAB,
       c(YMIN,YMAX))
     
     DIFF_VEC_UI_RP <- function.get_simple_twisted_diff_boxplot(
-      "Differences of simple and twisted read pairs from DI",
+      "Differences of simple and twisted read pairs from UI",
       YLAB_4,
       undirected_color,
       UI_RP_TAB,
@@ -561,14 +561,14 @@ function.get_pdf_for_n_med_or_iqr_st <- function(
       c(YMIN,YMAX))
     
     DIFF_VEC_UIR_RP <- function.get_simple_twisted_diff_boxplot(
-      "Differences of simple and twisted read pairs from DI",
+      "Differences of simple and twisted read pairs from UIR",
       YLAB_4,
       undirected_ref_color,
       UIR_RP_TAB,
       c(YMIN,YMAX))
     
     DIFF_VEC_UI_RP <- function.get_simple_twisted_diff_boxplot(
-      "Differences of simple and twisted read pairs from DI",
+      "Differences of simple and twisted read pairs from UI",
       YLAB_4,
       undirected_color,
       UI_RP_TAB,

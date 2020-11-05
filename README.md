@@ -107,12 +107,13 @@ JAV_NCD8_RALT_0.0019_enhanced_interaction_file_with_di_uii_and_uie.tsv.gz
 JAV_TCD8_RALT_0.0019_enhanced_interaction_file_with_di_uii_and_uie.tsv.gz
 ```
 
+Each of these files contains the combined interactions
+(`RALT` stands for Replicate At Least Two) for one of the 17 cell types.
+
 Place these files in the directory:
 ```
 diachrscripts/results/05_define_directed_interactions
 ```
-
-Each of these files contains the combined interactions for one of the hematopoietic 17 cell types.
 
 ## Selection of undirected reference interactions
 
@@ -123,17 +124,72 @@ This  is implemented in the  script:
 ```
 diachrscripts/06_select_uir_from_uie_and_uii.py
 ```
+The script has the following parameters:
+```
+--out-prefix
+```
+The name of each created file will have this prefix, which can also contain the path to an already existing directory.
+```
+--enhanced-interaction-file <OUT_PREFIX>_enhanced_interaction_file_with_di_uii_and_uie.tsv.gz
+```
+This script expects as input Enhanced Interaction Files
+that were generated with the script `diachrscripts/05_define_di_uie_and_uii.py`.
+The processing up to these files is computationally intensive
+and we carried it out on a computing cluster.
+These instructions assume that these files are in the following directory:
+```
+results/05_define_directed_interactions/
+```
+
+By default, the script assumes that there is no difference between the enrichment
+categories `NE` and `EN`,
+i.e. whether the first or the second digests of given interactions was
+selected for target enrichment (in sequential order),
+where `E` stands for Enriched and `N` for *Not enriched*.
+In this case, no distinction is made for `NE` and `EN` when selecting the reference interactions,
+i.e. the ratio of `NE` and `EN` is not taken from the directed interactions,
+but results from the ratio in the undirected interactions from which the selection is made.
+When using the option:
+```
+--respect-left-right
+```
+`NE` and `EN` are treated as separate categories,
+i.e. an attempt is made to select as many reference interactions in
+each of these two categories as there are corresponding directed interactions.
+
+### Selection of reference interactions for all 17 cell types
+
 Once you have downloaded the files from the previous step and placed them in the
-directory in the designated directory, you can select the reference interactions for
+directory:
+```
+results/05_define_directed_interactions/
+```
+you can select the reference interactions for
 each of the 17 cell types by executing the following bash script:
 ```
-bash_scripts/06_select_reference_interactions/06_select_reference_interactions_run_4_all.sh
+./bash_scripts/06_select_reference_interactions/06_select_reference_interactions_run_4_all.sh \
+/Users/<YOUR_USERNAME>/anaconda2/envs/diachscripts_p37env/bin/python3.7 \
+FALSE
 ```
-This script writes the results to the directory:
+The script expects two arguments.
+The first argument is a path to a Python 3.7 binary file.
+The second argument should be either `FALSE` or `TRUE`.
+If this argument is `FALSE`,
+no distinction is made between `NE` and `EN` when selecting the reference interactions
+and the results are written to the following directory:
 ```
 results/06_select_reference_interactions/
 ```
 whereby a separate subdirectory is created for each cell type.
+If the second argument of the bash script is `TRUE`,
+`NE` and `EN` are treated as separate categories and the results are written
+to the following directory:
+```
+results/06_select_reference_interactions/RLR/
+```
+
+The calculation time for each of the two variants is about 1 hour
+on a normal computer.
 
 ## Analysis of interaction distances
 
@@ -441,7 +497,7 @@ The bars of the histograms have pink borders for simple and green borders for tw
 As with the histograms for the comparison of DI, UIR and UI,
 the density differences of NE and EN within the individual bins
 are shown to the left of the histograms.
-The density differences between *simple* and *twisted* interaactions
+The density differences between *simple* and *twisted* interactions
 are shown below the histograms.
 
 The second PDF file
@@ -658,7 +714,6 @@ This is followed by 17 TSV files that contain the summary statistics for the ind
 #### Generated plots
 
 The R script creates one PDF files for each of the three summary statistics n, median and IQR:
-
 ```
 interaction_distance_summary_stats_st_n.pdf
 interaction_distance_summary_stats_st_median.pdf
@@ -736,6 +791,69 @@ But this plot is for interquartile ranges of interaction distances.
 
 ![Distance summary - ST - IQR](doc/07_analyze_interaction_distances/interaction_distance_summary_stats_st_iqr.png)
 
+### Interaction distance analysis for all 17 cell types
+
+The entire workflow, including the Python script and the various R scripts
+that generate the plots described above,
+can be executed for all 17 cell types via the following R script:
+```
+./bash_scripts/07_analyze_interaction_distances/07_analyze_interaction_distances_run_4_all.sh \
+/Users/<YOUR_USERNAME>/anaconda2/envs/diachscripts_p37env/bin/python3.7 \
+FALSE
+```
+The script expects two arguments.
+The first argument is a path to a Python 3.7 binary file.
+The second argument should be either `FALSE` or `TRUE`.
+If this argument is `FALSE`,
+then the reference interactions are used that were created
+without distinguishing between the enrichment categories `NE` and `EN`.
+In this case,
+the input files are taken from here:
+```
+results/06_select_reference_interactions/MK/
+results/06_select_reference_interactions/ERY/
+...
+results/06_select_reference_interactions/TCD8/
+```
+
+The results for the individual cell types will be written to the following
+directories:
+```
+results/07_analyze_interaction_distances/MK/
+results/07_analyze_interaction_distances/ERY/
+...
+results/07_analyze_interaction_distances/TCD8/
+```
+And the results for the subordinate analyzes of all cell types
+are saved in the directory above:
+```
+results/07_analyze_interaction_distances/
+```
+If the second argument of the bash script is `TRUE`,
+then the reference interactions are used that were selected
+taking `NE` and `EN` into account.
+In this case,
+the input files are taken from here:
+```
+results/06_select_reference_interactions/RLR/MK_RLR/
+results/06_select_reference_interactions/RLR/ERY_RLR/
+...
+results/06_select_reference_interactions/RLR/TCD8_RLR/
+```
+
+The results for the individual cell types will be written to
+the following directories:
+```
+results/07_analyze_interaction_distances/RLR/MK_RLR/
+results/07_analyze_interaction_distances/RLR/ERY_RLR/
+...
+results/07_analyze_interaction_distances/RLR/TCD8_RLR/
+```
+And the results for the subordinate analysis for all cell types are written to
+the directory one level above above:
+```
+results/07_analyze_interaction_distances/RLR/
+```
 
 ## Analysis of interaction profiles
 
