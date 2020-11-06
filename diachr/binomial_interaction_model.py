@@ -80,24 +80,26 @@ class BinomialInteractionModel:
             self._pval_memo [key] = p_value
             return p_value
 
-    def count_simulated_interactions(self, n_max: int=500,  i_num: int=100000) -> Tuple[List, Dict]:
+    def count_simulated_interactions(self, n_max: int=500,  i_num: int=100000) -> Tuple[List, List, List]:
         """
-        Get the counts of significant interactions in simulated data 
+        Simulate interactions and return lists with counts of simulated and significant interactions with n read pairs
         Parameters
         ----------------------------
         n_max: int = 500,
-            Simulate interactions with 1 to n_max read pairs.
+            Simulate interactions with _n_indef to n_max read pairs.
         i_num: int = 100000,
             Number of simulated interactions.
         Returns
         ----------------------------
-        A tuple of a list with interaction counts and a dictionary with corresponding p values.
+        A tuple of a lists with counts of simulated and significant interactions with n read pairs.
         """
-        # Dictionary stores the numbers of significant interactions for each n
-        N_DICT_SIM = defaultdict(int)
 
-        # List containing counts of significant interactions for each n
-        signum_list = [0 for _ in range(n_max + 1)]
+        # List of n
+        n_list = list(range(n_max + 1))
+
+        # Lists containing numbers of simulated and significant interactions for each n
+        n_sim_list = [0 for _ in range(n_max + 1)]
+        n_sig_list = [0 for _ in range(n_max + 1)]
 
         print("[INFO] " + "Generating random numbers of simple and twisted read pairs ...")
 
@@ -105,22 +107,32 @@ class BinomialInteractionModel:
         random_n_vec = np.random.randint(low = self._n_indef, high = n_max  + 1, size = i_num)
 
         # Count interactions that have the same number of read pairs for each n
+        N_DICT_SIM = defaultdict(int)
         for n in random_n_vec:
             N_DICT_SIM[n] += 1
+
+        # Transform dictionary to list (index=n)
+        for i in range(0, (n_max + 1)):
+            n_sim_list[i] = N_DICT_SIM[i]
 
         print("[INFO] " + "Counting significant interactions for each n ...")
 
         # Iterate dictionary with numbers of interactions for each read pair number n
-        for n, i in N_DICT_SIM.items():
-        # Generate random simple read pair counts for current n
-            simple_count_list = list(binom.rvs(n, p = 0.5, size = i))
+        for n in range(0, (n_max + 1)):
+            if n_sim_list[n]==0:
+                continue
+
+            # Generate random simple read pair counts for current n
+            simple_count_list = list(binom.rvs(n, p = 0.5, size = n_sim_list[n]))
+
+            # Determine P-values and count significant interactions
             for simple_count in simple_count_list:
                 twisted_count = n - simple_count
                 pv = self.binomial_p_value(simple_count=simple_count, twisted_count=twisted_count)
-                # Count significant interactions for current n
                 if pv <= self._p_value_cutoff:
-                    signum_list[n] += 1
-        return signum_list, N_DICT_SIM
+                    n_sig_list[n] += 1
+
+        return n_list, n_sim_list, n_sig_list
         
     
 

@@ -436,35 +436,35 @@ def get_interaction_pvalue(n_simple, n_twisted):
 
 def get_n_dict(ei_file, status_pair_flag, min_digest_dist, p_value_cutoff):
     """
-    :param ei_file -- diachromatic_interaction_file: Interaction file in Diachromatic format
-    :param status_pair_flag: ALL, AA, AI or II
+    :param ei_file: Interaction file in Enhanced Interaction Format format
+    :param status_pair_flag: ALL, NN, NE, EN or EE
     :param min_digest_dist: Minimal allowed distance between interacting digests, typically 10,000
     :return: Dictionary with total read pair numbers (n) as keys and the corresponding numbers interactions with n read pairs
     """
 
     p_val_dict = {} # dictionary that stores previously calculated P-values (saves time)
     n_dict = {}  # dictionary that stores the numbers of interactions with n read pairs
-    digest_distances = []
+    digest_distances = [] # List with interaction distances
 
-
-
+    # Get list of EI objects
     parser = EnhancedInteractionParser(ei_file)
     ei_list = parser.parse()
+
+    # Iterarate list of EI objects
     for ei in ei_list:
-        interaction = Interaction(ei)
-        #if status_pair_flag != "ALL" and interaction.get_digest_status_pair_flag() != status_pair_flag:
-        #    continue
+
+        # Restrict analysis to certain enrichment pair tags (NN, NE, EN, EE)
         if status_pair_flag != "ALL" and ei.enrichment_pair_tag != status_pair_flag:
             continue
-        # restrict analysis to cis long range interactions
-        #if not interaction.is_cis_long_range(min_digest_dist):
-        #    continue
+
+        # Restrict analysis to cis long range interactions
         if not ei.in_cis() or ei.i_dist < min_digest_dist:
             continue
-        #n_total = interaction.n_simple + interaction.n_twisted
+
+        # Get total number of read pairs (n_simple + n_twisted)
         n_total = ei.rp_total
 
-        #key = ":".join((str(interaction.n_simple),str(interaction.n_twisted)))
+        # Calculate P-value and count significant interactions
         key = ":".join((str(ei.simple_count), str(ei.twisted_count)))
         if key in p_val_dict:
             p_val = p_val_dict[key]
@@ -472,12 +472,12 @@ def get_n_dict(ei_file, status_pair_flag, min_digest_dist, p_value_cutoff):
             p_val = get_interaction_pvalue(ei.simple_count, ei.twisted_count)
             p_val_dict[key] = p_val
         if p_val <= p_value_cutoff:
-            #digest_distances.append(interaction.get_digest_distance())
             digest_distances.append(ei.i_dist)
             if n_total in n_dict:
                 n_dict[n_total] += 1
             else:
                 n_dict[n_total] = 1
+
     #print("[INFO] Determining distribution of n in significant interactions in: " + diachromatic_interaction_file + " ...")
     if(0<len(digest_distances)):
         n_dict[-1] = np.quantile(digest_distances, .25)
