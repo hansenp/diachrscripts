@@ -3,6 +3,7 @@ from collections import defaultdict
 from scipy.stats import binom
 import numpy as np
 from .diachr_util import calculate_binomial_p_value, find_indefinable_n, get_n_dict, get_n_dict_definable
+from .enhanced_interaction_parser import EnhancedInteractionParser
 
 class BinomialInteractionModel:
     """
@@ -161,7 +162,7 @@ class BinomialInteractionModel:
                 fh.write(str(i) + "\t" + str(signum_list[i]) + "\t" + str(sim_dict.get(i,0)) + "\n")
                 
 
-    def count_significant_empirical_interactions(self, eifile: str, min_dist=20000) -> Tuple[List, List]:
+    def count_significant_empirical_interactions(self, ei_file: str, min_dist=20000, n_max=2000) -> Tuple[List, List]:
         """
         Get the counts of significant interactions in emprical data for the 
         diachromatic extended interaction file (iefile).
@@ -178,15 +179,64 @@ class BinomialInteractionModel:
         """
         n_def_list = []
         n_sig_list = []
+
         # Count significant interactions in empirical data for each n
-        N_SIG_DICT_EMP = get_n_dict(ei_file=eifile, status_pair_flag='ALL', min_digest_dist=min_dist, p_value_cutoff=self._p_value_cutoff)
-        N_DEF_DICT_EMP = get_n_dict_definable(ei_file=eifile, status_pair_flag='ALL', min_digest_dist=min_dist, n_indef=self._n_indef)
-        for n in range(1, 2000):
-            n_def = N_DEF_DICT_EMP.get(n,0)
-            n_sig = N_SIG_DICT_EMP.get(n,0)
-            n_def_list.append(n_def)
-            n_sig_list.append(n_sig)
-        return n_def_list, n_sig_list
+        #N_DEF_DICT_EMP = get_n_dict_definable(ei_file=eifile, status_pair_flag='ALL', min_digest_dist=min_dist, n_indef=self._n_indef)
+        #N_DEF_DICT_EMP = get_n_dict(ei_file=eifile, status_pair_flag='ALL', min_digest_dist=min_dist, p_value_cutoff=1)
+        #N_SIG_DICT_EMP = get_n_dict(ei_file=eifile, status_pair_flag='ALL', min_digest_dist=min_dist, p_value_cutoff=self._p_value_cutoff)
+
+        n_dict_di = {}  # Dictionary that stores the numbers of DI interactions with n read pairs
+        n_dict_uir = {}  # Dictionary that stores the numbers of UIR interactions with n read pair
+        n_dict_ui = {}  # Dictionary that stores the numbers of UI interactions with n read pairs
+
+        # Get list of EI objects
+        parser = EnhancedInteractionParser(ei_file)
+        ei_list = parser.parse()
+
+        # Iterate list with EI objects
+        n_progress = 0
+        for ei in ei_list:
+            n_progress += 1
+            if n_progress % 1000000 == 0:
+                print("\t[INFO] Processed " + str(n_progress) + " interactions ...")
+            n  = ei.rp_total
+            if ei._interaction_category == 'DI':
+                if n in n_dict_di:
+                    n_dict_di[n] += 1
+                else:
+                    n_dict_di[n] = 1
+            elif ei._interaction_category == 'UIR':
+                if n in n_dict_uir:
+                    n_dict_uir[n] += 1
+                else:
+                    n_dict_uir[n] = 1
+            elif ei._interaction_category == 'UI':
+                if n in n_dict_ui:
+                    n_dict_ui[n] += 1
+                else:
+                    n_dict_ui[n] = 1
+            else:
+                print("[ERROR] Invalid interaction category tag: " + ei._interaction_category)
+
+        # List of n
+        n_list = list(range(n_max + 1))
+
+        # Lists of interaction counts for n = 0, ..., n_max
+        n_di_list = []
+        n_uir_list = []
+        n_ui_list = []
+
+        # Get ordered list of interaction counts for different n
+        for n in n_list:
+            n_di = n_dict_di.get(n,0)
+            n_di_list.append(n_di)
+            n_uir = n_dict_uir.get(n,0)
+            n_uir_list.append(n_uir)
+            n_ui = n_dict_ui.get(n, 0)
+            n_ui_list.append(n_ui)
+
+        return n_list, n_di_list, n_uir_list, n_ui_list
+        #return n_def_list, n_sig_list
 
 
     def write_significant_empirical_interactions(self, ei_file:str):

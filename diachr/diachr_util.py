@@ -441,6 +441,7 @@ def get_n_dict(ei_file, status_pair_flag, min_digest_dist, p_value_cutoff):
     :param min_digest_dist: Minimal allowed distance between interacting digests, typically 10,000
     :return: Dictionary with total read pair numbers (n) as keys and the corresponding numbers interactions with n read pairs
     """
+    print("[INFO] Getting N_DICT with P-value cutoff: " + str(p_value_cutoff))
 
     p_val_dict = {} # dictionary that stores previously calculated P-values (saves time)
     n_dict = {}  # dictionary that stores the numbers of interactions with n read pairs
@@ -450,7 +451,7 @@ def get_n_dict(ei_file, status_pair_flag, min_digest_dist, p_value_cutoff):
     parser = EnhancedInteractionParser(ei_file)
     ei_list = parser.parse()
 
-    # Iterarate list of EI objects
+    # Iterate list with EI objects
     for ei in ei_list:
 
         # Restrict analysis to certain enrichment pair tags (NN, NE, EN, EE)
@@ -471,19 +472,28 @@ def get_n_dict(ei_file, status_pair_flag, min_digest_dist, p_value_cutoff):
         else:
             p_val = get_interaction_pvalue(ei.simple_count, ei.twisted_count)
             p_val_dict[key] = p_val
-        if p_val <= p_value_cutoff:
+
+        if p_val <= float(p_value_cutoff):
+            #print(str(p_val) + "<=" +str(float(p_value_cutoff)))
             digest_distances.append(ei.i_dist)
             if n_total in n_dict:
                 n_dict[n_total] += 1
             else:
                 n_dict[n_total] = 1
 
+    # Count interactions
+    number_of_interactions = 0
+    for n in n_dict:
+        number_of_interactions = number_of_interactions + n_dict[n]
+    print(number_of_interactions)
+
+
     #print("[INFO] Determining distribution of n in significant interactions in: " + diachromatic_interaction_file + " ...")
     if(0<len(digest_distances)):
         n_dict[-1] = np.quantile(digest_distances, .25)
         n_dict[-3] = np.quantile(digest_distances, .75)
 
-    print("... done.")
+    print("[INFO] ... done.")
     return n_dict
 
 
