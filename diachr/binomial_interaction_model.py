@@ -17,34 +17,44 @@ class BinomialInteractionModel:
     model and a specified significance threshold. Finally, a plot for the number of significant simulated interactions for
     each n is generated and, in addition, the corresponding numbers are written to a tab separated text file.
 
-    If a Diachromatic interaction file is specified, the numbers of significant empirical interactions for each n will also
+    If a enhanced interaction (EI) file is specified, the numbers of significant empirical interactions for each n will also
     be determined and written to file.
+
+
     """
+
     def __init__(
-        self, 
-        p_value_cutoff: float=0.05, 
-        out_prefix: str = "OUTPREFIX") -> None:
-        """Create new BinomialInteractionModel object.
+        self,
+        p_value_cutoff: float=0.05,
+        out_prefix: str = "OUT_PREFIX") -> None:
 
-        Parameters
-        ----------------------------
-        p_value_cutoff: float=0.05, 
-            P-value threshold used for the classification of directed and undirected interactions.
-        diachromatic_interaction_file: str=None,
-            Diachromatic interaction file.
-        """
-
-
+        # Threshold used to define significant interactions
         self._p_value_cutoff = p_value_cutoff
+
+        # Prefix for the names of generated files
         self._out_prefix = out_prefix
 
-        # Determine indefinable cutoff for given P-value
+        # Find smallest number of read pairs (n) that yields a significant P-value
         self._n_indef, self._pv_indef = find_indefinable_n(self._p_value_cutoff)
-        # Dictionary that keeps track of already calculated P-values
+
+        # Dictionary that keeps track of already calculated P-values (saves time)
         #    key - a string like 2-7
         #    value - our corresponding binomial p-value
-        #    note -- use this as a global variable in this script!
         self._pval_memo = defaultdict(float)
+
+        # Maximum n for simulated interactions
+        self.n_max = None
+
+        # List containing 1, ..., n_max
+        self.n_list = None
+
+        # List containing numbers of simulated interactions for each n
+        self.n_sim_list = None
+
+        # List containing numbers of simulated significant interactions for each n
+        self.n_sig_list = None
+
+        # Output parameters
         self._print_params()
 
     def _print_params(self):
@@ -54,42 +64,18 @@ class BinomialInteractionModel:
         print("\t[INFO] _n_indef: " + str(self._n_indef))
         print("\t[INFO] _pv_indef: " + str(self._pv_indef))
 
-    def binomial_p_value(self, simple_count: int, twisted_count: int):
-        """
-        Locally defined method for the calculation of the binomial P-value that uses a dictionary that keeps track of
-        P-values that already have been calculated.
 
-        Parameters
-        ----------------------------
-        simple_count: int,
-            Number of simple read pairs.
-        twisted_count: int,
-            Number of twisted read pairs.
-
-        Returns
-        ----------------------------
-        Binomial P-value.
+    def simulate_interactions(self, n_max: int=500,  i_num: int=100000) -> Tuple[List, List, List]:
         """
-        # Create key from simple and twisted read pair counts
-        key = "{}-{}".format(simple_count, twisted_count)
-        # Check whether a P-value for this combination of simple and twisted counts has been calculated already
-        if key in self._pval_memo :
-            return self._pval_memo [key]
-        else:
-            # Calculate P-value and add to dictionary
-            p_value = calculate_binomial_p_value(simple_count, twisted_count)
-            self._pval_memo [key] = p_value
-            return p_value
+        Simulate interactions and return lists with counts of simulated and significant interactions with n read pairs.
 
-    def count_simulated_interactions(self, n_max: int=500,  i_num: int=100000) -> Tuple[List, List, List]:
-        """
-        Simulate interactions and return lists with counts of simulated and significant interactions with n read pairs
         Parameters
         ----------------------------
         n_max: int = 500,
             Simulate interactions with _n_indef to n_max read pairs.
         i_num: int = 100000,
             Number of simulated interactions.
+
         Returns
         ----------------------------
         A tuple of a lists with counts of simulated and significant interactions with n read pairs.
@@ -130,37 +116,17 @@ class BinomialInteractionModel:
             for simple_count in simple_count_list:
                 twisted_count = n - simple_count
                 pv = self.binomial_p_value(simple_count=simple_count, twisted_count=twisted_count)
-                if pv <= self._p_value_cutoff:
+                # Our test of directionality is two-sided (either simple or twisted).
+                # Therefore, we have to divide the threshold by 2.
+                if pv <= self._p_value_cutoff/2:
                     n_sig_list[n] += 1
 
+        self.n_max = n_max
+        self.n_list = n_list
+        self.n_sim_list = n_sim_list
+        self.n_sig_list = n_sig_list
         return n_list, n_sim_list, n_sig_list
-        
-    
 
-    def write_simulated_interaction_counts(self):
-        """
-        Get the counts of significant interactions in simulated data, and write to file
-        Write a text file with significant empirical interactions for each n
-        If no value for n can be found, write 0.
-        Uses count_simulated_interactions()
-        Writes to file "{OUTPREFIX}_sig_interactions_vs_uniform_n.tab"
-        Parameters
-        ----------------------------
-        signum_list: List,
-            a list containing counts of significant simple and twisted interactions for each n
-        sim_dict: Dict,
-            a dictionary with ?
-        Returns
-        ----------------------------
-        """
-        sim_tab_file_name = self._outprefix + "_sig_interactions_vs_uniform_n.tab"
-        signum_list, sim_dict = self.count_simulated_interactions()
-        N = len(signum_list)
-        with open(sim_tab_file_name, 'wt') as fh:
-            print("[INFO] " + "Writing numbers of significant simulated interactions for each n to text file ...")
-            for i in range(1, N):
-                fh.write(str(i) + "\t" + str(signum_list[i]) + "\t" + str(sim_dict.get(i,0)) + "\n")
-                
 
     def count_di_uir_and_ui_for_each_n(self, ei_file: str, n_max=2000) -> Tuple[List, List, List, List]:
         """
@@ -239,6 +205,57 @@ class BinomialInteractionModel:
 
         return n_list, n_di_list, n_uir_list, n_ui_list
 
+
+    def binomial_p_value(self, simple_count: int, twisted_count: int):
+        """
+        Locally defined method for the calculation of the binomial P-value that uses a dictionary that keeps track of
+        P-values that already have been calculated.
+
+        Parameters
+        ----------------------------
+        simple_count: int,
+            Number of simple read pairs.
+        twisted_count: int,
+            Number of twisted read pairs.
+
+        Returns
+        ----------------------------
+        Binomial P-value.
+        """
+        # Create key from simple and twisted read pair counts
+        key = "{}-{}".format(simple_count, twisted_count)
+        # Check whether a P-value for this combination of simple and twisted counts has been calculated already
+        if key in self._pval_memo :
+            return self._pval_memo [key]
+        else:
+            # Calculate P-value and add to dictionary
+            p_value = calculate_binomial_p_value(simple_count, twisted_count)
+            self._pval_memo [key] = p_value
+            return p_value
+
+    def write_simulated_interaction_counts(self):
+        """
+        Get the counts of significant interactions in simulated data, and write to file
+        Write a text file with significant empirical interactions for each n
+        If no value for n can be found, write 0.
+        Uses count_simulated_interactions()
+        Writes to file "{OUTPREFIX}_sig_interactions_vs_uniform_n.tab"
+        Parameters
+        ----------------------------
+        signum_list: List,
+            a list containing counts of significant simple and twisted interactions for each n
+        sim_dict: Dict,
+            a dictionary with ?
+        Returns
+        ----------------------------
+        """
+        sim_tab_file_name = self._outprefix + "_sig_interactions_vs_uniform_n.tab"
+        signum_list, sim_dict = self.count_simulated_interactions()
+        N = len(signum_list)
+        with open(sim_tab_file_name, 'wt') as fh:
+            print("[INFO] " + "Writing numbers of significant simulated interactions for each n to text file ...")
+            for i in range(1, N):
+                fh.write(str(i) + "\t" + str(signum_list[i]) + "\t" + str(sim_dict.get(i,0)) + "\n")
 
     def write_significant_empirical_interactions(self, ei_file:str):
         """
