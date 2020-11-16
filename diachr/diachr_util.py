@@ -410,7 +410,7 @@ def calculate_binomial_logsf_p_value(n_simple, n_twisted): # (natural) logsf
         #return log(sys.float_info.min * sys.float_info.epsilon) # return natural log of smallest possible float
 
 
-def find_indefinable_n(p_value_cutoff, verbose = True):
+def find_indefinable_nx(p_value_cutoff, verbose = True):
     """
     :param p_value_cutoff: Chosen threshold
     :return: Minimal n that yields a significant P-value given the threshold
@@ -424,6 +424,19 @@ def find_indefinable_n(p_value_cutoff, verbose = True):
                 print("\t[INFO] Smallest n: " + str(n) + " read pairs (" + str(p_value) + ")")
             return n, p_value
 
+def find_indefinable_n(p_value_cutoff, verbose = True):
+    """
+    :param p_value_cutoff: Chosen threshold
+    :return: Minimal n that yields a significant P-value given the threshold
+    """
+    if verbose:
+        print("[INFO] Looking for smallest number of read pairs n that yields a significant P-value with the threshold of " + str(p_value_cutoff) + ".")
+    for n in range(1, 1000):
+        p_value = calculate_binomial_p_value(n, 0)
+        if p_value <= p_value_cutoff/2.0:
+            if verbose:
+                print("\t[INFO] Smallest n: " + str(n) + " read pairs (" + str(p_value) + ")")
+            return n, p_value
 
 def get_interaction_pvalue(n_simple, n_twisted):
     """
