@@ -72,8 +72,26 @@ pip install ipykernel
 python -m ipykernel install --user
 ```
 
+## Exploration of the binomial model for directionality of interactions (00)
 
-## Definition of directed interactions
+Jupyter notebook:
+```
+jupyter_notebooks/binomialModel.ipynb
+```
+
+Script:
+```
+00_explore_binomial_model.py
+00_binomial_model.py
+```
+
+Results:
+```
+results/00_explore_binomial_model
+```
+
+
+## Definition of directed interactions (05)
 
 We carried out the first steps of the analysis on a computing cluster.
 This include this step, which is implemented in the following script:

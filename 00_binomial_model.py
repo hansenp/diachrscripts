@@ -1,95 +1,123 @@
 import os
+import sys
 import argparse
 from diachr import BinomialInteractionModel
 from diachr import EnhancedInteraction
 from diachr import EnhancedInteractionParser
 import matplotlib.pyplot as plt
-
+import scipy, scipy.stats, numpy
 
 parser = argparse.ArgumentParser(description='Explore binomial model using simuated and real interactions.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-parser.add_argument('--i-num', help='Number of simulated interactions', default=10000)
-parser.add_argument('--n-max', help='Simulate interactions with 1 to n read pairs.',default=500)
-parser.add_argument('--p-value-cutoff', help='P-value threshold used for the classification of directed and undirected interactions.', default=0.05)
 parser.add_argument('--enhanced-interaction-file', help='Enhanced interaction file.')
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
-n_max = int(args.n_max)
-i_num = int(args.i_num)
-p_value_cutoff = float(args.p_value_cutoff)
 enhanced_interaction_file = args.enhanced_interaction_file
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] --out_prefix: " + out_prefix)
-print("\t[INFO] --i-num: " + str(i_num))
-print("\t[INFO] --n-max: " + str(n_max))
-print("\t[INFO] --p-value-cutoff: " + str(p_value_cutoff))
 print("\t[INFO] --enhanced-interaction-file: " + str(enhanced_interaction_file))
 
-# Create object
-bim = BinomialInteractionModel(p_value_cutoff)
+# Create BinomialInteractionModel object
+bim = BinomialInteractionModel()
+bim._out_prefix = out_prefix
 
-# Simulate interactions
-n_max=400
-i_num=100000000
-bim._p_value_cutoff = 0.05
-n_list_s, n_sim_list, n_sig_list = bim.simulate_interactions(n_max=n_max, i_num=i_num)
+# Verification of the implementation of the P-value calculation through simulation
+# --------------------------------------------------------------------------------
 
-plt.rcParams["figure.figsize"] = (10,5)
-fig, ax1 = plt.subplots()
-color = 'gray'
-ax1.set_xlabel('Number of read pairs per interaction (n)')
-ax1.set_ylabel('Simulated interactions', color=color)
-ax1.scatter(n_list_s, n_sim_list, color=color)
-ax1.tick_params(axis='y', labelcolor=color)
-ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-color = (255/255,163/255,0/255,1)
-ax2.set_ylabel('Simulated significant interactions', color=color)  # we already handled the x-label with ax1
-ax2.plot(n_list_s, n_sig_list, color=color, linewidth=0.5)
-ax2.scatter(n_list_s, n_sig_list, color=color, alpha=0.5)
-ax2.hlines(bim._p_value_cutoff*(i_num/n_max),0, n_max, color='red', linestyle='dashed')
-ax2.tick_params(axis='y', labelcolor=color)
-fig.tight_layout()  # otherwise the right y-label is slightly clipped
-plt.savefig(bim._out_prefix + "_simulated_interactions.pdf", format = "pdf")
+# Simulation for n=0,...,400 and a P-value threshold of 0.05
+n_max = 400
+i_num = 20000000
+pvt = 0.05
+n_list, n_sim_list, n_sig_list = bim.simulate_interactions(n_max=n_max, i_num=i_num, pvt=pvt)
+bim.simulate_interactions_plot(n_max=n_max, i_num=i_num, pvt=pvt,
+                               n_list=n_list,n_sim_list=n_sim_list,n_sig_list=n_sig_list, CREATE_PDF=True)
 
-# plt.scatter(n_list_s, n_sim_list, alpha=0.5)
-# plt.title('Simulated interactions')
-# plt.xlabel('Number of read pairs per interaction (n)')
-# plt.ylabel('Number of interactions')
-#
-# # Scatterplot
-# plt.scatter(n_list_s, n_sig_list, alpha=0.5)
-# plt.title('Simulated significant interactions')
-# plt.xlabel('Number of read pairs per interaction (n)')
-# plt.ylabel('Number of interactions')
-#
-# plt.show()
-
-# print("[INFO] " + "Generating plot: Significant simulated interactions versus n ...")
-# plt.plot(signum_list)
-# plt.grid(True)
-# plt.xlabel("n")
-# plt.ylabel("# Significant interactions")
-# sub_title = "# Interactions: " + str(i_num) + " | Max n: " + str(n_max) + " | P-value cutoff: " + str(p_value_cutoff)
-# plt.suptitle(sub_title)
-# plt.savefig(pdf_name, format = "pdf")
+# Simualtion for n=0,...,400 and a P-value threshold of 0.0019
+n_max = 400
+i_num = 100000000
+pvt = 0.0019
+n_list, n_sim_list, n_sig_list = bim.simulate_interactions(n_max=n_max, i_num=i_num, pvt=pvt)
+bim.simulate_interactions_plot(n_max=n_max, i_num=i_num, pvt=pvt,
+                               n_list=n_list,n_sim_list=n_sim_list,n_sig_list=n_sig_list, CREATE_PDF=True)
 
 
-# Count DI, UIR and UI for each n in enhanced interaction file
-if enhanced_interaction_file != None:
-    if not os.path.exists(enhanced_interaction_file):
-        raise FileNotFoundError("Could not find IE file")
-    n_list_e, n_di_list, n_uir_list, n_ui_list = bim.count_di_uir_and_ui_for_each_n(ei_file=enhanced_interaction_file)
+# Binomial distributions for different n and a fixed P-value threshold
+# --------------------------------------------------------------------
+
+# Binomial distributions for n=1,...,10 and a P-value threshold of 0.05
+pvt=0.05
+N=10
+bim.analyze_N_binomial_distributions_with_fixed_p_thresh(N=N, pvt=pvt, CREATE_DIST_PLOTS=False, CREATE_PDF=True)
+
+# Comparison with the results from the simualtion with n=1,...10 and a P-value threshold of 0.05
+n_max = 10
+i_num = 100000000
+pvt = 0.05
+n_list, n_sim_list, n_sig_list = bim.simulate_interactions(n_max=n_max, i_num=i_num, pvt=pvt)
+bim.simulate_interactions_plot(n_max=n_max, i_num=i_num, pvt=pvt,
+                               n_list=n_list,n_sim_list=n_sim_list,n_sig_list=n_sig_list, CREATE_PDF=True)
+# Binomial distributions for n=1,...,40 and a P-value threshold of 0.05
+pvt=0.05
+N=40
+bim.analyze_N_binomial_distributions_with_fixed_p_thresh(N=N, pvt=pvt, CREATE_DIST_PLOTS=False, CREATE_PDF=True)
+
+# Comparison with the results from the simualtion with n=1,...40 and a P-value threshold of 0.05
+n_max = 40
+i_num = 100000000
+pvt = 0.05
+n_list, n_sim_list, n_sig_list = bim.simulate_interactions(n_max=n_max, i_num=i_num, pvt=pvt)
+
+bim.simulate_interactions_plot(n_max=n_max, i_num=i_num, pvt=pvt,
+                               n_list=n_list,n_sim_list=n_sim_list,n_sig_list=n_sig_list, CREATE_PDF=True)
+
+
+# Binomial distributions for n=1,...,400 and a P-value threshold of 0.05
+pvt=0.05
+N=400
+bim.analyze_N_binomial_distributions_with_fixed_p_thresh(N=N, pvt=pvt, CREATE_DIST_PLOTS=False, CREATE_PDF=True)
+
+# Binomial distributions for n=1,...,400 and a P-value threshold of 0.0019
+pvt=0.0019
+N=400
+bim.analyze_N_binomial_distributions_with_fixed_p_thresh(N=N, pvt=pvt, CREATE_DIST_PLOTS=False, CREATE_PDF=True)
+
+# ## Distribution of n for empirical data
+
+if not os.path.exists(enhanced_interaction_file):
+    raise FileNotFoundError("Could not find IE file")
+n_list, n_di_list, n_uir_list, n_ui_list = bim.count_di_uir_and_ui_for_each_n(ei_file=enhanced_interaction_file)
+
+# Plot distribution for n=1,...,400
+bim.count_di_uir_and_ui_for_each_n_plot(n_list=n_list, n_di_list=n_di_list, n_uir_list=n_uir_list, n_ui_list=n_ui_list, x_max = 400, l_wd=0.0)
+
+# Plot distribution for n=1,...,20
+x_max = 20
+y_max = 0.04
+l_wd=0.2
+bim.count_di_uir_and_ui_for_each_n_plot(n_list=n_list, n_di_list=n_di_list, n_uir_list=n_uir_list, n_ui_list=n_ui_list, x_max = x_max, y_max = y_max, l_wd=l_wd)
+
+# Compare empirical and theoretical distribution for n=1,...,20
+pvt=0.0019*2 # Our test is two-sided
+N=20
+bim.analyze_N_binomial_distributions_with_fixed_p_thresh(N=N, pvt=pvt, CREATE_DIST_PLOTS=False, CREATE_PDF=True)
 
 
 
 
-# bim.write_simulated_interaction_counts(outprefix=out_prefix)
-#
-# bim.write_simulated_interaction_counts()
-# if diachromatic_interaction_file != None:
-#     print("\t[INFO] --diachromatic-interaction-file: " + diachromatic_interaction_file)
-#     bim.write_significant_empirical_interactions(ei_file=diachromatic_interaction_file, n_indef=n_max)
 
-print("******** Done new version **********")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
