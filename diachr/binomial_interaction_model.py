@@ -194,9 +194,26 @@ class BinomialInteractionModel:
         spl = scipy.interpolate.UnivariateSpline(n_list, d_sum_prev_list)
         spl.set_smoothing_factor(0.5)
 
+        # Set ticks for x-axis
+        xticks = list(range(0, N + 1, int(N / 10)))
+
+        # Set ticks for right y-axis (k_max)
+        max_k = max(k_pvt_list)
+        if max_k < 11:
+            yticks_k = list(range(0, max_k + 1, 1))
+        elif max_k < 21:
+            yticks_k = list(range(0, max_k + 1, 2))
+        elif max_k < 51:
+            yticks_k = list(range(0, max_k + 1, 5))
+        elif max_k < 101:
+            yticks_k = list(range(0, max_k + 1, 10))
+        else:
+            yticks_k = list(range(0, max_k + 1, 20))
+
         # Create final plot with two y-axes, one for d_sum and one for k_pvt
         fig, ax1 = plt.subplots()
         plt.title("N: " + str(N) + ", pvt: " + str(pvt))
+        plt.xticks(xticks)
         color = 'cornflowerblue'
         ax1.set_xlabel('n')
         ax1.set_ylabel('P-value', color=color)
@@ -210,7 +227,7 @@ class BinomialInteractionModel:
         color = 'black'
         ax2.set_ylabel('$k_{max}$', color=color)
         ax2.scatter(n_list, k_pvt_list, color=color)
-        ax2.tick_params(axis='y', labelcolor=color)
+        ax2.set_yticks(yticks_k)
 
         fig.tight_layout()
         if CREATE_PDF:
@@ -293,7 +310,7 @@ class BinomialInteractionModel:
 
         return n_list, n_di_list, n_uir_list, n_ui_list
 
-    def count_di_uir_and_ui_for_each_n_plot(self, n_list: List=None, n_di_list: List=None, n_uir_list: List=None, n_ui_list: List=None):
+    def count_di_uir_and_ui_for_each_n_plot(self, n_list: List=None, n_di_list: List=None, n_uir_list: List=None, n_ui_list: List=None, x_max: int=None, y_max: int=None, l_wd: float=0.0):
 
         # Get interaction sums and relative frequencies
         max_rel = 0
@@ -316,32 +333,69 @@ class BinomialInteractionModel:
             if max_rel < i / ui_sum:
                 max_rel = i / ui_sum
 
+        # Set common limit of y-axes
+        if y_max == None:
+            y_max = max_rel
+
+        # Set ticks for x-axes
+        xticks = list(range(0,x_max+1,int(x_max/10)))
+
         # Plot UI vs. DI
         plt.title('UI vs. DI')
         plt.xlabel('Number of read pairs per interaction (n)')
         plt.ylabel('Relative frequency of interactions')
-        plt.xlim(0, 400)
-        plt.ylim(0, max_rel)
+        plt.xlim(0, x_max)
+        plt.ylim(0, y_max)
+        plt.xticks(xticks)
+
         plt.scatter(n_list, ui_rel, alpha=1, color=self._ui_color,
                     label='UI: ' + str("{:,d}".format(ui_sum)))
+
+        plt.plot(n_list, di_rel, color=self._di_color, linewidth = l_wd)
         plt.scatter(n_list, di_rel, alpha=0.5, color=self._di_color,
                     label='DI: ' + str("{:,d}".format(di_sum)))
         plt.legend()
-        plt.savefig(self._out_prefix + "_emp_ui_vs_di" + ".pdf", format="pdf")
+        plt.savefig(self._out_prefix + "_x_max_" + str(x_max) + "_emp_ui_vs_di" + ".pdf", format="pdf")
+        plt.show()
         plt.close()
 
-        # Plot UI vs. DI
+        # Plot UI vs. UIR
         plt.title('UI vs. UIR')
         plt.xlabel('Number of read pairs per interaction (n)')
         plt.ylabel('Relative frequency of interactions')
-        plt.xlim(0, 400)
-        plt.ylim(0, max_rel)
+        plt.xlim(0, x_max)
+        plt.ylim(0, y_max)
+        plt.xticks(xticks)
+
         plt.scatter(n_list, ui_rel, alpha=1, color=self._ui_color,
                     label='UI: ' + str("{:,d}".format(ui_sum)))
-        plt.scatter(n_list, uir_rel, alpha=0.5, color=self._di_color,
-                    label='uir: ' + str("{:,d}".format(uir_sum)))
+
+        plt.plot(n_list, uir_rel, color=self._uir_color, linewidth=l_wd)
+        plt.scatter(n_list, uir_rel, alpha=0.5, color=self._uir_color,
+                    label='UIR: ' + str("{:,d}".format(uir_sum)))
         plt.legend()
-        plt.savefig(self._out_prefix + "_emp_ui_vs_uir" + ".pdf", format="pdf")
+        plt.savefig(self._out_prefix + "_x_max_" + str(x_max) + "_emp_ui_vs_uir" + ".pdf", format="pdf")
+        plt.show()
+        plt.close()
+
+        # Plot DI vs. UIR
+        plt.title('DI vs. UIR')
+        plt.xlabel('Number of read pairs per interaction (n)')
+        plt.ylabel('Relative frequency of interactions')
+        plt.xlim(0, x_max)
+        plt.ylim(0, y_max)
+        plt.xticks(xticks)
+
+        plt.plot(n_list, di_rel, color=self._di_color, linewidth=l_wd)
+        plt.scatter(n_list, di_rel, alpha=1, color=self._di_color,
+                    label='DI: ' + str("{:,d}".format(di_sum)))
+
+        plt.plot(n_list, uir_rel, color=self._uir_color, linewidth=l_wd)
+        plt.scatter(n_list, uir_rel, alpha=0.5, color=self._uir_color,
+                    label='UIR: ' + str("{:,d}".format(uir_sum)))
+        plt.legend()
+        plt.savefig(self._out_prefix + "_x_max_" + str(x_max) + "_emp_di_vs_uir" + ".pdf", format="pdf")
+        plt.show()
         plt.close()
 
     def binomial_p_value(self, simple_count: int, twisted_count: int):
