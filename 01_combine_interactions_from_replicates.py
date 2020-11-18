@@ -16,7 +16,7 @@ from collections import defaultdict
 
 parser = argparse.ArgumentParser(description='Combine interactions that occur in a specified number of replicates.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-parser.add_argument('--interaction-files-path', help='Path to directory with gt1 gzip files')
+parser.add_argument('--interaction-files-path', help='Path to directory with gzip files')
 parser.add_argument('--required-replicates', help='Required number of replicates.')
 
 args = parser.parse_args()

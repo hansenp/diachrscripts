@@ -120,6 +120,81 @@ results/00_explore_binomial_model
 
 ## Combination of reproducible interactions from different replicates (01)
 
+For the dataset that we analyzed, there are three to four biological replicates
+for each cell type.
+On the other hand, we need as many read pairs as possible in the individual
+interactions in order to decide whether an interaction is directed or not.
+
+We therefore decided on an compromise when combining interactions from different
+replicates.
+We discard interactions that occur in less than two replicates and,
+for the remaining interactions, we add up the read pair counts from
+all replicates separately for simple and twisted read pairs. This way
+of combining interactions from different replicates is implemented in
+the following script:
+```
+01_combine_interactions_from_replicates.py
+```
+This script has the following parameters:
+```
+--out-prefix <string>
+```
+The name of each created file will have this prefix, which can also contain the path to an already existing directory.
+```
+--interaction-files-path <string>
+```
+Path to a directory that contains gzipped files in Diachromatic's interaction format.
+From the files output by Diachromatic,
+we have filtered out interactions between different chromosomes,
+interactions with a distance of less than 20,000 bp and
+interactions with or on chromosome M (see above).
+```
+--required-replicates <int>
+```
+Required number of replicates. All interactions that occur in less replicates
+will be discarded.
+For the remaining interactions,
+the simple and twisted read pair counts from different replicates
+will be added up separately.
+
+The script reads in the interactions from several replicates,
+which is why the memory consumption can become very high.
+We therefore carried out this step on a compute cluster.
+
+We have prepared small input files for testing
+so that this step can be followed here.
+There are a total of four replicates and four interactions.
+The first interaction occurs only in replicate 1,
+the second interaction occurs in replicates 1 and 2,
+the third interaction occurs in replicates 1,2 and 3 and
+the fourth interactions occurs in all replicates.
+
+This is content of the interaction file for replicate 4:
+```
+chr1    46297999   46305684   A   chr1    51777391   51781717   I   1:2
+chr17   72411026   72411616   I   chr17   72712662   72724357   I   2:1
+chr7    69513952   69514636   I   chr7    87057837   87061499   A   1:2
+chr11    9641153    9642657   I   chr11   47259263   47272706   A   2:3
+```
+From this file, we created the files for the other replicates
+by deleting interactions from the last line one by one.
+
+```
+$PYTHON_PATH 01_combine_interactions_from_replicates.py \
+--out-prefix TEST \
+--interaction-files-path tests/data/test_01/ \
+--required-replicates 2
+```
+
+XXX
+
+
+
+
+
+
+## Permuation of simple and twisted read pairs (02)
+
 XXX
 
 ## Definition of directed interactions (05)
