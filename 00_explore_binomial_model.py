@@ -1,196 +1,132 @@
 #!/usr/bin/env python
 
 """
-This script is to investigate the relationship between signal strength, measured as the total number of read pairs,
-and the binomial model for directionality of interactions.
+With this script all plots can be created that are also created in the following Jupyter notebook:
 
-For this purpose, a specified number of interactions is simulated, whereby the the total numbers of read pairs are drawn
-from a uniform distribution. For individual interactions with n read pairs, the number of simple read pairs is drawn
-from a binomial distribution with p = 0.5 (null model) and the number of twisted read pairs is set to n minus the number
-of simple read pairs. Subsequently, the simulated interactions are evaluated for statistical significance given the null
-model and a specified significance threshold. Finally, a plot for the number of significant simulated interactions for
-each n is generated and, in addition, the corresponding numbers are written to a tab separated text file.
+       jupyter_notebooks/binomialModel.ipynb
 
-If a Diachromatic interaction files is specified, the numbers of significant empirical interactions for each n will also
-be determined and written to file.
+All functionality is in class BinomialInteractionModel that is also used by the notebook.
 
-The two tab separated output text files can be used to reproduce Figure S1 in R.
+In between, interactive plot windows open that have to closed for the script to continue.
 """
 
-from collections import defaultdict
+import os
+import sys
 import argparse
-from diachr.binomial_interaction_model import BinomialInteractionModel
-from scipy.stats import binom
-import numpy as np
+from diachr import BinomialInteractionModel
+from diachr import EnhancedInteraction
+from diachr import EnhancedInteractionParser
 import matplotlib.pyplot as plt
-import diachrscripts_toolkit as dclass
-
-
-### Parse command line
-######################
+import scipy, scipy.stats, numpy
 
 parser = argparse.ArgumentParser(description='Explore binomial model using simuated and real interactions.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-parser.add_argument('--i-num', help='Number of simulated interactions', default=10000)
-parser.add_argument('--n-max', help='Simulate interactions with 1 to n read pairs.',default=500)
-parser.add_argument('--p-value-cutoff', help='P-value threshold used for the classification of directed and undirected interactions.', default=0.05)
-parser.add_argument('--diachromatic-interaction-file', help='Diachromatic interaction file.')
+parser.add_argument('--enhanced-interaction-file', help='Enhanced interaction file.')
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
-n_max = int(args.n_max)
-i_num = int(args.i_num)
-p_value_cutoff = float(args.p_value_cutoff)
-diachromatic_interaction_file = args.diachromatic_interaction_file
-
+enhanced_interaction_file = args.enhanced_interaction_file
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] --out_prefix: " + out_prefix)
-print("\t[INFO] --i-num: " + str(i_num))
-print("\t[INFO] --n-max: " + str(n_max))
-print("\t[INFO] --p-value-cutoff: " + str(p_value_cutoff))
-if diachromatic_interaction_file != None:
-    print("\t[INFO] --diachromatic-interaction-file: " + diachromatic_interaction_file)
+print("\t[INFO] --enhanced-interaction-file: " + str(enhanced_interaction_file))
 
-### Define auxiliary functions
-##############################
+# Create BinomialInteractionModel object
+bim = BinomialInteractionModel()
+bim._out_prefix = out_prefix
 
-# Dictionary that keeps track of already calculated P-values
-#    key - a string like 2-7
-#    value - our corresponding binomial p-value
-#    note -- use this as a global variable in this script!
-pval_memo = defaultdict(float)
+# Verification of the implementation of the P-value calculation through simulation
+# --------------------------------------------------------------------------------
 
-def binomial_p_value(simple_count, twisted_count):
-    """
-    Locally defined method for the calculation of the binomial P-value that uses a dictionary that keeps track of
-    P-values that already have been calculated.
-
-    :param simple_count: Number of simple read pairs
-    :param twisted_count: Number of twisted read pairs
-    :return: Binomial P-value
-    """
-
-    # Create key from simple and twisted read pair counts
-    key = "{}-{}".format(simple_count, twisted_count)
-
-    # Check whether a P-value for this combination of simple and twisted counts has been calculated already
-    if key in pval_memo:
-        return pval_memo[key]
-    else:
-        # Calculate P-value and add to dictionary
-        p_value = dclass.calculate_binomial_p_value(simple_count, twisted_count)
-        pval_memo[key] = p_value
-        return p_value
+# Simulation for n=0,...,400 and a P-value threshold of 0.05
+n_max = 400
+i_num = 20000000
+pvt = 0.05
+n_list, n_sim_list, n_sig_list = bim.simulate_interactions(n_max=n_max, i_num=i_num, pvt=pvt)
+bim.simulate_interactions_plot(n_max=n_max, i_num=i_num, pvt=pvt,
+                               n_list=n_list,n_sim_list=n_sim_list,n_sig_list=n_sig_list, CREATE_PDF=True)
 
 
-### Prepare variables, data structures and streams for output files
-###################################################################
-
-# Dictionary that stores the numbers of significant interactions for each n
-N_SIG_DICT_SIM = {}
-N_SIG_DICT_EMP = {}
-N_DEF_DICT_EMP = {}
-
-
-# List containing counts of significant simple and twisted interactions for each n
-signum_list = [0] * (n_max + 1)
-
-# Name for PDF file with significant simulated interactions versus n plot
-pdf_name = out_prefix + "_sig_interactions_vs_uniform_n.pdf"
-
-# Name for text file with significant empirical interactions for each n
-sim_tab_file_name = out_prefix + "_sig_interactions_vs_uniform_n.tab"
-sim_tab_stream_name = open(sim_tab_file_name, 'wt')
-
-if diachromatic_interaction_file != None:
-
-    # Name for text file with significant empirical interactions for each n
-    emp_tab_file_name = out_prefix + "_sig_interactions_vs_empirical_n.tab"
-    emp_tab_stream_name = open(emp_tab_file_name, 'wt')
+# Simualtion for n=0,...,400 and a P-value threshold of 0.0019
+n_max = 400
+i_num = 100000000
+pvt = 0.0019
+n_list, n_sim_list, n_sig_list = bim.simulate_interactions(n_max=n_max, i_num=i_num, pvt=pvt)
+bim.simulate_interactions_plot(n_max=n_max, i_num=i_num, pvt=pvt,
+                               n_list=n_list,n_sim_list=n_sim_list,n_sig_list=n_sig_list, CREATE_PDF=True)
 
 
-### Start execution
-###################
+plt.close('all')
 
-print("[INFO] " + "Generating random numbers of simple and twisted read pairs ...")
+# Binomial distributions for different n and a fixed P-value threshold
+# --------------------------------------------------------------------
 
-# Determine indefinable cutoff for given P-value
-n_indef, pv_indef = dclass.find_indefinable_n(p_value_cutoff)
+# Binomial distributions for n=1,...,10 and a P-value threshold of 0.05
+pvt=0.05
+N=10
+bim.analyze_N_binomial_distributions_with_fixed_p_thresh(N=N, pvt=pvt, CREATE_DIST_PLOTS=False, CREATE_PDF=True)
 
-# Random vector for n with uniform distribution
-random_n_vec = np.random.randint(low = n_indef, high = n_max  + 1, size = i_num)
-for n in random_n_vec:
-    if n in N_SIG_DICT_SIM:
-        N_SIG_DICT_SIM[n] += 1
-    else:
-        N_SIG_DICT_SIM[n] = 1
+# Comparison with the results from the simualtion with n=1,...10 and a P-value threshold of 0.05
+n_max = 10
+i_num = 100000000
+pvt = 0.05
+n_list, n_sim_list, n_sig_list = bim.simulate_interactions(n_max=n_max, i_num=i_num, pvt=pvt)
+bim.simulate_interactions_plot(n_max=n_max, i_num=i_num, pvt=pvt,
+                               n_list=n_list,n_sim_list=n_sim_list,n_sig_list=n_sig_list, CREATE_PDF=True)
 
+plt.close('all')
 
-print("[INFO] " + "Counting significant interactions for each n ...")
-
-# Iterate dictionary with numbers of interactions for each read pair number n
-for n, i in N_SIG_DICT_SIM.items():
-
-    # Generate random simple read pair counts for current n
-    simple_count_list = list(binom.rvs(n, p = 0.5, size = i))
-
-    for simple_count in simple_count_list:
-
-        # Get twisted count
-        twisted_count = n - simple_count
-
-        # Get binomial P-value
-        key = "{}-{}".format(simple_count, twisted_count)
-        if key in pval_memo:
-            pv = pval_memo[key]
-        else:
-            pv = binomial_p_value(simple_count, twisted_count)
-            pval_memo[key] = pv
-
-        # Count significant interactions for current n
-        if pv <= p_value_cutoff:
-            signum_list[n] += 1
+# Binomial distributions for n=1,...,40 and a P-value threshold of 0.05
+pvt=0.05
+N=40
+bim.analyze_N_binomial_distributions_with_fixed_p_thresh(N=N, pvt=pvt, CREATE_DIST_PLOTS=False, CREATE_PDF=True)
 
 
-# print("[INFO] " + "Generating plot: Significant simulated interactions versus n ...")
-# plt.plot(signum_list)
-# plt.grid(True)
-# plt.xlabel("n")
-# plt.ylabel("# Significant interactions")
-# sub_title = "# Interactions: " + str(i_num) + " | Max n: " + str(n_max) + " | P-value cutoff: " + str(p_value_cutoff)
-# plt.suptitle(sub_title)
-# plt.savefig(pdf_name, format = "pdf")
+
+# Comparison with the results from the simualtion with n=1,...40 and a P-value threshold of 0.05
+n_max = 40
+i_num = 100000000
+pvt = 0.05
+n_list, n_sim_list, n_sig_list = bim.simulate_interactions(n_max=n_max, i_num=i_num, pvt=pvt)
+
+bim.simulate_interactions_plot(n_max=n_max, i_num=i_num, pvt=pvt,
+                               n_list=n_list,n_sim_list=n_sim_list,n_sig_list=n_sig_list, CREATE_PDF=True)
 
 
-print("[INFO] " + "Writing numbers of significant simulated interactions for each n to text file ...")
-for n in range(1, n_max + 1):
-    try:
-        sim_tab_stream_name.write(str(n) + "\t" + str(signum_list[n]) + "\t" + str(N_SIG_DICT_SIM[n]) + "\n")
-    except KeyError:
-        sim_tab_stream_name.write(str(n) + "\t" + str(signum_list[n]) + "\t" + str(0) + "\n")
-sim_tab_stream_name.close()
+# Binomial distributions for n=1,...,400 and a P-value threshold of 0.05
+pvt=0.05
+N=400
+bim.analyze_N_binomial_distributions_with_fixed_p_thresh(N=N, pvt=pvt, CREATE_DIST_PLOTS=False, CREATE_PDF=True)
 
 
-if diachromatic_interaction_file != None:
 
-    # Count significant interactions in empirical data for each n
-    N_SIG_DICT_EMP = dclass.get_n_dict(diachromatic_interaction_file, 'ALL', 20000, p_value_cutoff)
-    N_DEF_DICT_EMP = dclass.get_n_dict_definable(diachromatic_interaction_file, 'ALL', 20000, n_indef)
+# Binomial distributions for n=1,...,400 and a P-value threshold of 0.0019
+pvt=0.0019
+N=400
+bim.analyze_N_binomial_distributions_with_fixed_p_thresh(N=N, pvt=pvt, CREATE_DIST_PLOTS=False, CREATE_PDF=True)
 
-    print("[INFO] " + "Writing numbers of significant empirical interactions for each n to text file ...")
-    for n in range(1, 2000):
 
-        try:
-            n_def = N_DEF_DICT_EMP[n]
-        except KeyError:
-            n_def = 0
+# Distribution of n for empirical data
+# ------------------------------------
 
-        try:
-            n_sig = N_SIG_DICT_EMP[n]
-        except KeyError:
-            n_sig = 0
+if enhanced_interaction_file == None:
+    exit(0)
 
-        emp_tab_stream_name.write(str(n) + "\t" + str(n_def) + "\t" + str(n_sig) + "\n")
+if not os.path.exists(enhanced_interaction_file):
+    raise FileNotFoundError("Could not find IE file")
+n_list, n_di_list, n_uir_list, n_ui_list = bim.count_di_uir_and_ui_for_each_n(ei_file=enhanced_interaction_file)
 
-    emp_tab_stream_name.close()
+# Plot distribution for n=1,...,400
+x_max = 400
+bim.count_di_uir_and_ui_for_each_n_plot(n_list=n_list, n_di_list=n_di_list, n_uir_list=n_uir_list, n_ui_list=n_ui_list, x_max = x_max, l_wd=0.0)
+
+# Plot distribution for n=1,...,20
+x_max = 20
+y_max = 0.04
+l_wd=0.2
+bim.count_di_uir_and_ui_for_each_n_plot(n_list=n_list, n_di_list=n_di_list, n_uir_list=n_uir_list, n_ui_list=n_ui_list, x_max = x_max, y_max = y_max, l_wd=l_wd)
+
+# Compare empirical and theoretical distribution for n=1,...,20
+pvt=0.0019*2 # Our test is two-sided
+N=20
+bim.analyze_N_binomial_distributions_with_fixed_p_thresh(N=N, pvt=pvt, CREATE_DIST_PLOTS=False, CREATE_PDF=True)

@@ -9,20 +9,17 @@ import matplotlib.pyplot as plt
 
 class BinomialInteractionModel:
     """
-    This class is to investigate the relationship between signal strength, measured as the total number of read pairs,
-    and the binomial model for directionality of interactions.
+    This class is to review our implementation of the P-value calculation and to investigate the consequences of the
+    different null distributions used for the test due to different total read pair numbers of interactions.
 
-    For this purpose, a specified number of interactions is simulated, whereby the the total numbers of read pairs are drawn
-    from a uniform distribution. For individual interactions with n read pairs, the number of simple read pairs is drawn
-    from a binomial distribution with p = 0.5 (null model) and the number of twisted read pairs is set to n minus the number
-    of simple read pairs. Subsequently, the simulated interactions are evaluated for statistical significance given the null
-    model and a specified significance threshold. Finally, a plot for the number of significant simulated interactions for
-    each n is generated and, in addition, the corresponding numbers are written to a tab separated text file.
+    A more detailed description and application examples can be found in the following Jupyter notebook:
 
-    If a enhanced interaction (EI) file is specified, the numbers of significant empirical interactions for each n will also
-    be determined and written to file.
+           jupyter_notebooks/binomialModel.ipynb
 
+    In addition, this class is used in the following script to create all plots that are also created in the
+    Jupyter notebook:
 
+           00_explore_binomial_model.py
     """
 
     def __init__(
@@ -57,15 +54,6 @@ class BinomialInteractionModel:
         self._di_color = (255/255, 163/255, 0/255, 1)
         self._uir_color = (171/255,215/255,230/255,1)
         self._ui_color = (210/255,210/255,210/255,1)
-
-        # Output parameters
-        #self._print_params()
-
-    def _print_params(self):
-        print("[INFO] " + "Parameters")
-        print("\t[INFO] _out_prefix: " + self._out_prefix)
-        print("\t[INFO] _p_value_cutoff: " + str(self._p_value_cutoff))
-
 
     def simulate_interactions(self, n_max: int=500,  i_num: int=100000, pvt: float=0.05) -> Tuple[List, List, List]:
         """
@@ -119,6 +107,30 @@ class BinomialInteractionModel:
 
     def simulate_interactions_plot(self, n_max: int=None,  i_num: int=None, pvt: float=None,
                                    n_list: List=None, n_sim_list: List=None,  n_sig_list: List=None, CREATE_PDF=False):
+        """
+        Plot all simulated and simulated significant interactions.
+
+        Parameters
+        ----------------------------
+        n_max: int = None,
+            Shown in the title and file name and used to calculate the expected number of significant interactions.
+        i_num: int = None,
+            Shown in the title and file name and used to calculate the expected number of significant interactions.
+        pvt: float = None,
+            Shown in the title and file name and used to calculate the expected number of significant interactions.
+        n_list: List = None,
+            List of indices (x-axis).
+        n_sim_list: List = None,
+            List of simulated interaction numbers for n=1,...,n_max (left y-axis).
+        n_sig_list: List = None,
+            List of simulated significant interaction numbers for n=1,...,n_max (right y-axis).
+        CREATE_PDF: bool = None,
+            If 'True', a PDF will be created.
+
+        Returns
+        ----------------------------
+        Nothing. Only the plot is generated.
+        """
         fig, ax1 = plt.subplots()
         plt.title("n_max: " + str(n_max) + ", i_num: " + str(i_num) + ", pvt: " + str(pvt))
         color = 'gray'
@@ -139,8 +151,25 @@ class BinomialInteractionModel:
 
 
     def analyze_N_binomial_distributions_with_fixed_p_thresh(self, N=40, pvt=0.05, CREATE_DIST_PLOTS=True, CREATE_PDF=False):
+        """
+        Plot PMF of binomial distributions for n=1,...,N and create a combined plot with maximal P-values and
+        associated k.
 
-        # Intit lists for the final plot
+        Parameters
+        ----------------------------
+        N: int = 40,
+            Number of PMF that will be analyzed.
+        pvt: float = 0.05,
+            P-value threshold.
+        CREATE_DIST_PLOTS: bool = None,
+            If 'True', the PMF will be plotted for each n=1,...,N.
+        CREATE_PDF: bool = None,
+            If 'True', a PDF with the combined plot will be created.
+
+        Returns
+        ----------------------------
+        Nothing. Only the plots are generated.
+        """
         n_list = []
         d_sum_prev_list = []
         k_pvt_list = []
@@ -189,6 +218,7 @@ class BinomialInteractionModel:
                 plt.axvspan(0, k_pvt, facecolor='b', alpha=0.2)
                 plt.axvspan(n - k_pvt, n, facecolor='b', alpha=0.2)
                 plt.show()
+                plt.close()
 
         # Calculate trendline
         spl = scipy.interpolate.UnivariateSpline(n_list, d_sum_prev_list)
@@ -230,8 +260,12 @@ class BinomialInteractionModel:
         ax2.set_yticks(yticks_k)
 
         fig.tight_layout()
+
         if CREATE_PDF:
             plt.savefig(self._out_prefix + "_N_binom_dist_with_fixed_pvt_N_" + str(N) + "_pvt_" + str(pvt) + ".pdf", format="pdf")
+
+        plt.show()
+        plt.close()
 
     def count_di_uir_and_ui_for_each_n(self, ei_file: str, n_max=2000) -> Tuple[List, List, List, List]:
         """
@@ -240,20 +274,20 @@ class BinomialInteractionModel:
         Parameters
         ----------------------------
         iefile: str,
-            path to a enhanced interaction file.
+            Path to a enhanced interaction file.
         n_max: int,
-            maximum read pair number for which the interaction numbers are determined.
+            Maximum read pair number for which the interaction numbers are determined.
 
         Returns
         ----------------------------
         n_list: List,
-            contains the index which corresponds to read pair numbers.
+            Contains the index which corresponds to read pair numbers (n).
         n_di_list: List,
-            contains the DI counts for each read pair number.
+            Contains the DI counts for each read pair number.
         n_uir_list: List,
-            contains the UIR counts for each read pair number.
+            Contains the UIR counts for each read pair number.
         n_ui_list: List,
-            contains the UI counts for each read pair number.
+            Contains the UI counts for each read pair number.
         """
 
         # Count significant interactions in empirical data for each n
@@ -311,6 +345,30 @@ class BinomialInteractionModel:
         return n_list, n_di_list, n_uir_list, n_ui_list
 
     def count_di_uir_and_ui_for_each_n_plot(self, n_list: List=None, n_di_list: List=None, n_uir_list: List=None, n_ui_list: List=None, x_max: int=None, y_max: int=None, l_wd: float=0.0):
+        """
+        Create plots for empirical data.
+
+        Parameters
+        ----------------------------
+        n_list: List = None,
+            List of indices (x-axis).
+        n_di_list: List = None,
+            List of DI counts.
+        n_uir_list: List = None,
+            List of UIR counts.
+        n_ui_list: List = None,
+            List of UI counts.
+        x_max: int = None,
+            Limit for x-axis.
+        y_max: int = None,
+            Limit for y-axis.
+        l_wd: float = 0.0,
+            If 0.0<l_wd, neighboring points in the scatterplots are connected by lines.
+
+        Returns
+        ----------------------------
+        Nothing. Only the plots are generated.
+        """
 
         # Get interaction sums and relative frequencies
         max_rel = 0

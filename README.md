@@ -74,22 +74,53 @@ python -m ipykernel install --user
 
 ## Exploration of the binomial model for directionality of interactions (00)
 
-Jupyter notebook:
+We use a binomial test in order to assess imbalances of simple and twisted
+read pairs within individual interactions for statistical significance,
+whereby the total number of read pairs (n) corresponds to a parameter
+of the binomial distribution (*number of trials*).
+Therefore, the test is based on different null distributions for interactions with
+different n.
+In this section, we review our implementation of the P-value calculation
+and investigate the consequences of the different null distributions.
+
+For our analyzes, we have implented various functions in the class `BinomialInteractionModel`.
+```
+diachr/binomial_interaction_model.py
+```
+
+In a Jupyter notebook, these functions are explained step by step and used to carry out the entire analysis:
+
 ```
 jupyter_notebooks/binomialModel.ipynb
 ```
-
-Script:
+In this notebook, a total 15 plots are generated.
+Alternatively, the following script can be executed to generate these plots:
 ```
-00_explore_binomial_model.py
-00_binomial_model.py
+PYTHON_PATH="<PATH_TO_PYTHON_3.7>/python3.7"
+$PYTHON_PATH 00_explore_binomial_model.py --out-prefix results/00_explore_binomial_model/EBM
 ```
+If no enhanced interaction file is passed to the script, only 8 plots are generated.
+In order to generate all plots, execute the following command:
+```
+$PYTHON_PATH 00_explore_binomial_model.py --out-prefix results/00_explore_binomial_model/EBM \
+--enhanced-interaction-file results/06_select_reference_interactions/MK/MK_enhanced_interaction_file_with_di_ui_and_uir.tsv.gz
+```
+Note that column 3 in the interaction file must indicate whether the interactions
+are directed (DI), undirected reference (UIR) or undirected interactions (UI).
+This classification is made in the script `06_select_uir_from_uie_and_uii.py`.
+If you have not yet created interaction files with reference
+interactions, the execute the first of the two commands and otherwise 
+the second.
 
-Results:
+If the commands are executed as stated above,
+all plots will be written to the following directory:
 ```
 results/00_explore_binomial_model
 ```
 
+## Combination of reproducible interactions from different replicates (01)
+
+XXX
 
 ## Definition of directed interactions (05)
 
