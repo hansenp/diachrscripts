@@ -87,8 +87,9 @@ dataset for 17 hematopoietic cell types.
 The input of Diachromatic essentially consists of the following:
 
 1. Paired-end read data in FASTQ format
-2. The restriction enzyme that was used to generate the data
-3. A file that contains the restriction fragments (or digests)
+2. A bowtie2 index for the reference sequence to which the reads will be mapped
+3. The restriction enzyme that was used to generate the data
+4. A file that contains the restriction fragments (or digests)
 of the entire genome that result from digestion with the restriction enzyme
 
 Diachromatic processes the data in three steps:
@@ -97,13 +98,95 @@ Diachromatic processes the data in three steps:
 2. Mapping and removal of artifact read pairs
 3. Counting of read pairs that map to the same digest pairs
 
+In the following subsection you will be guided through
+the alalysis with Diachromatic so that every step can be followed exactly.
+
 ### Input data
 
-XXX
+#### Paired-end data in FASTQ format
+
+For paired-end data, the reads of the read pairs are typically in two different files,
+one for the forward reads (R1) and one for the reverse reads (R2).
+For the data on the hematopoietic cell types,
+the downloadable reads for given replicates are divided into multiple FASTQ files
+(beyond the division into R1 and R2).
+For each replicate, we have merged the files by writing their contents
+into two new files, one for R1 and one for R2.
+We made sure that the files for R1 and R2 are in sync,
+i.e. that two reads with the same row index form a pair.
+For example, we have the following file pairs for replicate 1 on megakaryocytes:
+```
+EGAF00001274989.fq, EGAF00001274990.fq
+EGAF00001274991.fq, EGAF00001274992.fq
+EGAF00001274993.fq, EGAF00001274994.fq
+```
+In each line, the first file belongs to R1 annd the second file to R2.
+We wrote these files into two new files as follows:
+```
+cat EGAF00001274989.fq EGAF00001274991.fq EGAF00001274993.fq > JAV_MK_R10_1.fastq
+cat EGAF00001274990.fq EGAF00001274992.fq EGAF00001274994.fq > JAV_MK_R10_2.fastq
+```
+In table TODO.xls,
+we have documented which original files were concatenated in which order.
+
+#### bowtie2 index for reference sequence
+
+Diachromatic uses bowtie2 to map reads to a reference sequence,
+which requires an index for the reference sequence.
+Such an index can be created with bowtie2 or a precalculated index can be downloaded.
+
+For the data on the hematopoietic cell types,
+we used the reference sequence hg38 and downloaded a precalculated index from here:
+```
+ftp://ftp.ncbi.nlm.nih.gov/genomes/archive/old_genbank/Eukaryotes/vertebrates_mammals/Homo_sapiens/GRCh38/seqs_for_alignment_pipelines/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bowtie_index.tar.gz
+```
+
+#### Restriction enzyme an digest map
+
+For the dataset on the 17 hematopoietic cell types,
+the enzyme *HindIII* with the recognition sequence `AAGCTT` was used.
+
+Diachromatic reports individual interactions as a pair of restriction fragments (or digest pairs)
+along with the number of read pairs that map to this digest pair.
+This requires the coordinates of all digests in the reference genome
+that are passed to Diachromatic in form of a text file,
+which we refer to as digest map.
+For a given restriction enzyme and a reference genome,
+a corresponding digest map can be created with the GOPHER software
+[as described in the documentation](https://diachromatic.readthedocs.io/en/latest/digest.html).
+To ensure consistency,
+we recommend creating the digest map from the same FASTA file that was used
+to create the bowtie2 index.
+
+
+
+
+
+
 
 ### Truncation of reads
 
-XXX
+Use Diachromatic to truncate the read pairs given in FASTQ format as follows:
+```
+java -jar Diachromatic.jar truncate \
+   -e HindIII \
+   -q R1.fq \
+   -r R2.fq \
+   -o <OUT_DIR> \
+   -x <OUT_PREFIX>
+```
+
+Diachromatic has an internal list of common restriction enzymes
+and will use the appropriate recognition sequence and cutting positions
+for `HindIII`.
+
+R1,R2
+
+An already existing directory for the output and a prefix
+for all generated files can also be specified.
+More details on the truncation of reads can be found in the
+[relevant section of the Diachromatic documentation](https://diachromatic.readthedocs.io/en/latest/truncate.html).
+
 
 ### Mapping and removal of artifact read pairs
 
