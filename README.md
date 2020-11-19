@@ -72,6 +72,51 @@ pip install ipykernel
 python -m ipykernel install --user
 ```
 
+## Calling interactions with Diachromatic
+
+We used the Java program Diachromatic to derive interactions from
+unprocessed capture Hi-C reads.
+There is already a
+[publication](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6678864/)
+and a [detailed documentation](https://diachromatic.readthedocs.io/en/latest/index.html)
+on this program.
+This section is intended to give a brief overview
+and to describe the details of the analysis of the capture Hi-C
+dataset for 17 hematopoietic cell types.
+
+The input of Diachromatic essentially consists of the following:
+
+1. Paired-end read data in FASTQ format
+2. The restriction enzyme that was used to generate the data
+3. A file that contains the restriction fragments (or digests)
+of the entire genome that result from digestion with the restriction enzyme
+
+Diachromatic processes the data in three steps:
+
+1. Truncation of reads
+2. Mapping and removal of artifact read pairs
+3. Counting of read pairs that map to the same digest pairs
+
+### Input data
+
+XXX
+
+### Truncation of reads
+
+XXX
+
+### Mapping and removal of artifact read pairs
+
+XXX
+
+### Counting of read pairs that map to the same digest pairs
+
+XXX
+
+### Subsequent filtering of interactions
+
+XXX
+
 ## Exploration of the binomial model for directionality of interactions (00)
 
 We use a binomial test in order to assess imbalances of simple and twisted
