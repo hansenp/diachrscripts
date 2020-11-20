@@ -134,7 +134,6 @@ we have documented which original files were concatenated in which order.
 Diachromatic uses bowtie2 to map reads to a reference sequence,
 which requires an index for the reference sequence.
 Such an index can be created with bowtie2 or a precalculated index can be downloaded.
-
 For the data on the hematopoietic cell types,
 we used the reference sequence hg38 and downloaded a precalculated index from here:
 ```
@@ -145,7 +144,6 @@ ftp://ftp.ncbi.nlm.nih.gov/genomes/archive/old_genbank/Eukaryotes/vertebrates_ma
 
 For the dataset on the 17 hematopoietic cell types,
 the enzyme *HindIII* with the recognition sequence `AAGCTT` was used.
-
 Diachromatic reports individual interactions as a pair of restriction fragments (or digest pairs)
 along with the number of read pairs that map to this digest pair.
 This requires the coordinates of all digests in the reference genome
@@ -158,39 +156,72 @@ To ensure consistency,
 we recommend creating the digest map from the same FASTA file that was used
 to create the bowtie2 index.
 
-
-
-
-
-
-
 ### Truncation of reads
 
 Use Diachromatic to truncate the read pairs given in FASTQ format as follows:
 ```
 java -jar Diachromatic.jar truncate \
    -e HindIII \
-   -q R1.fq \
-   -r R2.fq \
+   -q JAV_MK_R10_R1.fastq.gz \
+   -r JAV_MK_R10_R2.fastq.gz \
    -o <OUT_DIR> \
    -x <OUT_PREFIX>
 ```
 
 Diachromatic has an internal list of common restriction enzymes
 and will use the appropriate recognition sequence and cutting positions
-for `HindIII`.
-
-R1,R2
-
-An already existing directory for the output and a prefix
-for all generated files can also be specified.
+for `-e HindIII`.
+We use the previously downloaded and concatenated FASTQ files
+for the forward (R1, `-q`) and reverse (R2, `-r`) as input.
+An already existing directory for the output (`-o`) and a prefix
+for all generated files (`-x`) can also be specified.
+For capture Hi-C data, we don't use the `--sticky-ends` option,
+i.e. we assume that the sticky ends resulting from the restriction
+have been filled in.
 More details on the truncation of reads can be found in the
 [relevant section of the Diachromatic documentation](https://diachromatic.readthedocs.io/en/latest/truncate.html).
 
-
 ### Mapping and removal of artifact read pairs
 
-XXX
+Use Diachromatic to map the the truncated read pairs to the reference sequence as follows:
+
+```
+java -jar Diachromatic.jar align \
+-bsu \
+-d <DIGEST_MAP> \
+-q JAV_MK_R10.truncated_R1.fastq.gz \
+-r JAV_MK_R10.truncated_R2.fastq.gz \
+-b <BOWTIE2_PATH> \
+-i <BOWTIE2_INDEX> \
+-p 32 \
+-j \
+-o <OUT_DIR> \
+-x <OUT_PREFIX>
+```
+
+In addition to mapping, Diachromatic removes duplicated read pairs and
+keeps track of the number of read pairs for different duplication levels.
+Depending on the size of the input and the actual duplication rate,
+this can take up a lot of memory.
+We therefore recommend providing 16 to 32 GB memory.
+
+We use the more stringent mode of Diachromatic to define uniquely mapped reads,
+i.e. reads that map to only one location (`-bsu`).
+In order to determine artifact read pairs,
+for example pairs mapped to the same digest,
+the previously created digest map is required (`-d`).
+
+Diachromatic uses bowtie2 to map the reads to the reference genome.
+To do this,
+an executable bowtie2 file and an index for the reference must be specified (`-b`, `-i`).
+We use 32 threads for the maapping with bowtie2 (`-p`).
+
+For possible subsequent investigation,
+we write the rejected artifact read pairs to an extra BAM file (`-j`).
+The output can be redirected and given prefixes as with the `truncate` command.
+More details on the mapping and removal of artifact read pairs can be found in the
+[relevant section of the Diachromatic documentation](https://diachromatic.readthedocs.io/en/latest/mapping.html).
+
 
 ### Counting of read pairs that map to the same digest pairs
 
