@@ -123,8 +123,8 @@ EGAF00001274993.fq, EGAF00001274994.fq
 In each line, the first file belongs to R1 annd the second file to R2.
 We wrote these files into two new files as follows:
 ```
-cat EGAF00001274989.fq EGAF00001274991.fq EGAF00001274993.fq > JAV_MK_R10_1.fastq
-cat EGAF00001274990.fq EGAF00001274992.fq EGAF00001274994.fq > JAV_MK_R10_2.fastq
+cat EGAF00001274989.fq EGAF00001274991.fq EGAF00001274993.fq > MK/JAV_MK_R10_1.fastq
+cat EGAF00001274990.fq EGAF00001274992.fq EGAF00001274994.fq > MK/JAV_MK_R10_2.fastq
 ```
 In table TODO.xls,
 we have documented which original files were concatenated in which order.
@@ -162,10 +162,10 @@ Use Diachromatic to truncate the read pairs given in FASTQ format as follows:
 ```
 java -jar Diachromatic.jar truncate \
    -e HindIII \
-   -q JAV_MK_R10_R1.fastq.gz \
-   -r JAV_MK_R10_R2.fastq.gz \
-   -o <OUT_DIR> \
-   -x <OUT_PREFIX>
+   -q MK/JAV_MK_R10_R1.fastq.gz \
+   -r MK/JAV_MK_R10_R2.fastq.gz \
+   -o MK \
+   -x JAV_MK_R10
 ```
 
 Diachromatic has an internal list of common restriction enzymes
@@ -189,14 +189,14 @@ Use Diachromatic to map the the truncated read pairs to the reference sequence a
 java -jar Diachromatic.jar align \
 -bsu \
 -d <DIGEST_MAP> \
--q JAV_MK_R10.truncated_R1.fastq.gz \
--r JAV_MK_R10.truncated_R2.fastq.gz \
+-q MK/JAV_MK_R10.truncated_R1.fastq.gz \
+-r MK/JAV_MK_R10.truncated_R2.fastq.gz \
 -b <BOWTIE2_PATH> \
 -i <BOWTIE2_INDEX> \
 -p 32 \
 -j \
--o <OUT_DIR> \
--x <OUT_PREFIX>
+-o MK \
+-x JAV_MK_R10
 ```
 
 In addition to mapping, Diachromatic removes duplicated read pairs and
@@ -222,10 +222,66 @@ The output can be redirected and given prefixes as with the `truncate` command.
 More details on the mapping and removal of artifact read pairs can be found in the
 [relevant section of the Diachromatic documentation](https://diachromatic.readthedocs.io/en/latest/mapping.html).
 
-
 ### Counting of read pairs that map to the same digest pairs
 
-XXX
+Use Diachromatic to count read pairs between interacting digest regions as follows:
+
+```
+java -jar Diachromatic.jar count \
+-d <DIGEST_MAP>  \
+-v JAV_MK_R10.valid_pairs.aligned.bam \
+-s \
+-o MK \
+-x JAV_MK_R10
+```
+
+In Diachromatic, interactions are defined as digest pairs that have at least
+one supporting read pair.
+In this step, the supporting read pairs for individual interactions are counted,
+for which the digest map is required (`-d`).
+
+We use the unique valid pairs from the previous step as input,
+i.e. duplicates and artifact read pairs have been removed.
+We use the `-s` option so that the simple and twisted read pairs counts
+of individual interactions are reported separately.
+
+More details on counting read pairs between interacting digest regions can be found in the
+[relevant section of the Diachromatic documentation](https://diachromatic.readthedocs.io/en/latest/count.html).
+
+The interactions with their read pair counts are written to the following file:
+
+```
+MK/JAV_MK_R10.interaction.counts.table.tsv
+```
+
+These are the first few lines from such a file:
+```
+chr1    46297999   46305684   A   chr1    51777391   51781717   I   2:1
+chr17   72411026   72411616   I   chr17   72712662   72724357   I   3:2
+chr7    69513952   69514636   I   chr7    87057837   87061499   A   4:3
+chr11    9641153    9642657   I   chr11   47259263   47272706   A   5:4
+```
+Each line represents one interaction.
+
+Columns 1 to 3 and 5 to 7 contain the coordinates of the digest pair,
+whereby the smaller coordinates are always in columns 1 to 3.
+
+In column 4 and 8 there is either an `A` or an `I`,
+where column 4 belongs to the first and column 8 belongs to the second digest.
+An `A` means that the corresponding digest was selected for target enrichment
+and an `I` means that it was not selected.
+The information about digests that were selected for enrichment
+is taken from the digest map that was generated with GOPHER.
+When generating the digest map with GOPHER,
+we used the shortcut option *All protein coding genes*
+because the analyzed data comes from a whole-promoter capture Hi-C
+experiment.
+This has the effect that all digests which contain at least on TSS
+aand are potentially suited for enrichment are marked with an `A`
+and all others with an `I`.
+
+
+
 
 ### Subsequent filtering of interactions
 
