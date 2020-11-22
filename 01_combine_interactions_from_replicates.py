@@ -6,6 +6,7 @@ specified number of files into one interaction with summed simple and twisted re
 """
 
 import argparse
+from diachr.diachromatic_parser import DiachromaticParser
 import os
 import gzip
 from collections import defaultdict
@@ -14,10 +15,13 @@ from collections import defaultdict
 ### Parse command line
 ######################
 
+
 parser = argparse.ArgumentParser(description='Combine interactions that occur in a specified number of replicates.')
-parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-parser.add_argument('--interaction-files-path', help='Path to directory with gzip files')
-parser.add_argument('--required-replicates', help='Required number of replicates.')
+parser.add_argument('-o','--out-prefix', help='Prefix for output.', default='OUTPREFIX')
+parser.add_argument('-i','--interaction-files-path', help='Path to directory with gzip files', required=True)
+parser.add_argument('-r','--required-replicates', help='Required number of replicates.', required=True)
+
+parser.add_argument('-m','--usemod', help="Use new module", dest='usemod', action='store_true')
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -28,6 +32,15 @@ print("[INFO] " + "Input parameters")
 print("\t[INFO] --out-prefix: " + out_prefix)
 print("\t[INFO] --interaction-files-path: " + interaction_files_path)
 print("\t[INFO] --required-replicates: " + str(required_replicates))
+print("\t[INFO] --usemod: " + str(args.usemod))
+
+
+############   Uses new module/class ###############
+if args.usemod:
+    parser = DiachromaticParser(interaction_file_dir=interaction_files_path, required_replicates=required_replicates, prefix=out_prefix)
+    parser.write_combined_interaction_file()
+    exit(1)
+############   End ###############
 
 
 ### Define auxiliary classes and methods
