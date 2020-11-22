@@ -20,6 +20,7 @@ and standard deviation of w_i.
 """
 
 
+from diachr.random_permutation import RandomPermutation
 import diachrscripts_toolkit as dclass
 import argparse
 import gzip
@@ -36,10 +37,12 @@ import itertools
 parser = argparse.ArgumentParser(description='Determine overall significance of directed interactions using random'
                                              'permutation of simple and twisted read pairs.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-parser.add_argument('--interaction-file', help='Diachromatic interaction file.')
-parser.add_argument('--iter-num', help='Number of iterations.', default=1000)
-parser.add_argument('--nominal-alpha', help='Nominal alpha. P-value threshold used for permutation analysis.', default=0.05)
-parser.add_argument('--thread-num', help='Number of threads.', default=1)
+parser.add_argument('-i','--interaction-file', help='Diachromatic interaction file.', required=True)
+parser.add_argument('-n','--iter-num', help='Number of iterations.', default=1000)
+parser.add_argument('-a','--nominal-alpha', help='Nominal alpha. P-value threshold used for permutation analysis.', default=0.05)
+parser.add_argument('-t','--thread-num', help='Number of threads.', default=1)
+
+parser.add_argument('-m','--usemod', help="Use new module", dest='usemod', action='store_true')
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -54,6 +57,13 @@ print("\t[INFO] --interaction-file: " + diachromatic_interaction_file)
 print("\t[INFO] --iter-num: " + str(ITER_NUM))
 print("\t[INFO] --nominal-alpha: " + str(NOMINAL_ALPHA))
 print("\t[INFO] --thread-num: " + str(thread_num))
+
+if args.usemod:
+    print("[INFO] Using module")
+    randomP = RandomPermutation(combined_interaction_file=diachromatic_interaction_file, alpha=NOMINAL_ALPHA, threads=thread_num,
+                    prefix=out_prefix)
+    randomP.permute(ITER_NUM=ITER_NUM)
+    exit(1)
 
 
 ### Define auxiliary functions

@@ -75,6 +75,10 @@ class DiachromaticInteraction:
         return self._twisted
 
     @property
+    def total_readpairs(self):
+        return self._simple + self._twisted
+
+    @property
     def status(self):
         if self.s_flag_int == 0:
             return 'II'
