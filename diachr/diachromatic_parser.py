@@ -73,7 +73,7 @@ class DiachromaticParser:
                 n_incomplete_data += 1
             else:
                 n_has_required_data += 1
-            outfh.write(iaction.output_summary() + "\n")
+                outfh.write(iaction.output_summary() + "\n")
 
             if (n_incomplete_data + n_has_required_data)%1000000==0:
                 print("\t[INFO] " + (str(n_incomplete_data + n_has_required_data)) + " interactions processed ...")
