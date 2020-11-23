@@ -203,7 +203,7 @@ In addition to mapping, Diachromatic removes duplicated read pairs and
 keeps track of the number of read pairs for different duplication levels.
 Depending on the size of the input and the actual duplication rate,
 this can take up a lot of memory.
-We therefore recommend providing 16 to 32 GB memory.
+We therefore recommend having 16 to 32 GB memory available.
 
 We use the more stringent mode of Diachromatic to define uniquely mapped reads,
 i.e. reads that map to only one location (`-bsu`).
@@ -218,13 +218,22 @@ We use 32 threads for the maapping with bowtie2 (`-p`).
 
 For possible subsequent investigation,
 we write the rejected artifact read pairs to an extra BAM file (`-j`).
+The valid read pairs are always written to a BAM file
+with the suffix `.valid_pairs.aligned.bam`.
+We note that these files do not contain any read pairs that have
+been mapped to non-canonical chromosomes
+(e.g. `chrUn_GL000216v2`).
+The reads of a pair are mapped independently to all chromosomes,
+but a pair for which at least one read is mapped to a non-canonical
+chromosome cannot be re-paired.
+
 The output can be redirected and given prefixes as with the `truncate` command.
 More details on the mapping and removal of artifact read pairs can be found in the
 [relevant section of the Diachromatic documentation](https://diachromatic.readthedocs.io/en/latest/mapping.html).
 
-### Counting of read pairs that map to the same digest pairs
+### Counting of valid read pairs that map to the same digest pairs
 
-Use Diachromatic to count read pairs between interacting digest regions as follows:
+Use Diachromatic to count valid read pairs between interacting digest regions as follows:
 
 ```
 java -jar Diachromatic.jar count \
