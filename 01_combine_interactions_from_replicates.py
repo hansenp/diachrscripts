@@ -37,7 +37,7 @@ print("\t[INFO] --usemod: " + str(args.usemod))
 
 ############   Uses new module/class ###############
 if args.usemod:
-    parser = DiachromaticParser(interaction_file_dir=interaction_files_path, required_replicates=required_replicates, prefix=out_prefix)
+    parser = DiachromaticParser(path=interaction_files_path, required_replicates=required_replicates, prefix=out_prefix)
     parser.write_combined_interaction_file()
     exit(1)
 ############   End ###############

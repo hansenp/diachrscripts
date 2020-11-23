@@ -28,7 +28,7 @@ class DiachromaticParser:
         self._interaction_d = defaultdict(DiachromaticInteraction)
         self._n_iteraction = [] # list with total number of interactions per file
         if os.path.isdir(self._path):
-            print("[INFO] Parsing diachromatic files in  directory at ", self._dir)
+            print("[INFO] Parsing diachromatic files in  directory at ", self._path)
             if not isinstance(required_replicates, int):
                 raise ValueError("Need to pass an integer value for required_replicates")
             for file in os.listdir(self._path):
