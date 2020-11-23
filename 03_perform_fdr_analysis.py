@@ -19,6 +19,7 @@ S_p / S_o is used as estimator for the FDR.
 
 
 import argparse
+from diachr.fdr_analysis import FdrAnalysis
 import gzip
 import math
 
@@ -32,12 +33,14 @@ import diachrscripts_toolkit as dclass
 ######################
 
 parser = argparse.ArgumentParser(description='Determine a P-value threshold that corresponds to a given FDR threshold.')
-parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-parser.add_argument('--enhanced-interaction-file', help='Enhanced interaction file.')
-parser.add_argument('--fdr-threshold', help='Use this switch to estimate a P-value cutoff that corresponds to a given FDR threshold.', default=0.25)
+parser.add_argument('-p', '--out-prefix', help='Prefix for output.', default='OUTPREFIX')
+parser.add_argument('-i', '--enhanced-interaction-file', help='Enhanced interaction file.', required=True)
+parser.add_argument('-f', '--fdr-threshold', help='Use this switch to estimate a P-value cutoff that corresponds to a given FDR threshold.', default=0.25)
 parser.add_argument('--p-val-c-min', help='Smallest P-value cutoff.', default=0.00025)
 parser.add_argument('--p-val-c-max', help='Largest P-value cutoff.', default=0.05)
 parser.add_argument('--p-val-step-size', help='P-value step size.', default=0.00025)
+
+parser.add_argument('-m','--usemod', help="Use new module", dest='usemod', action='store_true')
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -54,6 +57,14 @@ print("\t[INFO] --fdr-threshold: " + str(fdr_threshold))
 print("\t[INFO] --p-val-c-min: " + str(p_val_c_min))
 print("\t[INFO] --p-val-c-max: " + str(p_val_c_max))
 print("\t[INFO] --p-val-step-size: " + str(p_val_step_size))
+
+
+if args.usemod:
+    print("[INFO] Using FdrAnalysis module")
+    fdra = FdrAnalysis(enhanced_interaction_file=enhanced_interaction_file, fdr_threshold=fdr_threshold, p_val_c_min=p_val_c_min,
+            p_val_c_max=p_val_c_max, step_size=p_val_step_size, prefix=out_prefix)
+    fdra.calculate_fdr_threshild()
+    exit(10)
 
 
 ### Define auxiliary functions
