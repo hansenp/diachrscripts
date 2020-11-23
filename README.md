@@ -277,15 +277,84 @@ we used the shortcut option *All protein coding genes*
 because the analyzed data comes from a whole-promoter capture Hi-C
 experiment.
 This has the effect that all digests which contain at least on TSS
-aand are potentially suited for enrichment are marked with an `A`
+and are potentially suited for enrichment are marked with an `A`
 and all others with an `I`.
+The digests marked with an `A` do not exactly correspond to the digests
+that were actually selected for the experiment.
+This is due to different annotations as well as different criteria
+for the selection of enrichable digests.
+Therefore, we only used the markings with `A` and `I` at the beginning
+to roughly asses the how well the enrichment worked.
+For the following,
+we did not use these markings with `A` and `I`,
+but instead a list of enriched digests from the original publication
+of Javierre et al. 2016 (see below).
+To make it easier to distinguish,
+we denote enriched enriched digests with an `E` and non-enriched
+digests with an `N`, when using the annotation from this list.
 
-
-
+The last columnn in a Diachromatic interaction file
+shows the counts of simple and twisted read pairs
+separated by a colon.
+For example, `5:4` means that five simple and four twisted
+read pairs were counted for an interaction.
 
 ### Subsequent filtering of interactions
 
 XXX
+
+## hg38 coordinates of enriched digests
+
+For all subsequent analyzes,
+we used a [list of enriched digests](https://osf.io/u8tzp/)
+that can be downloaded as part of the publication by Javierre et al. 2016.
+This list can be found in the *Capture design* in the archive named:
+```
+human_PCHiC_hg19_HindIII_design.tar.gz
+```
+that expands into a folder that can be provided to Chicago as the
+*design folder*.
+
+Along with four other files, this folder contains the following file:
+```
+Digest_Human_HindIII_baits_e75_ID.baitmap
+```
+This is
+[Chicago's bait map file](http://regulatorygenomicsgroup.org/resources/Chicago_vignette.html#input-files-required)
+that contains the following columns:
+`chr`, `start`, `end`, `fragmentID`, `geneName`.
+Here are the first four lines of this file:
+```
+1	831895	848168	218	RP11-54O7.16;RP11-54O7.1
+1	848169	850618	219	RP11-54O7.2
+1	850619	874081	220	AL645608.1;RP11-54O7.3;SAMD11
+1	889424	903640	223	KLHL17;NOC2L;PLEKHN1
+```
+From this file, we extracted the coordinates of enriched digests
+by adding a `chr` to the chromosome numbers in column 1 and
+writing them them together with the start and end positions to a new file.
+These are the first four lines of the file with the extracted digest coordinates:
+```
+$ awk '{print "chr"$1"\t"$2"\t"$3}' Digest_Human_HindIII_baits_e75_ID.baitmap | head -n 4
+chr1	831895	848168
+chr1	848169	850618
+chr1	850619	874081
+chr1	889424	903640
+
+```
+In total, there are coordinates for 22,076 digests.
+These coordinates refer to the genome build hg19.
+We used
+[UCSC's LiftOver tool](https://genome.ucsc.edu/cgi-bin/hgLiftOver)
+to convert the coordinates to hg38.
+22,056 digest could be converted successfully to hg38.
+The conversion failed for 20 digests
+because hg19 coordinates in hg38
+are either split or partially deleted.
+The resulting file in BED format cann be found here:
+```
+diachrscripts/additional_files/javierre_2016/baited_digest_regions/Digest_Human_HindIII_baits_e75_ID.baitmap.hg38.bed
+```
 
 ## Exploration of the binomial model for directionality of interactions (00)
 
