@@ -20,6 +20,7 @@ S_p / S_o is used as estimator for the FDR.
 
 import argparse
 from diachr.fdr_analysis import FdrAnalysis
+from diachr.diachromatic_interaction import DiachromaticInteraction
 import gzip
 import math
 
@@ -34,7 +35,8 @@ import diachrscripts_toolkit as dclass
 
 parser = argparse.ArgumentParser(description='Determine a P-value threshold that corresponds to a given FDR threshold.')
 parser.add_argument('-p', '--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-parser.add_argument('-i', '--enhanced-interaction-file', help='Enhanced interaction file.', required=True)
+#parser.add_argument('-i', '--enhanced-interaction-file', help='Enhanced interaction file.', required=True)
+parser.add_argument('-i', '--diachromatic-interaction-file', help='Diachromatic interaction file.', required=True)
 parser.add_argument('-f', '--fdr-threshold', help='Use this switch to estimate a P-value cutoff that corresponds to a given FDR threshold.', default=0.25)
 parser.add_argument('--p-val-c-min', help='Smallest P-value cutoff.', default=0.00025)
 parser.add_argument('--p-val-c-max', help='Largest P-value cutoff.', default=0.05)
@@ -44,7 +46,7 @@ parser.add_argument('-m','--usemod', help="Use new module", dest='usemod', actio
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
-enhanced_interaction_file = args.enhanced_interaction_file
+diachromatic_interaction_file = args.diachromatic_interaction_file
 fdr_threshold = float(args.fdr_threshold)
 p_val_c_min = float(args.p_val_c_min)
 p_val_c_max = float(args.p_val_c_max)
@@ -52,7 +54,7 @@ p_val_step_size = float(args.p_val_step_size)
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] --out_prefix: " + out_prefix)
-print("\t[INFO] --enhanced-interaction-file: " + enhanced_interaction_file)
+print("\t[INFO] --enhanced-interaction-file: " + diachromatic_interaction_file)
 print("\t[INFO] --fdr-threshold: " + str(fdr_threshold))
 print("\t[INFO] --p-val-c-min: " + str(p_val_c_min))
 print("\t[INFO] --p-val-c-max: " + str(p_val_c_max))
@@ -61,7 +63,7 @@ print("\t[INFO] --p-val-step-size: " + str(p_val_step_size))
 
 if args.usemod:
     print("[INFO] Using FdrAnalysis module")
-    fdra = FdrAnalysis(enhanced_interaction_file=enhanced_interaction_file, fdr_threshold=fdr_threshold, p_val_c_min=p_val_c_min,
+    fdra = FdrAnalysis(diachromatic_interaction_file=diachromatic_interaction_file, fdr_threshold=fdr_threshold, p_val_c_min=p_val_c_min,
             p_val_c_max=p_val_c_max, step_size=p_val_step_size, prefix=out_prefix)
     fdra.calculate_fdr_threshild()
     exit(10)
@@ -154,8 +156,8 @@ txt_file_stream_results.write("OUT_PREFIX\tFDR\tPC\tNSIG_P\tNSIG_O" + "\n")
 ### Start execution
 ###################
 
-print("[INFO] Iterating enhanced interaction file ...")
-with gzip.open(enhanced_interaction_file, 'r' + 't') as fp:
+print("[INFO] Iterating Diachromatic interaction file ...")
+with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
     for line in fp:
 
@@ -163,14 +165,18 @@ with gzip.open(enhanced_interaction_file, 'r' + 't') as fp:
         n_interaction += 1
 
         # Report progress
-        if n_interaction % 1000000 == 0:
+        if n_interaction % 100000 == 0:
             print("\t\t[INFO]", n_interaction, "interactions processed ...")
 
-        # Parse enhanced interactions line
-        chr_a, sta_a, end_a, syms_a, tsss_a, chr_b, sta_b, end_b, syms_b, tsss_b, enrichment_pair_tag, strand_pair_tag, interaction_category, neg_log_p_value, rp_total, i_dist = \
-            dclass.parse_enhanced_interaction_line_with_gene_symbols(line)
+        # Parse Diachromatic interaction line
+        field = line.split("\t")
+        rp_simple = int(field[8].split(":")[0])
+        rp_twisted = int(field[8].split(":")[1])
+        rp_total = int(field[8].split(":")[0]) + int(field[8].split(":")[1])
 
-        p_val_o_list.append(float(neg_log_p_value))
+        # Get neg_log_p_value
+        neg_log_p_value = -dclass.calculate_binomial_logsf_p_value(rp_simple, rp_twisted)
+        p_val_o_list.append(neg_log_p_value)
 
         # Add the sum of simple and twisted read pair counts to dictionary that will be used for randomization
         if rp_total in N_DICT:

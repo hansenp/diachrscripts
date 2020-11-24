@@ -1,7 +1,3 @@
-
-
-
-
 class DiachromaticInteraction:
     """
     Class to represent an interaction between two different parts of the genome with status and count.
@@ -136,4 +132,3 @@ class DiachromaticInteraction:
 
     def __eq__(self, other):
         return self._fromA == other._fromA and self._fromB == other._fromB and self._chrA == other._chrA and self._chrB == other._chrB
-
