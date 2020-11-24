@@ -531,7 +531,35 @@ and the counts triple (`3:2` becomes `9:6`).
 Finally, the interaction on `chr11` occurs in the files for all four replicates
 and the counts quadruple (`2:1` becomes `8:4`).
 
-## Permuation of simple and twisted read pairs (02)
+## Randomization of simple and twisted read pairs (02)
+
+To decide whether directed interactions occur more often than expected by chance,
+we took an approach in which we randomize the
+simple and twisted read pair counts of individual interactions.
+
+For a given dataset,
+we first determine the number of interactions
+that are significant at a chosen P-value threshold,
+using our binomial test for directionality of interactions.
+
+Then we randomize the simple *s* and twisted read pair counts *t*
+for each interaction according to our null model,
+i.e. we randomly draw a number of simple read pairs *s'*
+from a binomial distribution with *n=s+t* and *p=0.5*.
+We then set the number of twisted read pairs to *t'=n-s'*.
+After we randomized the counts of all interactions,
+we determine the number of significant interactions.
+
+We implemented this analysis in the follwing script:
+```
+02_perform_permutation_analysis.py
+```
+
+## FDR (03)
+
+XXX
+
+## Enhanced interaction format (04)
 
 XXX
 
