@@ -233,7 +233,7 @@ More details on the mapping and removal of artifact read pairs can be found in t
 
 ### Counting of valid read pairs that map to the same digest pairs
 
-Use Diachromatic to count valid read pairs between interacting digest regions as follows:
+Use Diachromatic to count valid read pairs between interacting digest pairs as follows:
 
 ```
 java -jar Diachromatic.jar count \
@@ -246,8 +246,8 @@ java -jar Diachromatic.jar count \
 
 In Diachromatic, interactions are defined as digest pairs that have at least
 one supporting read pair.
-In this step, the supporting read pairs for individual interactions are counted,
-for which the digest map is required (`-d`).
+In this step, the supporting read pairs for individual interactions are counted.
+To do this, the digest map is required (`-d`).
 
 We use the unique valid pairs from the previous step as input,
 i.e. duplicates and artifact read pairs have been removed.
@@ -310,7 +310,23 @@ read pairs were counted for an interaction.
 
 ### Subsequent filtering of interactions
 
-XXX
+We filtered out interactions between different chromosomes (trans).
+From the remaining interactions (cis),
+we have filtered out short interactions with a distance <= 20,000 bp
+and interactions with and on chromosome `chrM`.
+We implemented the filtering with the
+[command line tool AWK](https://en.wikipedia.org/wiki/AWK):
+
+```
+awk '{if($1==$5 && $6-$3>=20000){print $0}}' MK/JAV_MK_R10.interaction.counts.table.tsv \
+   | grep -v chrM \
+   | gzip > gzdir/JAV_MK_R10.interaction.counts.table.clr_200000.tsv.gz
+```
+
+The filtered interactions are written to a gzip-compressed file
+in a directory `gzdir`.
+This is where the interactions for all replicates are written
+and from there they are read in by the script `01_combine_interactions_from_replicates.py` (see below).
 
 ## hg38 coordinates of enriched digests
 
