@@ -35,7 +35,6 @@ import diachrscripts_toolkit as dclass
 
 parser = argparse.ArgumentParser(description='Determine a P-value threshold that corresponds to a given FDR threshold.')
 parser.add_argument('-p', '--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-#parser.add_argument('-i', '--enhanced-interaction-file', help='Enhanced interaction file.', required=True)
 parser.add_argument('-i', '--diachromatic-interaction-file', help='Diachromatic interaction file.', required=True)
 parser.add_argument('-f', '--fdr-threshold', help='Use this switch to estimate a P-value cutoff that corresponds to a given FDR threshold.', default=0.25)
 parser.add_argument('--p-val-c-min', help='Smallest P-value cutoff.', default=0.00025)
@@ -54,7 +53,7 @@ p_val_step_size = float(args.p_val_step_size)
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] --out_prefix: " + out_prefix)
-print("\t[INFO] --enhanced-interaction-file: " + diachromatic_interaction_file)
+print("\t[INFO] --diachromatic-interaction-file: " + diachromatic_interaction_file)
 print("\t[INFO] --fdr-threshold: " + str(fdr_threshold))
 print("\t[INFO] --p-val-c-min: " + str(p_val_c_min))
 print("\t[INFO] --p-val-c-max: " + str(p_val_c_max))
