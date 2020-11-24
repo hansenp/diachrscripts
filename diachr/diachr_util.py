@@ -424,7 +424,7 @@ def find_indefinable_nx(p_value_cutoff, verbose = True):
                 print("\t[INFO] Smallest n: " + str(n) + " read pairs (" + str(p_value) + ")")
             return n, p_value
 
-def find_indefinable_n(p_value_cutoff, verbose = True):
+def find_minimum_powered_n(p_value_cutoff, verbose = True):
     """
     :param p_value_cutoff: Chosen threshold
     :return: Minimal n that yields a significant P-value given the threshold
