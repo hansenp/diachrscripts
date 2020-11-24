@@ -155,7 +155,7 @@ txt_file_stream_results.write("OUT_PREFIX\tFDR\tPC\tNSIG_P\tNSIG_O" + "\n")
 
 ### Start execution
 ###################
-
+np.random.seed(42)
 print("[INFO] Iterating Diachromatic interaction file ...")
 with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
 
@@ -172,10 +172,10 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         field = line.split("\t")
         rp_simple = int(field[8].split(":")[0])
         rp_twisted = int(field[8].split(":")[1])
-        rp_total = int(field[8].split(":")[0]) + int(field[8].split(":")[1])
+        rp_total = rp_simple + rp_twisted
 
         # Get neg_log_p_value
-        neg_log_p_value = -dclass.calculate_binomial_logsf_p_value(rp_simple, rp_twisted)
+        neg_log_p_value = float("{:.2f}".format(-dclass.calculate_binomial_logsf_p_value(rp_simple, rp_twisted)))
         p_val_o_list.append(neg_log_p_value)
 
         # Add the sum of simple and twisted read pair counts to dictionary that will be used for randomization
