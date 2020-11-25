@@ -1,3 +1,5 @@
+.. _RST_Interaction_calling:
+
 ###################
 Interaction calling
 ###################
@@ -313,8 +315,7 @@ We implemented the filtering with the
        | gzip > MK/gzdir/JAV_MK_R10.interaction.counts.table.clr_200000.tsv.gz
 
 The filtered interactions are written to a gzip-compressed file
-in a directory ``gzdir``.
+in a directory ``MK/gzdir``.
 This is where the interactions for all replicates are written
-and from there they are read in by the script ``01_combine_interactions_from_replicates.py`` (see below).
-
-:ref:`RST_Combining_interactions`
+and from there they are read in by the script ``01_combine_interactions_from_replicates.py``
+(see :ref:`RST_Combining_interactions`).
