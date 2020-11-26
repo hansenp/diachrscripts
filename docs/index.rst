@@ -18,9 +18,4 @@ Note that none of the links below work yet because there are no files.
    setup
    interaction_calling
    combining_interactions
-
-
-
-   
-
-
+   binomial_model
