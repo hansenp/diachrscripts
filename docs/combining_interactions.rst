@@ -46,25 +46,35 @@ This is the content of the directory with the gzipped files for ``MK``:
     JAV_MK_R40.interaction.counts.table.clr_20000.tsv.gz
 
 In addition, the required number of replicates must be specified (``--required-replicates``).
-Required number of replicates. All interactions that occur in less replicates
+All interactions that occur in less replicates
 will be discarded.
 For the remaining interactions,
 the simple and twisted read pair counts from different replicates
 will be added up separately.
 For this analysis,
 we required that an interaction must occur in at least two replicates.
-
-The name of each created file will have this prefix, which can also contain the path to an already existing directory.
+The name of each created file will have the same prefix ``--out-prefix``, which can also contain the path to an already existing directory.
 For combined replicates,
 we have used the abbreviation ``RALT``,
-where ``ALT`` stands for At Least Two.
+where ``ALT`` stands for **A**\ t\  **L**\ east **T**\ wo.
+
+The command above will generate the following two files:
+
+.. code-block:: console
+
+    MK/JAV_MK_RALT_at_least_in_2_replicates_summary.txt
+    MK/JAV_MK_RALT_at_least_in_2_replicates_interactions.tsv.gz
+
+The first file contains an overview of the numbers of interactions
+in the individual files and
+the second file contains the combined interactions.
 
 
 Testing the script
 ==================
 
-Diachromatic does not filter interactions
-and even outputs interactions that have only a single read pair.
+Diachromatic
+even outputs interactions that have only a single read pair.
 On the other hand, when combining interactions,
 the interactions from multiple replicates must be read into memory.
 Therefore, the memory consumption can become very high
@@ -92,11 +102,11 @@ by deleting interactions from the last line one by one.
 By creating the files in this way,
 the individual interactions have same simple and twisted read pair counts
 for all replicates, which is usually not the case.
-However, in simplifies the presentation here,
+However, it simplifies the presentation here,
 because we only need to know the content of the file for replicate 4
 in order to understand the results.
 
-To get the combined interactions that occur in at least two replicates
+To get the combined interactions that occur in at least two replicates,
 execute the following command:
 
 .. code-block:: console
@@ -106,16 +116,7 @@ execute the following command:
        --required-replicates 2
        --out-prefix TEST \
 
-This will generate two files:
-
-.. code-block:: console
-
-    TEST_at_least_in_2_replicates_summary.txt
-    TEST_at_least_in_2_replicates_interactions.tsv.gz
-
-The first file contains an overview of the numbers of interactions
-in the individual files and the combined interactions.
-The second file contains the combined interactions:
+This is the content of the generated file with the combined interactions:
 
 .. code-block:: console
 
