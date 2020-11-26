@@ -20,6 +20,7 @@ Note that none of the links below work yet because there are no files.
    coordinates_of_enriched_digests
    combining_interactions
    binomial_model
+   simple_twisted_randomization
+   false_discovery_rate
 
 
-coordinates_of_ennriched_digests

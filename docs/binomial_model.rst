@@ -55,3 +55,4 @@ all plots will be written to the following directory:
 .. code-block:: console
 
     results/00_explore_binomial_model
+
