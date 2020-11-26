@@ -36,8 +36,8 @@ the analysis with Diachromatic so that every step can be followed exactly.
 Input data
 **********
 
-Paired-end data in FASTQ format
-===============================
+Paired-end FASTQ data
+=====================
 
 For paired-end data, the reads of the read pairs are typically in two different files,
 one for the forward reads (``R1``) and one for the reverse reads (``R2``).
@@ -68,8 +68,8 @@ In table TODO.xls,
 we have documented which original files were concatenated in which order.
 
 
-bowtie2 index for reference sequence
-====================================
+bowtie2 index
+=============
 
 Diachromatic uses bowtie2 to map reads to a reference sequence,
 which requires an index for the reference sequence.
@@ -95,11 +95,9 @@ Note that the index consists of several files:
 Only the path together with the prefix (``hg38``) of these files are passed to Diachromatic.
 
 
-Restriction enzyme an digest map
-================================
+Digest map
+==========
 
-For the dataset on the 17 hematopoietic cell types,
-the enzyme *HindIII* with the recognition sequence ``AAGCTT`` was used.
 Diachromatic reports individual interactions as a pair of restriction fragments (or digest pairs)
 along with the number of read pairs that map to this digest pair.
 This requires the coordinates of all digests in the reference genome
@@ -108,16 +106,10 @@ which we refer to as digest map.
 For a given restriction enzyme and a reference genome,
 a corresponding digest map can be created with the GOPHER software
 `as described in the documentation <https://diachromatic.readthedocs.io/en/latest/digest.html>`_.
-These are the first few line of such a digest map:
-
-.. code-block:: console
-
-    Chromosome      Fragment_Start_Position Fragment_End_Position   Fragment_Number 5'_Restriction_Site     3'_Restriction_Site     Length  5'_GC_Content   3'_GC_Content   5'_Repeat_Content       3'_Repeat_Content       Selected        5'_Probes       3'_Probes
-    chr1    1       16007   1       None    HindIII 16007   0.000   0.000   0.000   0.003   F       0       0
-    chr1    16008   24571   2       HindIII HindIII 8564    0.018   0.018   0.000   0.015   F       0       0
-    chr1    24572   27981   3       HindIII HindIII 3410    0.046   0.046   0.000   0.044   F       0       0
-    chr1    27982   30429   4       HindIII HindIII 2448    0.035   0.035   0.047   0.043   F       0       0
-
+The digest map can also contain information about which digests have been selected for enrichment
+(see also :ref:`RST_coordinates_of_enriched_digests`).
+Diachromatic will report the enrichment status for the two digests of
+each called interaction (see below).
 To ensure consistency,
 we recommend creating the digest map from the same FASTA file that was used
 to create the bowtie2 index.
@@ -141,7 +133,9 @@ Use Diachromatic to truncate the read pairs given in FASTQ format as follows:
 
 Diachromatic has an internal list of common restriction enzymes
 and will use the appropriate recognition sequence and cutting positions
-for ``-e HindIII``.
+for ``-e``.
+For the dataset on the 17 hematopoietic cell types,
+the enzyme ``HindIII`` with the recognition sequence ``AAGCTT`` was used.
 We use the previously downloaded and concatenated FASTQ files
 for the forward (R1, ``-q``) and reverse (R2, ``-r``) as input.
 An already existing directory for the output (``-o``) and a prefix
@@ -153,11 +147,11 @@ More details on the truncation of reads can be found in the
 `relevant section of the Diachromatic documentation <https://diachromatic.readthedocs.io/en/latest/truncate.html>`_.
 
 
-******************************************
-Mapping and removal of artifact read pairs
-******************************************
+****************************
+Mapping and artifact removal
+****************************
 
-Use Diachromatic to map the the truncated read pairs to the reference sequence as follows:
+Use Diachromatic to map the the truncated read pairs to a reference sequence as follows:
 
 .. code-block:: console
 
@@ -215,9 +209,9 @@ The output can be redirected and given prefixes as with the ``truncate`` command
 More details on the mapping and removal of artifact read pairs can be found in the
 `relevant section of the Diachromatic documentation <https://diachromatic.readthedocs.io/en/latest/mapping.html>`_.
 
-***************************************************
-Counting of valid read pairs mapped to digest pairs
-***************************************************
+****************************
+Counting of valid read pairs
+****************************
 
 Use Diachromatic to count valid read pairs between interacting digest pairs as follows:
 
@@ -250,8 +244,11 @@ The interactions with their read pair counts are written to the following file:
 
     MK/JAV_MK_R10.interaction.counts.table.tsv
 
+*********************************
+Diachromatic's interaction format
+*********************************
 
-These are the first few lines from such a file:
+These are the first few lines of a file in Diachromatic's interaction format:
 
 .. code-block:: console
 
@@ -268,28 +265,11 @@ In column 4 and 8 there is either an ``A`` or an ``I``,
 where column 4 belongs to the first and column 8 belongs to the second digest.
 An ``A`` means that the corresponding digest was selected for target enrichment
 and an ``I`` means that it was not selected.
-The information about digests that were selected for enrichment
-is taken from the digest map that was generated with GOPHER.
-When generating the digest map with GOPHER,
-we used the shortcut option *All protein coding genes*
-because the analyzed data comes from a whole-promoter capture Hi-C
-experiment.
-This has the effect that all digests which contain at least on TSS
-and are potentially suited for enrichment are marked with an ``A``
-and all others with an ``I``.
-The digests marked with an ``A`` do not exactly correspond to the digests
-that were actually selected for the experiment.
-This is due to different annotations as well as different criteria
-for the selection of enrichable digests.
-Therefore, we only used the markings with ``A`` and ``I`` at the beginning
-to roughly asses the how well the enrichment worked.
-For the following,
-we did not use these markings with ``A`` and ``I``,
-but instead a list of enriched digests from the original publication
-of Javierre et al. 2016 (see below).
-To make it easier to distinguish,
-we denote enriched enriched digests with an ``E`` and non-enriched
-digests with an ``N``, when using the annotation from this list.
+Diachromatic takes the information about enriched digests from the digest map
+that was generated with GOPHER.
+In addition,
+this information can also be included later in the analysis with ``diachrscripts``
+(see :ref:`RST_coordinates_of_enriched_digests`).
 
 The last columnn in a Diachromatic interaction file
 shows the counts of simple and twisted read pairs

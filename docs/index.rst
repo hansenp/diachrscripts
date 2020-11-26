@@ -17,5 +17,9 @@ Note that none of the links below work yet because there are no files.
 
    setup
    interaction_calling
+   coordinates_of_enriched_digests
    combining_interactions
    binomial_model
+
+
+coordinates_of_ennriched_digests
