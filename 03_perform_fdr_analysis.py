@@ -21,6 +21,7 @@ S_p / S_o is used as estimator for the FDR.
 import argparse
 from diachr.fdr_analysis import FdrAnalysis
 from diachr.diachromatic_interaction import DiachromaticInteraction
+from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
 import gzip
 import math
 
@@ -155,33 +156,27 @@ txt_file_stream_results.write("OUT_PREFIX\tFDR\tPC\tNSIG_P\tNSIG_O" + "\n")
 ### Start execution
 ###################
 np.random.seed(42)
-print("[INFO] Iterating Diachromatic interaction file ...")
-with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
+# Get list of Dichromatic interaction objects
+parser = DiachromaticInteractionParser()
+parser.parse_file(diachromatic_interaction_file)
+d_inter_list = parser.i_list
 
-    for line in fp:
+n_progress = 0
+for d_inter in d_inter_list:
+    n_progress += 1
+    if n_progress % 100000 == 0:
+        print("\t[INFO] Processed " + str(n_progress) + " interaction objects ...")
 
-        # Count total number of interactions
-        n_interaction += 1
+    # Get neg_log_p_value
+    neg_log_p_value = float("{:.2f}".format(-dclass.calculate_binomial_logsf_p_value(d_inter.simple, d_inter.twisted)))
+    p_val_o_list.append(neg_log_p_value)
 
-        # Report progress
-        if n_interaction % 100000 == 0:
-            print("\t\t[INFO]", n_interaction, "interactions processed ...")
+    # Add the sum of simple and twisted read pair counts to dictionary that will be used for randomization
+    if d_inter.total_readpairs in N_DICT:
+        N_DICT[d_inter.total_readpairs] += 1
+    else:
+        N_DICT[d_inter.total_readpairs] = 1
 
-        # Parse Diachromatic interaction line
-        field = line.split("\t")
-        rp_simple = int(field[8].split(":")[0])
-        rp_twisted = int(field[8].split(":")[1])
-        rp_total = rp_simple + rp_twisted
-
-        # Get neg_log_p_value
-        neg_log_p_value = float("{:.2f}".format(-dclass.calculate_binomial_logsf_p_value(rp_simple, rp_twisted)))
-        p_val_o_list.append(neg_log_p_value)
-
-        # Add the sum of simple and twisted read pair counts to dictionary that will be used for randomization
-        if rp_total in N_DICT:
-            N_DICT[rp_total] +=1
-        else:
-            N_DICT[rp_total] = 1
 
 print("[INFO] Total number of interactions: {}".format(n_interaction))
 

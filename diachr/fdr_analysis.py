@@ -5,14 +5,8 @@ import math
 import gzip
 
 from .diachr_util import calculate_binomial_logsf_p_value
-from .enhanced_interaction_parser import EnhancedInteractionParser
-from .enhanced_interaction import EnhancedInteraction
-
-
-
-
-
-
+from diachr.diachromatic_interaction import DiachromaticInteraction
+from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
 
 class FdrAnalysis:
     """
@@ -65,36 +59,28 @@ class FdrAnalysis:
         # List of P-values for observed interactions
         self._p_val_o_list = []
 
-        # Input interactions
+        # Get list of Dichromatic interaction objects
+        parser = DiachromaticInteractionParser()
+        parser.parse_file(diachromatic_interaction_file)
+        d_inter_list = parser.i_list
         np.random.seed(42)
-        print("[INFO] Iterating Diachromatic interaction file ...")
-        with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
+        n_progress = 0
+        for d_inter in d_inter_list:
+            n_progress += 1
+            if n_progress % 100000 == 0:
+                print("\t[INFO] Processed " + str(n_progress) + " interaction objects ...")
 
-            for line in fp:
+            # Get neg_log_p_value
+            neg_log_p_value = float("{:.2f}".format(-calculate_binomial_logsf_p_value(d_inter.simple, d_inter.twisted)))
+            self._p_val_o_list.append(neg_log_p_value)
 
-                # Count total number of interactions
-                self._n_interaction += 1
+            # Add the sum of simple and twisted read pair counts to dictionary that will be used for randomization
+            if d_inter.total_readpairs in self._N_DICT:
+                self._N_DICT[d_inter.total_readpairs] += 1
+            else:
+                self._N_DICT[d_inter.total_readpairs] = 1
 
-                # Report progress
-                if self._n_interaction % 100000 == 0:
-                    print("\t\t[INFO]", self._n_interaction, "interactions processed ...")
-
-                # Parse Diachromatic interaction line
-                field = line.split("\t")
-                rp_simple = int(field[8].split(":")[0])
-                rp_twisted = int(field[8].split(":")[1])
-                rp_total = rp_simple + rp_twisted
-
-                # Get neg_log_p_value
-                neg_log_p_value = float("{:.2f}".format(-calculate_binomial_logsf_p_value(rp_simple, rp_twisted)))
-                self._p_val_o_list.append(neg_log_p_value)
-
-                # Add the sum of simple and twisted read pair counts to dictionary that will be used for randomization
-                if rp_total in self._N_DICT:
-                    self._N_DICT[rp_total] += 1
-                else:
-                    self._N_DICT[rp_total] = 1
-
+        self._n_interaction = n_progress
         print("[INFO] Total number of interactions: {}".format(self._n_interaction))
         print("[INFO] Getting sorted lists of P-values ...")
 
