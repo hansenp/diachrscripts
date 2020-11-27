@@ -45,9 +45,11 @@ f_name<-paste(PREFIX, "_permutation_plot.pdf", sep="")
 cairo_pdf(f_name, width=4.5, height=4.5)
 
 f_name<-paste(PREFIX, "_permutation_summary.txt", sep="")
+print(f_name)
 SUMMARY<-read.table(f_name, header=T)
 
 f_name<-paste(PREFIX, "_n_sig_permuted_interactions.txt", sep="")
+print(f_name)
 INTERACTION_NUMBERS<-read.table(f_name)
 
 OUT_PREFIX <- SUMMARY[,1]

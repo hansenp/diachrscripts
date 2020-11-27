@@ -38,7 +38,7 @@ for(f in FILE_LIST){
 }
 
 
-cairo_pdf("hurz.pdf", width=4.75, height=4)
+cairo_pdf(paste(PREFIX, "_fdr_plot.pdf",sep=""), width=4.75, height=4)
 par(mar = c(5,5,2,6), las=1)
 for(i in 1:REP_NUM){
   plot(PC[,i], FDR[,i], xlim=c(XMIN,XMAX), ylim=c(YMIN,YMAX), axes=F, xlab="", ylab="", col=REPLICATE_COLORS[i], pch=20)
