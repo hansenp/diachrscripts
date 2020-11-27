@@ -3,6 +3,8 @@
 """
 This takes a path to a directory containing Diachromatic interaction files and combines interactions that occur in a
 specified number of files into one interaction with summed simple and twisted read pair counts.
+
+You can find a detailed documentation on this script in the relevant section in the RTD of this repository.
 """
 
 import argparse
