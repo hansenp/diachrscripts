@@ -26,7 +26,7 @@ In addition, we keep track of the number of randomized
 significant interactions for each iteration and,
 at the end, calculate mean, standard deviation and Z-score.
 
-We implemented this analysis in the follwing script:
+We implemented this analysis in the following script:
 
 .. code-block:: console
 
