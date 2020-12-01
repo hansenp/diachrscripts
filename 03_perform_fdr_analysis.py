@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
 """
-XXX
+This takes a path to a Diachromatic interaction file and determines a P-value threshold that corresponds to a
+given FDR threshold.
+
+You can find a detailed documentation on this script in the relevant section in the RTD of this repository.
 """
 
 
