@@ -10,6 +10,8 @@ from diachr.diachromatic_parser import DiachromaticParser
 import os
 import gzip
 from collections import defaultdict
+from diachr.diachromatic_interaction import DiachromaticInteraction
+from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
 
 
 ### Parse command line
@@ -179,7 +181,59 @@ def parse_gzip_tsv_file(file, interaction_dict):
 
     return n_iteraction
 
+### Iterate interactions
+########################
 
+gz_files = get_gzip_tsv_files(interaction_files_path)
+if len(gz_files) < int(required_replicates):
+    print("[FATAL] Not enough replicates. Must be at least " + str(required_replicates) + " But there are only " + str(len(gzfiles)) + " files.")
+    exit(1)
+
+# Get list of Diachromatic interaction objects
+parser = DiachromaticInteractionParser()
+print("[INFO] Will parse all gz files in", interaction_files_path)
+n_interactions = []
+for gz_file in gz_files:
+    print("\t[INFO] Reading ", gz_file)
+    n_lines = parser.parse_file(gz_file)
+    print("\t\t[INFO] Number of interactions: " + str(n_lines))
+    n_interactions.append(n_lines)
+
+d_inter_list = parser.i_list
+
+print("[INFO] The union of all interactions has " + str(len(d_inter_list)) + " interactions.")
+print("[INFO] Total numbers of interactions: " + str(n_interactions))
+
+fname = out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_interactions.tsv.gz"
+outfh = gzip.open(fname, 'wt')
+print("[INFO] Writing interactions to file ...")
+n_has_required_data = 0
+n_incomplete_data = 0
+for d_inter in d_inter_list:
+
+    if (n_incomplete_data + n_has_required_data) % 1000000 == 0:
+        print("\t[INFO] " + (str(n_incomplete_data + n_has_required_data)) + " interactions processed ...")
+
+    if d_inter.has_data_for_required_replicate_num(required_replicates):
+        outfh.write(d_inter.get_diachromatic_interaction_line() + '\n')
+        n_has_required_data += 1
+    else:
+        n_incomplete_data += 1
+
+outfh.close()
+
+fname = out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_summary.txt"
+outfh = open(fname, 'wt')
+outfh.write("OUT_PREFIX" + "\t" + "INTERACTIONS_NUMBERS" + "\t" + "REQUIRED_INTERACTIONS" + "\t" + "HAS_ALL_DATA" + "\t" + "INCOMPLETE_DATA" + "\n")
+outfh.write(str(out_prefix) + "\t" + str(n_interactions) + "\t" + str(required_replicates) + "\t" + str(n_has_required_data) + "\t" + str(n_incomplete_data) + "\n")
+outfh.close()
+
+print("[INFO] Interactions with at least {} data points: {}, lacking interactions: {}".format(required_replicates, n_has_required_data, n_incomplete_data))
+print("[INFO] We wrote summary statistics to file: {}".format(fname))
+print("[INFO] ... done.")
+
+
+exit(1)
 ### Iterate interactions
 ########################
 

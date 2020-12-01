@@ -9,8 +9,6 @@ class DiachromaticInteraction:
         """
         @param F an array with 9 elements that represent an interaction
         """
-        #global chr_id
-        #global chr_dict
 
         # map status flag pair to int
         if statusA == 'I' and statusB == 'I':
@@ -30,14 +28,17 @@ class DiachromaticInteraction:
             self._chrA = chrA
         self._fromA = fromA
         self._toA = toA
+
         if chrB.startswith("chr"):
             self._chrB = chrB[3:]
         else:
             self._chrB = chrB
         self._fromB = fromB
         self._toB = toB
+
         self._simple = simple
         self._twisted = twisted
+
         self._rep_num = 1
         
 
@@ -120,7 +121,40 @@ class DiachromaticInteraction:
                                                                 self._toB,
                                                                 statusB,
                                                                 self._simple,
+
                                                                 self._twisted)
+    def get_diachromatic_interaction_line(self):
+        """
+        :return: A string that represents this interaction in Diachromatic's interaction format
+        """
+
+        # Determine enrichment state of the two digests
+        if self.s_flag_int == 0:
+            statusA = 'I'
+            statusB = 'I'
+        elif self.s_flag_int == 1:
+            statusA = 'I'
+            statusB = 'A'
+        elif self.s_flag_int == 2:
+            statusA = 'A'
+            statusB = 'I'
+        else:
+            statusA = 'A'
+            statusB = 'A'
+
+        di_line = \
+            self.chrA + "\t" + \
+            str(self._fromA) + "\t" + \
+            str(self._toA) + "\t" + \
+            statusA + "\t" + \
+            self.chrB + "\t" + \
+            str(self._fromB) + "\t" + \
+            str(self._toB) + "\t" + \
+            statusB + "\t" + \
+            str(self._simple)+ ":" + \
+            str(self._twisted)
+
+        return di_line
 
     def __hash__(self):
         """

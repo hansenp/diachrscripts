@@ -44,15 +44,16 @@ class DiachromaticInteractionParser:
         if not os.path.exists(path):
             raise ValueError("Could not find file at %s" % path)
 
+        # Increment number of files
         self._file_num += 1
 
         if path.endswith(".gz"):
             with gzip.open(path, 'rt') as fp:
-                n_progress = 0
+                n_lines = 0
                 for line in fp:
-                    n_progress += 1
-                    if n_progress % 1000000 == 0:
-                        print("\t[INFO] Parsed " + str(n_progress) + " interaction lines ...")
+                    n_lines += 1
+                    if n_lines % 1000000 == 0:
+                        print("\t[INFO] Parsed " + str(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
                     if d_inter.key in self._inter_dict:
                         self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.simple, twisted=d_inter.twisted)
@@ -60,16 +61,21 @@ class DiachromaticInteractionParser:
                         self._inter_dict[d_inter.key] = d_inter
         else:
             with open(path) as fp:
-                n_progress = 0
+                n_lines = 0
                 for line in fp:
-                    n_progress += 1
-                    if n_progress % 1000000 == 0:
-                        print("\t[INFO] Parsed " + str(n_progress) + " interaction lines ...")
+                    n_lines += 1
+                    if n_lines % 1000000 == 0:
+                        print("\t[INFO] Parsed " + str(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
                     if d_inter.key in self._inter_dict:
                         self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.simple, twisted=d_inter.twisted)
                     else:
                         self._inter_dict[d_inter.key] = d_inter
+        return n_lines
+
+    def write_diachromatic_interaction_file(self, target_file_name):
+        for d_inter in self._inter_dict.values:
+            print(d_inter.write_diachromatic_interaction_line())
 
     @property
     def i_list(self):
