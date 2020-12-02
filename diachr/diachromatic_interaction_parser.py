@@ -11,7 +11,7 @@ class DiachromaticInteractionParser:
     """
 
     def __init__(self):
-        self._file_num = 0
+        self._file_dict = {}
         self._inter_dict = defaultdict(DiachromaticInteraction)
 
     def _parse_line(self, line: str) -> DiachromaticInteraction:
@@ -39,16 +39,17 @@ class DiachromaticInteractionParser:
                                           twisted=twisted)
         return di_inter
 
-    def parse_file(self, path) -> List:
+    def parse_file(self, i_file):
+        """
+        Parses a file with interactions. For interactions that have already been parsed from another file,
+        only the simple and twisted read pair counts are added.
+        :param i_file: File with interactions
+        """
+        if not os.path.exists(i_file):
+            raise ValueError("Could not find file at %s" % i_file)
 
-        if not os.path.exists(path):
-            raise ValueError("Could not find file at %s" % path)
-
-        # Increment number of files
-        self._file_num += 1
-
-        if path.endswith(".gz"):
-            with gzip.open(path, 'rt') as fp:
+        if i_file.endswith(".gz"):
+            with gzip.open(i_file, 'rt') as fp:
                 n_lines = 0
                 for line in fp:
                     n_lines += 1
@@ -60,7 +61,7 @@ class DiachromaticInteractionParser:
                     else:
                         self._inter_dict[d_inter.key] = d_inter
         else:
-            with open(path) as fp:
+            with open(i_file) as fp:
                 n_lines = 0
                 for line in fp:
                     n_lines += 1
@@ -71,16 +72,46 @@ class DiachromaticInteractionParser:
                         self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.simple, twisted=d_inter.twisted)
                     else:
                         self._inter_dict[d_inter.key] = d_inter
-        return n_lines
 
-    def write_diachromatic_interaction_file(self, target_file_name):
-        for d_inter in self._inter_dict.values:
-            print(d_inter.write_diachromatic_interaction_line())
+        self._file_dict[i_file] = n_lines
 
-    @property
-    def i_list(self):
-        return self._inter_dict.values()
+    def get_file_dict_info(self):
+        """
+        :return: String that contains information about parsed data.
+        """
+        file_dict_info = "[INFO] Read interaction data from " + str(len(self._file_dict)) + " files:" + '\n'
+        for k, v in self._file_dict.items():
+            file_dict_info += "\t[INFO] " + str(v) + " interactions from " + k  + '\n'
+        file_dict_info += "[INFO] The union of all interactions has "  + str(len(self._inter_dict)) + " interactions." + '\n'
+        return(file_dict_info)
+
+    def write_diachromatic_interaction_file(self, required_replicates = 1, target_file_name = None):
+        """
+        Writes interactions that occur in a specified minimum number of replicates to a file
+        and returns a string with information on this writing process.
+
+        :param required_replicates: Minimum number of replicates
+        :param target_file_name: Generated file with interactions
+        :return: String with information on this writing process
+        """
+        write_info = "[INFO] Writing interactions that occur in at least " + str(required_replicates) + " replicates to " + target_file_name + '\n'
+        out_fh = gzip.open(target_file_name, 'wt')
+        n_has_required_data = 0
+        n_incomplete_data = 0
+        for d_inter in self._inter_dict.values():
+            if d_inter.has_data_for_required_replicate_num(required_replicates):
+                n_has_required_data += 1
+                out_fh.write(d_inter.get_diachromatic_interaction_line() + '\n')
+            else:
+                n_incomplete_data += 1
+        out_fh.close()
+        write_info += "\t[INFO] Interactions that occur in at least " + str(required_replicates) + " replicates: " + str(n_has_required_data) + '\n'
+        write_info += "\t[INFO] Other interactions: " + str(n_incomplete_data) + '\n'
+        write_info += '\n'
+        write_info += "FILE_NAME" + "\t" + "INTERACTIONS_NUMBERS" + "\t" + "REQUIRED_INTERACTIONS" + "\t" + "HAS_ALL_DATA" + "\t" + "INCOMPLETE_DATA" + '\n'
+        write_info += str(target_file_name) + "\t" + str(list(self._file_dict.values())) + "\t" + str(required_replicates) + "\t" + str(n_has_required_data) + "\t" + str(n_incomplete_data) + '\n'
+        return write_info
 
     @property
     def file_num(self):
-        return self._file_num
+        return len(self._file_dict)
