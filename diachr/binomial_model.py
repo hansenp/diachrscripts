@@ -1,5 +1,6 @@
 from scipy.stats import binom
-from numpy import log, exp, logaddexp
+from numpy import log, logaddexp
+import numpy as np
 import warnings
 
 class BinomialModel:
@@ -9,9 +10,8 @@ class BinomialModel:
     class and is then used for all calculations. In addition, to save time, P-values that have already been calculated
     for given pairs of simple and twisted read pair counts are saved in a dictionary to save time.
     """
-    def __init__(self, probabilty_of_simple:float, n_max:int) -> None:
-        self._probabilty_of_simple = probabilty_of_simple
-        self._probabilty_of_twisted = 1.0 - probabilty_of_simple
+    def __init__(self, prob_simple:float, n_max:int) -> None:
+        self._prob_simple = prob_simple
         self._n_max = n_max
 
 
@@ -19,19 +19,77 @@ class BinomialModel:
 
         print("n_max: " + str(self._n_max))
         #self._precalculate_p_values_using_pmf()
-        self.compare_different_ways_of_p_value_calculation(N=10,prob_simple=0.5)
+        #self.compare_different_ways_of_p_value_calculation(N=1000,prob_simple=0.5)
 
-    def _pre_calculate_p_values_using_logcdf(self):
+        self._pre_calculate_p_values_using_pmf_and_log()
+        #self._pre_calculate_p_values_using_logcdf_and_logsf()
+
+    def _pre_calculate_p_values_using_pmf_and_log(self):
+
+        PVAL_DICT = {}
+        n_list = list(range(1, self._n_max + 1))
+        print(n_list)
+        print("#####")
+
+        for n in n_list:
+            print("============================= " + str(n))
+            k_list = list(range(0, n + 1))
+            print(binom.pmf(k_list, n, self._prob_simple))
+
+            for k in k_list:
+                if k < n-k-1:
+                    d_sum_left = 0
+                    d_sum_right = 0
+                    for i in range(0, k + 1):
+                        print(str(i) + "\t" + str(n-i))
+                        d_sum_left = d_sum_left + binom.pmf(i, n, self._prob_simple)
+                        d_sum_right = d_sum_right + binom.pmf(n-i, n, self._prob_simple)
+                else:
+                    d_sum_left = 0
+                    d_sum_right = 0
+                    for i in range(k, n + 1):
+                        print(str(i) + "\t" + str(n-i))
+                        d_sum_left = d_sum_left + binom.pmf(i, n, self._prob_simple)
+                        d_sum_right = d_sum_right + binom.pmf(n-i, n, self._prob_simple)
+
+                print(str(k) + "\t" + str(n-k) + "\t" + str(d_sum_left) + "\t" + str(d_sum_right) + "\t" + str(d_sum_left + d_sum_right))
+
+        return PVAL_DICT
+
+
+    def _pre_calculate_p_values_using_logcdf_and_logsf(self):
+
+        PVAL_DICT = {}
 
         n_list = list(range(1, self._n_max + 1))
 
         for n in n_list:
-            pass
 
-        cdf_list_simple = -binom.logcdf(k_list, n, prob_simple)
-        print("logcdf_list_simple: " + str(cdf_list_simple))
-        cdf_list_twisted = -binom.logcdf(k_list, n, prob_twisted)
-        print("logcdf_list_twisted: " + str(cdf_list_twisted))
+            print(n)
+            k_list = list(range(0, n + 1))
+            PVAL_DICT[n] = []
+
+            try:
+                logcdf_list_simple = binom.logcdf(k_list, n, self._prob_simple)
+                logsf_list_simple = binom.logsf([n - k for k in k_list], n, self._prob_simple)
+                print(k_list)
+                print([n - k for k in k_list])
+                print(logcdf_list_simple)
+                print(logsf_list_simple)
+                print(-logaddexp(logcdf_list_simple[k_list], logsf_list_simple[k_list]))
+
+                print(n)
+                for k in k_list[:int(n+1)]:
+                    print(k)
+                    PVAL_DICT[n].append(-logaddexp(logcdf_list_simple[k], logsf_list_simple[k]))
+
+                print("p_values_two_sided_logcdfsf " + str(n) + ": " + str(PVAL_DICT[n]))
+
+            except RuntimeWarning:
+                print("Underflow at n = " + str(n) + "!")
+                exit(1)
+
+        return PVAL_DICT
 
     def compare_different_ways_of_p_value_calculation(self, N=5, prob_simple=0.5):
 
@@ -120,15 +178,15 @@ class BinomialModel:
 
             # Get logcdf for simple and twisted
             try:
-                logcdf_list_simple = -binom.logcdf(k_list, n, prob_simple)
+                logcdf_list_simple = binom.logcdf(k_list, n, prob_simple)
                 print("logcdf_list_simple: " + str(logcdf_list_simple))
-                logcdf_list_twisted = -binom.logsf(k_list, n, prob_twisted)
-                print("logcdf_list_twisted: " + str(logcdf_list_twisted))
+                logsf_list_simple = binom.logsf([n - x - 1 for x in k_list], n, prob_simple)
+                print("logsf_list_simple: " + str(logsf_list_simple))
 
-                p_values_two_sided_logcdf = []
+                p_values_two_sided_logcdfsf = []
                 for k in k_list[:int(n/2)]:
-                    p_values_two_sided_logcdf.append(logaddexp(logcdf_list_simple[k],logcdf_list_twisted[k]))
-                print("p_values_two_sided_logcdf: " + str(log(p_values_two_sided_logcdf)))
+                    p_values_two_sided_logcdfsf.append(-logaddexp(logcdf_list_simple[k],logsf_list_simple[k]))
+                print("p_values_two_sided_logcdfsf: " + str(p_values_two_sided_logcdfsf))
 
             except RuntimeWarning:
                 print("Underflow at 'logcdf' and n = " + str(n) + "!")
