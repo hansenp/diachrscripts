@@ -19,79 +19,64 @@ class BinomialModel:
 
         print("n_max: " + str(self._n_max))
         #self._precalculate_p_values_using_pmf()
-        #self.compare_different_ways_of_p_value_calculation(N=1000,prob_simple=0.5)
 
-        self._pre_calculate_p_values_using_pmf_and_log()
+
+        #self._pre_calculate_p_values_using_pmf_and_log()
+        self.compare_different_ways_of_p_value_calculation(N=10,prob_simple=0.5)
         #self._pre_calculate_p_values_using_logcdf_and_logsf()
 
-    def _pre_calculate_p_values_using_pmf_and_log(self):
+    def get_binomial_logsf_p_value(self, n_simple, n_twisted):
+        """
+        This function returns already calculated P-values from the dictionary or,
+        if the P-value has not yet been calculated, a funnction is called to
+        calculate the P-value. This P-value is then added to the dictionary and returned.
 
-        PVAL_DICT = {}
-        n_list = list(range(1, self._n_max + 1))
-        print(n_list)
-        print("#####")
+        :return: P-value.
+        """
+        # Create key from simple and twisted read pair counts
+        key = "{}-{}".format(n_simple, n_twisted)
 
-        for n in n_list:
-            print("============================= " + str(n))
-            k_list = list(range(0, n + 1))
-            print(binom.pmf(k_list, n, self._prob_simple))
+        if key not in self._pval_dict:
+            self._pval_dict[key] = self._calculate_binomial_logsf_p_value(n_simple, n_twisted)
 
-            for k in k_list:
-                if k < n-k-1:
-                    d_sum_left = 0
-                    d_sum_right = 0
-                    for i in range(0, k + 1):
-                        print(str(i) + "\t" + str(n-i))
-                        d_sum_left = d_sum_left + binom.pmf(i, n, self._prob_simple)
-                        d_sum_right = d_sum_right + binom.pmf(n-i, n, self._prob_simple)
-                else:
-                    d_sum_left = 0
-                    d_sum_right = 0
-                    for i in range(k, n + 1):
-                        print(str(i) + "\t" + str(n-i))
-                        d_sum_left = d_sum_left + binom.pmf(i, n, self._prob_simple)
-                        d_sum_right = d_sum_right + binom.pmf(n-i, n, self._prob_simple)
-
-                print(str(k) + "\t" + str(n-k) + "\t" + str(d_sum_left) + "\t" + str(d_sum_right) + "\t" + str(d_sum_left + d_sum_right))
-
-        return PVAL_DICT
+        return self._pval_dict[key]
 
 
-    def _pre_calculate_p_values_using_logcdf_and_logsf(self):
+    def _calculate_binomial_logsf_p_value(self, n_simple, n_twisted): # (natural) logsf
+        """
+        So far, we have used this function to calculate the P-values in script '04' and we will
+        continue to uses.
+        This function assumes a background frequency of 0.5 for simple and twisted read pairs.
+        Further down in this class an attempt is made to allow different background frequencies
+        for simple and twisted read pairs.
 
-        PVAL_DICT = {}
-
-        n_list = list(range(1, self._n_max + 1))
-
-        for n in n_list:
-
-            print(n)
-            k_list = list(range(0, n + 1))
-            PVAL_DICT[n] = []
-
-            try:
-                logcdf_list_simple = binom.logcdf(k_list, n, self._prob_simple)
-                logsf_list_simple = binom.logsf([n - k for k in k_list], n, self._prob_simple)
-                print(k_list)
-                print([n - k for k in k_list])
-                print(logcdf_list_simple)
-                print(logsf_list_simple)
-                print(-logaddexp(logcdf_list_simple[k_list], logsf_list_simple[k_list]))
-
-                print(n)
-                for k in k_list[:int(n+1)]:
-                    print(k)
-                    PVAL_DICT[n].append(-logaddexp(logcdf_list_simple[k], logsf_list_simple[k]))
-
-                print("p_values_two_sided_logcdfsf " + str(n) + ": " + str(PVAL_DICT[n]))
-
-            except RuntimeWarning:
-                print("Underflow at n = " + str(n) + "!")
-                exit(1)
-
-        return PVAL_DICT
+        :param n_simple:
+        :param n_twisted:
+        :return: Since the distribution is symmetrical because of p=0.5,
+        we return twice the P-value from a one-sided test as the P-value for a two-sided test.
+        For P-values that are too small to be represented, we return -np.inf.
+        """
+        try:
+            if n_simple < n_twisted:
+                p_value = binom.logsf(n_twisted - 1, n_simple + n_twisted, 0.5)
+                return 2*p_value
+            else:
+                p_value = binom.logsf(n_simple - 1, n_simple + n_twisted, 0.5)
+                return 2*p_value
+        except RuntimeWarning: # Underflow: P-value is too small
+            return -np.inf
+            #return log(sys.float_info.min * sys.float_info.epsilon) # return natural log of smallest possible float
 
     def compare_different_ways_of_p_value_calculation(self, N=5, prob_simple=0.5):
+        """
+        In this function, various methods for calculating the the P-values are tried out
+        and compared. First, the P-values are calculated by adding up the pmf.
+        Then the P-values are calculated using the cdf.
+        These P-values are then logarithmized and compared with those calculated with logcdf and logsf.
+
+        :param N: Maximum n
+        :param prob_simple: Background frequency of simple read pairs
+        """
 
         prob_twisted = 1.0 - prob_simple
         n_list = list(range(1, N + 1))
@@ -192,14 +177,53 @@ class BinomialModel:
                 print("Underflow at 'logcdf' and n = " + str(n) + "!")
                 exit(1)
 
-    def calculate_binomial_logsf_p_value(n_simple, n_twisted): # (natural) logsf
-        try:
-            if n_simple < n_twisted:
-                p_value = binom.logsf(n_twisted - 1, n_simple + n_twisted, 0.5)
-                return p_value
-            else:
-                p_value = binom.logsf(n_simple - 1, n_simple + n_twisted, 0.5)
-                return p_value
-        except RuntimeWarning: # Underflow: P-value is too small
-            return -np.inf
-            #return log(sys.float_info.min * sys.float_info.epsilon) # return natural log of smallest possible float
+    def _pre_calculate_p_values_using_logcdf_and_logsf(self):
+        """
+        This function is an attempt to implement a two-sided binomial test for directionality,
+        whereby the probability of success (prob_simple) does not necessarily have to be 0.5.
+        The functions uses 'logcdf', 'logsf' and 'logaddexp' from numpy are used, which allow
+        particularly small P-values to be calculated.
+        For a given n, the P-values for k = 0, ..., n are calculated at once and saved in a
+        dictionary, which is much faster than calculating the P-values one by one.
+        The function appears to be working for the left tail of the distribution,
+        but for the right tail (simple counts greater than n/2) a case distinction would have
+        to be maade and it is not clear how.
+
+        :return: PVAL_DICT dictionary with n as key and P-values for k = 0, ..., n as values.
+        """
+
+        # Dictionary with pre-calculated P-values to be returned
+        PVAL_DICT = {}
+
+        # List from 1 to n
+        n_list = list(range(1, self._n_max + 1))
+
+        # In one iteraation of this loop, we calculate all P-values for a given n.
+        for n in n_list:
+
+            print(n)
+
+            # List k = 0, ..., n for which P-values are to be calculated
+            k_list = list(range(0, n + 1))
+
+            # Maybe we shoul work with two lists that we put together afterwards
+            k_list_a = list(range(0, int(n/2) + 1))
+            k_list_b = list(range(int(n/2)+1, n + 1))
+
+            # Init array that will be stored under the key n
+            PVAL_DICT[n] = []
+
+            try:
+
+                logcdf_list_simple = binom.logcdf(k_list, n, self._prob_simple)
+                logsf_list_simple = binom.logsf([n - k for k in k_list], n, self._prob_simple)
+
+                PVAL_DICT[n] = -logaddexp(logcdf_list_simple[k_list], logsf_list_simple[k_list])
+
+                print("p_values_two_sided_logcdfsf n=" + str(n) + ": " + str(PVAL_DICT[n]))
+
+            except RuntimeWarning:
+                print("Underflow at n = " + str(n) + "!")
+                exit(1)
+
+        return PVAL_DICT
