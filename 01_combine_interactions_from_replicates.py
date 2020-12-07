@@ -181,6 +181,7 @@ def parse_gzip_tsv_file(file, interaction_dict):
 
     return n_iteraction
 
+
 ### Iterate interactions
 ########################
 # THE FOLLOWING COMMENTED LINES DO NOT USE THE FUNCTIONS FROM THIS SCRIPT,

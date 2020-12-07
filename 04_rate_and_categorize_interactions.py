@@ -9,29 +9,48 @@ FDR procedure. The output is again a file in Diachromatic interaction format, bu
 on the right for the calculated P-values and interaction categories.
 """
 
-from diachr.binomial_model import BinomialModel
+import argparse
+from numpy import log
+from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
 
-# Parse command line
+### Parse command line
+######################
+
+parser = argparse.ArgumentParser(description='Rate and categorize interactions and select unndirected reference interactions.')
 parser.add_argument('-o','--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('-i', '--diachromatic-interaction-file', help='Diachromatic interaction file.', required=True)
 parser.add_argument('--p-value-threshold', help='P-value threshold for directed interactions.', default=0.001)
+parser.add_argument('--enriched-digests-file', help='BED file with digests that were selected for target enrichment.', required=True)
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
-interaction_files_path = args.interaction_files_path
-required_replicates = int(args.required_replicates)
+diachromatic_interaction_file = args.diachromatic_interaction_file
+p_value_threshold = float(args.p_value_threshold)
+enriched_digests_file = args.enriched_digests_file
 
 print("[INFO] " + "Input parameters")
 print("\t[INFO] --out-prefix: " + out_prefix)
 print("\t[INFO] --diachromatic-interaction-file: " + diachromatic_interaction_file)
 print("\t[INFO] --p-value-threshold: " + str(p_value_threshold))
+print("\t[INFO] --enriched-digests-file: " + enriched_digests_file)
 
-
-# Determine the time savings acieved by using the dictionary
-#p_vaule_factory = BinomialModel()
-#p_vaule_factory.measure_time_savings_due_to_pval_dict()
+# Transform P-value threshold
+nln_p_value_threshold = -log(p_value_threshold)
+print("[INFO] We use the negative of the natural logarithm of the P-values.")
+print("\t[INFO] The chosen threshold corresponds to: -ln(" + str(p_value_threshold) + ") = " + str(nln_p_value_threshold))
 
 # Load interactions with 'DiachromaticInteractionParser'
+interaction_set = DiachromaticInteractionParser(enriched_digests_file)
+interaction_set.parse_file(diachromatic_interaction_file)
+
+interaction_set.rate_and_categorize_interactions(nln_p_value_threshold)
+
+interaction_set.select_reference_interactions()
+
+f_name = out_prefix + "_rated_and_categorized_interactions" + ".tsv.gz"
+interaction_set.write_diachromatic_interaction_file(target_file_name=f_name)
+
+
 
 
 # FIRST PASS: CALCULATE P-VALUES AND DEFINE DIRECTED AND UNDIRECTED INTERACTIONS

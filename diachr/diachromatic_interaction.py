@@ -86,7 +86,6 @@ class DiachromaticInteraction:
         else:
             return 'AA'
 
-
     @property
     def key(self):
         """
@@ -121,8 +120,8 @@ class DiachromaticInteraction:
                                                                 self._toB,
                                                                 statusB,
                                                                 self._simple,
-
                                                                 self._twisted)
+
     def get_diachromatic_interaction_line(self):
         """
         :return: A string that represents this interaction in Diachromatic's interaction format
@@ -154,6 +153,9 @@ class DiachromaticInteraction:
             str(self._simple)+ ":" + \
             str(self._twisted)
 
+        if type(self).__name__ == "DiachromaticInteraction11":
+            di_line = di_line + "\t" + str(self._nln_pval) + "\t" + self.get_category()
+
         return di_line
 
     def __hash__(self):
@@ -166,3 +168,47 @@ class DiachromaticInteraction:
 
     def __eq__(self, other):
         return self._fromA == other._fromA and self._fromB == other._fromB and self._chrA == other._chrA and self._chrB == other._chrB
+
+
+class DiachromaticInteraction11(DiachromaticInteraction):
+
+    """
+    This is an extension of the class DiachromaticInteraction that can store also a P-value and a category.
+    """
+
+    def __init__(self, chrA: str, fromA: int, toA: int, statusA:str, chrB: str, fromB: int, toB: int, statusB: str, simple: int, twisted: int, nln_pval: float):
+        super().__init__(chrA, fromA, toA, statusA, chrB, fromB, toB, statusB, simple, twisted)
+
+        # Negative of the natural logarithm of P-values
+        self._nln_pval = nln_pval
+
+        # Interaction category
+        self._category = None
+
+    def set_category(self, category: str):
+        """
+        Sets the category of an interaction
+        :param category: A string, either UI, DI or UIR
+        """
+        if category == "UI":
+            self._category = 0
+        elif category == "DI":
+            self._category = 1
+        elif category == "UIR":
+            self._category = 2
+        else:
+            raise TypeError("Invalid tag for interaction category: " + category + ". Must be either 'UI', 'DI' or 'UIR'")
+
+    def get_category(self):
+        """
+        Sets the category of an interaction
+        :param category: A string, either UI, DI or UIR
+        """
+        if self._category == 0:
+            return "UI"
+        elif self._category == 1:
+            return "DI"
+        elif aself._category == 2:
+            return "UIR"
+        else:
+            raise NameError("Interaction category not yet defined.")
