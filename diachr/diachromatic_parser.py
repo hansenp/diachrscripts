@@ -1,8 +1,8 @@
 import os
 import gzip
+from typing import Tuple, List
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
-
 
 
 class DiachromaticParser:

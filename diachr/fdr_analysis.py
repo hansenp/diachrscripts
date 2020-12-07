@@ -2,16 +2,11 @@ from collections import defaultdict
 from scipy.stats import binom
 import numpy as np
 import math
+import gzip
 
 from .diachr_util import calculate_binomial_logsf_p_value
-from .enhanced_interaction_parser import EnhancedInteractionParser
-from .enhanced_interaction import EnhancedInteraction
-
-
-
-
-
-
+from diachr.diachromatic_interaction import DiachromaticInteraction
+from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
 
 class FdrAnalysis:
     """
@@ -29,13 +24,13 @@ class FdrAnalysis:
     S_p / S_o is used as estimator for the FDR.
     """
 
-    def __init__(self, enhanced_interaction_file:str, 
+    def __init__(self, diachromatic_interaction_file:str, 
                         fdr_threshold:float=0.25, 
                         p_val_c_min:float=0.00025, 
                         p_val_c_max:float=0.05, 
                         step_size:float=0.00025, 
                         prefix:str='OUTPREFIX') -> None:
-        self._inputfile = enhanced_interaction_file
+        self._inputfile = diachromatic_interaction_file
         if fdr_threshold <= 0 or fdr_threshold > 1.0:
             raise ValueError("FDR threshold must be in (0,1)")
         self._fdr_threshold = fdr_threshold
@@ -52,7 +47,7 @@ class FdrAnalysis:
         self._pval_memo = defaultdict(float)
         print("[INFO] " + "Input parameters")
         print("\t[INFO] --out_prefix: " + self._prefix)
-        print("\t[INFO] --enhanced-interaction-file: " + self._inputfile)
+        print("\t[INFO] --diachromatic-interaction-file: " + self._inputfile)
         print("\t[INFO] --fdr-threshold: " + str(self._fdr_threshold))
         print("\t[INFO] --p-val-c-min: " + str(self._p_val_c_min))
         print("\t[INFO] --p-val-c-max: " + str(self._p_val_c_max))
@@ -63,15 +58,29 @@ class FdrAnalysis:
         self._n_interaction = 0
         # List of P-values for observed interactions
         self._p_val_o_list = []
-        # Input the interaction
-        eiparser = EnhancedInteractionParser(self._inputfile)
-        ei_list = eiparser.parse()
-        for ei in ei_list:
-            self._n_interaction += 1
-            if self._n_interaction % 1000000 == 0:
-                print("\t\t[INFO]", self._n_interaction, "interactions processed ...")
-            self._p_val_o_list.append(float(ei.neg_log_p_value))
-            self._N_DICT[ei.rp_total] += 1
+
+        # Get list of Dichromatic interaction objects
+        parser = DiachromaticInteractionParser()
+        parser.parse_file(diachromatic_interaction_file)
+        d_inter_list = parser.i_list
+        np.random.seed(42)
+        n_progress = 0
+        for d_inter in d_inter_list:
+            n_progress += 1
+            if n_progress % 100000 == 0:
+                print("\t[INFO] Processed " + str(n_progress) + " interaction objects ...")
+
+            # Get neg_log_p_value
+            neg_log_p_value = float("{:.2f}".format(-calculate_binomial_logsf_p_value(d_inter.simple, d_inter.twisted)))
+            self._p_val_o_list.append(neg_log_p_value)
+
+            # Add the sum of simple and twisted read pair counts to dictionary that will be used for randomization
+            if d_inter.total_readpairs in self._N_DICT:
+                self._N_DICT[d_inter.total_readpairs] += 1
+            else:
+                self._N_DICT[d_inter.total_readpairs] = 1
+
+        self._n_interaction = n_progress
         print("[INFO] Total number of interactions: {}".format(self._n_interaction))
         print("[INFO] Getting sorted lists of P-values ...")
 

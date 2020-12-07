@@ -12,6 +12,8 @@ from diachr.diachromatic_parser import DiachromaticParser
 import os
 import gzip
 from collections import defaultdict
+from diachr.diachromatic_interaction import DiachromaticInteraction
+from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
 
 
 ### Parse command line
@@ -179,9 +181,51 @@ def parse_gzip_tsv_file(file, interaction_dict):
 
     return n_iteraction
 
+### Iterate interactions
+########################
+# THE FOLLOWING COMMENTED LINES DO NOT USE THE FUNCTIONS FROM THIS SCRIPT,
+# BUT ONLY THE CLASSES DiachromaticInteraction and DiachromaticInteractionParser.
+# WHICH SIMPLIFIES THE CODE.
+# HOWEVER, THIS TASK REQUIRES A LOT OF MEMORY ANND IT STILL HAS TO BE TESTED WHETHER THE
+# MANY INTERACTION OBJECTS ARE NOT TOO LARGE.
+# IF THIS IS NOT THE CASE, WE COULD DELETE EVERYTHING ELSE FROM THIS SCRIPT.
+
+# Get list of interaction files under given path
+gz_files = get_gzip_tsv_files(interaction_files_path)
+if len(gz_files) < int(required_replicates):
+    print("[FATAL] Not enough replicates. Must be at least " + str(required_replicates) + " But there are only " + str(len(gzfiles)) + " files.")
+    exit(1)
+
+# Get list of Diachromatic interaction objects
+interaction_set = DiachromaticInteractionParser()
+print("[INFO] Will parse all gz files in " + interaction_files_path)
+for gz_file in gz_files:
+    print("\t[INFO] Reading ", gz_file)
+    interaction_set.parse_file(gz_file)
+
+# Print information about read files
+print(interaction_set.get_file_dict_info())
+
+# Write interactions that occur in enough replicates to file
+f_name = out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_interactions.tsv.gz"
+write_info = interaction_set.write_diachromatic_interaction_file(target_file_name=f_name, required_replicates=required_replicates)
+
+# Print information about written interactions
+print(write_info)
+
+# Create file that contains all the information
+f_name =  out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_summary.txt"
+out_fh = open(f_name, 'wt')
+out_fh.write(interaction_set.get_file_dict_info() + '\n')
+out_fh.write(write_info + '\n')
+out_fh.close()
+
+exit(1)
 
 ### Iterate interactions
 ########################
+# THIS IS THE OLD IMPLEMENTATION THAT CAN BE DELETED IF THE NEW IMPLEMENTATION DOES NOT
+# USE TOO MUCH MEMORY.
 
 print("[INFO] Will parse all gz files in", interaction_files_path)
 
