@@ -2,6 +2,7 @@ from scipy.stats import binom
 from numpy import log, logaddexp, exp
 import numpy as np
 import warnings
+import time
 
 class BinomialModel:
     """
@@ -69,6 +70,32 @@ class BinomialModel:
             return -np.inf
             # or return natural log of smallest possible float
             #return log(sys.float_info.min * sys.float_info.epsilon)
+
+    def measure_time_savings_due_to_pval_dict(self):
+        """
+        This function determines time saved by using the dictionary for P-values.
+        For this purpose, the time is measured which is required to to calculate approx. 500,000 P-values.
+        Then the time is measured that is required to query these P-values from the dictionary.
+        """
+        start_time = time.time()
+        n_max = 1000
+        for n in range(1, n_max + 1):
+            for k in range(0, n + 1):
+                self.get_binomial_logsf_p_value(k, n - k)
+        end_time = time.time()
+        pval_num = self._get_pval_dict_size()
+
+        print("It took " + "{:.2f}".format(end_time - start_time) + " seconds to calculate " + str(pval_num) + " P-values.")
+
+        start_time = time.time()
+        n_max = 1000
+        for n in range(1, n_max + 1):
+            for k in range(0, n + 1):
+                self.get_binomial_logsf_p_value(k, n - k)
+        end_time = time.time()
+        pval_num = self._get_pval_dict_size()
+
+        print("It took " + "{:.2f}".format(end_time - start_time) + " seconds to get " + str(pval_num) + " P-values from the dictionary.")
 
     def compare_different_ways_of_p_value_calculation(self, N=5, prob_simple=0.5):
         """

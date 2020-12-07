@@ -10,36 +10,29 @@ on the right for the calculated P-values and interaction categories.
 """
 
 from diachr.binomial_model import BinomialModel
-import time
 
-# PARSE COMMAND LINE
+# Parse command line
+parser.add_argument('-o','--out-prefix', help='Prefix for output.', default='OUTPREFIX')
+parser.add_argument('-i', '--diachromatic-interaction-file', help='Diachromatic interaction file.', required=True)
+parser.add_argument('--p-value-threshold', help='P-value threshold for directed interactions.', default=0.001)
 
-# TEST MODULE FOR P-VALUE CALCULATION
+args = parser.parse_args()
+out_prefix = args.out_prefix
+interaction_files_path = args.interaction_files_path
+required_replicates = int(args.required_replicates)
 
-p_vaule_factory = BinomialModel()
-
-start_time = time.time()
-n_max = 1000
-for n in range(1, n_max + 1):
-    for k in range(0, n + 1):
-        p_vaule_factory.get_binomial_logsf_p_value(k, n - k)
-end_time = time.time()
-pval_num = p_vaule_factory._get_pval_dict_size()
-
-print("It took " + "{:.2f}".format(end_time-start_time) + " seconds to calculate " + str(pval_num) + " P-values.")
-
-start_time = time.time()
-n_max = 1000
-for n in range(1, n_max + 1):
-    for k in range(0, n + 1):
-        p_vaule_factory.get_binomial_logsf_p_value(k, n - k)
-end_time = time.time()
-pval_num = p_vaule_factory._get_pval_dict_size()
-
-print("It took " + "{:.2f}".format(end_time-start_time) + " seconds to get " + str(pval_num) + " P-values from the dictionary.")
+print("[INFO] " + "Input parameters")
+print("\t[INFO] --out-prefix: " + out_prefix)
+print("\t[INFO] --diachromatic-interaction-file: " + diachromatic_interaction_file)
+print("\t[INFO] --p-value-threshold: " + str(p_value_threshold))
 
 
-# LOAD INTERACTIONS WITH 'DiachromaticInteractionparser'
+# Determine the time savings acieved by using the dictionary
+#p_vaule_factory = BinomialModel()
+#p_vaule_factory.measure_time_savings_due_to_pval_dict()
+
+# Load interactions with 'DiachromaticInteractionParser'
+
 
 # FIRST PASS: CALCULATE P-VALUES AND DEFINE DIRECTED AND UNDIRECTED INTERACTIONS
 

@@ -17,12 +17,10 @@ from collections import defaultdict
 ### Parse command line
 ######################
 
-
 parser = argparse.ArgumentParser(description='Combine interactions that occur in a specified number of replicates.')
 parser.add_argument('-o','--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('-i','--interaction-files-path', help='Path to directory with gzip files', required=True)
 parser.add_argument('-r','--required-replicates', help='Required number of replicates.', required=True)
-
 parser.add_argument('-m','--usemod', help="Use new module", dest='usemod', action='store_true')
 
 args = parser.parse_args()
