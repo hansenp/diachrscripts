@@ -1,6 +1,5 @@
 import gzip
 import os
-from typing import Tuple, List
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
@@ -49,6 +48,8 @@ class DiachromaticInteractionParser:
 
         print("[INFO] Parsing Diachromatic interaction file ...")
 
+        print("\t[INFO] " + i_file)
+
         if i_file.endswith(".gz"):
             with gzip.open(i_file, 'rt') as fp:
                 n_lines = 0
@@ -58,7 +59,7 @@ class DiachromaticInteractionParser:
                         print("\t[INFO] Parsed " + str(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
                     if d_inter.key in self._inter_dict:
-                        self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.simple, twisted=d_inter.twisted)
+                        self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple, twisted=d_inter.n_twisted)
                     else:
                         self._inter_dict[d_inter.key] = d_inter
         else:
@@ -70,7 +71,7 @@ class DiachromaticInteractionParser:
                         print("\t[INFO] Parsed " + str(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
                     if d_inter.key in self._inter_dict:
-                        self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.simple, twisted=d_inter.twisted)
+                        self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple, twisted=d_inter.n_twisted)
                     else:
                         self._inter_dict[d_inter.key] = d_inter
 
@@ -189,7 +190,7 @@ class DiachromaticInteractionParser:
         for d_inter in self._inter_dict.values():
 
             # Get P-value
-            nln_p_val = self._p_values.get_binomial_logsf_p_value(d_inter._simple, d_inter._twisted)
+            nln_p_val = self._p_values.get_binomial_nnl_p_value(d_inter._simple, d_inter._twisted)
 
             # Determine interaction category
             if nln_pval_thresh <= nln_p_val:
@@ -201,13 +202,13 @@ class DiachromaticInteractionParser:
                 chrA=d_inter.chrA,
                 fromA=d_inter._fromA,
                 toA=d_inter._toA,
-                statusA=d_inter.status[0],
+                statusA=d_inter.enrichment_status_tag_pair[0],
                 chrB=d_inter.chrB,
                 fromB=d_inter._fromB,
                 toB=d_inter._toB,
-                statusB=d_inter.status[1],
-                simple=d_inter.simple,
-                twisted=d_inter.twisted,
+                statusB=d_inter.enrichment_status_tag_pair[1],
+                simple=d_inter.n_simple,
+                twisted=d_inter.n_twisted,
                 nln_pval=nln_p_val)
 
             di_11_inter.set_category(i_category)
@@ -235,8 +236,8 @@ class DiachromaticInteractionParser:
         for d11_inter in self._inter_dict.values():
 
             # Get enrichment status tag pair and read pair number
-            enrichment_pair_tag = d11_inter.status
-            rp_total = d11_inter.total_readpairs
+            enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
+            rp_total = d11_inter.rp_total
 
             # Collect read pair numbers for DI
             if d11_inter.get_category == 'DI':

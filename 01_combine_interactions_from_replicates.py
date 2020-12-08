@@ -194,14 +194,14 @@ def parse_gzip_tsv_file(file, interaction_dict):
 # Get list of interaction files under given path
 gz_files = get_gzip_tsv_files(interaction_files_path)
 if len(gz_files) < int(required_replicates):
-    print("[FATAL] Not enough replicates. Must be at least " + str(required_replicates) + " But there are only " + str(len(gzfiles)) + " files.")
+    print("[FATAL] Not enough replicates. Must be at least " + str(required_replicates) + " But there are only " + str(len(gz_files)) + " files.")
     exit(1)
 
 # Get list of Diachromatic interaction objects
 interaction_set = DiachromaticInteractionParser()
 print("[INFO] Will parse all gz files in " + interaction_files_path)
 for gz_file in gz_files:
-    print("\t[INFO] Reading ", gz_file)
+    #print("\t[INFO] Reading ", gz_file)
     interaction_set.parse_file(gz_file)
 
 # Print information about read files

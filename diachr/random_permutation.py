@@ -22,7 +22,7 @@ class RandomPermutation:
         parser = DiachromaticParser(combined_interaction_file)
         self._interaction_d = parser.get_interaction_dict()
         for _, interaction in self._interaction_d.items():
-            self._N_DICT[interaction.total_readpairs] += 1
+            self._N_DICT[interaction.rp_total] += 1
         print("[INFO] We ingested {} interactions from {}".format(len(self._interaction_d), combined_interaction_file))
         # Minimum number of read pairs required for significance
         self._minimum_powered_n, self._pv_of_minimum_powered_n = find_minimum_powered_n(self._nominal_alpha)
@@ -36,7 +36,7 @@ class RandomPermutation:
         for _, interaction in self._interaction_d.items():
             self._n_interaction += 1
             # Skip interactions that cannot be significant
-            n = interaction.total_readpairs
+            n = interaction.rp_total
             if n < self._minimum_powered_n:
                 self._n_underpowered_interaction += 1
                 continue
@@ -44,14 +44,14 @@ class RandomPermutation:
             if key in self._pval_memo:
                 pv = self._pval_memo[key]
             else:
-                pv = calculate_binomial_p_value(interaction.simple, interaction.twisted)
+                pv = calculate_binomial_p_value(interaction.n_simple, interaction.n_twisted)
                 self._pval_memo[key] = pv
             # Count interaction as directed or undirected
             if pv < self._nominal_alpha:
                 self._n_directed_interaction += 1
             else:
                 self._n_undirected_interaction += 1
-            self._N_DICT[interaction.total_readpairs] += 1
+            self._N_DICT[interaction.rp_total] += 1
         # Output some statistics about original interactions
         print("[INFO] Total number interactions: {}".format(len(self._interaction_d)))
         print("\t[INFO] Number of underpowered interactions (discarded): {}".format(self._n_underpowered_interaction))

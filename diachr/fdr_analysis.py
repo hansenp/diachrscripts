@@ -71,14 +71,14 @@ class FdrAnalysis:
                 print("\t[INFO] Processed " + str(n_progress) + " interaction objects ...")
 
             # Get neg_log_p_value
-            neg_log_p_value = float("{:.2f}".format(-calculate_binomial_logsf_p_value(d_inter.simple, d_inter.twisted)))
+            neg_log_p_value = float("{:.2f}".format(-calculate_binomial_logsf_p_value(d_inter.n_simple, d_inter.n_twisted)))
             self._p_val_o_list.append(neg_log_p_value)
 
             # Add the sum of simple and twisted read pair counts to dictionary that will be used for randomization
-            if d_inter.total_readpairs in self._N_DICT:
-                self._N_DICT[d_inter.total_readpairs] += 1
+            if d_inter.rp_total in self._N_DICT:
+                self._N_DICT[d_inter.rp_total] += 1
             else:
-                self._N_DICT[d_inter.total_readpairs] = 1
+                self._N_DICT[d_inter.rp_total] = 1
 
         self._n_interaction = n_progress
         print("[INFO] Total number of interactions: {}".format(self._n_interaction))

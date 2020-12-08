@@ -19,16 +19,18 @@ Finally, in order to compare the overall significance of for different datasets,
 and standard deviation of w_i.
 """
 
-
-from diachr.random_permutation import RandomPermutation
-import diachrscripts_toolkit as dclass
 import argparse
 import gzip
 from scipy.stats import binom
 from collections import defaultdict
 from statistics import mean, stdev
+from numpy import exp
 import multiprocessing as mp
 import itertools
+
+from diachr.random_permutation import RandomPermutation
+import diachrscripts_toolkit as dclass
+from diachr.binomial_model import BinomialModel
 
 
 ### Parse command line
@@ -75,6 +77,8 @@ if args.usemod:
 #    note -- use this as a global variable in this script!
 pval_memo = defaultdict(float)
 
+p_values = BinomialModel()
+
 def binomial_p_value(simple_count, twisted_count):
     """
     Locally defined method for the calculation of the binomial P-value that uses a dictionary that keeps track of
@@ -94,6 +98,10 @@ def binomial_p_value(simple_count, twisted_count):
     else:
         # Calculate P-value and add to dictionary
         p_value = dclass.calculate_binomial_p_value(simple_count, twisted_count)
+        #p_value = exp(-p_values.get_binomial_nnl_p_value(simple_count, twisted_count))/2.0
+        # results/tmp_results/02/02	10	0.05	5	1000000	643678	316119	40203	19656.80	75.63	271.68	0
+        # results/tmp_results/02/02	10	0.05	5	1000000	643678	316119	40203	19586.60	196.98	104.66	0
+
         pval_memo[key] = p_value
         return p_value
 

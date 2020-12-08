@@ -10,14 +10,14 @@ class DiachromaticInteraction:
         @param F an array with 9 elements that represent an interaction
         """
 
-        # map status flag pair to int
-        if statusA == 'I' and statusB == 'I':
+        # Map status flag pair to int
+        if (statusA == 'I' and statusB == 'I') or (statusA == 'N' and statusB == 'N'):
             self.s_flag_int = 0
-        elif statusA == 'I' and statusB == 'A':
+        elif (statusA == 'I' and statusB == 'A') or (statusA == 'N' and statusB == 'E'):
             self.s_flag_int = 1
-        elif statusA == 'A' and statusB == 'I':
+        elif (statusA == 'A' and statusB == 'I') or (statusA == 'E' and statusB == 'N'):
             self.s_flag_int = 2
-        elif statusA == 'A' and statusB == 'A':
+        elif (statusA == 'A' and statusB == 'A') or (statusA == 'E' and statusB == 'E'):
             self.s_flag_int = 3
         else:
             raise ValueError("Bad status values: A-%s, B-%s" % (statusA, statusB))
@@ -64,19 +64,19 @@ class DiachromaticInteraction:
         return "chr%s" % self._chrB
 
     @property
-    def simple(self):
+    def n_simple(self):
         return self._simple
 
     @property
-    def twisted(self):
+    def n_twisted(self):
         return self._twisted
 
     @property
-    def total_readpairs(self):
+    def rp_total(self):
         return self._simple + self._twisted
 
     @property
-    def status(self):
+    def enrichment_status_tag_pair(self):
         if self.s_flag_int == 0:
             return 'II'
         elif self.s_flag_int == 1:
@@ -92,35 +92,6 @@ class DiachromaticInteraction:
         Unique key to refer to this pair of Digests
         """
         return "%s%d%s%d" % (self._chrA, self._fromA, self._chrB, self._fromB)
-
-
-    def output_summary(self):
-        """
-        This function essentially recreates the original line from Diachromatic (for a single interaction)
-        or creates an analogous line for the recreated interactions.
-        """
-        if self.s_flag_int == 0:
-            statusA = 'I'
-            statusB = 'I'
-        elif self.s_flag_int == 1:
-            statusA = 'I'
-            statusB = 'A'
-        elif self.s_flag_int == 2:
-            statusA = 'A'
-            statusB = 'I'
-        else:
-            statusA = 'A'
-            statusB = 'A'
-        return "chr{}\t{}\t{}\t{}\tchr{}\t{}\t{}\t{}\t{}:{}".format(self._chrA,
-                                                                self._fromA,
-                                                                self._toA,
-                                                                statusA,
-                                                                self._chrB,
-                                                                self._fromB,
-                                                                self._toB,
-                                                                statusB,
-                                                                self._simple,
-                                                                self._twisted)
 
     def get_diachromatic_interaction_line(self):
         """
@@ -171,7 +142,6 @@ class DiachromaticInteraction:
 
 
 class DiachromaticInteraction11(DiachromaticInteraction):
-
     """
     This is an extension of the class DiachromaticInteraction that can store also a P-value and a category.
     """
@@ -187,9 +157,10 @@ class DiachromaticInteraction11(DiachromaticInteraction):
 
     def set_category(self, category: str):
         """
-        Sets the category of an interaction
+        Sets the category of an interaction.
         :param category: A string, either UI, DI or UIR
         """
+
         if category == "UI":
             self._category = 0
         elif category == "DI":
@@ -201,14 +172,15 @@ class DiachromaticInteraction11(DiachromaticInteraction):
 
     def get_category(self):
         """
-        Sets the category of an interaction
+        Returns the category of an interaction.
         :param category: A string, either UI, DI or UIR
         """
+
         if self._category == 0:
             return "UI"
         elif self._category == 1:
             return "DI"
-        elif aself._category == 2:
+        elif self._category == 2:
             return "UIR"
         else:
             raise NameError("Interaction category not yet defined.")

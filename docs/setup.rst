@@ -1,4 +1,4 @@
-.. _rstsetup
+.. _RST_setup:
 
 Setup
 #####

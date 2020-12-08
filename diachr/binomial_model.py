@@ -30,7 +30,7 @@ class BinomialModel:
         print("Size of dictionary for P-values: " + str(len(self._pval_dict)))
         return len(self._pval_dict)
 
-    def get_binomial_logsf_p_value(self, n_simple, n_twisted):
+    def get_binomial_nnl_p_value(self, n_simple, n_twisted):
         """
         This function returns already calculated P-values from the dictionary or,
         if the P-value has not yet been calculated, a function is called to
@@ -62,10 +62,12 @@ class BinomialModel:
         try:
             if n_simple < n_twisted:
                 p_value = binom.logsf(n_twisted - 1, n_simple + n_twisted, 0.5)
-                return -2*p_value
+                return -logaddexp(p_value,p_value)
             else:
                 p_value = binom.logsf(n_simple - 1, n_simple + n_twisted, 0.5)
-                return -2*p_value
+
+            return -logaddexp(p_value, p_value)
+
         except RuntimeWarning: # Underflow: P-value is too small
             return -np.inf
             # or return natural log of smallest possible float
@@ -81,7 +83,7 @@ class BinomialModel:
         n_max = 1000
         for n in range(1, n_max + 1):
             for k in range(0, n + 1):
-                self.get_binomial_logsf_p_value(k, n - k)
+                self.get_binomial_nnl_p_value(k, n - k)
         end_time = time.time()
         pval_num = self._get_pval_dict_size()
 
@@ -91,7 +93,7 @@ class BinomialModel:
         n_max = 1000
         for n in range(1, n_max + 1):
             for k in range(0, n + 1):
-                self.get_binomial_logsf_p_value(k, n - k)
+                self.get_binomial_nnl_p_value(k, n - k)
         end_time = time.time()
         pval_num = self._get_pval_dict_size()
 
