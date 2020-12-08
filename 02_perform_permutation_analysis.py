@@ -15,6 +15,7 @@ from statistics import mean, stdev
 from numpy import exp
 import multiprocessing as mp
 import itertools
+import numpy as np
 
 from diachr.random_permutation import RandomPermutation
 import diachrscripts_toolkit as dclass
@@ -65,33 +66,20 @@ if args.usemod:
 pval_memo = defaultdict(float)
 
 p_values = BinomialModel()
+# Unchanged
+# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
+# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
 
-def binomial_p_value(simple_count, twisted_count):
-    """
-    Locally defined method for the calculation of the binomial P-value that uses a dictionary that keeps track of
-    P-values that already have been calculated.
+# Using P-value class with exp(-nln_pval)/2
+# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
+# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
+# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
+# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
+# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
+# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
 
-    :param simple_count: Number of simple read pairs
-    :param twisted_count: Number of twisted read pairs
-    :return: Binomial P-value
-    """
-
-    # Create key from simple and twisted read pair counts
-    key = "{}-{}".format(simple_count, twisted_count)
-
-    # Check whether a P-value for this combination of simple and twisted counts has been calculated already
-    if key in pval_memo:
-        return pval_memo[key]
-    else:
-        # Calculate P-value and add to dictionary
-        p_value = dclass.calculate_binomial_p_value(simple_count, twisted_count)
-        #p_value = exp(-p_values.get_binomial_nnl_p_value(simple_count, twisted_count))/2.0
-        # results/tmp_results/02/02	10	0.05	5	1000000	643678	316119	40203	19656.80	75.63	271.68	0
-        # results/tmp_results/02/02	10	0.05	5	1000000	643678	316119	40203	19586.60	196.98	104.66	0
-
-        pval_memo[key] = p_value
-        return p_value
-
+# Set random seed
+np.random.seed(42)
 
 def perform_one_iteration():
     """
@@ -116,12 +104,7 @@ def perform_one_iteration():
             twisted_count = n - simple_count
 
             # Get binomial P-value
-            key = "{}-{}".format(simple_count, twisted_count)
-            if key in pval_memo:
-                pv = pval_memo[key]
-            else:
-                pv = binomial_p_value(simple_count, twisted_count)
-                pval_memo[key] = pv
+            pv = p_values.get_binomial_p_value(simple_count, twisted_count) / 2.0
 
             # Count significant interactions
             if pv < NOMINAL_ALPHA:
@@ -206,12 +189,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
             continue
 
         # Get P-value of interaction
-        key = "{}-{}".format(n_simple, n_twisted)
-        if key in pval_memo:
-            pv = pval_memo[key]
-        else:
-            pv = binomial_p_value(n_simple, n_twisted)
-            pval_memo[key] = pv
+        pv = p_values.get_binomial_p_value(n_simple, n_twisted) / 2.0
 
         # Count interaction as directed or undirected
         if pv < NOMINAL_ALPHA:

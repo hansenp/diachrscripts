@@ -46,6 +46,14 @@ class BinomialModel:
 
         return self._pval_dict[key]
 
+    def get_binomial_p_value(self, n_simple, n_twisted):
+        """
+        :param n_simple: Number of simple read pairs
+        :param n_twisted: Number of simple read pairs
+        :return: P-value of a two-sided test for directionality
+        """
+        return(exp(-self.get_binomial_nnl_p_value(n_simple, n_twisted)))
+
 
     def _calculate_binomial_logsf_p_value(self, n_simple, n_twisted): # (natural) logsf
         """
