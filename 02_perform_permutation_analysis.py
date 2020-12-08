@@ -1,22 +1,10 @@
 #!/usr/bin/env python
 
 """
-This script estimates the significance of the observation of a certain amount of interactions that are nominally
-significant under a binomial test with the null hypothesis that simple and twisted read pairs are equally probably.
-It inputs a capture Hi-C (CHC) dataset (that has been processed by Diachromatic).
+This script takes a path to a Diachromatic interaction file and determines the overall significance of directed
+interactions  by randomization of simple and twisted read pairs.
 
-For each interaction (one line in the Diachromatic file), it performs a binomial test with n = total number of
-interactions, p = 0.5 and k = min(# simple read pairs (s), # twisted read pairs (t)). The result of this test is
-assessed as to whether it is significant at a nominal level of alpha = 0.05. We then count the total number of such
-significant tests (call this number W).
-
-Then, we randomize the input by permuting the counts of simple and twisted read pairs of each interaction using
-Binom(n = s + t, p = 0.5) and recalculate the number of 'significant' interactions. We do this m times
-(m = 1000 by default) and record the number of significant interactions for each iteration (w_i). If we do not observe
-an iteration with W < w_i, we estimate the empirical P-value with p < 1/m.
-
-Finally, in order to compare the overall significance of for different datasets, we compute the Z-score from the mean
-and standard deviation of w_i.
+You can find a detailed documentation on this script in the relevant section in the RTD of this repository.
 """
 
 import argparse
@@ -36,8 +24,7 @@ from diachr.binomial_model import BinomialModel
 ### Parse command line
 ######################
 
-parser = argparse.ArgumentParser(description='Determine overall significance of directed interactions using random'
-                                             'permutation of simple and twisted read pairs.')
+parser = argparse.ArgumentParser(description='Determine overall significance of directed interactions by randomization of simple and twisted read pairs.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('-i','--interaction-file', help='Diachromatic interaction file.', required=True)
 parser.add_argument('-n','--iter-num', help='Number of iterations.', default=1000)
