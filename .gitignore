@@ -15,6 +15,7 @@ chc2go/
 
 # Pycharm connfiguration files
 .idea/*.*
+.idea/*/*
 
 # Distribution / packaging
 .Python
