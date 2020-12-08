@@ -242,7 +242,7 @@ class DiachromaticInteractionParser:
             if d11_inter.get_category == 'DI':
 
                 # Count directed interactions
-                di_num += 1
+                #di_num += 1
 
                 if enrichment_pair_tag == 'II':
                     if rp_total not in di_ii_rp_dict:
