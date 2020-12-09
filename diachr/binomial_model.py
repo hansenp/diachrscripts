@@ -81,6 +81,23 @@ class BinomialModel:
             # or return natural log of smallest possible float
             #return log(sys.float_info.min * sys.float_info.epsilon)
 
+
+    def find_indefinable_n(self, p_value_threshold, verbose=True):
+        """
+        :param p_value_threshold: Chosen threshold
+        :return: Minimal n that yields a significant P-value given the threshold
+        """
+        if verbose:
+            print(
+                "[INFO] Looking for smallest number of read pairs n that yields a significant P-value with the given threshold of " + str(
+                    p_value_threshold) + ".")
+        for n in range(1, 1000):
+            p_value = self.get_binomial_p_value(n, 0)
+            if p_value < p_value_threshold:
+                if verbose:
+                    print("\t[INFO] Smallest n: " + str(n) + " read pairs (" + str(p_value) + ")")
+                return n, p_value
+
     def measure_time_savings_due_to_pval_dict(self):
         """
         This function determines time saved by using the dictionary for P-values.

@@ -581,6 +581,7 @@ def find_indefinable_n(p_value_cutoff, verbose = True):
         print("[INFO] Looking for smallest number of read pairs n that yields a significant P-value with the given threshold of " + str(p_value_cutoff) + ".")
     for n in range(1, 1000):
         p_value = calculate_binomial_p_value(n, 0)
+        print(str(p_value) + "\t" + str(n) + "\told")
         if p_value < p_value_cutoff:
             if verbose:
                 print("\t[INFO] Smallest n: " + str(n) + " read pairs (" + str(p_value) + ")")
