@@ -8,17 +8,18 @@ You can find a detailed documentation on this script in the relevant section in 
 """
 
 import argparse
-import gzip
 from scipy.stats import binom
 from collections import defaultdict
 from statistics import mean, stdev
-from numpy import exp, log
+from numpy import log
 import multiprocessing as mp
 import itertools
 import numpy as np
 
-from diachr.random_permutation import RandomPermutation
+from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
 from diachr.binomial_model import BinomialModel
+
+from diachr.random_permutation import RandomPermutation
 
 
 ### Parse command line
@@ -70,30 +71,6 @@ if args.usemod:
 pval_memo = defaultdict(float)
 
 p_values = BinomialModel()
-# Unchanged
-# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
-# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
-
-# Using P-value class with exp(-nln_pval)/2
-# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
-# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
-# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
-# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
-# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
-# results/tmp_results/02/02	100	0.05	5	1000000	643678	316119	40203	19646.36	127.98	160.62	0
-
-# Using P-value class with exp(-nln_pval)
-# results/tmp_results/02/02	100	0.05	5	1000000	>643678<	332283	24039	8053.22	91.56	174.60	0
-# results/tmp_results/02/02	100	0.05	5	1000000	643678	332283	24039	8053.22	91.56	174.60	0
-# results/tmp_results/02/02	100	0.05	5	1000000	643678	332283	24039	8053.22	91.56	174.60	0
-
-# Using P-value class with exp(-nln_pval) -> adjusted indef-function to two-sided test
-# results/tmp_results/02/02	100	0.05	6	1000000	706490	269471	24039	8034.44	75.56	211.80	0
-
-# Using nln(p_val_thresh) instead of p_val_thresh -> Should not change results
-# results/tmp_results/02/02	100	0.05	6	1000000	706490	269471	24039	8034.44	75.56	211.80	0
-# results/tmp_results/02/02	100	0.05	6	1000000	706490	269471	24039	8034.44	75.56	211.80	0
-# results/tmp_results/02/02	100	0.05	6	1000000	706490	269471	24039	8034.44	75.56	211.80	0
 
 # Set random seed
 np.random.seed(random_seed)
@@ -110,7 +87,7 @@ def perform_one_iteration():
     n_random_significant = 0
 
     # Iterate dictionary with numbers of interactions foreach read pair number n
-    for n, i_num in N_DICT.items():
+    for n, i_num in RP_I_DICT.items():
 
         # Generate random simple read pair counts for current n
         simple_count_list = list(binom.rvs(n, p = 0.5, size = i_num))
@@ -145,8 +122,8 @@ def perform_m_iterations(m_iter):
 ### Prepare variables, data structures and streams for output files
 ###################################################################
 
-# Dictionary that stores the numbers of interactions with n read pairs
-N_DICT = {}
+# Dictionary that stores for each total read pair number (n) the number of interactions
+RP_I_DICT = {}
 
 # Minimum number of read pairs required for significance
 smallest_sig_n, pv_indefinable_cutoff = p_values.find_smallest_significant_n(NOMINAL_ALPHA)
@@ -175,51 +152,43 @@ txt_stream_w_sig_p_output = open(txt_file_w_sig_p_output, 'wt')
 ### Start execution
 ###################
 
-print("[INFO] Iterating Diachromatic interaction file ...")
-with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
+# Get list of Diachromatic interaction objects
+interaction_set = DiachromaticInteractionParser()
+interaction_set.parse_file(diachromatic_interaction_file)
+d_inter_list = interaction_set.interaction_list
 
-    for line in fp:
+# Iterate Dichromatic interaction objects
+print("[INFO] Iterating list Diachromatic interaction objects ...")
+for d_inter in d_inter_list:
 
-        # Count total number of interactions
-        n_interaction += 1
+    # Count total number of interactions
+    n_interaction += 1
 
-        # Report progress
-        if n_interaction % 1000000 == 0:
-            print("\t\t[INFO]", n_interaction, "interactions processed ...")
+    # Report progress
+    if n_interaction % 1000000 == 0:
+        print("\t\t[INFO]", n_interaction, "interactions processed ...")
 
-        # Split Diachromatic interaction line
-        fields = line.rstrip('\n').split('\t')
+    # Skip interactions that cannot be significant
+    if d_inter.rp_total < smallest_sig_n:
+        n_indefinable_interaction += 1
+        continue
 
-        # Check format of Diachromatic interaction line
-        if len(fields) < 9:
-            raise TypeError("Malformed diachromatic input line {} (number of fields {})".format(line, len(fields)))
+    # Get P-value of interaction
+    nln_pv = p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
 
-        # Extract simple and twisted read pair counts from Diachromatic interaction line
-        n_simple, n_twisted = fields[8].split(':')
-        n_simple = int(n_simple)
-        n_twisted = int(n_twisted)
-        n = n_simple + n_twisted
+    # Count directed and undirected interactions
+    if NLN_NOMINAL_ALPHA < nln_pv:
+        n_directed_interaction += 1
+    else:
+        n_undirected_interaction += 1
 
-        # Skip interactions that cannot be significant
-        if n < smallest_sig_n:
-            n_indefinable_interaction += 1
-            continue
+    # Add total number of read pair counts to dictionary that will be used for randomization
+    if d_inter.rp_total in RP_I_DICT:
+        RP_I_DICT[d_inter.rp_total] += 1
+    else:
+        RP_I_DICT[d_inter.rp_total] = 1
 
-        # Get P-value of interaction
-        nln_pv = p_values.get_binomial_nnl_p_value(n_simple, n_twisted)
-
-
-        # Count interaction as directed or undirected
-        if NLN_NOMINAL_ALPHA < nln_pv:
-            n_directed_interaction += 1
-        else:
-            n_undirected_interaction += 1
-
-        # Add the sum of simple and twisted read pair counts to dictionary that will be used for randomization
-        if n in N_DICT:
-            N_DICT[n] +=1
-        else:
-            N_DICT[n] = 1
+print("[INFO] ... done.")
 
 
 # Output some statistics about original interactions
