@@ -149,7 +149,7 @@ def perform_m_iterations(m_iter):
 N_DICT = {}
 
 # Minimum number of read pairs required for significance
-n_indefinable_cutoff, pv_indefinable_cutoff = p_values.find_indefinable_n(NOMINAL_ALPHA)
+smallest_sig_n, pv_indefinable_cutoff = p_values.find_smallest_significant_n(NOMINAL_ALPHA)
 
 # Total number of input interactions
 n_interaction = 0
@@ -201,7 +201,7 @@ with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
         n = n_simple + n_twisted
 
         # Skip interactions that cannot be significant
-        if n < n_indefinable_cutoff:
+        if n < smallest_sig_n:
             n_indefinable_interaction += 1
             continue
 
@@ -286,7 +286,7 @@ print("\t[INFO] OUT_PREFIX"
 print("\t[INFO] " + out_prefix + "\t"
       + str(ITER_NUM) + "\t"
       + str(NOMINAL_ALPHA) + "\t"
-      + str(n_indefinable_cutoff) + "\t"
+      + str(smallest_sig_n) + "\t"
       + str(n_interaction) + "\t"
       + str(n_indefinable_interaction) + "\t"
       + str(n_undirected_interaction) + "\t"
@@ -319,7 +319,7 @@ tab_stream_stats_output.write("OUT_PREFIX"
 tab_stream_stats_output.write(out_prefix + "\t"
                               + str(ITER_NUM) + "\t"
                               + str(NOMINAL_ALPHA) + "\t"
-                              + str(n_indefinable_cutoff) + "\t"
+                              + str(smallest_sig_n) + "\t"
                               + str(n_interaction) + "\t"
                               + str(n_indefinable_interaction) + "\t"
                               + str(n_undirected_interaction) + "\t"

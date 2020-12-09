@@ -82,21 +82,24 @@ class BinomialModel:
             #return log(sys.float_info.min * sys.float_info.epsilon)
 
 
-    def find_indefinable_n(self, p_value_threshold, verbose=True):
+    def find_smallest_significant_n(self, p_val_thresh, verbose=True):
         """
-        :param p_value_threshold: Chosen threshold
-        :return: Minimal n that yields a significant P-value given the threshold
+        This function finds the smallest n that gives a significant P-value at a chosen threshold.
+        A tuple consisting of the smallest n and the associated P-value is returned.
+
+        :param p_val_thresh:float
+        :return: (n:int, p_val:float)
         """
+
         if verbose:
-            print(
-                "[INFO] Looking for smallest number of read pairs n that yields a significant P-value with the given threshold of " + str(
-                    p_value_threshold) + ".")
+            print("[INFO] Looking for smallest n with a significant P-value at the chosen threshold of " + str(p_val_thresh) + ".")
+
         for n in range(1, 1000):
-            p_value = self.get_binomial_p_value(n, 0)
-            if p_value < p_value_threshold:
+            p_val = self.get_binomial_p_value(n, 0)
+            if p_val < p_val_thresh:
                 if verbose:
-                    print("\t[INFO] Smallest n: " + str(n) + " read pairs (" + str(p_value) + ")")
-                return n, p_value
+                    print("\t[INFO] Smallest n: " + str(n) + " read pairs (" + str(p_val) + ")")
+                return n, p_val
 
     def measure_time_savings_due_to_pval_dict(self):
         """
