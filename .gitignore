@@ -4,8 +4,8 @@ __pycache__/
 *$py.class
 
 # Local directories
-data
-results
+#data/
+results/
 
 # subdirectory with tool for GO analysis
 chc2go/
