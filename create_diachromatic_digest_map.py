@@ -145,9 +145,25 @@ for d in enriched_digests_set:
                 sta = fields[1]        # Fragment_Start_Position
                 end = fields[2]        # Fragment_End_Position
 
-                if chr == CHR and STA - add_range < int(sta) and int(end) < END + add_range:
+                if chr == CHR and STA - add_range <= int(sta) and int(end) <= END + add_range:
                     print(line)
 
 print("[INFO] ... done.")
 # chr15	23033835	23052286
 # chr15	23033832	23052283	2142	HindIII	HindIII	18452	0.005	0.005	0.013	0.014	F	0	0
+
+
+# --out-prefix
+# results/tmp_results/create_digest_map/JAV_HindIII_hg19
+# --enriched-digests-file
+# data/tmp_example_input_data/digest_map/hg19/Digest_Human_HindIII_baits_e75_ID.baitmap.bed
+# --diachromatic-digest-map
+# data/tmp_example_input_data/digest_map/hg19/digest_map_hg19_hg19_DigestedGenome.txt
+
+
+# --out-prefix
+# results/tmp_results/create_digest_map/JAV_HindIII_hg19
+# --enriched-digests-file
+# additional_files/javierre_2016/baited_digest_regions/Digest_Human_HindIII_baits_e75_ID.baitmap.hg38.bed
+# --diachromatic-digest-map
+# data/tmp_example_input_data/digest_map/hg38/digest_map_hg38_hg38_DigestedGenome.txt

@@ -27,7 +27,7 @@ These are the first few line of such a digest file:
     chr1    24572   27981   3       HindIII HindIII 3410    0.046   0.046   0.000   0.044   F       0       0
     chr1    27982   30429   4       HindIII HindIII 2448    0.035   0.035   0.047   0.043   F       0       0
 
-Each line stands represents one digest,
+Each line represents one digest,
 and the entire file contains the digests for the entire genome.
 In the ``Selected`` column,
 enriched digests are marked with a ``T`` and all others with an ``F``.
@@ -39,32 +39,10 @@ an ``A`` corresponds to an ``T`` (enriched) and an ``I`` to an ``F`` (not enrich
 Digest file used for Javierre data
 ==================================
 
-For analyzing the data from Javierre 2016,
-we used the GOPHER's shortcut option *All protein coding genes*
-to generate a digest map
-because the analyzed data comes from a whole-promoter capture Hi-C
-experiment.
-This has the effect that all digests which contain at least on TSS
-and are potentially suited for enrichment are marked with an ``A``
-and all others with an ``I``.
-In this case,
-the digests marked with an ``A`` do not exactly correspond to the digests
-that were actually selected for the experiment.
-This is due to different annotations as well as different criteria
-for the selection of enrichable digests.
-Therefore, we only used the markings with ``A`` and ``I`` at the beginning
-to roughly asses the how well the enrichment worked.
-For further analyzes,
-we did not use these markings with ``A`` and ``I``,
-but instead a list of enriched digests from the original publication
-of Javierre et al. 2016 (see below).
-
-
 hg38 coordinates for Javierre 2016
-==================================
+----------------------------------
 
-For all subsequent analyzes,
-we used a
+We used a
 `list of enriched digests <https://osf.io/u8tzp/>`_
 that can be downloaded as part of the publication by Javierre et al. 2016.
 This list can be found in the *Capture design* in the archive named:
@@ -121,7 +99,43 @@ The resulting file in BED format can be found here:
 
 .. code-block:: console
 
-    diachrscripts/additional_files/javierre_2016/baited_digest_regions/Digest_Human_HindIII_baits_e75_ID.baitmap.hg38.bed
+    additional_files/javierre_2016/baited_digest_regions/Digest_Human_HindIII_baits_e75_ID.baitmap.hg38.bed
+
+hg38 digest map for Javierre 2016
+---------------------------------
+
+We wrote a Python script that can be used to overwrite the values in the ``Selected`` column
+of a digest map:
+
+.. code-block:: console
+
+    $ python diachrscripts/create_diachromatic_digest_map.py
+       --enriched-digests-file Digest_Human_HindIII_baits_e75_ID.baitmap.hg38.bed
+       --diachromatic-digest-map digest_map_hg19_hg19_DigestedGenome.txt
+       --out-prefix /JAV_hg38_HindIII
+
+This script takes a BED file with coordinates of digests selected for enrichment (``--enriched-digests-file``)
+and a Diachromatic digest map (``--diachromatic-digest-map``).
+It is important that the coordinates in the two files refer to the same genome build,
+e.g. ``hg19`` or ``hg38``.
+For each line of the digest map, it is checked
+whether there is a digest with matching coordinates in the BED file.
+If this is the case, the ``Selected`` field is overwritten with a ``T`` and otherwise with an ``F``.
+
+We applied the script to the enriched digest file for Javierre 2016 (see above)
+and a digest map for ``hg38`` and ``HindIII``.
+
+For 22,008 of the 22,056 enriched digests, matching coordinates are found in the digest map.
+
+No matching coordinates are found for 48 digests.
+
+We examined these cases more closely.
+
+In 34 cases, the coordinates of the enriched digest are shifted three positions to the right,
+with respect to the corresponding coordinates in the digest map.
+
+
+
 
 If an analysis with ``diachrscripts`` needs information about enriched digests,
 we use this BED file as input.
