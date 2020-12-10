@@ -116,17 +116,17 @@ txt_file_stream_results.write("OUT_PREFIX\tFDR\tPC\tNSIG_P\tNSIG_O" + "\n")
 # Set random seed
 np.random.seed(42)
 
-# Get list of Dichromatic interaction objects
-parser = DiachromaticInteractionParser()
-parser.parse_file(interaction_file)
-d_inter_list = parser._inter_dict.values()
+# Get list of Diachromatic interaction objects
+interaction_set = DiachromaticInteractionParser()
+interaction_set.parse_file(interaction_file)
+d_inter_list = interaction_set.interaction_list
 
 # Iterate Dichromatic interaction objects
-n_progress = 0
+n_interaction = 0
 for d_inter in d_inter_list:
-    n_progress += 1
-    if n_progress % 100000 == 0:
-        print("\t[INFO] Processed " + str(n_progress) + " interaction objects ...")
+    n_interaction += 1
+    if n_interaction % 100000 == 0:
+        print("\t[INFO] Processed " + str(n_interaction) + " interaction objects ...")
 
     # Get negative natural logarithm of P-value of a two-sided binomial test
     nnl_p_value = float("{:.2f}".format(p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)))

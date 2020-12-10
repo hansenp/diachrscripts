@@ -1,47 +1,36 @@
 #!/usr/bin/env python
 
 """
-This script estimates the significance of the observation of a certain amount of interactions that are nominally
-significant under a binomial test with the null hypothesis that simple and twisted read pairs are equally probably.
-It inputs a capture Hi-C (CHC) dataset (that has been processed by Diachromatic).
+This script takes a path to a Diachromatic interaction file and determines the overall significance of directed
+interactions  by randomization of simple and twisted read pairs.
 
-For each interaction (one line in the Diachromatic file), it performs a binomial test with n = total number of
-interactions, p = 0.5 and k = min(# simple read pairs (s), # twisted read pairs (t)). The result of this test is
-assessed as to whether it is significant at a nominal level of alpha = 0.05. We then count the total number of such
-significant tests (call this number W).
-
-Then, we randomize the input by permuting the counts of simple and twisted read pairs of each interaction using
-Binom(n = s + t, p = 0.5) and recalculate the number of 'significant' interactions. We do this m times
-(m = 1000 by default) and record the number of significant interactions for each iteration (w_i). If we do not observe
-an iteration with W < w_i, we estimate the empirical P-value with p < 1/m.
-
-Finally, in order to compare the overall significance of for different datasets, we compute the Z-score from the mean
-and standard deviation of w_i.
+You can find a detailed documentation on this script in the relevant section in the RTD of this repository.
 """
 
 import argparse
-import gzip
 from scipy.stats import binom
 from collections import defaultdict
 from statistics import mean, stdev
-from numpy import exp
+from numpy import log
 import multiprocessing as mp
 import itertools
+import numpy as np
+
+from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
+from diachr.binomial_model import BinomialModel
 
 from diachr.random_permutation import RandomPermutation
-import diachrscripts_toolkit as dclass
-from diachr.binomial_model import BinomialModel
 
 
 ### Parse command line
 ######################
 
-parser = argparse.ArgumentParser(description='Determine overall significance of directed interactions using random'
-                                             'permutation of simple and twisted read pairs.')
+parser = argparse.ArgumentParser(description='Determine overall significance of directed interactions by randomization of simple and twisted read pairs.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('-i','--interaction-file', help='Diachromatic interaction file.', required=True)
 parser.add_argument('-n','--iter-num', help='Number of iterations.', default=1000)
-parser.add_argument('-a','--nominal-alpha', help='Nominal alpha. P-value threshold used for permutation analysis.', default=0.05)
+parser.add_argument('-a','--nominal-alpha', help='Nominal alpha. P-value threshold used to define significant interactions.', default=0.05)
+parser.add_argument('-s','--random-seed', help='Seed for randomization of simple and twisted read pairs.', default=42)
 parser.add_argument('-t','--thread-num', help='Number of threads.', default=1)
 
 parser.add_argument('-m','--usemod', help="Use new module", dest='usemod', action='store_true')
@@ -51,6 +40,8 @@ out_prefix = args.out_prefix
 diachromatic_interaction_file = args.interaction_file
 ITER_NUM = int(args.iter_num)
 NOMINAL_ALPHA = float(args.nominal_alpha)
+NLN_NOMINAL_ALPHA = -log(NOMINAL_ALPHA)
+random_seed = int(args.random_seed)
 thread_num = int(args.thread_num)
 
 print("[INFO] " + "Input parameters")
@@ -58,6 +49,8 @@ print("\t[INFO] --out_prefix: " + out_prefix)
 print("\t[INFO] --interaction-file: " + diachromatic_interaction_file)
 print("\t[INFO] --iter-num: " + str(ITER_NUM))
 print("\t[INFO] --nominal-alpha: " + str(NOMINAL_ALPHA))
+print("\t\t[INFO] Negative of natural logarithm: " + str(NLN_NOMINAL_ALPHA))
+print("\t[INFO] --random-seed: " + str(random_seed))
 print("\t[INFO] --thread-num: " + str(thread_num))
 
 if args.usemod:
@@ -79,46 +72,22 @@ pval_memo = defaultdict(float)
 
 p_values = BinomialModel()
 
-def binomial_p_value(simple_count, twisted_count):
-    """
-    Locally defined method for the calculation of the binomial P-value that uses a dictionary that keeps track of
-    P-values that already have been calculated.
-
-    :param simple_count: Number of simple read pairs
-    :param twisted_count: Number of twisted read pairs
-    :return: Binomial P-value
-    """
-
-    # Create key from simple and twisted read pair counts
-    key = "{}-{}".format(simple_count, twisted_count)
-
-    # Check whether a P-value for this combination of simple and twisted counts has been calculated already
-    if key in pval_memo:
-        return pval_memo[key]
-    else:
-        # Calculate P-value and add to dictionary
-        p_value = dclass.calculate_binomial_p_value(simple_count, twisted_count)
-        #p_value = exp(-p_values.get_binomial_nnl_p_value(simple_count, twisted_count))/2.0
-        # results/tmp_results/02/02	10	0.05	5	1000000	643678	316119	40203	19656.80	75.63	271.68	0
-        # results/tmp_results/02/02	10	0.05	5	1000000	643678	316119	40203	19586.60	196.98	104.66	0
-
-        pval_memo[key] = p_value
-        return p_value
-
+# Set random seed
+np.random.seed(random_seed)
 
 def perform_one_iteration():
     """
-    This function performs one iteration of the random permutation analysis. It permutes the simple and twisted read
+    This function performs one iteration of the randomization analysis. It randomizes the simple and twisted read
     pair counts of all interactions and then determines and returns the number of significant interactions.
 
-    :return: Number of significant interactions after permutation
+    :return: Number of significant interactions after randomization
     """
 
-    # Init number of significant interactions after permutation
-    w_perm_significant = 0
+    # Init number of significant interactions after randomization
+    n_random_significant = 0
 
     # Iterate dictionary with numbers of interactions foreach read pair number n
-    for n, i_num in N_DICT.items():
+    for n, i_num in RP_I_DICT.items():
 
         # Generate random simple read pair counts for current n
         simple_count_list = list(binom.rvs(n, p = 0.5, size = i_num))
@@ -129,18 +98,13 @@ def perform_one_iteration():
             twisted_count = n - simple_count
 
             # Get binomial P-value
-            key = "{}-{}".format(simple_count, twisted_count)
-            if key in pval_memo:
-                pv = pval_memo[key]
-            else:
-                pv = binomial_p_value(simple_count, twisted_count)
-                pval_memo[key] = pv
+            nln_pv = p_values.get_binomial_nnl_p_value(simple_count, twisted_count)
 
             # Count significant interactions
-            if pv < NOMINAL_ALPHA:
-                w_perm_significant += 1
+            if NLN_NOMINAL_ALPHA < nln_pv:
+                n_random_significant += 1
 
-    return w_perm_significant
+    return n_random_significant
 
 
 def perform_m_iterations(m_iter):
@@ -158,11 +122,11 @@ def perform_m_iterations(m_iter):
 ### Prepare variables, data structures and streams for output files
 ###################################################################
 
-# Dictionary that stores the numbers of interactions with n read pairs
-N_DICT = {}
+# Dictionary that stores for each total read pair number (n) the number of interactions
+RP_I_DICT = {}
 
 # Minimum number of read pairs required for significance
-n_indefinable_cutoff, pv_indefinable_cutoff = dclass.find_indefinable_n(NOMINAL_ALPHA)
+smallest_sig_n, pv_indefinable_cutoff = p_values.find_smallest_significant_n(NOMINAL_ALPHA)
 
 # Total number of input interactions
 n_interaction = 0
@@ -188,55 +152,43 @@ txt_stream_w_sig_p_output = open(txt_file_w_sig_p_output, 'wt')
 ### Start execution
 ###################
 
-print("[INFO] Iterating Diachromatic interaction file ...")
-with gzip.open(diachromatic_interaction_file, 'r' + 't') as fp:
+# Get list of Diachromatic interaction objects
+interaction_set = DiachromaticInteractionParser()
+interaction_set.parse_file(diachromatic_interaction_file)
+d_inter_list = interaction_set.interaction_list
 
-    for line in fp:
+# Iterate Dichromatic interaction objects
+print("[INFO] Iterating list Diachromatic interaction objects ...")
+for d_inter in d_inter_list:
 
-        # Count total number of interactions
-        n_interaction += 1
+    # Count total number of interactions
+    n_interaction += 1
 
-        # Report progress
-        if n_interaction % 1000000 == 0:
-            print("\t\t[INFO]", n_interaction, "interactions processed ...")
+    # Report progress
+    if n_interaction % 1000000 == 0:
+        print("\t\t[INFO]", n_interaction, "interactions processed ...")
 
-        # Split Diachromatic interaction line
-        fields = line.rstrip('\n').split('\t')
+    # Skip interactions that cannot be significant
+    if d_inter.rp_total < smallest_sig_n:
+        n_indefinable_interaction += 1
+        continue
 
-        # Check format of Diachromatic interaction line
-        if len(fields) < 9:
-            raise TypeError("Malformed diachromatic input line {} (number of fields {})".format(line, len(fields)))
+    # Get P-value of interaction
+    nln_pv = p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
 
-        # Extract simple and twisted read pair counts from Diachromatic interaction line
-        n_simple, n_twisted = fields[8].split(':')
-        n_simple = int(n_simple)
-        n_twisted = int(n_twisted)
-        n = n_simple + n_twisted
+    # Count directed and undirected interactions
+    if NLN_NOMINAL_ALPHA < nln_pv:
+        n_directed_interaction += 1
+    else:
+        n_undirected_interaction += 1
 
-        # Skip interactions that cannot be significant
-        if n < n_indefinable_cutoff:
-            n_indefinable_interaction += 1
-            continue
+    # Add total number of read pair counts to dictionary that will be used for randomization
+    if d_inter.rp_total in RP_I_DICT:
+        RP_I_DICT[d_inter.rp_total] += 1
+    else:
+        RP_I_DICT[d_inter.rp_total] = 1
 
-        # Get P-value of interaction
-        key = "{}-{}".format(n_simple, n_twisted)
-        if key in pval_memo:
-            pv = pval_memo[key]
-        else:
-            pv = binomial_p_value(n_simple, n_twisted)
-            pval_memo[key] = pv
-
-        # Count interaction as directed or undirected
-        if pv < NOMINAL_ALPHA:
-            n_directed_interaction += 1
-        else:
-            n_undirected_interaction += 1
-
-        # Add the sum of simple and twisted read pair counts to dictionary that will be used for randomization
-        if n in N_DICT:
-            N_DICT[n] +=1
-        else:
-            N_DICT[n] = 1
+print("[INFO] ... done.")
 
 
 # Output some statistics about original interactions
@@ -303,7 +255,7 @@ print("\t[INFO] OUT_PREFIX"
 print("\t[INFO] " + out_prefix + "\t"
       + str(ITER_NUM) + "\t"
       + str(NOMINAL_ALPHA) + "\t"
-      + str(n_indefinable_cutoff) + "\t"
+      + str(smallest_sig_n) + "\t"
       + str(n_interaction) + "\t"
       + str(n_indefinable_interaction) + "\t"
       + str(n_undirected_interaction) + "\t"
@@ -336,7 +288,7 @@ tab_stream_stats_output.write("OUT_PREFIX"
 tab_stream_stats_output.write(out_prefix + "\t"
                               + str(ITER_NUM) + "\t"
                               + str(NOMINAL_ALPHA) + "\t"
-                              + str(n_indefinable_cutoff) + "\t"
+                              + str(smallest_sig_n) + "\t"
                               + str(n_interaction) + "\t"
                               + str(n_indefinable_interaction) + "\t"
                               + str(n_undirected_interaction) + "\t"

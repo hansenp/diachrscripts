@@ -22,7 +22,7 @@ class DiachromaticInteractionParser:
         # Dictionary that contains all interaction objects
         self._p_values = BinomialModel()
 
-        # XXX
+        # Take information about digests selected for enrichment from BED file
         self._enriched_digests_set = None
         if enriched_digests_file != None:
             print("[INFO] Reading list with digests selected for enrichment ...")
@@ -90,7 +90,6 @@ class DiachromaticInteractionParser:
         F = line.rstrip().split('\t')
         if len(F) < 9:
             raise ValueError("Malformed line {}".format(line))
-
 
         chrA = F[0]
         fromA = int(F[1])
@@ -177,11 +176,15 @@ class DiachromaticInteractionParser:
     def file_num(self):
         return len(self._file_dict)
 
+    @property
+    def interaction_list(self):
+        return self._inter_dict.values()
+
 
     def rate_and_categorize_interactions(self, nln_pval_thresh: float):
         """
         Calculates the P-value and defines categories for all interactions in this object.
-        'DiachromaticInteraction' objects will be replaced by 'DiachromaticInteraction11' objects.
+        DiachromaticInteraction objects will be replaced by DiachromaticInteraction11 objects.
         """
 
         print("[INFO] Rate and categorize interactions ...")

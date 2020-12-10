@@ -46,6 +46,14 @@ class BinomialModel:
 
         return self._pval_dict[key]
 
+    def get_binomial_p_value(self, n_simple, n_twisted):
+        """
+        :param n_simple: Number of simple read pairs
+        :param n_twisted: Number of simple read pairs
+        :return: P-value of a two-sided test for directionality
+        """
+        return(exp(-self.get_binomial_nnl_p_value(n_simple, n_twisted)))
+
 
     def _calculate_binomial_logsf_p_value(self, n_simple, n_twisted): # (natural) logsf
         """
@@ -72,6 +80,26 @@ class BinomialModel:
             return -np.inf
             # or return natural log of smallest possible float
             #return log(sys.float_info.min * sys.float_info.epsilon)
+
+
+    def find_smallest_significant_n(self, p_val_thresh, verbose=True):
+        """
+        This function finds the smallest n that gives a significant P-value at a chosen threshold.
+        A tuple consisting of the smallest n and the associated P-value is returned.
+
+        :param p_val_thresh:float
+        :return: (n:int, p_val:float)
+        """
+
+        if verbose:
+            print("[INFO] Looking for smallest n with a significant P-value at the chosen threshold of " + str(p_val_thresh) + ".")
+
+        for n in range(1, 1000):
+            p_val = self.get_binomial_p_value(n, 0)
+            if p_val < p_val_thresh:
+                if verbose:
+                    print("\t[INFO] Smallest n: " + str(n) + " read pairs (" + str(p_val) + ")")
+                return n, p_val
 
     def measure_time_savings_due_to_pval_dict(self):
         """
