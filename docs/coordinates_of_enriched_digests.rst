@@ -13,11 +13,11 @@ we describe how to introduce this information into the analysis with
 GOPHER's digest file as input for Diachromatic
 ==============================================
 
-If the probes for a capture Hi-C experiment have been created with GOPHER,
+If the probes for a capture Hi-C experiment were created with GOPHER,
 then the digest file, which
 `can be exported from the corresponding GOPHER design <https://diachromatic.readthedocs.io/en/latest/digest.html>`_,
 contains precise information about all enriched digests.
-These are the first few line of such a digest file:
+For example, here are the first few lines from a GOPHER digest file:
 
 .. code-block:: console
 
@@ -28,7 +28,7 @@ These are the first few line of such a digest file:
     chr1    27982   30429   4       HindIII HindIII 2448    0.035   0.035   0.047   0.043   F       0       0
 
 Each line represents one digest,
-and the entire file contains the digests for the entire genome.
+and the file contains the digests for the entire genome.
 In the ``Selected`` column,
 enriched digests are marked with a ``T`` and all others with an ``F``.
 Diachromatic uses the information about enriched digests for quality control only
@@ -77,25 +77,24 @@ Here are the first four lines of this file:
     1	850619	874081	220	AL645608.1;RP11-54O7.3;SAMD11
     1	889424	903640	223	KLHL17;NOC2L;PLEKHN1
 
-From this file, we extracted the coordinates of enriched digests
-by adding a ``chr`` to the chromosome numbers in column 1 and
-writing them them together with the start and end positions to a new file.
-These are the first four lines of the file with the extracted digest coordinates:
+We extracted the coordinates of enriched digests from this file with 
+the following awk command:
 
 .. code-block:: console
 
-    $ awk '{print "chr"$1"\t"$2"\t"$3}' Digest_Human_HindIII_baits_e75_ID.baitmap | head -n 4
+    $ awk '{print "chr"$1"\t"$2"\t"$3}' Digest_Human_HindIII_baits_e75_ID.baitmap
     chr1	831895	848168
     chr1	848169	850618
     chr1	850619	874081
     chr1	889424	903640
+    (...)
 
-In total, there are coordinates for 22,076 digests.
+Coordinates are avaiable for a total of 22,076 digests.
 These coordinates refer to the genome build ``hg19``.
 We used
 `UCSC's LiftOver tool <https://genome.ucsc.edu/cgi-bin/hgLiftOver>`_
 to convert the coordinates to ``hg38``.
-22,056 digest could be converted successfully to ``hg38``.
+22,056 digests were successfully converted  to ``hg38``.
 The conversion failed for 20 digests
 because ``hg19`` coordinates in ``hg38``
 are either split or partially deleted.
@@ -121,7 +120,7 @@ Finally, we exported the following digest file:
 
 Because GOPHER was not used to select capture probes,
 no digest is marked as selected in this file.
-We wrote a Python script that can be used to overwrite the values in the ``Selected`` column
+We wrote a Python script to overwrite the values in the ``Selected`` column
 of a digest file:
 
 .. code-block:: console
@@ -135,7 +134,7 @@ This script takes a BED file with coordinates of digests selected for enrichment
 and a Diachromatic digest file (``--diachromatic-digest-file``).
 It is important that the coordinates in the two files refer to the same genome build,
 e.g. ``hg19`` or ``hg38``.
-For each line of the digest file, it is checked
+For each line of the digest file, the script checks
 whether there is a digest with matching coordinates in the BED file.
 If this is the case, the ``Selected`` field is overwritten with a ``T`` and otherwise with an ``F``.
 Furthermore, the fields ``5'_Probes`` and ``3'_Probes`` are set to ``1``.
@@ -160,11 +159,11 @@ The coordinates of these digests are written to the following file:
 
 The script has an option ``--verbose`` that can be used to examine such cases
 more closely by printing the associated lines from the digest file.
-Within the 48 cases, we identified three classes.
-In 34 cases, the enriched digest is shifted three positions to the right,
+Three categories of error were responsible for the 48 cases in which a digest could not be mapped.
+In 34 cases, the enriched digest is shifted three positions to the right
 with respect to the corresponding digest in the Diachromatic digest file.
 In 10 cases, the enriched digest spans a restriction site
-(overlap two or more digests in the Diachromatic digest file).
+(i.e., overlaps two or more digests in the Diachromatic digest file).
 And in four cases, the enriched digest is completely contained in a digest
 from the Diachromatic digest file.
 We assumed that these cases result from the LiftOver from ``hg19`` to ``hg38``
