@@ -1,6 +1,5 @@
 from .binomial_interaction_model import BinomialInteractionModel
-
-
+from .binomial_model import BinomialModel
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_parser import DiachromaticParser
 from .digest import Digest
@@ -10,6 +9,7 @@ from .random_permutation import RandomPermutation
 
 
 __all__ = [
+    "BinomialModel",
     "BinomialInteractionModel",
     "EnhancedInteraction",
     "DiachromaticInteraction",

@@ -19,3 +19,19 @@ make html
 ```
 
 You should now find documentation here: ``GIT/diachrscripts/docs/_build/html/index.html``
+
+## Testing
+
+To setup testing, run the setup.py script
+```
+source p38/bin/activate
+python setup.py test
+```
+Now test everything at once
+```
+nosetests tests
+```
+or specific files
+```
+ nosetests tests/test_binomial.py 
+```
