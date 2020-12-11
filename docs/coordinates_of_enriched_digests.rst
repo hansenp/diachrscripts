@@ -7,11 +7,11 @@ Coordinates of enriched digests
 When analyzing data from capture Hi-C experiments,
 it is important to know which restriction fragments or digests were selected for enrichment.
 In this section,
-we describe two ways of introducing this information into the analysis with
+we describe how to introduce this information into the analysis with
 ``Diachromatic`` and ``diachrscripts``.
 
-GOPHER's digest file
-====================
+GOPHER's digest file as input for Diachromatic
+==============================================
 
 If the probes for a capture Hi-C experiment have been created with GOPHER,
 then the digest file, which
@@ -34,13 +34,17 @@ enriched digests are marked with a ``T`` and all others with an ``F``.
 Diachromatic uses the information about enriched digests for quality control only
 and passes it through to the interactions reported in the interaction file.
 In this file,
-an ``A`` corresponds to an ``T`` (enriched) and an ``I`` to an ``F`` (not enriched).
+an ``E`` corresponds to an ``T`` (enriched) and an ``N`` to an ``F`` (not enriched).
+
+.. code-block:: console
+
+    chr11    9641153    9642657   E   chr11   47259263   47272706   N   5:4
 
 Digest file used for Javierre data
 ==================================
 
-hg38 coordinates for Javierre 2016
-----------------------------------
+hg38 coordinates of enriched digests
+------------------------------------
 
 We used a
 `list of enriched digests <https://osf.io/u8tzp/>`_
@@ -101,44 +105,88 @@ The resulting file in BED format can be found here:
 
     additional_files/javierre_2016/baited_digest_regions/Digest_Human_HindIII_baits_e75_ID.baitmap.hg38.bed
 
-hg38 digest map for Javierre 2016
----------------------------------
+hg38 digest file
+----------------
 
-We wrote a Python script that can be used to overwrite the values in the ``Selected`` column
-of a digest map:
+In order to create a Diachromatic digest file for the analysis of the Javierre data,
+we first created a GOPHER project with the name ``no_digests_selected_HindIII``.
+Then we set up the project for ``hg38``
+(no need to download ``Transcripts`` and ``Alignability Map``)
+and only selected the restriction enzyme ``HindIII`` for the design parameters.
+Finally, we exported the following digest file:
 
 .. code-block:: console
 
-    $ python diachrscripts/create_diachromatic_digest_map.py
+    no_digests_selected_HindIII_hg38_DigestedGenome.txt
+
+Because GOPHER was not used to select capture probes,
+no digest is marked as selected in this file.
+We wrote a Python script that can be used to overwrite the values in the ``Selected`` column
+of a digest file:
+
+.. code-block:: console
+
+    $ python diachrscripts/create_diachromatic_digest_file.py
        --enriched-digests-file Digest_Human_HindIII_baits_e75_ID.baitmap.hg38.bed
-       --diachromatic-digest-map digest_map_hg19_hg19_DigestedGenome.txt
+       --diachromatic-digest-file no_digests_selected_HindIII_hg38_DigestedGenome.txt
        --out-prefix /JAV_hg38_HindIII
 
 This script takes a BED file with coordinates of digests selected for enrichment (``--enriched-digests-file``)
-and a Diachromatic digest map (``--diachromatic-digest-map``).
+and a Diachromatic digest file (``--diachromatic-digest-file``).
 It is important that the coordinates in the two files refer to the same genome build,
 e.g. ``hg19`` or ``hg38``.
-For each line of the digest map, it is checked
+For each line of the digest file, it is checked
 whether there is a digest with matching coordinates in the BED file.
 If this is the case, the ``Selected`` field is overwritten with a ``T`` and otherwise with an ``F``.
+Furthermore, the fields ``5'_Probes`` and ``3'_Probes`` are set to ``1``.
 
-We applied the script to the enriched digest file for Javierre 2016 (see above)
-and a digest map for ``hg38`` and ``HindIII``.
+We applied the script to the prepared enriched digest BED file for the Javierre data
+and the digest file for ``hg38`` and ``HindIII`` in which no digest is marked as selected.
+For the command above,
+the created digest file has the following name:
 
-For 22,008 of the 22,056 enriched digests, matching coordinates are found in the digest map.
+.. code-block:: console
 
-No matching coordinates are found for 48 digests.
+    JAV_HindIII_hg38_diachromatic_digest_file.txt
 
-We examined these cases more closely.
+The script reports that for 22,008 of the 22,056 enriched digests
+no matching coordinates were found in the digest file,
+i.e. no matching coordinates were found for 48 digests.
+The coordinates of these digests are written to the following file:
 
-In 34 cases, the coordinates of the enriched digest are shifted three positions to the right,
-with respect to the corresponding coordinates in the digest map.
+.. code-block:: console
 
+    JAV_HindIII_hg38_digests_not_found.bed
 
+The script has an option ``--verbose`` that can be used to examine such cases
+more closely by printing the associated lines from the digest file.
+Within the 48 cases, we identified three classes.
+In 34 cases, the enriched digest is shifted three positions to the right,
+with respect to the corresponding digest in the Diachromatic digest file.
+In 10 cases, the enriched digest spans a restriction site
+(overlap two or more digests in the Diachromatic digest file).
+And in four cases, the enriched digest is completely contained in a digest
+from the Diachromatic digest file.
+We assumed that these cases result from the LiftOver from ``hg19`` to ``hg38``
+and repeated the same procedure for ``hg19``.
+In this case, all enriched digests are found in the Diachromatic digest file,
+which confirms our assumption.
 
+We also tried to correct the 48 cases.
+To do this, we extracted a BED file from from the Diachromatic digest file as follows:
 
-If an analysis with ``diachrscripts`` needs information about enriched digests,
-we use this BED file as input.
-In order to distinguish better from the Diachromatic noation with A and I,
-we denote enriched enriched digests with an ``E`` and non-enriched
-digests with an ``N``, when using the annotation from this list.
+.. code-block:: console
+
+    $ awk '{print $1"\t"$2"\t"$3}' no_digests_selected_HindIII_hg38_DigestedGenome.txt | tail -n+2 > no_digests_selected_HindIII_hg38_DigestedGenome.bed
+
+Then we used BedTools to get all digests from the Diachromatic interaction file
+that overlap at least 90% with an enriched digest.
+
+.. code-block:: console
+
+    $ bedtools intersect -f 0.90 -r -a no_digests_selected_HindIII_hg38_DigestedGenome.bed -b JAV_HindIII_hg38_digests_not_found.bed -wa
+
+With the corrected BED file for enriched digests,
+we get a Diachromatic digest file in which 22,045 are marked as enriched.
+In our analysis of the Javierre data,
+we used this file as input for Diachromatic.
