@@ -6,7 +6,7 @@ __pycache__/
 # Local directories
 #data/
 results/
-.DS_store
+.DS_Store
 
 # subdirectory with tool for GO analysis
 chc2go/
