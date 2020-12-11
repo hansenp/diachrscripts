@@ -171,21 +171,5 @@ and repeated the same procedure for ``hg19``.
 In this case, all enriched digests are found in the Diachromatic digest file,
 which confirms our assumption.
 
-We also tried to correct the 48 cases.
-To do this, we extracted a BED file from from the Diachromatic digest file as follows:
-
-.. code-block:: console
-
-    $ awk '{print $1"\t"$2"\t"$3}' no_digests_selected_HindIII_hg38_DigestedGenome.txt | tail -n+2 > no_digests_selected_HindIII_hg38_DigestedGenome.bed
-
-Then we used BedTools to get all digests from the Diachromatic interaction file
-that overlap at least 90% with an enriched digest.
-
-.. code-block:: console
-
-    $ bedtools intersect -f 0.90 -r -a no_digests_selected_HindIII_hg38_DigestedGenome.bed -b JAV_HindIII_hg38_digests_not_found.bed -wa
-
-With the corrected BED file for enriched digests,
-we get a Diachromatic digest file in which 22,045 are marked as enriched.
 In our analysis of the Javierre data,
-we used this file as input for Diachromatic.
+we used the digest file for ``hg38`` created as described above as input for Diachromatic.
