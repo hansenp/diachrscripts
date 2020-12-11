@@ -60,9 +60,12 @@ out_diachromatic_digest_file_fh = open(out_diachromatic_digest_file_fn, 'wt')
 enriched_digests_found_set = set()
 enriched_digests_not_found_set = set()
 with open(diachromatic_digest_file, 'rt') as fp:
-    for line in fp:
 
-        # Skip first line
+    # Skip first line
+    head_line = fp.readline()
+    out_diachromatic_digest_file_fh.write(head_line)
+
+    for line in fp:
 
         # Parse one line of a Diachromatic digest file
         fields = line.rstrip('\n').split('\t')
