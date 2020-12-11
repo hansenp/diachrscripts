@@ -107,7 +107,7 @@ with open(diachromatic_digest_file, 'rt') as fp:
             rp3 + '\t' +
             SELECTED + '\t' +
             str(PR5) + '\t' +
-            str(PR3)
+            str(PR3) + '\n'
             )
 
 out_diachromatic_digest_file_fh.close()
