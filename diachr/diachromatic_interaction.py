@@ -60,8 +60,24 @@ class DiachromaticInteraction:
         return "chr%s" % self._chrA
 
     @property
+    def fromA(self):
+        return self._fromA
+
+    @property
+    def toA(self):
+        return self._toA
+
+    @property
     def chrB(self):
         return "chr%s" % self._chrB
+
+    @property
+    def fromB(self):
+        return self._fromB
+
+    @property
+    def toB(self):
+        return self._toB
 
     @property
     def n_simple(self):
@@ -78,13 +94,13 @@ class DiachromaticInteraction:
     @property
     def enrichment_status_tag_pair(self):
         if self.s_flag_int == 0:
-            return 'II'
+            return 'NN'
         elif self.s_flag_int == 1:
-            return 'IA'
+            return 'NE'
         elif self.s_flag_int == 2:
-            return 'AI'
+            return 'EN'
         else:
-            return 'AA'
+            return 'EE'
 
     @property
     def key(self):
@@ -100,17 +116,17 @@ class DiachromaticInteraction:
 
         # Determine enrichment state of the two digests
         if self.s_flag_int == 0:
-            statusA = 'I'
-            statusB = 'I'
+            statusA = 'N'
+            statusB = 'N'
         elif self.s_flag_int == 1:
-            statusA = 'I'
-            statusB = 'A'
+            statusA = 'N'
+            statusB = 'E'
         elif self.s_flag_int == 2:
-            statusA = 'A'
-            statusB = 'I'
+            statusA = 'E'
+            statusB = 'N'
         else:
-            statusA = 'A'
-            statusB = 'A'
+            statusA = 'E'
+            statusB = 'E'
 
         di_line = \
             self.chrA + "\t" + \

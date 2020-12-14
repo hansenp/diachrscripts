@@ -32,6 +32,8 @@ print("\t[INFO] --enriched-digests-file: " + str(enriched_digests_file))
 print("\t[INFO] --diachromatic-digest-file: " + diachromatic_digest_file)
 
 
+
+
 ### Read BED file with coordinates of enriched digests
 ######################################################
 
