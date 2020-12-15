@@ -11,13 +11,13 @@ class DiachromaticInteraction:
         """
 
         # Map status flag pair to int
-        if (statusA == 'I' and statusB == 'I') or (statusA == 'N' and statusB == 'N'):
+        if statusA == 'N' and statusB == 'N':
             self.s_flag_int = 0
-        elif (statusA == 'I' and statusB == 'A') or (statusA == 'N' and statusB == 'E'):
+        elif statusA == 'N' and statusB == 'E':
             self.s_flag_int = 1
-        elif (statusA == 'A' and statusB == 'I') or (statusA == 'E' and statusB == 'N'):
+        elif statusA == 'E' and statusB == 'N':
             self.s_flag_int = 2
-        elif (statusA == 'A' and statusB == 'A') or (statusA == 'E' and statusB == 'E'):
+        elif statusA == 'E' and statusB == 'E':
             self.s_flag_int = 3
         else:
             raise ValueError("Bad status values: A-%s, B-%s" % (statusA, statusB))
