@@ -57,9 +57,8 @@ class BinomialModel:
 
     def _calculate_binomial_logsf_p_value(self, n_simple, n_twisted): # (natural) logsf
         """
-        So far, we have used this function to calculate the P-values in script '04' and we will
-        continue to use it. This function assumes a background frequency of 0.5 for simple and
-        twisted read pairs.
+        This function calculates the natural logarithm of a P-value from a two-sided test and returns the negative
+        of it. We assume a background frequency of 0.5 for simple and twisted read pairs.
 
         :param n_simple:
         :param n_twisted:
@@ -69,7 +68,7 @@ class BinomialModel:
         """
         try:
             if n_simple == n_twisted:
-                return 0
+                return 0 # All other cases are more extreme, so the P-value must be 1.
             if n_simple < n_twisted:
                 p_value = binom.logsf(n_twisted - 1, n_simple + n_twisted, 0.5)
                 return -logaddexp(p_value,p_value)
