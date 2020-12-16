@@ -111,14 +111,14 @@ class DiachromaticInteractionParser:
             coord_key_da = chrA + "\t" + str(fromA) + "\t" + str(toA)
             coord_key_db = chrB + "\t" + str(fromB) + "\t" + str(toB)
             if coord_key_da in self._enriched_digests_set:
-                statusA = 'A'
+                statusA = 'E'
             else:
-                statusA = 'I'
+                statusA = 'N'
 
             if coord_key_db in self._enriched_digests_set:
-                statusB = 'A'
+                statusB = 'E'
             else:
-                statusB = 'I'
+                statusB = 'N'
 
         di_inter = DiachromaticInteraction(
             chrA=chrA,
@@ -248,25 +248,25 @@ class DiachromaticInteractionParser:
                 # Count directed interactions
                 #di_num += 1
 
-                if enrichment_pair_tag == 'II':
+                if enrichment_pair_tag == 'NN':
                     if rp_total not in di_ii_rp_dict:
                         di_ii_rp_dict[rp_total] = 1
                     else:
                         di_ii_rp_dict[rp_total] += 1
 
-                elif enrichment_pair_tag == 'IA':
+                elif enrichment_pair_tag == 'NE':
                     if rp_total not in di_ia_rp_dict:
                         di_ia_rp_dict[rp_total] = 1
                     else:
                         di_ia_rp_dict[rp_total] += 1
 
-                elif enrichment_pair_tag == 'AI':
+                elif enrichment_pair_tag == 'EN':
                     if rp_total not in di_ai_rp_dict:
                         di_ai_rp_dict[rp_total] = 1
                     else:
                         di_ai_rp_dict[rp_total] += 1
 
-                elif enrichment_pair_tag == 'AA':
+                elif enrichment_pair_tag == 'EE':
                     if rp_total not in di_aa_rp_dict:
                         di_aa_rp_dict[rp_total] = 1
                     else:
