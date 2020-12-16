@@ -38,33 +38,33 @@ class TestCombineInteractions(TestCase):
         This function tests the number of combined interactions for different numbers of required replicates.
         """
 
-        required_replicates = 1 # Must be 4
-        n_interactions_required_number_of_replicates = 0
+        required_replicates = 1 # There must be 4 interactions that occur in at least one replicate
+        n_inter_with_required_replicate_num = 0
         for i in self.interaction_set.interaction_list:
             if i.has_data_for_required_replicate_num(required_replicates):
-                n_interactions_required_number_of_replicates += 1
-        self.assertEqual(4, n_interactions_required_number_of_replicates)
+                n_inter_with_required_replicate_num += 1
+        self.assertEqual(4, n_inter_with_required_replicate_num)
 
-        required_replicates = 2 # Must be 3
-        n_interactions_required_number_of_replicates = 0
+        required_replicates = 2 # There must be 3 interactions that occur in at least two replicates
+        n_inter_with_required_replicate_num = 0
         for i in self.interaction_set.interaction_list:
             if i.has_data_for_required_replicate_num(required_replicates):
-                n_interactions_required_number_of_replicates += 1
-        self.assertEqual(3, n_interactions_required_number_of_replicates)
+                n_inter_with_required_replicate_num += 1
+        self.assertEqual(3, n_inter_with_required_replicate_num)
 
-        required_replicates = 3 # Must be 2
-        n_interactions_required_number_of_replicates = 0
+        required_replicates = 3 # There must be 2 interactions that occur in at least three replicates
+        n_inter_with_required_replicate_num = 0
         for i in self.interaction_set.interaction_list:
             if i.has_data_for_required_replicate_num(required_replicates):
-                n_interactions_required_number_of_replicates += 1
-        self.assertEqual(2, n_interactions_required_number_of_replicates)
+                n_inter_with_required_replicate_num += 1
+        self.assertEqual(2, n_inter_with_required_replicate_num)
 
-        required_replicates = 4 # Must be 1
-        n_interactions_required_number_of_replicates = 0
+        required_replicates = 4  # There is only one interactions that occurs in all four replicates
+        n_inter_with_required_replicate_num = 0
         for i in self.interaction_set.interaction_list:
             if i.has_data_for_required_replicate_num(required_replicates):
-                n_interactions_required_number_of_replicates += 1
-        self.assertEqual(1, n_interactions_required_number_of_replicates)
+                n_inter_with_required_replicate_num += 1
+        self.assertEqual(1, n_inter_with_required_replicate_num)
 
 
     def test_summation_of_simple_and_twisted_rp_counts(self):
