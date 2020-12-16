@@ -68,6 +68,8 @@ class BinomialModel:
         For P-values that are too small to be represented, we return -np.inf.
         """
         try:
+            if n_simple == n_twisted:
+                return 0
             if n_simple < n_twisted:
                 p_value = binom.logsf(n_twisted - 1, n_simple + n_twisted, 0.5)
                 return -logaddexp(p_value,p_value)

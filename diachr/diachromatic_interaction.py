@@ -141,7 +141,9 @@ class DiachromaticInteraction:
             str(self._twisted)
 
         if type(self).__name__ == "DiachromaticInteraction11":
-            di_line = di_line + "\t" + str(self._nln_pval) + "\t" + self.get_category()
+            nln_pval = round(self._nln_pval, 2)
+            nln_pval += 0. # Get rid of negative sign on numbers close to zero
+            di_line = di_line + "\t" + "{:.2f}".format(nln_pval) + "\t" + self.get_category()
 
         return di_line
 

@@ -74,11 +74,3 @@ out_fh = open(f_name, 'wt')
 out_fh.write(interaction_set.get_file_dict_info() + '\n')
 out_fh.write(write_info + '\n')
 out_fh.close()
-
-print(len(interaction_set.interaction_list))
-
-
-n_in
-for i in interaction_set.interaction_list:
-    print(i.has_data_for_required_replicate_num(2))
-    print(i.chrA + "\t" + str(i.fromA) + "\t" + str(i.toA) + "\t" + i.chrA + "\t")

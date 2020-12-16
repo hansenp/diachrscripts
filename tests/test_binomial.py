@@ -54,3 +54,16 @@ class TestBinomial(TestCase):
         twisted = 34
         pval = self.binomial_model.get_binomial_nnl_p_value(n_simple=simple, n_twisted=twisted)
         self.assertAlmostEqual(17.75736, pval, places=5) # equal up to 5 significant digits
+
+    def test_binomial_pval_4_4_nnl(self):
+        """
+        In R
+        binom.test(4, 4, 0.5, alternative="two.sided")
+        number of successes = 2, number of trials = 36, p-value = 1.941e-08
+        -1 * log( binom.test(4, 8, 0.5, alternative="two.sided")$p.value)
+        0
+        """
+        simple = 4
+        twisted = 4
+        pval = self.binomial_model.get_binomial_nnl_p_value(n_simple=simple, n_twisted=twisted)
+        self.assertAlmostEqual(0, pval, places=5) # equal up to 5 significant digits
