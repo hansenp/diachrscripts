@@ -43,7 +43,9 @@ print("\t[INFO] The chosen threshold corresponds to: -ln(" + str(p_value_thresho
 interaction_set = DiachromaticInteractionParser(enriched_digests_file)
 interaction_set.parse_file(diachromatic_interaction_file)
 
+# Calculate P-values and assign interactions to 'DI' or 'UIR'
 interaction_set.rate_and_categorize_interactions(nln_p_value_threshold)
+
 
 interaction_set.select_reference_interactions()
 

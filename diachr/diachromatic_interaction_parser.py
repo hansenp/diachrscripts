@@ -229,58 +229,52 @@ class DiachromaticInteractionParser:
 
         print("[INFO] Select reference interactions ...")
 
-        # Dictionaries for read pair numbers of directed interactions within II, IA, AI and AA
-        di_ii_rp_dict = {}
-        di_ia_rp_dict = {}
-        di_ai_rp_dict = {}
-        di_aa_rp_dict = {}
+        # Nested dictionary that stores the number of interactions (value) for different read pair numbers (key)
+        rp_inter_dict = {'NN': {},
+                         'NE': {},
+                         'EN': {},
+                         'EE': {}}
 
         # First pass: Count directed interactions for different read pair counts
         for d11_inter in self._inter_dict.values():
 
-            # Get enrichment status tag pair and read pair number
-            enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
-            rp_total = d11_inter.rp_total
+            if d11_inter.get_category() == 'DI':
 
-            # Collect read pair numbers for DI
-            if d11_inter.get_category == 'DI':
+                # Get enrichment status tag pair and read pair number
+                enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
+                rp_total = d11_inter.rp_total
 
-                # Count directed interactions
-                #di_num += 1
-
-                if enrichment_pair_tag == 'NN':
-                    if rp_total not in di_ii_rp_dict:
-                        di_ii_rp_dict[rp_total] = 1
-                    else:
-                        di_ii_rp_dict[rp_total] += 1
-
-                elif enrichment_pair_tag == 'NE':
-                    if rp_total not in di_ia_rp_dict:
-                        di_ia_rp_dict[rp_total] = 1
-                    else:
-                        di_ia_rp_dict[rp_total] += 1
-
-                elif enrichment_pair_tag == 'EN':
-                    if rp_total not in di_ai_rp_dict:
-                        di_ai_rp_dict[rp_total] = 1
-                    else:
-                        di_ai_rp_dict[rp_total] += 1
-
-                elif enrichment_pair_tag == 'EE':
-                    if rp_total not in di_aa_rp_dict:
-                        di_aa_rp_dict[rp_total] = 1
-                    else:
-                        di_aa_rp_dict[rp_total] += 1
+                if rp_total not in rp_inter_dict[enrichment_pair_tag]:
+                    rp_inter_dict[enrichment_pair_tag][rp_total] = 1
+                else:
+                    rp_inter_dict[enrichment_pair_tag][rp_total] += 1
 
         # Check that there are enough interactions in all enrichment categories
-        di_aa_num = 0
-        for i_num in di_aa_rp_dict.values():
-            di_aa_num += i_num
-        print("di_aa_num: " + str(di_aa_num))
+        if \
+         sum(rp_inter_dict['NN'].values()) < 3 or \
+         sum(rp_inter_dict['NE'].values()) < 3 or \
+         sum(rp_inter_dict['EN'].values()) < 3 or \
+         sum(rp_inter_dict['EE'].values()) < 3:
+            print("[ERROR] Too few directed interactions within NN, NE, EN or EE! Cannot select reference interactions.")
 
+            print("\t[ERROR] NN interactions: " + str(sum(rp_inter_dict['NN'].values())))
+            print("\t[ERROR] NE interactions: " + str(sum(rp_inter_dict['NE'].values())))
+            print("\t[ERROR] EN interactions: " + str(sum(rp_inter_dict['EN'].values())))
+            print("\t[ERROR] EE interactions: " + str(sum(rp_inter_dict['EE'].values())))
 
         # Second pass: Select undirected reference interactions for different read pair counts
         for d11_inter in self._inter_dict.values():
-            pass
+
+            if d11_inter.get_category() != 'DI':
+
+                enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
+                rp_total = d11_inter.rp_total
+
+                if rp_total in rp_inter_dict[enrichment_pair_tag] and 0 < rp_inter_dict[enrichment_pair_tag][rp_total]:
+                    rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
+                    d11_inter.set_category('UIR')
 
         print("[INFO] ...done.")
+
+    def _get_read_pair_interaction_dict(self):
+        pass
