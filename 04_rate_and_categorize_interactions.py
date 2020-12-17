@@ -19,7 +19,7 @@ from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
 parser = argparse.ArgumentParser(description='Rate and categorize interactions and select unndirected reference interactions.')
 parser.add_argument('-o','--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('-i', '--diachromatic-interaction-file', help='Diachromatic interaction file.', required=True)
-parser.add_argument('--p-value-threshold', help='P-value threshold for directed interactions.', default=0.001)
+parser.add_argument('--p-value-threshold', help='P-value threshold for directed interactions.', default=0.01)
 parser.add_argument('--enriched-digests-file', help='BED file with digests that were selected for target enrichment.', required=True)
 
 args = parser.parse_args()
@@ -40,7 +40,7 @@ print("[INFO] We use the negative of the natural logarithm of the P-values.")
 print("\t[INFO] The chosen threshold corresponds to: -ln(" + str(p_value_threshold) + ") = " + str(nln_p_value_threshold))
 
 # Load interactions with 'DiachromaticInteractionParser'
-interaction_set = DiachromaticInteractionParser(enriched_digests_file)
+interaction_set = DiachromaticInteractionParser()
 interaction_set.parse_file(diachromatic_interaction_file)
 
 # Calculate P-values and assign interactions to 'DI' or 'UIR'

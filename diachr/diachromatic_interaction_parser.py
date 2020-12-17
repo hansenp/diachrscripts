@@ -154,7 +154,7 @@ class DiachromaticInteractionParser:
         :param target_file_name: Generated file with interactions
         :return: String with information on this writing process
         """
-        write_info = "[INFO] Writing interactions that occur in at least " + str(required_replicates) + " replicates to " + target_file_name + '\n'
+        write_info = "[INFO] Writing interactions that occur in at least " + str(required_replicates) + " replicates to: " + target_file_name + '\n'
         out_fh = gzip.open(target_file_name, 'wt')
         n_has_required_data = 0
         n_incomplete_data = 0
@@ -168,7 +168,7 @@ class DiachromaticInteractionParser:
         write_info += "\t[INFO] Interactions that occur in at least " + str(required_replicates) + " replicates: " + str(n_has_required_data) + '\n'
         write_info += "\t[INFO] Other interactions: " + str(n_incomplete_data) + '\n'
         write_info += '\n'
-        write_info += "FILE_NAME" + "\t" + "INTERACTIONS_NUMBERS" + "\t" + "REQUIRED_INTERACTIONS" + "\t" + "HAS_ALL_DATA" + "\t" + "INCOMPLETE_DATA" + '\n'
+        write_info += "FILE_NAME" + "\t" + "INTERACTIONS_NUMBERS" + "\t" + "REQUIRED_REPLICATES" + "\t" + "HAS_ALL_DATA" + "\t" + "INCOMPLETE_DATA" + '\n'
         write_info += str(target_file_name) + "\t" + str(list(self._file_dict.values())) + "\t" + str(required_replicates) + "\t" + str(n_has_required_data) + "\t" + str(n_incomplete_data) + '\n'
         return write_info
 
@@ -229,7 +229,7 @@ class DiachromaticInteractionParser:
 
         print("[INFO] Select reference interactions ...")
 
-        # Nested dictionary that stores the number of interactions (value) for different read pair numbers (key)
+        # Nested dictionary that stores the numbers of interactions (value) for different read pair numbers (key)
         rp_inter_dict = {'NN': {},
                          'NE': {},
                          'EN': {},
@@ -250,6 +250,11 @@ class DiachromaticInteractionParser:
                     rp_inter_dict[enrichment_pair_tag][rp_total] += 1
 
         # Check that there are enough interactions in all enrichment categories
+        print(rp_inter_dict['NN'].items())
+        print(rp_inter_dict['NE'].items())
+        print(rp_inter_dict['EN'].items())
+        print(rp_inter_dict['EE'].items())
+
         if \
          sum(rp_inter_dict['NN'].values()) < 3 or \
          sum(rp_inter_dict['NE'].values()) < 3 or \
@@ -274,7 +279,13 @@ class DiachromaticInteractionParser:
                     rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
                     d11_inter.set_category('UIR')
 
-        print("[INFO] ...done.")
+        # Check whether there are read pair numbers for which no undirected reference interactions were found
+        for enr_cat in rp_inter_dict.keys():
+            print(enr_cat)
+            n_missing = 0
+            for key in rp_inter_dict[enr_cat].keys():
+                if rp_inter_dict[enr_cat][key] < 0:
+                    n_missing += rp_inter_dict[enr_cat][key]
+            print("Missing interactions: " + str(n_missing))
 
-    def _get_read_pair_interaction_dict(self):
-        pass
+        print("[INFO] ...done.")
