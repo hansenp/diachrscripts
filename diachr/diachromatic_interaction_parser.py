@@ -249,23 +249,6 @@ class DiachromaticInteractionParser:
                 else:
                     rp_inter_dict[enrichment_pair_tag][rp_total] += 1
 
-        # Check that there are enough interactions in all enrichment categories
-        print(rp_inter_dict['NN'].items())
-        print(rp_inter_dict['NE'].items())
-        print(rp_inter_dict['EN'].items())
-        print(rp_inter_dict['EE'].items())
-
-        if \
-         sum(rp_inter_dict['NN'].values()) < 3 or \
-         sum(rp_inter_dict['NE'].values()) < 3 or \
-         sum(rp_inter_dict['EN'].values()) < 3 or \
-         sum(rp_inter_dict['EE'].values()) < 3:
-            print("[ERROR] Too few directed interactions within NN, NE, EN or EE! Cannot select reference interactions.")
-
-            print("\t[ERROR] NN interactions: " + str(sum(rp_inter_dict['NN'].values())))
-            print("\t[ERROR] NE interactions: " + str(sum(rp_inter_dict['NE'].values())))
-            print("\t[ERROR] EN interactions: " + str(sum(rp_inter_dict['EN'].values())))
-            print("\t[ERROR] EE interactions: " + str(sum(rp_inter_dict['EE'].values())))
 
         # Second pass: Select undirected reference interactions for different read pair counts
         for d11_inter in self._inter_dict.values():

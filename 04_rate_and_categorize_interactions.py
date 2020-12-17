@@ -45,20 +45,18 @@ interaction_set.parse_file(diachromatic_interaction_file)
 
 # Calculate P-values and assign interactions to 'DI' or 'UIR'
 interaction_set.rate_and_categorize_interactions(nln_p_value_threshold)
+# P-value
 
-
+# Select undirected reference interactions
 interaction_set.select_reference_interactions()
+# Test file
 
+# Create plots and calculate summary statistics
+# TODO
+
+# Write Diachromatic interaction file with two additional columns
 f_name = out_prefix + "_rated_and_categorized_interactions" + ".tsv.gz"
 interaction_set.write_diachromatic_interaction_file(target_file_name=f_name)
 
-
-
-
-# FIRST PASS: CALCULATE P-VALUES AND DEFINE DIRECTED AND UNDIRECTED INTERACTIONS
-
-# SECOND PASS: SELECT UNDIRECTED REFERENCE INTERACTIONS
-
-# WRITE FILE IN DIACHROMATIC INTERACTION FORMAT WITH TWO ADDITIONAL COLUMNS
 
 
