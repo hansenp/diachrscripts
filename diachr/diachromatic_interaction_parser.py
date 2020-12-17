@@ -224,7 +224,8 @@ class DiachromaticInteractionParser:
 
     def select_reference_interactions(self):
         """
-        XXX
+        Select reference interactions that match directed interactions in terms of enrichment category and total
+        number of read pairs per interaction.
         """
 
         print("[INFO] Select reference interactions ...")
@@ -264,11 +265,11 @@ class DiachromaticInteractionParser:
 
         # Check whether there are read pair numbers for which no undirected reference interactions were found
         for enr_cat in rp_inter_dict.keys():
-            print(enr_cat)
             n_missing = 0
-            for key in rp_inter_dict[enr_cat].keys():
-                if rp_inter_dict[enr_cat][key] < 0:
-                    n_missing += rp_inter_dict[enr_cat][key]
-            print("Missing interactions: " + str(n_missing))
+            for rp in rp_inter_dict[enr_cat].keys():
+                if rp_inter_dict[enr_cat][rp] > 0:
+                    n_missing += rp_inter_dict[enr_cat][rp]
+            if 0 < n_missing:
+                print("\t[INFO] Missing interactions: " + enr_cat + "\t" + str(n_missing) + "\t" + str(rp))
 
         print("[INFO] ...done.")
