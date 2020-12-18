@@ -250,7 +250,6 @@ class DiachromaticInteractionParser:
                 else:
                     rp_inter_dict[enrichment_pair_tag][rp_total] += 1
 
-
         # Second pass: Select undirected reference interactions for different read pair counts
         for d11_inter in self._inter_dict.values():
 
