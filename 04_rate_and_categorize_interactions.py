@@ -48,7 +48,11 @@ interaction_set.rate_and_categorize_interactions(nln_p_value_threshold)
 # P-value
 
 # Select undirected reference interactions
-interaction_set.select_reference_interactions()
+report, missing_ref_info = interaction_set.select_reference_interactions()
+print(report)
+for i in missing_ref_info.items():
+    print(i)
+
 # Test file
 
 # Create plots and calculate summary statistics

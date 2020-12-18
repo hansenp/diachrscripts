@@ -1,5 +1,6 @@
 import gzip
 import os
+import copy
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
@@ -222,13 +223,14 @@ class DiachromaticInteractionParser:
         print("[INFO] ...done.")
 
 
-    def select_reference_interactions(self):
+    def select_reference_interactions(self, verbose=False):
         """
         Select reference interactions that match directed interactions in terms of enrichment category and total
         number of read pairs per interaction.
         """
 
-        print("[INFO] Select reference interactions ...")
+        if verbose:
+            print("[INFO] Select reference interactions ...")
 
         # Nested dictionary that stores the numbers of interactions (value) for different read pair numbers (key)
         rp_inter_dict = {'NN': {},
@@ -236,7 +238,8 @@ class DiachromaticInteractionParser:
                          'EN': {},
                          'EE': {}}
 
-        # First pass: Count directed interactions for different read pair counts
+        if verbose:
+            print("\t[INFO] First pass: Count directed interactions for different read pair counts ...")
         for d11_inter in self._inter_dict.values():
 
             if d11_inter.get_category() == 'DI':
@@ -250,7 +253,10 @@ class DiachromaticInteractionParser:
                 else:
                     rp_inter_dict[enrichment_pair_tag][rp_total] += 1
 
-        # Second pass: Select undirected reference interactions for different read pair counts
+        rp_inter_dict_before = copy.deepcopy(rp_inter_dict)
+
+        if verbose:
+            print("\t[INFO] Second pass: Select undirected reference interactions for different read pair counts ...")
         for d11_inter in self._inter_dict.values():
 
             if d11_inter.get_category() != 'DI':
@@ -262,13 +268,50 @@ class DiachromaticInteractionParser:
                     rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
                     d11_inter.set_category('UIR')
 
-        # Check whether there are read pair numbers for which no undirected reference interactions were found
+        # Report on selection of undirected reference interactions
+        report = "[INFO] Report on selection of undirected reference interactions" + '\n'
+
+        report += "\t[INFO] Numbers of directed interactions" + '\n'
+        total = 0
+        for enr_cat in rp_inter_dict_before:
+            total += sum(rp_inter_dict_before[enr_cat].values())
+            report += "\t\t[INFO] Interactions in " + enr_cat + ": " + str(sum(rp_inter_dict_before[enr_cat].values())) + '\n'
+        report += "\t\t[INFO] Total: " + str(total) + '\n'
+
+        report += "\t[INFO] Numbers of selected reference interactions" + '\n'
+        total = 0
+        total_missing = 0
+        for enr_cat in rp_inter_dict:
+                total += sum(rp_inter_dict_before[enr_cat].values()) - sum(rp_inter_dict[enr_cat].values())
+                total_missing += sum(rp_inter_dict[enr_cat].values())
+                report += "\t\t[INFO] Interactions in " + enr_cat + ": " + str(sum(rp_inter_dict_before[enr_cat].values()) - sum(rp_inter_dict[enr_cat].values()))
+                if 0 < sum(rp_inter_dict[enr_cat].values()):
+                    report += " (-" + str(sum(rp_inter_dict[enr_cat].values())) + ')' + '\n'
+                else:
+                    report += '\n'
+        report += "\t\t[INFO] Total: " + str(total)
+        if 0 < total_missing:
+            report += " (-" + str(total_missing) + ')' + '\n'
+        else:
+            report += '\n'
+
+        report += "\t[INFO] Use the dictionary that is returned by this function to find out more about missing reference interactions." + '\n'
+        report += "\t\t[INFO] Keys: <ENRICHMENT_PAIR_TAG>:<READ_PAIR_NUMBER>" + '\n'
+        report += "\t\t[INFO] Values: Number of interactions" + '\n'
+        report += "\t\t[INFO] Example: ('NE:104', 1) means that there is '1' interaction with '104' read pairs is missing in 'NE'." + '\n'
+
+        missing_ref_info = {}
         for enr_cat in rp_inter_dict.keys():
+            n_total = 0
             n_missing = 0
             for rp in rp_inter_dict[enr_cat].keys():
-                if rp_inter_dict[enr_cat][rp] > 0:
+                n_total += rp_inter_dict_before[enr_cat][rp]
+                if 0 < rp_inter_dict[enr_cat][rp]:
                     n_missing += rp_inter_dict[enr_cat][rp]
             if 0 < n_missing:
-                print("\t[INFO] Missing interactions: " + enr_cat + "\t" + str(n_missing) + "\t" + str(rp))
+                missing_ref_info[enr_cat + ":" + str(rp)] = n_missing
 
-        print("[INFO] ...done.")
+        if verbose:
+            print("[INFO] ...done.")
+
+        return report, missing_ref_info
