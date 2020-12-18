@@ -40,7 +40,7 @@ class RandomPermutation:
             if n < self._minimum_powered_n:
                 self._n_underpowered_interaction += 1
                 continue
-            key = interaction.key
+            key = interaction.key # The dictionary for P-values has keys of the form 'rp_simple:rp_twisted' not digest coordinates!
             if key in self._pval_memo:
                 pv = self._pval_memo[key]
             else:

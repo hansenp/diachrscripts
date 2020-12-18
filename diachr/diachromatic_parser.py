@@ -79,10 +79,10 @@ class DiachromaticParser:
                 twisted = int(st_fields[1])
                 iaction = DiachromaticInteraction(chrA=chrA, fromA=fromA, toA=toA, statusA=statusA,
                         chrB=chrB, fromB=fromB, toB=toB, statusB=statusB, simple=simple, twisted=twisted)
-                if iaction.key in self._interaction_d:
-                    self._interaction_d[iaction.key].append_interaction_data(simple=simple, twisted=twisted)
+                if iaction in self._interaction_d:
+                    self._interaction_d[iaction].append_interaction_data(simple=simple, twisted=twisted)
                 else:
-                    self._interaction_d[iaction.key] = iaction
+                    self._interaction_d[iaction] = iaction
         self._n_iteraction.append(n_iteraction)
 
     def get_interaction_dict(self):

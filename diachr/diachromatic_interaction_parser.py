@@ -58,10 +58,10 @@ class DiachromaticInteractionParser:
                     if n_lines % 1000000 == 0:
                         print("\t[INFO] Parsed " + str(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
-                    if d_inter.key in self._inter_dict:
-                        self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple, twisted=d_inter.n_twisted)
+                    if d_inter in self._inter_dict:
+                        self._inter_dict[d_inter].append_interaction_data(simple=d_inter.n_simple, twisted=d_inter.n_twisted)
                     else:
-                        self._inter_dict[d_inter.key] = d_inter
+                        self._inter_dict[d_inter] = d_inter
         else:
             with open(i_file) as fp:
                 n_lines = 0
@@ -70,10 +70,10 @@ class DiachromaticInteractionParser:
                     if n_lines % 1000000 == 0:
                         print("\t[INFO] Parsed " + str(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
-                    if d_inter.key in self._inter_dict:
-                        self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple, twisted=d_inter.n_twisted)
+                    if d_inter in self._inter_dict:
+                        self._inter_dict[d_inter].append_interaction_data(simple=d_inter.n_simple, twisted=d_inter.n_twisted)
                     else:
-                        self._inter_dict[d_inter.key] = d_inter
+                        self._inter_dict[d_inter] = d_inter
 
         self._file_dict[i_file] = n_lines
 
@@ -216,7 +216,7 @@ class DiachromaticInteractionParser:
 
             di_11_inter.set_category(i_category)
 
-            d11_inter_dict[d_inter.key] = di_11_inter
+            d11_inter_dict[d_inter] = di_11_inter
             self._inter_dict = d11_inter_dict
 
         print("[INFO] ...done.")

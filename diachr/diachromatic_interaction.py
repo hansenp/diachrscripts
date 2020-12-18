@@ -107,7 +107,7 @@ class DiachromaticInteraction:
         """
         Unique key to refer to this pair of Digests
         """
-        return "%s%d%s%d" % (self._chrA, self._fromA, self._chrB, self._fromB)
+        return "%s:%d:%s:%d" % (self._chrA, self._fromA, self._chrB, self._fromB)
 
     def get_diachromatic_interaction_line(self):
         """
