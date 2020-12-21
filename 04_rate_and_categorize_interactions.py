@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='Rate and categorize interactions a
 parser.add_argument('-o','--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('-i', '--diachromatic-interaction-file', help='Diachromatic interaction file.', required=True)
 parser.add_argument('--p-value-threshold', help='P-value threshold for directed interactions.', default=0.01)
-parser.add_argument('--enriched-digests-file', help='BED file with digests that were selected for target enrichment.', required=True)
+parser.add_argument('--enriched-digests-file', help='BED file with digests that were selected for target enrichment.', required=False)
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -32,7 +32,8 @@ print("[INFO] " + "Input parameters")
 print("\t[INFO] --out-prefix: " + out_prefix)
 print("\t[INFO] --diachromatic-interaction-file: " + diachromatic_interaction_file)
 print("\t[INFO] --p-value-threshold: " + str(p_value_threshold))
-print("\t[INFO] --enriched-digests-file: " + enriched_digests_file)
+if enriched_digests_file != None:
+    print("\t[INFO] --enriched-digests-file: " + enriched_digests_file)
 
 # Transform P-value threshold
 nln_p_value_threshold = -log(p_value_threshold)
@@ -43,24 +44,22 @@ print("\t[INFO] The chosen threshold corresponds to: -ln(" + str(p_value_thresho
 interaction_set = DiachromaticInteractionParser()
 interaction_set.parse_file(diachromatic_interaction_file)
 
-# Calculate P-values and assign interactions to 'DI' or 'UIR'
-interaction_set.rate_and_categorize_interactions(nln_p_value_threshold)
-# P-value
-
-# Select undirected reference interactions
-report, missing_ref_info = interaction_set.select_reference_interactions()
+# Calculate P-values and assign interactions to 'DI' or 'UI'
+report = interaction_set.rate_and_categorize_interactions(nln_p_value_threshold, verbose=True)
 print(report)
-for i in missing_ref_info.items():
-    print(i)
 
-# Test file
+# Select undirected reference interactions from 'UI'
+report, missing_ref_info = interaction_set.select_reference_interactions(verbose=True)
+print(report)
+
+# Write Diachromatic interaction file with two additional columns
+f_name = out_prefix + "_rated_and_categorized_interactions.tsv.gz"
+interaction_set.write_diachromatic_interaction_file(target_file_name=f_name)
+
+
 
 # Create plots and calculate summary statistics
 # TODO
-
-# Write Diachromatic interaction file with two additional columns
-f_name = out_prefix + "_rated_and_categorized_interactions" + ".tsv.gz"
-interaction_set.write_diachromatic_interaction_file(target_file_name=f_name)
 
 
 

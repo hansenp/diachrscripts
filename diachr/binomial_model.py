@@ -54,6 +54,12 @@ class BinomialModel:
         """
         return(exp(-self.get_binomial_nnl_p_value(n_simple, n_twisted)))
 
+    def nln_pval_to_pval(self, nln_pval):
+        """
+        :param nln_pval: The negative of the natural logarithm of the P-value
+        :return: P-value between 0 and 1
+        """
+        return exp(-nln_pval)
 
     def _calculate_binomial_logsf_p_value(self, n_simple, n_twisted): # (natural) logsf
         """
@@ -83,7 +89,7 @@ class BinomialModel:
             #return log(sys.float_info.min * sys.float_info.epsilon)
 
 
-    def find_smallest_significant_n(self, p_val_thresh, verbose=True):
+    def find_smallest_significant_n(self, p_val_thresh, verbose=False):
         """
         This function finds the smallest n that gives a significant P-value at a chosen threshold.
         A tuple consisting of the smallest n and the associated P-value is returned.

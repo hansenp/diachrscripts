@@ -1,6 +1,7 @@
 import gzip
 import os
 import copy
+from numpy import exp
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
@@ -182,16 +183,33 @@ class DiachromaticInteractionParser:
         return self._inter_dict.values()
 
 
-    def rate_and_categorize_interactions(self, nln_pval_thresh: float):
+    def rate_and_categorize_interactions(self, nln_pval_thresh: float, verbose: bool=False):
         """
-        Calculates the P-value and defines categories for all interactions in this object.
+        Calculate the P-value and define interaction categories ('DI' and 'UI') for all interactions in this object.
         DiachromaticInteraction objects will be replaced by DiachromaticInteraction11 objects.
         """
 
-        print("[INFO] Rate and categorize interactions ...")
+        # Get smallest number of read pairs required for significance
+        smallest_significant_n, largest_significant_p = self._p_values.find_smallest_significant_n(exp(-nln_pval_thresh))
+
+        if verbose:
+            print("[INFO] Rate and categorize interactions ...")
 
         d11_inter_dict = {}
+        n_di = 0
+        n_ui = 0
+        n_discarded = 0
+        n_progress = 0
         for d_inter in self._inter_dict.values():
+            if verbose:
+                if n_progress % 1000000 == 0:
+                    print("\t[INFO] Processed " + str(n_progress) + " interactions ...")
+            n_progress += 1
+
+            # Discard interactions that don't have enough read pairs to be significant
+            if d_inter.rp_total < smallest_significant_n:
+                n_discarded += 1
+                continue
 
             # Get P-value
             nln_p_val = self._p_values.get_binomial_nnl_p_value(d_inter._simple, d_inter._twisted)
@@ -199,9 +217,12 @@ class DiachromaticInteractionParser:
             # Determine interaction category
             if nln_pval_thresh <= nln_p_val:
                 i_category = "DI"
+                n_di += 1
             else:
                 i_category = "UI"
+                n_ui += 1
 
+            # Create new 'DiachromaticInteraction11' with P-value and category
             di_11_inter = DiachromaticInteraction11(
                 chrA=d_inter.chrA,
                 fromA=d_inter._fromA,
@@ -215,12 +236,20 @@ class DiachromaticInteractionParser:
                 twisted=d_inter.n_twisted,
                 nln_pval=nln_p_val)
 
+            # Set interaction category
             di_11_inter.set_category(i_category)
-
             d11_inter_dict[d_inter.key] = di_11_inter
-            self._inter_dict = d11_inter_dict
 
-        print("[INFO] ...done.")
+        # Replace old list with new list of interactions
+        self._inter_dict = d11_inter_dict
+
+        # Report on selection of undirected reference interactions
+        report = "[INFO] Report on evaluation and categorization interactions" + '\n'
+
+        if verbose:
+            print("[INFO] ...done.")
+
+        return report
 
 
     def select_reference_interactions(self, verbose=False):
@@ -298,7 +327,7 @@ class DiachromaticInteractionParser:
         report += "\t[INFO] Use the dictionary that is returned by this function to find out more about missing reference interactions." + '\n'
         report += "\t\t[INFO] Keys: <ENRICHMENT_PAIR_TAG>:<READ_PAIR_NUMBER>" + '\n'
         report += "\t\t[INFO] Values: Number of interactions" + '\n'
-        report += "\t\t[INFO] Example: ('NE:104', 1) means that there is '1' interaction with '104' read pairs is missing in 'NE'." + '\n'
+        report += "\t\t[INFO] Example: ('NE:104', 1) means that there is '1' interaction with '104' read pairs missing in 'NE'." + '\n'
 
         missing_ref_info = {}
         for enr_cat in rp_inter_dict.keys():
