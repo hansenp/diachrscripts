@@ -147,7 +147,7 @@ class DiachromaticInteractionSet:
         file_dict_info += "[INFO] The union of all interactions has "  + str(len(self._inter_dict)) + " interactions." + '\n'
         return(file_dict_info)
 
-    def write_diachromatic_interaction_file(self, required_replicates = 1, target_file_name = None):
+    def write_diachromatic_interaction_file(self, required_replicates = 1, target_file_name = None, verbose: bool=False):
         """
         Writes interactions that occur in a specified minimum number of replicates to a file
         and returns a string with information on this writing process.
@@ -156,6 +156,9 @@ class DiachromaticInteractionSet:
         :param target_file_name: Generated file with interactions
         :return: String with information on this writing process
         """
+
+        if verbose:
+            print("[INFO] Writing Diachromatic interaction file ...")
         write_info = "[INFO] Writing interactions that occur in at least " + str(required_replicates) + " replicates to: " + target_file_name + '\n'
         out_fh = gzip.open(target_file_name, 'wt')
         n_has_required_data = 0
@@ -167,6 +170,9 @@ class DiachromaticInteractionSet:
             else:
                 n_incomplete_data += 1
         out_fh.close()
+        if verbose:
+            print("[INFO] ... done.")
+
         write_info += "\t[INFO] Interactions that occur in at least " + str(required_replicates) + " replicates: " + str(n_has_required_data) + '\n'
         write_info += "\t[INFO] Other interactions: " + str(n_incomplete_data) + '\n'
         write_info += '\n'
@@ -300,6 +306,10 @@ class DiachromaticInteractionSet:
                     rp_inter_dict[enrichment_pair_tag][rp_total] += 1
 
         rp_inter_dict_before = copy.deepcopy(rp_inter_dict)
+        ui_inter_dict = {'NN': 0,
+                         'NE': 0,
+                         'EN': 0,
+                         'EE': 0}
 
         if verbose:
             print("\t[INFO] Second pass: Select undirected reference interactions for different read pair counts ...")
@@ -313,6 +323,8 @@ class DiachromaticInteractionSet:
                 if rp_total in rp_inter_dict[enrichment_pair_tag] and 0 < rp_inter_dict[enrichment_pair_tag][rp_total]:
                     rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
                     d11_inter.set_category('UIR')
+                else:
+                    ui_inter_dict[enrichment_pair_tag] += 1
 
         # Report on selection of undirected reference interactions
         report = "[INFO] Report on selection of undirected reference interactions" + '\n'
@@ -357,33 +369,14 @@ class DiachromaticInteractionSet:
             if 0 < n_missing:
                 missing_ref_info[enr_cat + ":" + str(rp)] = n_missing
 
+        summary_stat_dict = {}
+        for enr_cat in ['NN','NE','EN','EE']:
+            summary_stat_dict['DI_' + enr_cat] = sum(rp_inter_dict_before[enr_cat].values())
+            summary_stat_dict['UIR_' + enr_cat] = sum(rp_inter_dict_before[enr_cat].values()) - sum(rp_inter_dict[enr_cat].values())
+            summary_stat_dict['M_UIR_' + enr_cat] = sum(rp_inter_dict[enr_cat].values())
+            summary_stat_dict['UI_' + enr_cat] = ui_inter_dict[enr_cat]
+
         if verbose:
             print("[INFO] ...done.")
-
-        summary_stat_dict = {}
-
-        # Directed interactions
-        summary_stat_dict['DI_NN'] = sum(rp_inter_dict_before['NN'].values())
-        summary_stat_dict['DI_NE'] = sum(rp_inter_dict_before['NE'].values())
-        summary_stat_dict['DI_EN'] = sum(rp_inter_dict_before['EN'].values())
-        summary_stat_dict['DI_EE'] = sum(rp_inter_dict_before['EE'].values())
-
-        # Undirected reference interactions
-        summary_stat_dict['UIR_NN'] = sum(rp_inter_dict_before['NN'].values()) - sum(rp_inter_dict['NN'].values())
-        summary_stat_dict['UIR_NE'] = sum(rp_inter_dict_before['NE'].values()) - sum(rp_inter_dict['NE'].values())
-        summary_stat_dict['UIR_EN'] = sum(rp_inter_dict_before['EN'].values()) - sum(rp_inter_dict['EN'].values())
-        summary_stat_dict['UIR_EE'] = sum(rp_inter_dict_before['EE'].values()) - sum(rp_inter_dict['EE'].values())
-
-        # Missing undirected reference interactions
-        summary_stat_dict['M_UIR_NN'] = sum(rp_inter_dict['NN'].values())
-        summary_stat_dict['M_UIR_NE'] = sum(rp_inter_dict['NE'].values())
-        summary_stat_dict['M_UIR_EN'] = sum(rp_inter_dict['EN'].values())
-        summary_stat_dict['M_UIR_EE'] = sum(rp_inter_dict['EE'].values())
-
-        # Undirected interactions
-        summary_stat_dict['UI_NN'] = -1
-        summary_stat_dict['UI_NE'] = -1
-        summary_stat_dict['UI_EN'] = -1
-        summary_stat_dict['UI_EE'] = -1
 
         return report, summary_stat_dict, missing_ref_info

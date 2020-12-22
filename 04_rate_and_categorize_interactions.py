@@ -1,12 +1,9 @@
 """
-In this script, the P-values for directionality of interactions are calculated and, based on these P-values,
-the interactions are categorized into directed (DI) und undirected interactions (UI).
-Undirected reference interactions (UIR) are then selected from UI, which are comparable to DI with respect to
-to the total number of read pairs (n).
+This script takes a file in Diachromatic interaction format and a P-value threshold, calculates the P-values of
+interactions, assigns interactions to directed (DI) and undirected interactions (UI), selects undirected reference
+interactions (UIR) from UI and creates a new file with two additional columns for P-value and interaction category.
 
-The input consists of a file in Diachromatic interaction format and a P-value threshold that was determined using our
-FDR procedure. The output is again a file in Diachromatic interaction format, but there are two additional columns
-on the right for the calculated P-values and interaction categories.
+You can find a detailed documentation on this script in the relevant section in the RTD of this repository.
 """
 
 import argparse
@@ -60,7 +57,7 @@ select_ref_report, select_ref_summary_stat_dict, missing_ref_info = interaction_
 
 # Write Diachromatic interaction file with two additional columns
 f_name = out_prefix + "_rated_and_categorized_interactions.tsv.gz"
-interaction_set.write_diachromatic_interaction_file(target_file_name=f_name)
+interaction_set.write_diachromatic_interaction_file(target_file_name=f_name, verbose=True)
 
 
 ### Create file with summary statistics
@@ -144,13 +141,4 @@ out_fh.write(
     str(select_ref_summary_stat_dict["UI_EE"]) + '\n'
 )
 
-print(select_ref_summary_stat_dict)
-
 out_fh.close()
-
-
-
-
-
-
-
