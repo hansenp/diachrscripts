@@ -12,7 +12,7 @@ otherwise something is wrong.
 """
 
 import argparse
-from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
+from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
 
 ### Parse command line
@@ -59,7 +59,7 @@ enriched_digests_interactions = set()
 not_enriched_digests_interactions = set()
 
 # Read Diachromatic interaction file
-interaction_set = DiachromaticInteractionParser()
+interaction_set = DiachromaticInteractionSet()
 interaction_set.parse_file(diachromatic_interaction_file)
 
 # Iterate interaction objects and create sets of enriched and not enriched digests

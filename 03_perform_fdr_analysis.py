@@ -16,7 +16,7 @@ import numpy as np
 
 
 from diachr.fdr_analysis import FdrAnalysis
-from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
+from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.binomial_model import BinomialModel
 
 
@@ -117,7 +117,7 @@ txt_file_stream_results.write("OUT_PREFIX\tFDR\tPC\tNSIG_P\tNSIG_O" + "\n")
 np.random.seed(42)
 
 # Get list of Diachromatic interaction objects
-interaction_set = DiachromaticInteractionParser()
+interaction_set = DiachromaticInteractionSet()
 interaction_set.parse_file(interaction_file)
 d_inter_list = interaction_set.interaction_list
 

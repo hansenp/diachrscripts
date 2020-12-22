@@ -16,7 +16,7 @@ import multiprocessing as mp
 import itertools
 import numpy as np
 
-from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
+from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.binomial_model import BinomialModel
 
 from diachr.random_permutation import RandomPermutation
@@ -153,7 +153,7 @@ txt_stream_w_sig_p_output = open(txt_file_w_sig_p_output, 'wt')
 ###################
 
 # Get list of Diachromatic interaction objects
-interaction_set = DiachromaticInteractionParser()
+interaction_set = DiachromaticInteractionSet()
 interaction_set.parse_file(diachromatic_interaction_file)
 d_inter_list = interaction_set.interaction_list
 

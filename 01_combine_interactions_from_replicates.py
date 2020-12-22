@@ -9,7 +9,7 @@ You can find a detailed documentation on this script in the relevant section in 
 
 import argparse
 import os
-from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
+from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
 
 ### Parse command line
@@ -53,7 +53,7 @@ if len(gz_files) < int(required_replicates):
     exit(1)
 
 # Get list of Diachromatic interaction objects
-interaction_set = DiachromaticInteractionParser()
+interaction_set = DiachromaticInteractionSet()
 print("[INFO] Will parse all gz files in " + interaction_files_path)
 for gz_file in gz_files:
     interaction_set.parse_file(gz_file)

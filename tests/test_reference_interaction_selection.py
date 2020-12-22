@@ -8,7 +8,7 @@ PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
+from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
 class TestReferenceInteractionSelection(TestCase):
 
@@ -16,7 +16,7 @@ class TestReferenceInteractionSelection(TestCase):
     def setUpClass(cls):
 
         # Use test data to create a DiachromaticInteractionParser object
-        cls.interaction_set = DiachromaticInteractionParser()
+        cls.interaction_set = DiachromaticInteractionSet()
         cls.interaction_set.parse_file("data/test_04/diachromatic_interaction_file.tsv")
         cls.interaction_set.rate_and_categorize_interactions(-log(0.01))
 
@@ -28,7 +28,7 @@ class TestReferenceInteractionSelection(TestCase):
         """
 
         # The function for reference selection returns a dictionary with information about missing reference interactions
-        report, missing_ref_info = self.interaction_set.select_reference_interactions()
+        select_ref_report, select_ref_summary_stat_dict, missing_ref_info = self.interaction_set.select_reference_interactions()
 
         # Check that there are two missing reference interactions
         self.assertEqual(2, sum(missing_ref_info.values()))

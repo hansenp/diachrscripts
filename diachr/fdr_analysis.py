@@ -6,7 +6,7 @@ import gzip
 
 from .diachr_util import calculate_binomial_logsf_p_value
 from diachr.diachromatic_interaction import DiachromaticInteraction
-from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
+from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
 class FdrAnalysis:
     """
@@ -60,7 +60,7 @@ class FdrAnalysis:
         self._p_val_o_list = []
 
         # Get list of Dichromatic interaction objects
-        parser = DiachromaticInteractionParser()
+        parser = DiachromaticInteractionSet()
         parser.parse_file(diachromatic_interaction_file)
         d_inter_list = parser.i_list
         np.random.seed(42)

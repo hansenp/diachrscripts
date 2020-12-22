@@ -6,7 +6,7 @@ PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
+from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
 class TestCombineInteractions(TestCase):
 
@@ -14,7 +14,7 @@ class TestCombineInteractions(TestCase):
     def setUpClass(cls):
 
         # Use test data to create a DiachromaticInteractionParser object
-        cls.interaction_set = DiachromaticInteractionParser()
+        cls.interaction_set = DiachromaticInteractionSet()
         cls.interaction_set.parse_file("data/test_01/diachromatic_interaction_file_r1.tsv.gz") # one interaction
         cls.interaction_set.parse_file("data/test_01/diachromatic_interaction_file_r2.tsv.gz") # two interactions
         cls.interaction_set.parse_file("data/test_01/diachromatic_interaction_file_r3.tsv.gz") # three interactions

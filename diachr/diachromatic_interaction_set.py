@@ -7,7 +7,7 @@ from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
 from diachr.binomial_model import BinomialModel
 
-class DiachromaticInteractionParser:
+class DiachromaticInteractionSet:
     """
     This class coordinates the parsing of Diachromatic interaction files.
     It creates a list of DiachromaticInteraction objects, each representing one data line.
@@ -190,7 +190,7 @@ class DiachromaticInteractionParser:
         """
 
         # Get smallest number of read pairs required for significance
-        smallest_significant_n, largest_significant_pval = self._p_values.find_smallest_significant_n(exp(-nln_pval_thresh))
+        min_rp, min_rp_pval = self._p_values.find_smallest_significant_n(exp(-nln_pval_thresh))
 
         if verbose:
             print("[INFO] Rate and categorize interactions ...")
@@ -207,7 +207,7 @@ class DiachromaticInteractionParser:
                     print("\t[INFO] Processed " + str(n_processed) + " interactions ...")
 
             # Discard interactions that don't have enough read pairs to be significant
-            if d_inter.rp_total < smallest_significant_n:
+            if d_inter.rp_total < min_rp:
                 n_discarded += 1
                 continue
 
@@ -244,19 +244,29 @@ class DiachromaticInteractionParser:
         self._inter_dict = d11_inter_dict
 
         # Report on selection of undirected reference interactions
-        report = "[INFO] Report on evaluation and categorization interactions:" + '\n'
-        report += "\t[INFO] Minimum number of read pairs required for significance: " + str(smallest_significant_n) + '\n'
-        report += "\t[INFO] Corresponding largest P-value: " + str(largest_significant_pval) + '\n'
+        report = "[INFO] Report on evaluation and categorization interactions" + '\n'
+        report += "\t[INFO] Minimum number of read pairs required for significance: " + str(min_rp) + '\n'
+        report += "\t[INFO] Corresponding largest P-value: " + str(min_rp_pval) + '\n'
         report += "\t[INFO] Processed interactions: " + str(n_processed) + '\n'
         report += "\t[INFO] Discarded interactions: " + str(n_discarded) + '\n'
         report += "\t[INFO] Significant interactions (DI): " + str(n_di) + '\n'
         report += "\t[INFO] Not significant interactions (UI): " + str(n_ui) + '\n'
         report += "[INFO] End of report."
 
+        # Prepare dictionary for testing
+        summary_stat_dict = {}
+        summary_stat_dict['NLN_PVAL_THRESH'] = nln_pval_thresh
+        summary_stat_dict['MIN_RP'] = min_rp
+        summary_stat_dict['MIN_RP_PVAL'] = min_rp_pval
+        summary_stat_dict['N_PROCESSED'] = n_processed
+        summary_stat_dict['N_DISCARDED'] = n_discarded
+        summary_stat_dict['N_UNDIRECTED'] = n_ui
+        summary_stat_dict['N_DIRECTED'] = n_di
+
         if verbose:
             print("[INFO] ...done.")
 
-        return report
+        return report, summary_stat_dict
 
 
     def select_reference_interactions(self, verbose=False):
@@ -350,4 +360,30 @@ class DiachromaticInteractionParser:
         if verbose:
             print("[INFO] ...done.")
 
-        return report, missing_ref_info
+        summary_stat_dict = {}
+
+        # Directed interactions
+        summary_stat_dict['DI_NN'] = sum(rp_inter_dict_before['NN'].values())
+        summary_stat_dict['DI_NE'] = sum(rp_inter_dict_before['NE'].values())
+        summary_stat_dict['DI_EN'] = sum(rp_inter_dict_before['EN'].values())
+        summary_stat_dict['DI_EE'] = sum(rp_inter_dict_before['EE'].values())
+
+        # Undirected reference interactions
+        summary_stat_dict['UIR_NN'] = sum(rp_inter_dict_before['NN'].values()) - sum(rp_inter_dict['NN'].values())
+        summary_stat_dict['UIR_NE'] = sum(rp_inter_dict_before['NE'].values()) - sum(rp_inter_dict['NE'].values())
+        summary_stat_dict['UIR_EN'] = sum(rp_inter_dict_before['EN'].values()) - sum(rp_inter_dict['EN'].values())
+        summary_stat_dict['UIR_EE'] = sum(rp_inter_dict_before['EE'].values()) - sum(rp_inter_dict['EE'].values())
+
+        # Missing undirected reference interactions
+        summary_stat_dict['M_UIR_NN'] = sum(rp_inter_dict['NN'].values())
+        summary_stat_dict['M_UIR_NE'] = sum(rp_inter_dict['NE'].values())
+        summary_stat_dict['M_UIR_EN'] = sum(rp_inter_dict['EN'].values())
+        summary_stat_dict['M_UIR_EE'] = sum(rp_inter_dict['EE'].values())
+
+        # Undirected interactions
+        summary_stat_dict['UI_NN'] = -1
+        summary_stat_dict['UI_NE'] = -1
+        summary_stat_dict['UI_EN'] = -1
+        summary_stat_dict['UI_EE'] = -1
+
+        return report, summary_stat_dict, missing_ref_info
