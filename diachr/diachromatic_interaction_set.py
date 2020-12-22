@@ -207,8 +207,8 @@ class DiachromaticInteractionSet:
         n_discarded = 0
         n_processed = 0
         for d_inter in self._inter_dict.values():
+            n_processed += 1
             if verbose:
-                n_processed += 1
                 if n_processed % 1000000 == 0:
                     print("\t[INFO] Processed " + str(n_processed) + " interactions ...")
 
@@ -249,30 +249,20 @@ class DiachromaticInteractionSet:
         # Replace old list with new list of interactions
         self._inter_dict = d11_inter_dict
 
-        # Report on selection of undirected reference interactions
-        report = "[INFO] Report on evaluation and categorization interactions" + '\n'
-        report += "\t[INFO] Minimum number of read pairs required for significance: " + str(min_rp) + '\n'
-        report += "\t[INFO] Corresponding largest P-value: " + str(min_rp_pval) + '\n'
-        report += "\t[INFO] Processed interactions: " + str(n_processed) + '\n'
-        report += "\t[INFO] Discarded interactions: " + str(n_discarded) + '\n'
-        report += "\t[INFO] Significant interactions (DI): " + str(n_di) + '\n'
-        report += "\t[INFO] Not significant interactions (UI): " + str(n_ui) + '\n'
-        report += "[INFO] End of report."
-
-        # Prepare dictionary for testing
-        summary_stat_dict = {}
-        summary_stat_dict['NLN_PVAL_THRESH'] = nln_pval_thresh
-        summary_stat_dict['MIN_RP'] = min_rp
-        summary_stat_dict['MIN_RP_PVAL'] = min_rp_pval
-        summary_stat_dict['N_PROCESSED'] = n_processed
-        summary_stat_dict['N_DISCARDED'] = n_discarded
-        summary_stat_dict['N_UNDIRECTED'] = n_ui
-        summary_stat_dict['N_DIRECTED'] = n_di
+        # Prepare dictionary for report
+        report_dict = {}
+        report_dict['NLN_PVAL_THRESH'] = nln_pval_thresh
+        report_dict['MIN_RP'] = min_rp
+        report_dict['MIN_RP_PVAL'] = min_rp_pval
+        report_dict['N_PROCESSED'] = n_processed
+        report_dict['N_DISCARDED'] = n_discarded
+        report_dict['N_UNDIRECTED'] = n_ui
+        report_dict['N_DIRECTED'] = n_di
 
         if verbose:
             print("[INFO] ...done.")
 
-        return report, summary_stat_dict
+        return report_dict
 
 
     def select_reference_interactions(self, verbose=False):
@@ -326,57 +316,15 @@ class DiachromaticInteractionSet:
                 else:
                     ui_inter_dict[enrichment_pair_tag] += 1
 
-        # Report on selection of undirected reference interactions
-        report = "[INFO] Report on selection of undirected reference interactions" + '\n'
-
-        report += "\t[INFO] Numbers of directed interactions" + '\n'
-        total = 0
-        for enr_cat in rp_inter_dict_before:
-            total += sum(rp_inter_dict_before[enr_cat].values())
-            report += "\t\t[INFO] Interactions in " + enr_cat + ": " + str(sum(rp_inter_dict_before[enr_cat].values())) + '\n'
-        report += "\t\t[INFO] Total: " + str(total) + '\n'
-
-        report += "\t[INFO] Numbers of selected reference interactions" + '\n'
-        total = 0
-        total_missing = 0
-        for enr_cat in rp_inter_dict:
-                total += sum(rp_inter_dict_before[enr_cat].values()) - sum(rp_inter_dict[enr_cat].values())
-                total_missing += sum(rp_inter_dict[enr_cat].values())
-                report += "\t\t[INFO] Interactions in " + enr_cat + ": " + str(sum(rp_inter_dict_before[enr_cat].values()) - sum(rp_inter_dict[enr_cat].values()))
-                if 0 < sum(rp_inter_dict[enr_cat].values()):
-                    report += " (-" + str(sum(rp_inter_dict[enr_cat].values())) + ')' + '\n'
-                else:
-                    report += '\n'
-        report += "\t\t[INFO] Total: " + str(total)
-        if 0 < total_missing:
-            report += " (-" + str(total_missing) + ')' + '\n'
-        else:
-            report += '\n'
-
-        report += "\t[INFO] Use the dictionary that is returned by this function to find out more about missing reference interactions." + '\n'
-        report += "\t\t[INFO] Keys: <ENRICHMENT_PAIR_TAG>:<READ_PAIR_NUMBER>" + '\n'
-        report += "\t\t[INFO] Values: Number of interactions" + '\n'
-        report += "\t\t[INFO] Example: ('NE:104', 1) means that there is '1' interaction with '104' read pairs missing in 'NE'." + '\n'
-
-        missing_ref_info = {}
-        for enr_cat in rp_inter_dict.keys():
-            n_total = 0
-            n_missing = 0
-            for rp in rp_inter_dict[enr_cat].keys():
-                n_total += rp_inter_dict_before[enr_cat][rp]
-                if 0 < rp_inter_dict[enr_cat][rp]:
-                    n_missing += rp_inter_dict[enr_cat][rp]
-            if 0 < n_missing:
-                missing_ref_info[enr_cat + ":" + str(rp)] = n_missing
-
-        summary_stat_dict = {}
+        # Prepare dictionary for report
+        report_dict = {}
         for enr_cat in ['NN','NE','EN','EE']:
-            summary_stat_dict['DI_' + enr_cat] = sum(rp_inter_dict_before[enr_cat].values())
-            summary_stat_dict['UIR_' + enr_cat] = sum(rp_inter_dict_before[enr_cat].values()) - sum(rp_inter_dict[enr_cat].values())
-            summary_stat_dict['M_UIR_' + enr_cat] = sum(rp_inter_dict[enr_cat].values())
-            summary_stat_dict['UI_' + enr_cat] = ui_inter_dict[enr_cat]
+            report_dict['DI_' + enr_cat] = sum(rp_inter_dict_before[enr_cat].values())
+            report_dict['UIR_' + enr_cat] = sum(rp_inter_dict_before[enr_cat].values()) - sum(rp_inter_dict[enr_cat].values())
+            report_dict['M_UIR_' + enr_cat] = sum(rp_inter_dict[enr_cat].values())
+            report_dict['UI_' + enr_cat] = ui_inter_dict[enr_cat]
 
         if verbose:
             print("[INFO] ...done.")
 
-        return report, summary_stat_dict, missing_ref_info
+        return report_dict

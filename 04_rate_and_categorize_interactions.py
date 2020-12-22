@@ -50,10 +50,10 @@ interaction_set = DiachromaticInteractionSet()
 interaction_set.parse_file(diachromatic_interaction_file)
 
 # Calculate P-values and assign interactions to 'DI' or 'UI'
-rate_and_cat_report, rate_and_cat_summary_stat_dict = interaction_set.rate_and_categorize_interactions(nln_p_value_threshold, verbose=True)
+rate_and_cat_report_dict = interaction_set.rate_and_categorize_interactions(nln_p_value_threshold, verbose=True)
 
 # Select undirected reference interactions from 'UI'
-select_ref_report, select_ref_summary_stat_dict, missing_ref_info = interaction_set.select_reference_interactions(verbose=True)
+select_ref_report_dict = interaction_set.select_reference_interactions(verbose=True)
 
 # Write Diachromatic interaction file with two additional columns
 f_name = out_prefix + "_rated_and_categorized_interactions.tsv.gz"
@@ -69,8 +69,17 @@ out_fh = open(f_name, 'wt')
 # Chosen parameters
 out_fh.write(parameter_info + '\n')
 
-out_fh.write(rate_and_cat_report + '\n\n')
-
+# Report on evaluation and categorization interactions
+report = "[INFO] --------------------------------------------------------------------------------------------" + '\n'
+report += "[INFO] Report on evaluation and categorization interactions" + '\n'
+report += "\t[INFO] Minimum number of read pairs required for significance: " + str(rate_and_cat_report_dict['MIN_RP']) + '\n'
+report += "\t[INFO] Corresponding largest P-value: " + "{:.2f}".format(-log(rate_and_cat_report_dict['MIN_RP_PVAL'])) + '\n'
+report += "\t[INFO] Processed interactions: " + str(rate_and_cat_report_dict['N_PROCESSED']) + '\n'
+report += "\t[INFO] Discarded interactions: " + str(rate_and_cat_report_dict['N_DISCARDED']) + '\n'
+report += "\t[INFO] Not significant interactions (UI): " + str(rate_and_cat_report_dict['N_UNDIRECTED']) + '\n'
+report += "\t[INFO] Significant interactions (DI): " + str(rate_and_cat_report_dict['N_DIRECTED']) + '\n'
+report += "[INFO] End of report."
+out_fh.write(report + '\n\n')
 out_fh.write(
     "OUT_PREFIX" + '\t' +
     "NLN_PVAL_THRESH" + '\t' +
@@ -83,15 +92,45 @@ out_fh.write(
 )
 out_fh.write(
     out_prefix + '\t' +
-    "{:.2f}".format(rate_and_cat_summary_stat_dict['NLN_PVAL_THRESH']) + '\t' +
-    str(rate_and_cat_summary_stat_dict['MIN_RP']) + '\t' +
-    "{:.2f}".format(-log(rate_and_cat_summary_stat_dict['MIN_RP_PVAL'])) + '\t' +
-    str(rate_and_cat_summary_stat_dict['N_PROCESSED']) + '\t' +
-    str(rate_and_cat_summary_stat_dict['N_DISCARDED']) + '\t' +
-    str(rate_and_cat_summary_stat_dict['N_UNDIRECTED']) + '\t' +
-    str(rate_and_cat_summary_stat_dict['N_DIRECTED']) + '\n\n'
+    "{:.2f}".format(rate_and_cat_report_dict['NLN_PVAL_THRESH']) + '\t' +
+    str(rate_and_cat_report_dict['MIN_RP']) + '\t' +
+    "{:.2f}".format(-log(rate_and_cat_report_dict['MIN_RP_PVAL'])) + '\t' +
+    str(rate_and_cat_report_dict['N_PROCESSED']) + '\t' +
+    str(rate_and_cat_report_dict['N_DISCARDED']) + '\t' +
+    str(rate_and_cat_report_dict['N_UNDIRECTED']) + '\t' +
+    str(rate_and_cat_report_dict['N_DIRECTED']) + '\n\n'
 )
-out_fh.write(select_ref_report + '\n\n')
+
+# Report on selection of reference interactions
+report = "[INFO] --------------------------------------------------------------------------------------------" + '\n'
+report += "[INFO] Report on selection of undirected reference interactions" + '\n'
+report += "\t[INFO] Numbers of directed interactions" + '\n'
+total = 0
+for enr_cat in ['NN','NE','EN','EE']:
+    total += select_ref_report_dict['DI_' + enr_cat]
+    report += "\t\t[INFO] Interactions in " + enr_cat + ": " + str(select_ref_report_dict['DI_' + enr_cat]) + '\n'
+report += "\t\t[INFO] Total: " + str(total) + '\n'
+report += "\t[INFO] Numbers of undirected reference interactions" + '\n'
+total = 0
+for enr_cat in ['NN','NE','EN','EE']:
+    total += select_ref_report_dict['UIR_' + enr_cat]
+    report += "\t\t[INFO] Interactions in " + enr_cat + ": " + str(select_ref_report_dict['UIR_' + enr_cat]) + '\n'
+report += "\t\t[INFO] Total: " + str(total) + '\n'
+report += "\t[INFO] Numbers of missing undirected reference interactions" + '\n'
+total = 0
+for enr_cat in ['NN','NE','EN','EE']:
+    total += select_ref_report_dict['M_UIR_' + enr_cat]
+    report += "\t\t[INFO] Interactions in " + enr_cat + ": " + str(select_ref_report_dict['M_UIR_' + enr_cat]) + '\n'
+report += "\t\t[INFO] Total: " + str(total) + '\n'
+report += "\t[INFO] Numbers undirected interactions" + '\n'
+total = 0
+for enr_cat in ['NN','NE','EN','EE']:
+    total += select_ref_report_dict['UI_' + enr_cat]
+    report += "\t\t[INFO] Interactions in " + enr_cat + ": " + str(select_ref_report_dict['UI_' + enr_cat]) + '\n'
+report += "\t\t[INFO] Total: " + str(total) + '\n'
+
+out_fh.write(report + '\n')
+
 
 out_fh.write(
     "OUT_PREFIX" + '\t' +
@@ -120,25 +159,25 @@ out_fh.write(
 out_fh.write(
     out_prefix + '\t' +
 
-    str(select_ref_summary_stat_dict["DI_NN"]) + '\t' +
-    str(select_ref_summary_stat_dict["DI_NE"]) + '\t' +
-    str(select_ref_summary_stat_dict["DI_EN"]) + '\t' +
-    str(select_ref_summary_stat_dict["DI_EE"]) + '\t' +
+    str(select_ref_report_dict["DI_NN"]) + '\t' +
+    str(select_ref_report_dict["DI_NE"]) + '\t' +
+    str(select_ref_report_dict["DI_EN"]) + '\t' +
+    str(select_ref_report_dict["DI_EE"]) + '\t' +
 
-    str(select_ref_summary_stat_dict["UIR_NN"]) + '\t' +
-    str(select_ref_summary_stat_dict["UIR_NE"]) + '\t' +
-    str(select_ref_summary_stat_dict["UIR_EN"]) + '\t' +
-    str(select_ref_summary_stat_dict["UIR_EE"]) + '\t' +
+    str(select_ref_report_dict["UIR_NN"]) + '\t' +
+    str(select_ref_report_dict["UIR_NE"]) + '\t' +
+    str(select_ref_report_dict["UIR_EN"]) + '\t' +
+    str(select_ref_report_dict["UIR_EE"]) + '\t' +
 
-    str(select_ref_summary_stat_dict["M_UIR_NN"]) + '\t' +
-    str(select_ref_summary_stat_dict["M_UIR_NE"]) + '\t' +
-    str(select_ref_summary_stat_dict["M_UIR_EN"]) + '\t' +
-    str(select_ref_summary_stat_dict["M_UIR_EE"]) + '\t' +
+    str(select_ref_report_dict["M_UIR_NN"]) + '\t' +
+    str(select_ref_report_dict["M_UIR_NE"]) + '\t' +
+    str(select_ref_report_dict["M_UIR_EN"]) + '\t' +
+    str(select_ref_report_dict["M_UIR_EE"]) + '\t' +
 
-    str(select_ref_summary_stat_dict["UI_NN"]) + '\t' +
-    str(select_ref_summary_stat_dict["UI_NE"]) + '\t' +
-    str(select_ref_summary_stat_dict["UI_EN"]) + '\t' +
-    str(select_ref_summary_stat_dict["UI_EE"]) + '\n'
+    str(select_ref_report_dict["UI_NN"]) + '\t' +
+    str(select_ref_report_dict["UI_NE"]) + '\t' +
+    str(select_ref_report_dict["UI_EN"]) + '\t' +
+    str(select_ref_report_dict["UI_EE"]) + '\n'
 )
 
 out_fh.close()

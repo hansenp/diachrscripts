@@ -10,34 +10,86 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
-class TestReferenceInteractionSelection(TestCase):
+class TestRateAndCategorizeInteractions(TestCase):
 
     @classmethod
     def setUpClass(cls):
-
-        # Use test data to create a DiachromaticInteractionParser object
-        cls.interaction_set = DiachromaticInteractionSet()
-        cls.interaction_set.parse_file("data/test_04/diachromatic_interaction_file.tsv")
-        cls.interaction_set.rate_and_categorize_interactions(-log(0.01))
-
-    def test_missing_ref_info(self):
         """
-        For the test file, there are two directed interactions for which no matching undirected interaction
-        can be selected. One interaction is in the enrichment category 'NE' and has a total of 104 read pairs.
+        We use test data to create a DiachromaticInteractionSet object.
+        For the test file, there are 18 clearly directed and 28 clearly undirected interactions.
+        In addition, there are four interactions that do not have enough read pairs to be significant at the given
+        P-value threshold.
+        For 16 directed interactions, there are undirected reference interactions with a corresponding number of read
+        pairs, but for two interactions there is no matching reference interaction.
+        One interaction is in the enrichment category 'NE' and has a total of 104 read pairs.
         The other interaction is in enrichment category 'EE' and has a total of 106 read pairs.
         """
 
-        # The function for reference selection returns a dictionary with information about missing reference interactions
-        select_ref_report, select_ref_summary_stat_dict, missing_ref_info = self.interaction_set.select_reference_interactions()
+        cls.interaction_set = DiachromaticInteractionSet()
+        cls.interaction_set.parse_file("data/test_04/diachromatic_interaction_file.tsv")
+        cls.rate_and_cat_report_dict = cls.interaction_set.rate_and_categorize_interactions(-log(0.01))
 
-        # Check that there are two missing reference interactions
-        self.assertEqual(2, sum(missing_ref_info.values()))
+    def test_rate_and_categorize_report_dict(self):
 
-        # Check that these interactions and have correct enrichment categories and read pair numbers
-        self.assertTrue("NE:104" in missing_ref_info)
-        self.assertTrue("EE:106" in missing_ref_info)
+        # Chosen P-value threshold
+        self.assertAlmostEqual(4.60517018, self.rate_and_cat_report_dict['NLN_PVAL_THRESH'], 7)
 
-    def test_interaction_file_after_reference_selection(self):
+        # Minimum number of read pairs required for significance
+        self.assertEqual(8, self.rate_and_cat_report_dict['MIN_RP'])
+
+        # Largest significant P-value
+        self.assertAlmostEqual(0.0078125, self.rate_and_cat_report_dict['MIN_RP_PVAL'], 7)
+
+        # Total number of interactions
+        self.assertEqual(50, self.rate_and_cat_report_dict['N_PROCESSED'])
+
+        # Number of discarded interactions (not enough read pairs)
+        self.assertEqual(4, self.rate_and_cat_report_dict['N_DISCARDED'])
+
+        # Number of discarded interactions
+        self.assertEqual(18, self.rate_and_cat_report_dict['N_DIRECTED'])
+
+        # Number of discarded interactions
+        self.assertEqual(28, self.rate_and_cat_report_dict['N_UNDIRECTED'])
+
+    def test_rate_and_categorize_created_file(self):
+        pass
+
+
+    def test_reference_selection_report_dict(self):
+        """
+        XXX
+        """
+
+        # The function for reference selection returns a dictionary with interaction numbers for all categories.
+        select_ref_report_dict = self.interaction_set.select_reference_interactions()
+
+        # Directed interactions
+        self.assertEqual(3, select_ref_report_dict['DI_NN'])
+        self.assertEqual(4, select_ref_report_dict['DI_NE'])
+        self.assertEqual(5, select_ref_report_dict['DI_EN'])
+        self.assertEqual(6, select_ref_report_dict['DI_EE'])
+
+        # Undirected reference interactions
+        self.assertEqual(3, select_ref_report_dict['UIR_NN'])
+        self.assertEqual(3, select_ref_report_dict['UIR_NE'])
+        self.assertEqual(5, select_ref_report_dict['UIR_EN'])
+        self.assertEqual(5, select_ref_report_dict['UIR_EE'])
+
+        # Missing undirected reference interactions
+        self.assertEqual(0, select_ref_report_dict['M_UIR_NN'])
+        self.assertEqual(1, select_ref_report_dict['M_UIR_NE'])
+        self.assertEqual(0, select_ref_report_dict['M_UIR_EN'])
+        self.assertEqual(1, select_ref_report_dict['M_UIR_EE'])
+
+        # Undirected reference interactions
+        self.assertEqual(3, select_ref_report_dict['UI_NN'])
+        self.assertEqual(3, select_ref_report_dict['UI_NE'])
+        self.assertEqual(3, select_ref_report_dict['UI_EN'])
+        self.assertEqual(3, select_ref_report_dict['UI_EE'])
+
+
+    def test_reference_selection_created_file(self):
         """
         This test creates an interaction file with P-values and interaction categories and tests the number of
         interactions for all interaction ('DI', 'UIR', 'UI') and enrichment categories ('NN', 'NE', 'EN', 'EE').
