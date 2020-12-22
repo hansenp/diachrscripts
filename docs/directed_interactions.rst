@@ -4,46 +4,23 @@
 Directed interactions
 #####################
 
-Remodeling plans
-================
-
-Until now, the P-values (logsf) are still calculated in the script:
-
-.. code-block:: console
-
-    diachrscripts/04_extract_gene_symbols_and_tss.py
-
-In addition,
-the scripts generates the Enhanced Interaction (EI) format.
-The script is complicated and takes a long time to assign gene annotations
-to digests of interactions.
-At the moment, we don't need any gene annotations and want to do without
-the EI-Format.
+We use a two-sided binomial test to asses the directionality of interactions.
 
 Based on the P-values, the interactions are divided into directed (``DI``)
 and undirected interactions (``UI``).
-
-.. code-block:: console
-
-    diachrscripts/05_define_di_uie_and_uii.py
-
-We further distinguish between ``UI`` that have a digest that is also involved in
-a directed interaction (``UII``) and other interactions (``UIE``).
 
 In a next step, we select undirected reference interactions from ``UI``,
 whereby we to not distinguish between ``UII`` and ``UIE``.
 
 .. code-block:: console
 
-    diachrscripts/06_select_uir_from_uie_and_uii.py
+    diachrscripts/04_rate_and_categorize_interactions.py
 
 After that, we have three categories of interactions: ``DI``, ``UIR``, ``UI``.
 
-If we discard the EI format, we could combine the categorization of innteractions
-into one single script.
 
-Current implementation
-======================
+Old implementation
+==================
 
 We carried out the first steps of the analysis on a computing cluster.
 This include this step, which is implemented in the following script:

@@ -190,7 +190,7 @@ class DiachromaticInteractionParser:
         """
 
         # Get smallest number of read pairs required for significance
-        smallest_significant_n, largest_significant_p = self._p_values.find_smallest_significant_n(exp(-nln_pval_thresh))
+        smallest_significant_n, largest_significant_pval = self._p_values.find_smallest_significant_n(exp(-nln_pval_thresh))
 
         if verbose:
             print("[INFO] Rate and categorize interactions ...")
@@ -199,12 +199,12 @@ class DiachromaticInteractionParser:
         n_di = 0
         n_ui = 0
         n_discarded = 0
-        n_progress = 0
+        n_processed = 0
         for d_inter in self._inter_dict.values():
             if verbose:
-                if n_progress % 1000000 == 0:
-                    print("\t[INFO] Processed " + str(n_progress) + " interactions ...")
-            n_progress += 1
+                n_processed += 1
+                if n_processed % 1000000 == 0:
+                    print("\t[INFO] Processed " + str(n_processed) + " interactions ...")
 
             # Discard interactions that don't have enough read pairs to be significant
             if d_inter.rp_total < smallest_significant_n:
@@ -244,7 +244,14 @@ class DiachromaticInteractionParser:
         self._inter_dict = d11_inter_dict
 
         # Report on selection of undirected reference interactions
-        report = "[INFO] Report on evaluation and categorization interactions" + '\n'
+        report = "[INFO] Report on evaluation and categorization interactions:" + '\n'
+        report += "\t[INFO] Minimum number of read pairs required for significance: " + str(smallest_significant_n) + '\n'
+        report += "\t[INFO] Corresponding largest P-value: " + str(largest_significant_pval) + '\n'
+        report += "\t[INFO] Processed interactions: " + str(n_processed) + '\n'
+        report += "\t[INFO] Discarded interactions: " + str(n_discarded) + '\n'
+        report += "\t[INFO] Significant interactions (DI): " + str(n_di) + '\n'
+        report += "\t[INFO] Not significant interactions (UI): " + str(n_ui) + '\n'
+        report += "[INFO] End of report."
 
         if verbose:
             print("[INFO] ...done.")

@@ -9,7 +9,7 @@ OUT_PREFIX="${CELL_TYPE}\_RLR"
 mkdir -p $OUT_DIR
 
 # Use Python script in order to get distance vectors for different categories
-./07_analyze_interaction_distances.py \
+./05_analyze_interaction_distances.py \
 --out-prefix \
 $OUT_DIR/$OUT_PREFIX \
 --enhanced-interaction-file \

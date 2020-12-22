@@ -44,6 +44,9 @@ print("\t[INFO] The chosen threshold corresponds to: -ln(" + str(p_value_thresho
 interaction_set = DiachromaticInteractionParser()
 interaction_set.parse_file(diachromatic_interaction_file)
 
+# data/tmp_example_input_data/JAV_MON_RALT_at_least_in_2_replicates_interactions.tsv.gz
+# --p-value-threshold 0.0024
+
 # Calculate P-values and assign interactions to 'DI' or 'UI'
 report = interaction_set.rate_and_categorize_interactions(nln_p_value_threshold, verbose=True)
 print(report)

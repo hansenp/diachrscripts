@@ -4,6 +4,9 @@
 Undirected reference interactions
 #################################
 
+
+==========
+
 Our binomial test for directionality rates interactions with fewer
 read pairs less often as significant that interactions with many read pairs
 (:ref:`RST_binomial_model`).
