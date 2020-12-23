@@ -21,7 +21,6 @@ Note that none of the links below work yet because there are no files.
    simple_twisted_randomization
    false_discovery_rate
    rate_and_categorize_interactions
-   undirected_reference_interactions
    interaction_categories
 
 
