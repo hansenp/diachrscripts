@@ -15,21 +15,31 @@ class TestRateAndCategorizeInteractions(TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        We use test data to create a DiachromaticInteractionSet object.
+        We use test data to create a DiachromaticInteractionSet object:
+
+               data/test_04/diachromatic_interaction_file.tsv
+
         For the test file, there are 18 clearly directed and 28 clearly undirected interactions.
         In addition, there are four interactions that do not have enough read pairs to be significant at the given
-        P-value threshold.
-        For 16 directed interactions, there are undirected reference interactions with a corresponding number of read
-        pairs, but for two interactions there is no matching reference interaction.
-        One interaction is in the enrichment category 'NE' and has a total of 104 read pairs.
-        The other interaction is in enrichment category 'EE' and has a total of 106 read pairs.
+        P-value threshold. For 16 directed interactions, there are undirected reference interactions with a
+        corresponding number of read pairs, but for two interactions there is no matching reference interaction.
+
+        First, the test data is used to create an object of class 'DiachromaticInteractionSet'.
+        Within this project there are three processing steps that are tested here.
         """
 
         cls.interaction_set = DiachromaticInteractionSet()
         cls.interaction_set.parse_file("data/test_04/diachromatic_interaction_file.tsv")
         cls.rate_and_cat_report_dict = cls.interaction_set.rate_and_categorize_interactions(-log(0.01))
+        cls.select_ref_report_dict = cls.interaction_set.select_reference_interactions()
 
     def test_rate_and_categorize_report_dict(self):
+        """
+        In the first processing step, P-values are calculated and, according to a given threshold, divided into
+        directed and undirected. Interactions that do not have enough read pairs to be significant are discarded.
+        The function for evaluation and categorization returns a dictionary with intermediate results that are tested
+        here.
+        """
 
         # Chosen P-value threshold
         self.assertAlmostEqual(4.60517018, self.rate_and_cat_report_dict['NLN_PVAL_THRESH'], 7)
@@ -46,62 +56,56 @@ class TestRateAndCategorizeInteractions(TestCase):
         # Number of discarded interactions (not enough read pairs)
         self.assertEqual(4, self.rate_and_cat_report_dict['N_DISCARDED'])
 
-        # Number of discarded interactions
+        # Number of directed interactions
         self.assertEqual(18, self.rate_and_cat_report_dict['N_DIRECTED'])
 
-        # Number of discarded interactions
+        # Number of undirected interactions
         self.assertEqual(28, self.rate_and_cat_report_dict['N_UNDIRECTED'])
-
-    def test_rate_and_categorize_created_file(self):
-        pass
 
 
     def test_reference_selection_report_dict(self):
         """
-        XXX
+        In a next step, undirected reference interactions (UIR) are selected from the undirected interactions (UI).
+        The function for reference selection returns a dictionary with intermediate results that are tested here.
         """
 
-        # The function for reference selection returns a dictionary with interaction numbers for all categories.
-        select_ref_report_dict = self.interaction_set.select_reference_interactions()
-
         # Directed interactions
-        self.assertEqual(3, select_ref_report_dict['DI_NN'])
-        self.assertEqual(4, select_ref_report_dict['DI_NE'])
-        self.assertEqual(5, select_ref_report_dict['DI_EN'])
-        self.assertEqual(6, select_ref_report_dict['DI_EE'])
+        self.assertEqual(3, self.select_ref_report_dict['DI_NN'])
+        self.assertEqual(4, self.select_ref_report_dict['DI_NE'])
+        self.assertEqual(5, self.select_ref_report_dict['DI_EN'])
+        self.assertEqual(6, self.select_ref_report_dict['DI_EE'])
 
         # Undirected reference interactions
-        self.assertEqual(3, select_ref_report_dict['UIR_NN'])
-        self.assertEqual(3, select_ref_report_dict['UIR_NE'])
-        self.assertEqual(5, select_ref_report_dict['UIR_EN'])
-        self.assertEqual(5, select_ref_report_dict['UIR_EE'])
+        self.assertEqual(3, self.select_ref_report_dict['UIR_NN'])
+        self.assertEqual(3, self.select_ref_report_dict['UIR_NE'])
+        self.assertEqual(5, self.select_ref_report_dict['UIR_EN'])
+        self.assertEqual(5, self.select_ref_report_dict['UIR_EE'])
 
         # Missing undirected reference interactions
-        self.assertEqual(0, select_ref_report_dict['M_UIR_NN'])
-        self.assertEqual(1, select_ref_report_dict['M_UIR_NE'])
-        self.assertEqual(0, select_ref_report_dict['M_UIR_EN'])
-        self.assertEqual(1, select_ref_report_dict['M_UIR_EE'])
+        self.assertEqual(0, self.select_ref_report_dict['M_UIR_NN'])
+        self.assertEqual(1, self.select_ref_report_dict['M_UIR_NE'])
+        self.assertEqual(0, self.select_ref_report_dict['M_UIR_EN'])
+        self.assertEqual(1, self.select_ref_report_dict['M_UIR_EE'])
 
         # Undirected reference interactions
-        self.assertEqual(3, select_ref_report_dict['UI_NN'])
-        self.assertEqual(3, select_ref_report_dict['UI_NE'])
-        self.assertEqual(3, select_ref_report_dict['UI_EN'])
-        self.assertEqual(3, select_ref_report_dict['UI_EE'])
-
+        self.assertEqual(3, self.select_ref_report_dict['UI_NN'])
+        self.assertEqual(3, self.select_ref_report_dict['UI_NE'])
+        self.assertEqual(3, self.select_ref_report_dict['UI_EN'])
+        self.assertEqual(3, self.select_ref_report_dict['UI_EE'])
 
     def test_reference_selection_created_file(self):
         """
-        This test creates an interaction file with P-values and interaction categories and tests the number of
-        interactions for all interaction ('DI', 'UIR', 'UI') and enrichment categories ('NN', 'NE', 'EN', 'EE').
-        It is also tested whether the interactions in the various categories have the expected number of read pairs.
+        Finally, the interactions are written to Diachromatic interaction file, which has two additional columns on the
+        left for P-value and interaction category ('DI', 'UIR', 'UI').
+        Inn this test, the file is read in again and the interaction numbers in the various categories are compared
+        with the known numbers.
         """
 
-        # Select reference interactions and write interaction file
-        self.interaction_set.select_reference_interactions()
+        # Create interaction file with P-values and interaction categories
         self.interaction_set.write_diachromatic_interaction_file(target_file_name='i_file.tsv')
 
-        # Read interaction file
-        # ---------------------
+        # Read created interaction file
+        # -----------------------------
 
         # Nested dictionaries that store the numbers of interactions (value) for different read pair numbers (key)
         rp_inter_dict = {'NN': {'DI':{},'UIR':{},'UI':{}},
@@ -120,7 +124,6 @@ class TestRateAndCategorizeInteractions(TestCase):
                     rp_inter_dict[enrichment_pair_tag][interaction_category][rp_total] = 1
                 else:
                     rp_inter_dict[enrichment_pair_tag][interaction_category][rp_total] += 1
-
 
         # Check values collected from file
         # --------------------------------
@@ -152,13 +155,13 @@ class TestRateAndCategorizeInteractions(TestCase):
         # There must be 3 undirected interactions in category NN
         self.assertEqual(3, len(rp_inter_dict['NN']['UI']))
 
-        # There must be 3 undirected interactions in category NE (one missing)
+        # There must be 3 undirected interactions in category NE
         self.assertEqual(3, len(rp_inter_dict['NE']['UI']))
 
         # There must be 3 undirected interactions in category EN
         self.assertEqual(3, len(rp_inter_dict['EN']['UI']))
 
-        # There must be 3 undirected interactions in category EE (one missing)
+        # There must be 3 undirected interactions in category EE
         self.assertEqual(3, len(rp_inter_dict['EE']['UI']))
 
         # Test total read pair numbers in different enrichment categories
@@ -169,6 +172,7 @@ class TestRateAndCategorizeInteractions(TestCase):
         self.assertTrue(101 in rp_inter_dict['NE']['UIR'])
         self.assertTrue(102 in rp_inter_dict['NE']['UIR'])
         self.assertTrue(103 in rp_inter_dict['NE']['UIR'])
+        self.assertFalse(104 in rp_inter_dict['NE']['UIR']) # (missing)
 
         self.assertTrue(101 in rp_inter_dict['EN']['UIR'])
         self.assertTrue(102 in rp_inter_dict['EN']['UIR'])
@@ -181,6 +185,7 @@ class TestRateAndCategorizeInteractions(TestCase):
         self.assertTrue(103 in rp_inter_dict['EE']['UIR'])
         self.assertTrue(104 in rp_inter_dict['EE']['UIR'])
         self.assertTrue(105 in rp_inter_dict['EE']['UIR'])
+        self.assertFalse(106 in rp_inter_dict['EE']['UIR']) # (missing)
 
-        # Remove interaction file
+        # Remove created interaction file
         os.remove('i_file.tsv')
