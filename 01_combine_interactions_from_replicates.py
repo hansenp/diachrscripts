@@ -25,11 +25,11 @@ out_prefix = args.out_prefix
 interaction_files_path = args.interaction_files_path
 required_replicates = int(args.required_replicates)
 
-print("[INFO] " + "Input parameters")
-print("\t[INFO] --out-prefix: " + out_prefix)
-print("\t[INFO] --interaction-files-path: " + interaction_files_path)
-print("\t[INFO] --required-replicates: " + str(required_replicates))
-
+parameter_info = "[INFO] " + "Input parameters" + '\n'
+parameter_info += "\t[INFO] --out-prefix: " + out_prefix + '\n'
+parameter_info += "\t[INFO] --interaction-files-path: " + interaction_files_path + '\n'
+parameter_info += "\t[INFO] --required-replicates: " + str(required_replicates) + '\n'
+print(parameter_info)
 
 ### Iterate and combine interactions from different replicates
 ##############################################################
@@ -52,25 +52,50 @@ if len(gz_files) < int(required_replicates):
     print("[FATAL] Not enough replicates. Must be at least " + str(required_replicates) + " But there are only " + str(len(gz_files)) + " files.")
     exit(1)
 
-# Get list of Diachromatic interaction objects
+# Read interaction files
 interaction_set = DiachromaticInteractionSet()
-print("[INFO] Will parse all gz files in " + interaction_files_path)
+read_info = "[INFO] Will parse all gz files in " + interaction_files_path + '\n'
 for gz_file in gz_files:
     interaction_set.parse_file(gz_file)
 
 # Print information about read files
-print(interaction_set.get_file_dict_info())
+file_info_dict = interaction_set.get_file_info_dict()
+file_num = len(file_info_dict['I_FILE']) - 1
+read_info += "\t[INFO] Read interaction data from " + str(file_num) + " files:" + '\n'
+for i in range(0, file_num):
+    read_info += "\t\t[INFO] " + str(file_info_dict['I_NUM'][i]) + " interactions from " + file_info_dict['I_FILE'][i] + '\n'
+read_info += "\t[INFO] The union of all interactions has " + str(file_info_dict['I_NUM'][file_num]) + " interactions." + '\n'
+read_info += "[INFO] ... done." + '\n'
+print(read_info)
 
 # Write interactions that occur in the required number of replicates to file
 f_name = out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_interactions.tsv.gz"
-write_info = interaction_set.write_diachromatic_interaction_file(target_file_name=f_name, required_replicates=required_replicates)
+write_info_dict = interaction_set.write_diachromatic_interaction_file(target_file=f_name, required_replicates=required_replicates)
 
 # Print information about written interactions
+write_info = "[INFO] Writing interactions that occur in at least " + str(required_replicates) + " replicates to: " + str(write_info_dict['TARGET_FILE'][0]) + '\n'
+write_info += "\t[INFO] Interactions that occur in at least " + str(write_info_dict['REQUIRED_REPLICATES'][0]) + " replicates: " + str(write_info_dict['HAS_ALL_DATA'][0]) + '\n'
+write_info += "\t[INFO] Other interactions: " + str(write_info_dict['INCOMPLETE_DATA'][0]) + '\n'
+write_info += "[INFO] ... done." + '\n'
 print(write_info)
+
+# Create a table row with all information
+table_row = "TARGET_FILE" + "\t" + "I_NUMS" + "\t" + "REQUIRED_REPLICATES" + "\t" + "HAS_ALL_DATA" + "\t" + "INCOMPLETE_DATA" + '\n'
+table_row += str(write_info_dict['TARGET_FILE'][0]) + "\t" +\
+              str(file_info_dict['I_NUM'][:-1]) + "\t" +\
+              str(write_info_dict['REQUIRED_REPLICATES'][0]) + "\t" +\
+              str(write_info_dict['HAS_ALL_DATA'][0]) + "\t" +\
+              str(write_info_dict['INCOMPLETE_DATA'][0]) + '\n'
+print(table_row)
 
 # Create file that contains all the information
 f_name =  out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_summary.txt"
 out_fh = open(f_name, 'wt')
-out_fh.write(interaction_set.get_file_dict_info() + '\n')
+out_fh.write(parameter_info + '\n')
+out_fh.write(read_info + '\n')
 out_fh.write(write_info + '\n')
+out_fh.write(table_row)
 out_fh.close()
+
+
+

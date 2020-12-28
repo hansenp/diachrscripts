@@ -57,7 +57,7 @@ select_ref_report_dict = interaction_set.select_reference_interactions(verbose=T
 
 # Write Diachromatic interaction file with two additional columns
 f_name = out_prefix + "_rated_and_categorized_interactions.tsv.gz"
-interaction_set.write_diachromatic_interaction_file(target_file_name=f_name, verbose=True)
+interaction_set.write_diachromatic_interaction_file(target_file=f_name, verbose=True)
 
 
 ### Create file with summary statistics
@@ -70,14 +70,13 @@ out_fh = open(f_name, 'wt')
 out_fh.write(parameter_info + '\n')
 
 # Report on evaluation and categorization interactions
-report = "[INFO] --------------------------------------------------------------------------------------------" + '\n'
-report += "[INFO] Report on evaluation and categorization interactions" + '\n'
-report += "\t[INFO] Minimum number of read pairs required for significance: " + str(rate_and_cat_report_dict['MIN_RP']) + '\n'
-report += "\t[INFO] Corresponding largest P-value: " + "{:.2f}".format(-log(rate_and_cat_report_dict['MIN_RP_PVAL'])) + '\n'
-report += "\t[INFO] Processed interactions: " + str(rate_and_cat_report_dict['N_PROCESSED']) + '\n'
-report += "\t[INFO] Discarded interactions: " + str(rate_and_cat_report_dict['N_DISCARDED']) + '\n'
-report += "\t[INFO] Not significant interactions (UI): " + str(rate_and_cat_report_dict['N_UNDIRECTED']) + '\n'
-report += "\t[INFO] Significant interactions (DI): " + str(rate_and_cat_report_dict['N_DIRECTED']) + '\n'
+report = "[INFO] Report on evaluation and categorization interactions" + '\n'
+report += "\t[INFO] Minimum number of read pairs required for significance: " + str(rate_and_cat_report_dict['MIN_RP'][0]) + '\n'
+report += "\t[INFO] Corresponding largest P-value: " + "{:.2f}".format(-log(rate_and_cat_report_dict['MIN_RP_PVAL'][0])) + '\n'
+report += "\t[INFO] Processed interactions: " + str(rate_and_cat_report_dict['N_PROCESSED'][0]) + '\n'
+report += "\t[INFO] Discarded interactions: " + str(rate_and_cat_report_dict['N_DISCARDED'][0]) + '\n'
+report += "\t[INFO] Not significant interactions (UI): " + str(rate_and_cat_report_dict['N_UNDIRECTED'][0]) + '\n'
+report += "\t[INFO] Significant interactions (DI): " + str(rate_and_cat_report_dict['N_DIRECTED'][0]) + '\n'
 report += "[INFO] End of report."
 out_fh.write(report + '\n\n')
 out_fh.write(
@@ -92,18 +91,17 @@ out_fh.write(
 )
 out_fh.write(
     out_prefix + '\t' +
-    "{:.2f}".format(rate_and_cat_report_dict['NLN_PVAL_THRESH']) + '\t' +
-    str(rate_and_cat_report_dict['MIN_RP']) + '\t' +
-    "{:.2f}".format(-log(rate_and_cat_report_dict['MIN_RP_PVAL'])) + '\t' +
-    str(rate_and_cat_report_dict['N_PROCESSED']) + '\t' +
-    str(rate_and_cat_report_dict['N_DISCARDED']) + '\t' +
-    str(rate_and_cat_report_dict['N_UNDIRECTED']) + '\t' +
-    str(rate_and_cat_report_dict['N_DIRECTED']) + '\n\n'
+    "{:.2f}".format(rate_and_cat_report_dict['NLN_PVAL_THRESH'][0]) + '\t' +
+    str(rate_and_cat_report_dict['MIN_RP'][0]) + '\t' +
+    "{:.2f}".format(-log(rate_and_cat_report_dict['MIN_RP_PVAL'][0])) + '\t' +
+    str(rate_and_cat_report_dict['N_PROCESSED'][0]) + '\t' +
+    str(rate_and_cat_report_dict['N_DISCARDED'][0]) + '\t' +
+    str(rate_and_cat_report_dict['N_UNDIRECTED'][0]) + '\t' +
+    str(rate_and_cat_report_dict['N_DIRECTED'][0]) + '\n\n'
 )
 
 # Report on selection of reference interactions
-report = "[INFO] --------------------------------------------------------------------------------------------" + '\n'
-report += "[INFO] Report on selection of undirected reference interactions" + '\n'
+report = "[INFO] Report on selection of undirected reference interactions" + '\n'
 report += "\t[INFO] Numbers of directed interactions" + '\n'
 total = 0
 for enr_cat in ['NN','NE','EN','EE']:
@@ -128,7 +126,7 @@ for enr_cat in ['NN','NE','EN','EE']:
     total += select_ref_report_dict['UI_' + enr_cat]
     report += "\t\t[INFO] Interactions in " + enr_cat + ": " + str(select_ref_report_dict['UI_' + enr_cat]) + '\n'
 report += "\t\t[INFO] Total: " + str(total) + '\n'
-
+report += "[INFO] End of report." + '\n'
 out_fh.write(report + '\n')
 
 

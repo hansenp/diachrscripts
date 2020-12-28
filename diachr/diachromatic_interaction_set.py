@@ -16,7 +16,7 @@ class DiachromaticInteractionSet:
     def __init__(self, enriched_digests_file: str = None):
 
         # Dictionary for read files
-        self._file_dict = {}
+        self._file_dict = {'I_FILE': [], 'I_NUM': []}
 
         # Dictionary that contains all interaction objects
         self._inter_dict = defaultdict(DiachromaticInteraction)
@@ -37,7 +37,7 @@ class DiachromaticInteractionSet:
             print("[INFO] ... done.")
 
 
-    def parse_file(self, i_file):
+    def parse_file(self, i_file: str=None, verbose: bool=False):
 
         """
         Parses a file with interactions. For interactions that have already been parsed from another file,
@@ -48,17 +48,18 @@ class DiachromaticInteractionSet:
         if not os.path.exists(i_file):
             raise ValueError("Could not find file at %s" % i_file)
 
-        print("[INFO] Parsing Diachromatic interaction file ...")
-
-        print("\t[INFO] " + i_file)
+        if verbose:
+            print("[INFO] Parsing Diachromatic interaction file ...")
+            print("\t[INFO] " + i_file)
 
         if i_file.endswith(".gz"):
             with gzip.open(i_file, 'rt') as fp:
                 n_lines = 0
                 for line in fp:
                     n_lines += 1
-                    if n_lines % 1000000 == 0:
-                        print("\t[INFO] Parsed " + str(n_lines) + " interaction lines ...")
+                    if verbose:
+                        if n_lines % 1000000 == 0:
+                            print("\t[INFO] Parsed " + str(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
                     if d_inter.key in self._inter_dict:
                         self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple, twisted=d_inter.n_twisted)
@@ -69,17 +70,20 @@ class DiachromaticInteractionSet:
                 n_lines = 0
                 for line in fp:
                     n_lines += 1
-                    if n_lines % 1000000 == 0:
-                        print("\t[INFO] Parsed " + str(n_lines) + " interaction lines ...")
+                    if verbose:
+                        if n_lines % 1000000 == 0:
+                            print("\t[INFO] Parsed " + str(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
                     if d_inter.key in self._inter_dict:
                         self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple, twisted=d_inter.n_twisted)
                     else:
                         self._inter_dict[d_inter.key] = d_inter
 
-        self._file_dict[i_file] = n_lines
+        self._file_dict['I_FILE'].append(i_file)
+        self._file_dict['I_NUM'].append(n_lines)
 
-        print("[INFO] ... done.")
+        if verbose:
+            print("[INFO] ... done.")
 
 
     def _parse_line(self, line: str) -> DiachromaticInteraction:
@@ -137,17 +141,18 @@ class DiachromaticInteractionSet:
         return di_inter
 
 
-    def get_file_dict_info(self):
+    def get_file_info_dict(self):
         """
-        :return: String that contains information about parsed data.
+        :return: Dictionary that contains information about parsed data.
         """
-        file_dict_info = "[INFO] Read interaction data from " + str(len(self._file_dict)) + " files:" + '\n'
-        for k, v in self._file_dict.items():
-            file_dict_info += "\t[INFO] " + str(v) + " interactions from " + k  + '\n'
-        file_dict_info += "[INFO] The union of all interactions has "  + str(len(self._inter_dict)) + " interactions." + '\n'
-        return(file_dict_info)
 
-    def write_diachromatic_interaction_file(self, required_replicates = 1, target_file_name = None, verbose: bool=False):
+        file_info_dict = copy.deepcopy(self._file_dict)
+        file_info_dict['I_FILE'].append('UNION')
+        file_info_dict['I_NUM'].append(len(self._inter_dict))
+
+        return(file_info_dict)
+
+    def write_diachromatic_interaction_file(self, required_replicates = 1, target_file = None, verbose: bool=False):
         """
         Writes interactions that occur in a specified minimum number of replicates to a file
         and returns a string with information on this writing process.
@@ -159,8 +164,8 @@ class DiachromaticInteractionSet:
 
         if verbose:
             print("[INFO] Writing Diachromatic interaction file ...")
-        write_info = "[INFO] Writing interactions that occur in at least " + str(required_replicates) + " replicates to: " + target_file_name + '\n'
-        out_fh = gzip.open(target_file_name, 'wt')
+
+        out_fh = gzip.open(target_file, 'wt')
         n_has_required_data = 0
         n_incomplete_data = 0
         for d_inter in self._inter_dict.values():
@@ -169,16 +174,21 @@ class DiachromaticInteractionSet:
                 out_fh.write(d_inter.get_diachromatic_interaction_line() + '\n')
             else:
                 n_incomplete_data += 1
+
         out_fh.close()
+
+        # Prepare dictionary for report
+        report_dict = {}
+        report_dict['TARGET_FILE'] = [target_file]
+        report_dict['INTERACTIONS_NUMBERS'] = [self._file_dict['I_NUM']]
+        report_dict['REQUIRED_REPLICATES'] = [required_replicates]
+        report_dict['HAS_ALL_DATA'] = [n_has_required_data]
+        report_dict['INCOMPLETE_DATA'] = [n_incomplete_data]
+
         if verbose:
             print("[INFO] ... done.")
 
-        write_info += "\t[INFO] Interactions that occur in at least " + str(required_replicates) + " replicates: " + str(n_has_required_data) + '\n'
-        write_info += "\t[INFO] Other interactions: " + str(n_incomplete_data) + '\n'
-        write_info += '\n'
-        write_info += "FILE_NAME" + "\t" + "INTERACTIONS_NUMBERS" + "\t" + "REQUIRED_REPLICATES" + "\t" + "HAS_ALL_DATA" + "\t" + "INCOMPLETE_DATA" + '\n'
-        write_info += str(target_file_name) + "\t" + str(list(self._file_dict.values())) + "\t" + str(required_replicates) + "\t" + str(n_has_required_data) + "\t" + str(n_incomplete_data) + '\n'
-        return write_info
+        return report_dict
 
     @property
     def file_num(self):
@@ -195,11 +205,11 @@ class DiachromaticInteractionSet:
         DiachromaticInteraction objects will be replaced by DiachromaticInteraction11 objects.
         """
 
-        # Get smallest number of read pairs required for significance
-        min_rp, min_rp_pval = self._p_values.find_smallest_significant_n(exp(-nln_pval_thresh))
-
         if verbose:
             print("[INFO] Rate and categorize interactions ...")
+
+        # Get smallest number of read pairs required for significance
+        min_rp, min_rp_pval = self._p_values.find_smallest_significant_n(exp(-nln_pval_thresh), verbose=False)
 
         d11_inter_dict = {}
         n_di = 0
@@ -251,13 +261,13 @@ class DiachromaticInteractionSet:
 
         # Prepare dictionary for report
         report_dict = {}
-        report_dict['NLN_PVAL_THRESH'] = nln_pval_thresh
-        report_dict['MIN_RP'] = min_rp
-        report_dict['MIN_RP_PVAL'] = min_rp_pval
-        report_dict['N_PROCESSED'] = n_processed
-        report_dict['N_DISCARDED'] = n_discarded
-        report_dict['N_UNDIRECTED'] = n_ui
-        report_dict['N_DIRECTED'] = n_di
+        report_dict['NLN_PVAL_THRESH'] = [nln_pval_thresh]
+        report_dict['MIN_RP'] = [min_rp]
+        report_dict['MIN_RP_PVAL'] = [min_rp_pval]
+        report_dict['N_PROCESSED'] = [n_processed]
+        report_dict['N_DISCARDED'] = [n_discarded]
+        report_dict['N_UNDIRECTED'] = [n_ui]
+        report_dict['N_DIRECTED'] = [n_di]
 
         if verbose:
             print("[INFO] ...done.")
@@ -319,10 +329,10 @@ class DiachromaticInteractionSet:
         # Prepare dictionary for report
         report_dict = {}
         for enr_cat in ['NN','NE','EN','EE']:
-            report_dict['DI_' + enr_cat] = sum(rp_inter_dict_before[enr_cat].values())
-            report_dict['UIR_' + enr_cat] = sum(rp_inter_dict_before[enr_cat].values()) - sum(rp_inter_dict[enr_cat].values())
-            report_dict['M_UIR_' + enr_cat] = sum(rp_inter_dict[enr_cat].values())
-            report_dict['UI_' + enr_cat] = ui_inter_dict[enr_cat]
+            report_dict['DI_' + enr_cat] = [sum(rp_inter_dict_before[enr_cat].values())]
+            report_dict['UIR_' + enr_cat] = [sum(rp_inter_dict_before[enr_cat].values()) - sum(rp_inter_dict[enr_cat].values())]
+            report_dict['M_UIR_' + enr_cat] = [sum(rp_inter_dict[enr_cat].values())]
+            report_dict['UI_' + enr_cat] = [ui_inter_dict[enr_cat]]
 
         if verbose:
             print("[INFO] ...done.")
