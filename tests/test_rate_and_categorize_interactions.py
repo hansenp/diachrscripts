@@ -30,7 +30,7 @@ class TestRateAndCategorizeInteractions(TestCase):
 
         cls.interaction_set = DiachromaticInteractionSet()
         cls.interaction_set.parse_file("data/test_04/diachromatic_interaction_file.tsv")
-        cls.rate_and_cat_report_dict = cls.interaction_set.rate_and_categorize_interactions(-log(0.01))
+        cls.rate_and_cat_report_dict = cls.interaction_set.evaluate_and_categorize_interactions(-log(0.01))
         cls.select_ref_report_dict = cls.interaction_set.select_reference_interactions()
 
     def test_rate_and_categorize_report_dict(self):
@@ -42,25 +42,25 @@ class TestRateAndCategorizeInteractions(TestCase):
         """
 
         # Chosen P-value threshold
-        self.assertAlmostEqual(4.60517018, self.rate_and_cat_report_dict['NLN_PVAL_THRESH'], 7)
+        self.assertAlmostEqual(4.60517018, self.rate_and_cat_report_dict['NLN_PVAL_THRESH'][0], 7)
 
         # Minimum number of read pairs required for significance
-        self.assertEqual(8, self.rate_and_cat_report_dict['MIN_RP'])
+        self.assertEqual(8, self.rate_and_cat_report_dict['MIN_RP'][0])
 
         # Largest significant P-value
-        self.assertAlmostEqual(0.0078125, self.rate_and_cat_report_dict['MIN_RP_PVAL'], 7)
+        self.assertAlmostEqual(0.0078125, self.rate_and_cat_report_dict['MIN_RP_PVAL'][0], 7)
 
         # Total number of interactions
-        self.assertEqual(50, self.rate_and_cat_report_dict['N_PROCESSED'])
+        self.assertEqual(50, self.rate_and_cat_report_dict['N_PROCESSED'][0])
 
         # Number of discarded interactions (not enough read pairs)
-        self.assertEqual(4, self.rate_and_cat_report_dict['N_DISCARDED'])
+        self.assertEqual(4, self.rate_and_cat_report_dict['N_DISCARDED'][0])
 
         # Number of directed interactions
-        self.assertEqual(18, self.rate_and_cat_report_dict['N_DIRECTED'])
+        self.assertEqual(18, self.rate_and_cat_report_dict['N_DIRECTED'][0])
 
         # Number of undirected interactions
-        self.assertEqual(28, self.rate_and_cat_report_dict['N_UNDIRECTED'])
+        self.assertEqual(28, self.rate_and_cat_report_dict['N_UNDIRECTED'][0])
 
 
     def test_reference_selection_report_dict(self):
@@ -70,28 +70,28 @@ class TestRateAndCategorizeInteractions(TestCase):
         """
 
         # Directed interactions
-        self.assertEqual(3, self.select_ref_report_dict['DI_NN'])
-        self.assertEqual(4, self.select_ref_report_dict['DI_NE'])
-        self.assertEqual(5, self.select_ref_report_dict['DI_EN'])
-        self.assertEqual(6, self.select_ref_report_dict['DI_EE'])
+        self.assertEqual(3, self.select_ref_report_dict['DI_NN'][0])
+        self.assertEqual(4, self.select_ref_report_dict['DI_NE'][0])
+        self.assertEqual(5, self.select_ref_report_dict['DI_EN'][0])
+        self.assertEqual(6, self.select_ref_report_dict['DI_EE'][0])
 
         # Undirected reference interactions
-        self.assertEqual(3, self.select_ref_report_dict['UIR_NN'])
-        self.assertEqual(3, self.select_ref_report_dict['UIR_NE'])
-        self.assertEqual(5, self.select_ref_report_dict['UIR_EN'])
-        self.assertEqual(5, self.select_ref_report_dict['UIR_EE'])
+        self.assertEqual(3, self.select_ref_report_dict['UIR_NN'][0])
+        self.assertEqual(3, self.select_ref_report_dict['UIR_NE'][0])
+        self.assertEqual(5, self.select_ref_report_dict['UIR_EN'][0])
+        self.assertEqual(5, self.select_ref_report_dict['UIR_EE'][0])
 
         # Missing undirected reference interactions
-        self.assertEqual(0, self.select_ref_report_dict['M_UIR_NN'])
-        self.assertEqual(1, self.select_ref_report_dict['M_UIR_NE'])
-        self.assertEqual(0, self.select_ref_report_dict['M_UIR_EN'])
-        self.assertEqual(1, self.select_ref_report_dict['M_UIR_EE'])
+        self.assertEqual(0, self.select_ref_report_dict['M_UIR_NN'][0])
+        self.assertEqual(1, self.select_ref_report_dict['M_UIR_NE'][0])
+        self.assertEqual(0, self.select_ref_report_dict['M_UIR_EN'][0])
+        self.assertEqual(1, self.select_ref_report_dict['M_UIR_EE'][0])
 
         # Undirected reference interactions
-        self.assertEqual(3, self.select_ref_report_dict['UI_NN'])
-        self.assertEqual(3, self.select_ref_report_dict['UI_NE'])
-        self.assertEqual(3, self.select_ref_report_dict['UI_EN'])
-        self.assertEqual(3, self.select_ref_report_dict['UI_EE'])
+        self.assertEqual(3, self.select_ref_report_dict['UI_NN'][0])
+        self.assertEqual(3, self.select_ref_report_dict['UI_NE'][0])
+        self.assertEqual(3, self.select_ref_report_dict['UI_EN'][0])
+        self.assertEqual(3, self.select_ref_report_dict['UI_EE'][0])
 
     def test_reference_selection_created_file(self):
         """
@@ -102,7 +102,7 @@ class TestRateAndCategorizeInteractions(TestCase):
         """
 
         # Create interaction file with P-values and interaction categories
-        self.interaction_set.write_diachromatic_interaction_file(target_file_name='i_file.tsv')
+        self.interaction_set.write_diachromatic_interaction_file(target_file='i_file.tsv')
 
         # Read created interaction file
         # -----------------------------
