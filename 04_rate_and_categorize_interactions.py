@@ -42,16 +42,13 @@ print(parameter_info)
 ### Perform analysis
 ####################
 
-# Transform P-value threshold
-nln_p_value_threshold = -log(p_value_threshold)
-
 # Load interactions
 interaction_set = DiachromaticInteractionSet()
 interaction_set.parse_file(diachromatic_interaction_file, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 
 # Calculate P-values and assign interactions to 'DI' or 'UI'
-interaction_set.evaluate_and_categorize_interactions(nln_p_value_threshold, verbose=True)
+interaction_set.evaluate_and_categorize_interactions(p_value_threshold, verbose=True)
 eval_cat_info_report = interaction_set.get_eval_cat_info_report()
 eval_cat_info_table_row = interaction_set.get_eval_cat_info_table_row(out_prefix)
 

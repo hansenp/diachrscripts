@@ -2,7 +2,6 @@ from unittest import TestCase
 import os
 import sys
 import gzip
-from numpy import log
 
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
@@ -30,7 +29,7 @@ class TestRateAndCategorizeInteractions(TestCase):
 
         cls.interaction_set = DiachromaticInteractionSet()
         cls.interaction_set.parse_file("data/test_04/diachromatic_interaction_file.tsv")
-        cls.rate_and_cat_report_dict = cls.interaction_set.evaluate_and_categorize_interactions(-log(0.01))
+        cls.rate_and_cat_report_dict = cls.interaction_set.evaluate_and_categorize_interactions(0.01)
         cls.select_ref_report_dict = cls.interaction_set.select_reference_interactions()
 
     def test_rate_and_categorize_report_dict(self):
@@ -42,7 +41,7 @@ class TestRateAndCategorizeInteractions(TestCase):
         """
 
         # Chosen P-value threshold
-        self.assertAlmostEqual(4.60517018, self.rate_and_cat_report_dict['NLN_PVAL_THRESH'][0], 7)
+        self.assertAlmostEqual(0.01, self.rate_and_cat_report_dict['PVAL_THRESH'][0], 7)
 
         # Minimum number of read pairs required for significance
         self.assertEqual(8, self.rate_and_cat_report_dict['MIN_RP'][0])

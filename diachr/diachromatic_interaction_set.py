@@ -1,12 +1,13 @@
 import gzip
 import os
 import copy
+import warnings
 from numpy import exp, log
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
 from diachr.binomial_model import BinomialModel
-
+warnings.filterwarnings('always')
 
 class DiachromaticInteractionSet:
     """
@@ -32,6 +33,9 @@ class DiachromaticInteractionSet:
 
         # Object for calculating P-values
         self._p_values = BinomialModel()
+
+        # Smallest P-value threshold used so far
+        self._smallest_pval_thresh = 1.0
 
         # Dictionary with information about read files
         self._read_file_info_dict = {'I_FILE': [], 'I_NUM': []}
@@ -65,8 +69,16 @@ class DiachromaticInteractionSet:
         :param i_file: File with interactions
         """
 
+        # Check if interaction file exists
         if not os.path.exists(i_file):
             raise ValueError("Could not find file at %s" % i_file)
+
+        # Check if interaction file has already been read
+        if i_file in self._read_file_info_dict['I_FILE']:
+            warnings.warn("This interaction file has already been read!" + '\n' + \
+                          "Filename: " + i_file + '\n' + \
+                          "Won't add interactions from this file to the interaction set.")
+            return
 
         if verbose:
             print("[INFO] Parsing Diachromatic interaction file ...")
@@ -165,17 +177,28 @@ class DiachromaticInteractionSet:
 
         return di_inter
 
-    def evaluate_and_categorize_interactions(self, nln_pval_thresh: float = None, verbose: bool = False):
+    def evaluate_and_categorize_interactions(self, pval_thresh: float = None, verbose: bool = False):
         """
         Calculate the P-value and define interaction category ('DI' or 'UI') for all interactions in this object.
         'DiachromaticInteraction' objects will be replaced by 'DiachromaticInteraction11' objects.
         """
 
+        # Check whether an lowest or smaller P-value threshold was used before
+        if self._smallest_pval_thresh <= pval_thresh:
+            warnings.warn("This interaction set has previously categorized using an equal or smaller threshold!" + '\n'
+                          "Nothing is done. Interaction set remains unchanged.")
+            return self._eval_cat_info_dict
+        else:
+            self._smallest_pval_thresh = pval_thresh
+
         if verbose:
             print("[INFO] Rate and categorize interactions ...")
 
         # Get smallest number of read pairs required for significance
-        min_rp, min_rp_pval = self._p_values.find_smallest_significant_n(exp(-nln_pval_thresh), verbose=False)
+        min_rp, min_rp_pval = self._p_values.find_smallest_significant_n(pval_thresh, verbose=False)
+
+        # Transform P-value threshold
+        nln_pval_thresh = -log(pval_thresh)
 
         # Iterate interaction objects
         d11_inter_dict = {}
@@ -228,7 +251,7 @@ class DiachromaticInteractionSet:
 
         # Prepare dictionary for report
         report_dict = {
-            'NLN_PVAL_THRESH': [nln_pval_thresh],
+            'PVAL_THRESH': [pval_thresh],
             'MIN_RP': [min_rp],
             'MIN_RP_PVAL': [min_rp_pval],
             'N_PROCESSED': [n_processed],
@@ -438,10 +461,12 @@ class DiachromaticInteractionSet:
         """
 
         report = "[INFO] Report on evaluation and categorization interactions:" + '\n'
+        report += "\t[INFO] P-value threshold: " + "{:.7f}".format(
+            self._eval_cat_info_dict['PVAL_THRESH'][0]) + '\n'
         report += "\t[INFO] Minimum number of read pairs required for significance: " + str(
             self._eval_cat_info_dict['MIN_RP'][0]) + '\n'
-        report += "\t[INFO] Corresponding largest P-value: " + "{:.2f}".format(
-            -log(self._eval_cat_info_dict['MIN_RP_PVAL'][0])) + '\n'
+        report += "\t[INFO] Corresponding largest P-value: " + "{:.7f}".format(
+            self._eval_cat_info_dict['MIN_RP_PVAL'][0]) + '\n'
         report += "\t[INFO] Processed interactions: " + str(self._eval_cat_info_dict['N_PROCESSED'][0]) + '\n'
         report += "\t[INFO] Discarded interactions: " + str(self._eval_cat_info_dict['N_DISCARDED'][0]) + '\n'
         report += "\t[INFO] Not significant interactions (UI): " + str(
@@ -458,18 +483,18 @@ class DiachromaticInteractionSet:
         """
 
         table_row = "OUT_PREFIX" + '\t' + \
-                    "NLN_PVAL_THRESH" + '\t' + \
+                    "PVAL_THRESH" + '\t' + \
                     "MIN_RP" + '\t' + \
-                    "MIN_RP_NLN_PVAL" + '\t' + \
+                    "MIN_RP_PVAL" + '\t' + \
                     "N_PROCESSED" + '\t' + \
                     "N_DISCARDED" + '\t' + \
                     "N_UNDIRECTED" + '\t' \
                                      "N_DIRECTED" + '\n'
 
         table_row += str(out_prefix) + '\t' + \
-                     "{:.2f}".format(self._eval_cat_info_dict['NLN_PVAL_THRESH'][0]) + '\t' + \
+                     "{:.7f}".format(self._eval_cat_info_dict['PVAL_THRESH'][0]) + '\t' + \
                      str(self._eval_cat_info_dict['MIN_RP'][0]) + '\t' + \
-                     "{:.2f}".format(-log(self._eval_cat_info_dict['MIN_RP_PVAL'][0])) + '\t' + \
+                     "{:.7f}".format(self._eval_cat_info_dict['MIN_RP_PVAL'][0]) + '\t' + \
                      str(self._eval_cat_info_dict['N_PROCESSED'][0]) + '\t' + \
                      str(self._eval_cat_info_dict['N_DISCARDED'][0]) + '\t' + \
                      str(self._eval_cat_info_dict['N_UNDIRECTED'][0]) + '\t' + \
