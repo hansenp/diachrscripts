@@ -69,28 +69,28 @@ class TestRateAndCategorizeInteractions(TestCase):
         """
 
         # Directed interactions
-        self.assertEqual(3, self.select_ref_report_dict['DI_NN'][0])
-        self.assertEqual(4, self.select_ref_report_dict['DI_NE'][0])
-        self.assertEqual(5, self.select_ref_report_dict['DI_EN'][0])
-        self.assertEqual(6, self.select_ref_report_dict['DI_EE'][0])
+        self.assertEqual(3, self.select_ref_report_dict['NN']['DI'][0])
+        self.assertEqual(4, self.select_ref_report_dict['NE']['DI'][0])
+        self.assertEqual(5, self.select_ref_report_dict['EN']['DI'][0])
+        self.assertEqual(6, self.select_ref_report_dict['EE']['DI'][0])
 
         # Undirected reference interactions
-        self.assertEqual(3, self.select_ref_report_dict['UIR_NN'][0])
-        self.assertEqual(3, self.select_ref_report_dict['UIR_NE'][0])
-        self.assertEqual(5, self.select_ref_report_dict['UIR_EN'][0])
-        self.assertEqual(5, self.select_ref_report_dict['UIR_EE'][0])
+        self.assertEqual(3, self.select_ref_report_dict['NN']['UIR'][0])
+        self.assertEqual(3, self.select_ref_report_dict['NE']['UIR'][0])
+        self.assertEqual(5, self.select_ref_report_dict['EN']['UIR'][0])
+        self.assertEqual(5, self.select_ref_report_dict['EE']['UIR'][0])
 
         # Missing undirected reference interactions
-        self.assertEqual(0, self.select_ref_report_dict['M_UIR_NN'][0])
-        self.assertEqual(1, self.select_ref_report_dict['M_UIR_NE'][0])
-        self.assertEqual(0, self.select_ref_report_dict['M_UIR_EN'][0])
-        self.assertEqual(1, self.select_ref_report_dict['M_UIR_EE'][0])
+        self.assertEqual(0, self.select_ref_report_dict['NN']['M_UIR'][0])
+        self.assertEqual(1, self.select_ref_report_dict['NE']['M_UIR'][0])
+        self.assertEqual(0, self.select_ref_report_dict['EN']['M_UIR'][0])
+        self.assertEqual(1, self.select_ref_report_dict['EE']['M_UIR'][0])
 
         # Undirected reference interactions
-        self.assertEqual(3, self.select_ref_report_dict['UI_NN'][0])
-        self.assertEqual(3, self.select_ref_report_dict['UI_NE'][0])
-        self.assertEqual(3, self.select_ref_report_dict['UI_EN'][0])
-        self.assertEqual(3, self.select_ref_report_dict['UI_EE'][0])
+        self.assertEqual(3, self.select_ref_report_dict['NN']['UI'][0])
+        self.assertEqual(3, self.select_ref_report_dict['NE']['UI'][0])
+        self.assertEqual(3, self.select_ref_report_dict['EN']['UI'][0])
+        self.assertEqual(3, self.select_ref_report_dict['EE']['UI'][0])
 
     def test_reference_selection_created_file(self):
         """
