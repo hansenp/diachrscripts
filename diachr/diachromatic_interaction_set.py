@@ -38,7 +38,7 @@ class DiachromaticInteractionSet:
         self._smallest_pval_thresh = 1.0
 
         # Dictionary with information about read files
-        self._read_file_info_dict = {'I_FILE': [], 'I_NUM': [], 'I_UNION_NUM': []}
+        self._read_file_info_dict = {'I_FILE': [], 'I_NUM': [], 'I_SET_SIZE': []}
 
         # Dictionary with information about the last writing process
         self._write_file_info_dict = {}
@@ -116,7 +116,7 @@ class DiachromaticInteractionSet:
         # Keep track of the name of the input file and the number of interactions
         self._read_file_info_dict['I_FILE'].append(i_file)
         self._read_file_info_dict['I_NUM'].append(n_lines)
-        self._read_file_info_dict['I_UNION_NUM'].append(len(self._inter_dict))
+        self._read_file_info_dict['I_SET_SIZE'].append(len(self._inter_dict))
 
         if verbose:
             print("[INFO] ... done.")
@@ -396,11 +396,11 @@ class DiachromaticInteractionSet:
         report = "[INFO] Report on reading files:" + '\n'
         report += "\t[INFO] Read interaction data from " + str(file_num) + " files:" + '\n'
         for i in range(0, file_num):
-            report += "\t\t[INFO] " + str(self._read_file_info_dict['I_NUM'][i]) + " interactions from " + \
-                      self._read_file_info_dict['I_FILE'][i] + \
-                      ' (Union: ' + str(self._read_file_info_dict['I_UNION_NUM'][i]) + ')' + '\n'
-        report += "\t[INFO] The union of all interactions has " + \
-                  str(self._read_file_info_dict['I_UNION_NUM'][-1]) + " interactions." + '\n'
+            report += "\t\t[INFO] " + str(self._read_file_info_dict['I_NUM'][i]) + " interactions from: \n" + \
+                      "\t\t\t[INFO] " + self._read_file_info_dict['I_FILE'][i] + '\n' \
+                      '\t\t\t[INFO] Set size: ' + str(self._read_file_info_dict['I_SET_SIZE'][i]) + '\n'
+        report += "\t[INFO] The interaction set has " + \
+                  str(self._read_file_info_dict['I_SET_SIZE'][-1]) + " interactions." + '\n'
         report += "[INFO] End of report." + '\n'
 
         return report
@@ -418,8 +418,8 @@ class DiachromaticInteractionSet:
 
         report = "[INFO] Report on writing files:" + '\n'
         report += "\t[INFO] Wrote interactions that occur in at least " + \
-                  str(self._write_file_info_dict['REQUIRED_REPLICATES'][0]) + \
-                  " replicates to: " + self._write_file_info_dict['TARGET_FILE'][0] + '\n'
+                  str(self._write_file_info_dict['REQUIRED_REPLICATES'][0]) + " replicates to:" + '\n'
+        report += "\t\t[INFO] " + self._write_file_info_dict['TARGET_FILE'][0] + '\n'
         report += "\t[INFO] Interactions that occur in at least " + \
                   str(self._write_file_info_dict['REQUIRED_REPLICATES'][0]) + " replicates: " + \
                   str(self._write_file_info_dict['N_COMPLETE_DATA'][0]) + '\n'

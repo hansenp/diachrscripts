@@ -3,7 +3,11 @@ This script takes a file in Diachromatic interaction format and a P-value thresh
 interactions, assigns interactions to directed (DI) and undirected interactions (UI), selects undirected reference
 interactions (UIR) from UI and creates a new file with two additional columns for P-value and interaction category.
 
-You can find a detailed documentation on this script in the relevant section in the RTD of this repository.
+You can find documentation on this script in the relevant section in the RTD of this repository.
+
+The individual steps that are carried out in this script are demonstrated in the following Jupyter notebook:
+
+       diachrscripts/jupyter_notebooks/evaluate_and_categorize_interactions.ipynb
 """
 
 import argparse
@@ -14,7 +18,7 @@ from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 ### Parse command line
 ######################
 
-parser = argparse.ArgumentParser(description='Rate and categorize interactions and select unndirected reference interactions.')
+parser = argparse.ArgumentParser(description='Evaluate and categorize interactions and select unndirected reference interactions.')
 parser.add_argument('-o','--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('-i', '--diachromatic-interaction-file', help='Diachromatic interaction file.', required=True)
 parser.add_argument('--p-value-threshold', help='P-value threshold for directed interactions.', default=0.01)
@@ -58,16 +62,16 @@ select_ref_info_report = interaction_set.get_select_ref_info_report()
 select_ref_info_table_row = interaction_set.get_select_ref_info_table_row(out_prefix)
 
 # Write Diachromatic interaction file with two additional columns
-f_name = out_prefix + "_rated_and_categorized_interactions.tsv.gz"
-interaction_set.write_diachromatic_interaction_file(target_file=f_name, verbose=True)
+f_name_interactions = out_prefix + "_evaluated_and_categorized_interactions.tsv.gz"
+interaction_set.write_diachromatic_interaction_file(target_file=f_name_interactions, verbose=True)
 write_file_info_report = interaction_set.get_write_file_info_report()
 
 
 ### Create file with summary statistics
 #######################################
 
-f_name = out_prefix + "_rate_and_categorize_summary.txt"
-out_fh = open(f_name, 'wt')
+f_name_summary = out_prefix + "_evaluated_and_categorized_summary.txt"
+out_fh = open(f_name_summary, 'wt')
 
 # Chosen parameters
 out_fh.write(parameter_info + '\n')
@@ -84,6 +88,14 @@ out_fh.write(select_ref_info_report + '\n')
 out_fh.write(select_ref_info_table_row + '\n')
 
 # Report on writing the file
-out_fh.write(write_file_info_report)
+out_fh.write(write_file_info_report + '\n')
+
+# Report on generated files
+generated_file_info = "[INFO] Generated files:" + '\n'
+generated_file_info += "\t[INFO] " + f_name_summary + '\n'
+generated_file_info += "\t[INFO] " + f_name_interactions + '\n'
+out_fh.write(generated_file_info)
 
 out_fh.close()
+
+print(generated_file_info)

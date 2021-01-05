@@ -63,8 +63,8 @@ for gz_file in gz_files:
 read_file_info_report = interaction_set.get_read_file_info_report()
 
 # Write interactions that occur in the required number of replicates to file
-f_name = out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_interactions.tsv.gz"
-interaction_set.write_diachromatic_interaction_file(target_file=f_name, required_replicates=required_replicates, verbose=True)
+f_name_interactions = out_prefix + "_at_least_" + str(required_replicates) + "_combined_interactions.tsv.gz"
+interaction_set.write_diachromatic_interaction_file(target_file=f_name_interactions, required_replicates=required_replicates, verbose=True)
 write_file_info_report = interaction_set.get_write_file_info_report()
 write_file_info_table_row = interaction_set.get_write_file_info_table_row()
 
@@ -72,12 +72,26 @@ write_file_info_table_row = interaction_set.get_write_file_info_table_row()
 ### Create file with summary statistics
 #######################################
 
-f_name =  out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_summary.txt"
+f_name_summary =  out_prefix + "_at_least_" + str(required_replicates) + "_combined_summary.txt"
 
-out_fh = open(f_name, 'wt')
+out_fh = open(f_name_summary, 'wt')
+
+# Chosen parameters
 out_fh.write(parameter_info + '\n')
+
+# Report on reading files
 out_fh.write(read_file_info_report + '\n')
+
+# Report on writing the file
 out_fh.write(write_file_info_report + '\n')
-out_fh.write(write_file_info_table_row)
+out_fh.write(write_file_info_table_row + '\n')
+
+# Report on generated files
+generated_file_info = "[INFO] Generated files:" + '\n'
+generated_file_info += "\t[INFO] " + f_name_summary + '\n'
+generated_file_info += "\t[INFO] " + f_name_interactions + '\n'
+out_fh.write(generated_file_info)
 
 out_fh.close()
+
+print(generated_file_info)
