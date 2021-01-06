@@ -267,7 +267,7 @@ class BinomialInteractionModel:
         plt.show()
         plt.close()
 
-    def count_di_uir_and_ui_for_each_n(self, ei_file: str, n_max=2000) -> Tuple[List, List, List, List]:
+    def count_di_uir_and_ui_for_each_n(self, di11_file: str, n_max=2000) -> Tuple[List, List, List, List]:
         """
         Get the counts of DI, UIR and UI interactions for each read pair number.
 
@@ -297,8 +297,7 @@ class BinomialInteractionModel:
 
         # Load interactions
         interaction_set = DiachromaticInteractionSet()
-        interaction_set.parse_file(ei_file, verbose=True)
-        read_file_info_report = interaction_set.get_read_file_info_report()
+        interaction_set.parse_file(di11_file, verbose=True)
 
         # Iterate interaction set
         n_progress = 0
