@@ -20,8 +20,7 @@ Note that none of the links below work yet because there are no files.
    binomial_model
    simple_twisted_randomization
    false_discovery_rate
-   directed_interactions
-   undirected_reference_interactions
+   rate_and_categorize_interactions
    interaction_categories
 
 

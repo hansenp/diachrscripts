@@ -1,7 +1,6 @@
 from scipy.stats import binom
 from numpy import log, logaddexp, exp
 import numpy as np
-import warnings
 import time
 
 class BinomialModel:
@@ -36,13 +35,14 @@ class BinomialModel:
         if the P-value has not yet been calculated, a function is called to
         calculate the P-value. This P-value is then added to the dictionary and returned.
 
-        :return: P-value.
+        :return: The negative of the natural logarithm of the P-value
         """
+
         # Create key from simple and twisted read pair counts
         key = "{}-{}".format(n_simple, n_twisted)
 
         if key not in self._pval_dict:
-            self._pval_dict[key] = self._calculate_binomial_logsf_p_value(n_simple, n_twisted)
+            self._pval_dict[key] = self._calculate_binomial_nnl_p_value(n_simple, n_twisted)
 
         return self._pval_dict[key]
 
@@ -55,29 +55,29 @@ class BinomialModel:
         return(exp(-self.get_binomial_nnl_p_value(n_simple, n_twisted)))
 
 
-    def _calculate_binomial_logsf_p_value(self, n_simple, n_twisted): # (natural) logsf
+    def _calculate_binomial_nnl_p_value(self, n_simple, n_twisted): # (natural) logsf
         """
-        So far, we have used this function to calculate the P-values in script '04' and we will
-        continue to use it. This function assumes a background frequency of 0.5 for simple and
-        twisted read pairs.
-
-        :param n_simple:
-        :param n_twisted:
-        :return: Since the distribution is symmetrical because of p=0.5,
-        we return twice the P-value from a one-sided test as the P-value for a two-sided test.
+        This function calculates the natural logarithm of a P-value from a two-sided test and returns the negative
+        of it. We assume a background frequency of 0.5 for simple and twisted read pairs. Therefore, the distribution
+        is symmetrical and we return twice the P-value from a one-sided test as the P-value for a two-sided test.
         For P-values that are too small to be represented, we return -np.inf.
+
+        :param n_simple: Number of simple read pairs
+        :param n_twisted: Number of simple read pairs
+        :return: The negative of the natural logarithm of the P-value
         """
         try:
+            if n_simple == n_twisted:
+                return 0 # All other cases are more extreme, so the P-value must be 1.
             if n_simple < n_twisted:
-                p_value = binom.logsf(n_twisted - 1, n_simple + n_twisted, 0.5)
-                return -logaddexp(p_value,p_value)
+                ln_p_value = binom.logcdf(n_simple, n_simple + n_twisted, 0.5)
             else:
-                p_value = binom.logsf(n_simple - 1, n_simple + n_twisted, 0.5)
+                ln_p_value = binom.logcdf(n_twisted, n_simple + n_twisted, 0.5)
 
-            return -logaddexp(p_value, p_value)
+            return -logaddexp(ln_p_value, ln_p_value)
 
         except RuntimeWarning: # Underflow: P-value is too small
-            return -np.inf
+            return np.inf
             # or return natural log of smallest possible float
             #return log(sys.float_info.min * sys.float_info.epsilon)
 

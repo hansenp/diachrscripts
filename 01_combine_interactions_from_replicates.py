@@ -9,7 +9,7 @@ You can find a detailed documentation on this script in the relevant section in 
 
 import argparse
 import os
-from diachr.diachromatic_interaction_parser import DiachromaticInteractionParser
+from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
 
 ### Parse command line
@@ -25,60 +25,73 @@ out_prefix = args.out_prefix
 interaction_files_path = args.interaction_files_path
 required_replicates = int(args.required_replicates)
 
-print("[INFO] " + "Input parameters")
-print("\t[INFO] --out-prefix: " + out_prefix)
-print("\t[INFO] --interaction-files-path: " + interaction_files_path)
-print("\t[INFO] --required-replicates: " + str(required_replicates))
+parameter_info = "[INFO] " + "Input parameters" + '\n'
+parameter_info += "\t[INFO] --out-prefix: " + out_prefix + '\n'
+parameter_info += "\t[INFO] --interaction-files-path: " + interaction_files_path + '\n'
+parameter_info += "\t[INFO] --required-replicates: " + str(required_replicates) + '\n'
+
+print(parameter_info)
 
 
-### Iterate and combine interactions from different replicates
-##############################################################
+### Get list of interaction files under given path
+##################################################
 
-def get_gzip_tsv_files(dir):
+def get_gzip_tsv_files(path):
     """
     Get list of all gzip files in a directory
     """
-    gzfiles = []
-    for file in os.listdir(dir):
+    gz_files = []
+    for file in os.listdir(path):
         if file.endswith(".tsv.gz"):
-            gzpath = os.path.join(dir, file)
-            gzfiles.append(gzpath)
-    return gzfiles
+            gz_path = os.path.join(path, file)
+            gz_files.append(gz_path)
+    return gz_files
 
-
-# Get list of interaction files under given path
 gz_files = get_gzip_tsv_files(interaction_files_path)
 if len(gz_files) < int(required_replicates):
     print("[FATAL] Not enough replicates. Must be at least " + str(required_replicates) + " But there are only " + str(len(gz_files)) + " files.")
     exit(1)
 
-# Get list of Diachromatic interaction objects
-interaction_set = DiachromaticInteractionParser()
-print("[INFO] Will parse all gz files in " + interaction_files_path)
-for gz_file in gz_files:
-    interaction_set.parse_file(gz_file)
 
-# Print information about read files
-print(interaction_set.get_file_dict_info())
+### Perform analysis
+####################
+
+# Read interaction files
+interaction_set = DiachromaticInteractionSet()
+for gz_file in gz_files:
+    interaction_set.parse_file(gz_file, verbose=True)
+read_file_info_report = interaction_set.get_read_file_info_report()
 
 # Write interactions that occur in the required number of replicates to file
-f_name = out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_interactions.tsv.gz"
-write_info = interaction_set.write_diachromatic_interaction_file(target_file_name=f_name, required_replicates=required_replicates)
+f_name_interactions = out_prefix + "_at_least_" + str(required_replicates) + "_combined_interactions.tsv.gz"
+interaction_set.write_diachromatic_interaction_file(target_file=f_name_interactions, required_replicates=required_replicates, verbose=True)
+write_file_info_report = interaction_set.get_write_file_info_report()
+write_file_info_table_row = interaction_set.get_write_file_info_table_row()
 
-# Print information about written interactions
-print(write_info)
 
-# Create file that contains all the information
-f_name =  out_prefix + "_at_least_in_" + str(required_replicates) + "_replicates_summary.txt"
-out_fh = open(f_name, 'wt')
-out_fh.write(interaction_set.get_file_dict_info() + '\n')
-out_fh.write(write_info + '\n')
+### Create file with summary statistics
+#######################################
+
+f_name_summary =  out_prefix + "_at_least_" + str(required_replicates) + "_combined_summary.txt"
+
+out_fh = open(f_name_summary, 'wt')
+
+# Chosen parameters
+out_fh.write(parameter_info + '\n')
+
+# Report on reading files
+out_fh.write(read_file_info_report + '\n')
+
+# Report on writing the file
+out_fh.write(write_file_info_report + '\n')
+out_fh.write(write_file_info_table_row + '\n')
+
+# Report on generated files
+generated_file_info = "[INFO] Generated files:" + '\n'
+generated_file_info += "\t[INFO] " + f_name_summary + '\n'
+generated_file_info += "\t[INFO] " + f_name_interactions + '\n'
+out_fh.write(generated_file_info)
+
 out_fh.close()
 
-print(len(interaction_set.interaction_list))
-
-
-n_in
-for i in interaction_set.interaction_list:
-    print(i.has_data_for_required_replicate_num(2))
-    print(i.chrA + "\t" + str(i.fromA) + "\t" + str(i.toA) + "\t" + i.chrA + "\t")
+print(generated_file_info)
