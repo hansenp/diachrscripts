@@ -8,10 +8,7 @@ from decimal import Decimal
 from math import log
 import sys
 
-from .digest import Digest
-from .enhanced_interaction import EnhancedInteraction
 from .enhanced_interaction_parser import EnhancedInteractionParser
-from .interaction import Interaction
 
 #########################################################################################
 

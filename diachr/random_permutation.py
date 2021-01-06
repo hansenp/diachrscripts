@@ -8,7 +8,6 @@ import os
 
 from .diachr_util import calculate_binomial_p_value, find_minimum_powered_n
 from .diachromatic_parser import DiachromaticParser
-from .diachromatic_interaction import DiachromaticInteraction
 
 class RandomPermutation:
     def __init__(self, combined_interaction_file: str, alpha: float, threads: int = 1, prefix:str="PERMUTATION") -> None:

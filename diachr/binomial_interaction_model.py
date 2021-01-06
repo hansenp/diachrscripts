@@ -1,10 +1,9 @@
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 from collections import defaultdict
 from scipy.stats import binom
-import numpy as np
-from .diachr_util import calculate_binomial_p_value
-from .enhanced_interaction_parser import EnhancedInteractionParser
-import scipy, scipy.stats, numpy
+from diachr.binomial_model import BinomialModel
+from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
+import scipy, scipy.stats
 import matplotlib.pyplot as plt
 
 class BinomialInteractionModel:
@@ -37,6 +36,9 @@ class BinomialInteractionModel:
         #    key - a string like 2-7
         #    value - our corresponding binomial p-value
         self._pval_memo = defaultdict(float)
+
+        # Object for calculating P-values
+        self._p_values = BinomialModel()
 
         # Maximum n for simulated interactions
         self.n_max = None
@@ -95,10 +97,8 @@ class BinomialInteractionModel:
             # Determine P-values and count significant interactions
             for simple_count in simple_count_list:
                 twisted_count = n - simple_count
-                pv = self.binomial_p_value(simple_count=simple_count, twisted_count=twisted_count)
-                # Our test of directionality is two-sided (either simple or twisted).
-                # Therefore, we have to divide the threshold by 2.
-                if pv <= pvt/2.0:
+                pv = self._p_values.get_binomial_p_value(simple_count, twisted_count)
+                if pv <= pvt:
                     n_sig_list[n] += 1
 
         print("[INFO] " + "...done.")
@@ -295,35 +295,36 @@ class BinomialInteractionModel:
         n_dict_uir = {}  # Dictionary that stores the numbers of UIR interactions with n read pair
         n_dict_ui = {}  # Dictionary that stores the numbers of UI interactions with n read pairs
 
-        # Get list of EI objects
-        parser = EnhancedInteractionParser(ei_file)
-        ei_list = parser.parse()
+        # Load interactions
+        interaction_set = DiachromaticInteractionSet()
+        interaction_set.parse_file(ei_file, verbose=True)
+        read_file_info_report = interaction_set.get_read_file_info_report()
 
-        # Iterate list with EI objects
+        # Iterate interaction set
         n_progress = 0
-        for ei in ei_list:
+        for di_11_inter in interaction_set._inter_dict.values():
             n_progress += 1
             if n_progress % 1000000 == 0:
                 print("\t[INFO] Processed " + str(n_progress) + " interactions ...")
 
-            n  = ei.rp_total
-            if ei._interaction_category == 'DI':
+            n = di_11_inter.rp_total
+            if di_11_inter.get_category() == 'DI':
                 if n in n_dict_di:
                     n_dict_di[n] += 1
                 else:
                     n_dict_di[n] = 1
-            elif ei._interaction_category == 'UIR':
+            elif di_11_inter.get_category() == 'UIR':
                 if n in n_dict_uir:
                     n_dict_uir[n] += 1
                 else:
                     n_dict_uir[n] = 1
-            elif ei._interaction_category == 'UI':
+            elif di_11_inter.get_category() == 'UI':
                 if n in n_dict_ui:
                     n_dict_ui[n] += 1
                 else:
                     n_dict_ui[n] = 1
             else:
-                print("[ERROR] Invalid interaction category tag: " + ei._interaction_category)
+                print("[ERROR] Invalid interaction category tag: " + d_inter.get_category())
 
         # List of n
         n_list = list(range(n_max + 1))
@@ -455,30 +456,3 @@ class BinomialInteractionModel:
         plt.savefig(self._out_prefix + "_x_max_" + str(x_max) + "_emp_di_vs_uir" + ".pdf", format="pdf")
         plt.show()
         plt.close()
-
-    def binomial_p_value(self, simple_count: int, twisted_count: int):
-        """
-        Locally defined method for the calculation of the binomial P-value that uses a dictionary that keeps track of
-        P-values that already have been calculated.
-
-        Parameters
-        ----------------------------
-        simple_count: int,
-            Number of simple read pairs.
-        twisted_count: int,
-            Number of twisted read pairs.
-
-        Returns
-        ----------------------------
-        Binomial P-value.
-        """
-        # Create key from simple and twisted read pair counts
-        key = "{}-{}".format(simple_count, twisted_count)
-        # Check whether a P-value for this combination of simple and twisted counts has been calculated already
-        if key in self._pval_memo :
-            return self._pval_memo [key]
-        else:
-            # Calculate P-value and add to dictionary
-            p_value = calculate_binomial_p_value(simple_count, twisted_count)
-            self._pval_memo [key] = p_value
-            return p_value

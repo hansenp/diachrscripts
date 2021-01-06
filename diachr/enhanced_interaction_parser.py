@@ -110,6 +110,6 @@ class EnhancedInteractionParser:
                     n_progress += 1
                     if n_progress % 1000000 == 0:
                         print("\t[INFO] Processed " + str(n_progress) + " interactions ...")
-                    enh_int = EnhancedInteractionParser.parse_line(line)
+                    enh_int = self.parse_line(line)
                     ei_list.append(enh_int)
             return ei_list

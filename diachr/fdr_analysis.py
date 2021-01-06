@@ -5,7 +5,6 @@ import math
 import gzip
 
 from .diachr_util import calculate_binomial_logsf_p_value
-from diachr.diachromatic_interaction import DiachromaticInteraction
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
 class FdrAnalysis:

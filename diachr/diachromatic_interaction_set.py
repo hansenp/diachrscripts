@@ -2,7 +2,7 @@ import gzip
 import os
 import copy
 import warnings
-from numpy import exp, log
+from numpy import log
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
@@ -164,19 +164,41 @@ class DiachromaticInteractionSet:
             else:
                 statusB = 'N'
 
-        di_inter = DiachromaticInteraction(
-            chrA=chrA,
-            fromA=fromA,
-            toA=toA,
-            statusA=statusA,
-            chrB=chrB,
-            fromB=fromB,
-            toB=toB,
-            statusB=statusB,
-            simple=simple,
-            twisted=twisted)
+        # The interaction read has not yet been evaluated and categorized
+        if len(F) == 9:
+            di_inter = DiachromaticInteraction(
+                chrA=chrA,
+                fromA=fromA,
+                toA=toA,
+                statusA=statusA,
+                chrB=chrB,
+                fromB=fromB,
+                toB=toB,
+                statusB=statusB,
+                simple=simple,
+                twisted=twisted)
+            return di_inter
 
-        return di_inter
+        # The interaction read has already been evaluated and categorized
+        if len(F) == 11:
+            nln_p_val = F[9]
+            i_cat = F[10]
+            di_11_inter = DiachromaticInteraction11(
+                chrA=chrA,
+                fromA=fromA,
+                toA=toA,
+                statusA=statusA,
+                chrB=chrB,
+                fromB=fromB,
+                toB=toB,
+                statusB=statusB,
+                simple=simple,
+                twisted=twisted,
+                nln_pval=nln_p_val)
+
+            # Set interaction category
+            di_11_inter.set_category(i_cat)
+            return di_11_inter
 
     def evaluate_and_categorize_interactions(self, pval_thresh: float = None, verbose: bool = False):
         """
