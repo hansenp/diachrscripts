@@ -22,8 +22,12 @@ class Randomize:
             raise ValueError("Step size must be smaller than maximum P-value threshold!")
 
         # Get list of observed P-values and dictionary that stores the numbers of interactions with n read pairs
+        pvals_observed = []
+        #for d_inter in self._interaction_set.interaction_list:
+            #pvals_observed.append(d_inter.self._nln_pval)
 
         # Use dictionary to get list of P-values for randomized data
+        pvals_randomized = self._get_list_of_p_values_from_randomized_data()
 
         # Determine numbers of significant interactions in observed and randomized data for increasing P-value
         # thresholds and estimate FDR.
@@ -49,7 +53,7 @@ class Randomize:
 
         pval_list = []
 
-        for n, i_num in self._N_DICT.items():
+        for n, i_num in self.rp_inter_dict.items():
 
             # Generate random simple read pair counts for current n
             simple_count_list = list(binom.rvs(n, p=0.5, size=i_num))
