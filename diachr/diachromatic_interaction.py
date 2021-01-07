@@ -1,3 +1,5 @@
+from numpy import exp
+
 class DiachromaticInteraction:
     """
     Class to represent an interaction between two different parts of the genome with status and count.
@@ -202,3 +204,6 @@ class DiachromaticInteraction11(DiachromaticInteraction):
             return "UIR"
         else:
             raise NameError("Interaction category not yet defined.")
+
+    def get_pval(self):
+        return exp(-self._nln_pval)

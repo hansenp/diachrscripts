@@ -2,19 +2,15 @@
 
 """
 This takes a path to a Diachromatic interaction file and determines a P-value threshold that corresponds to a
-given FDR threshold.
+chosen FDR threshold.
 
 You can find a detailed documentation on this script in the relevant section in the RTD of this repository.
 """
 
 
 import argparse
-import math
 from scipy.stats import binom
-from collections import defaultdict
-import numpy as np
-
-
+from numpy import random, arange, log
 from diachr.fdr_analysis import FdrAnalysis
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.binomial_model import BinomialModel
@@ -48,7 +44,6 @@ print("\t[INFO] --fdr-threshold: " + str(fdr_threshold))
 print("\t[INFO] --p-val-c-min: " + str(p_val_c_min))
 print("\t[INFO] --p-val-c-max: " + str(p_val_c_max))
 print("\t[INFO] --p-val-step-size: " + str(p_val_step_size))
-
 
 if args.usemod:
     print("[INFO] Using FdrAnalysis module")
@@ -114,7 +109,7 @@ txt_file_stream_results.write("OUT_PREFIX\tFDR\tPC\tNSIG_P\tNSIG_O" + "\n")
 ###################
 
 # Set random seed
-np.random.seed(42)
+random.seed(42)
 
 # Get list of Diachromatic interaction objects
 interaction_set = DiachromaticInteractionSet()
@@ -154,10 +149,11 @@ print("[INFO] Estimating FDR for increasing P-value thresholds ...")
 # Estimate FDR for increasing P-value thresholds from original and randomized P-value lists
 S_o = 0 # start index in sorted list
 S_r = 0 # start index in sorted list
-for pc in np.arange(p_val_c_min, p_val_c_max, p_val_step_size):
+print(arange(p_val_c_min, p_val_c_max + p_val_step_size, p_val_step_size))
+for pc in arange(p_val_c_min, p_val_c_max + p_val_step_size, p_val_step_size):
 
     # Transform P-value to negative natural logarithm (nnl)
-    pc_nnl = - math.log(pc)
+    pc_nnl = -log(pc)
 
     # Get number of significant interactions for original P-values
     #S_o = sum(pc_nnl < pv_nnl for pv_nnl in p_val_o_list) # slow
