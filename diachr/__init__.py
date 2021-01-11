@@ -5,7 +5,7 @@ from .diachromatic_interaction_set import DiachromaticInteractionSet
 from .diachromatic_parser import DiachromaticParser
 from .enhanced_interaction_parser import EnhancedInteraction, EnhancedInteractionParser
 from .random_permutation import RandomPermutation
-from .randomize import Randomize
+from .randomize_interaction_set import RandomizeInteractionSet
 
 
 
@@ -18,5 +18,5 @@ __all__ = [
     "DiachromaticParser",
     "EnhancedInteractionParser",
     "RandomPermutation",
-    "Randomize"
+    "RandomizeInteractionSet"
 ]
