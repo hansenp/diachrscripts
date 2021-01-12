@@ -14,8 +14,20 @@ class RandomizeInteractionSet:
     def get_pval_tresh_at_chosen_fdr_tresh(self,
                                            chosen_fdr_thresh: float = 0.05,
                                            pval_thresh_max: float = 0.05,
-                                           pval_thresh_step_size: float = 0.00025
+                                           pval_thresh_step_size: float = 0.00025,
+                                           verbose: bool = False
                                            ):
+        """
+
+        :param chosen_fdr_thresh:
+        :param pval_thresh_max:
+        :param pval_thresh_step_size:
+        :param verbose:
+        :return:
+        """
+
+        if verbose:
+            print("[INFO] Performing FDR procedure ...")
 
         # Set random seed
         random.seed(self._random_seed)
@@ -28,14 +40,23 @@ class RandomizeInteractionSet:
         if pval_thresh_max <= pval_thresh_step_size:
             raise ValueError("Step size must be smaller than maximum P-value threshold!")
 
-        # Get list of observed P-values
+        if verbose:
+            print("\t[INFO] Getting list of observed P-values ...")
+
         pvals_observed = []
         for d_inter in self._interaction_set.interaction_list:
-            pvals_observed.append(d_inter._nln_pval)
+            nnnl_pval = self._interaction_set._p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
+            pvals_observed.append(nnnl_pval)
+
+        if verbose:
+            print("\t[INFO] Getting list of randomized P-values ...")
 
         # Get dictionary that stores the numbers of interactions with n read pairs and list of random P-values
         rp_inter_dict = self._get_rp_inter_dict()
         pvals_randomized = self._get_list_of_p_values_from_randomized_data(rp_inter_dict=rp_inter_dict)
+
+        if verbose:
+            print("\t[INFO] Going through list of P-value thresholds and estimate FDR ...")
 
         # Sort lists of P-values
         pvals_observed.sort(key=float, reverse=True)
@@ -73,15 +94,28 @@ class RandomizeInteractionSet:
             fdr = sig_num_r / sig_num_o
             fdr_list.append(fdr)
 
+        if verbose:
+            print("\t[INFO] Looking for largest P-value threshold for which the FDR is below the chosen threshold ...")
+
         # Check whether FDR increases monotonically
-        if all(x<=y for x,y in zip(fdr_list,fdr_list[1:])):
-            warnings.warn("FDR does not grow monotonically with P-value threshold!" + '\n' + \
+        if not all(x<=y for x, y in zip(fdr_list,fdr_list[1:])):
+            warnings.warn("FDR did not grow monotonically with P-value threshold!" + '\n' + \
                           "Take a close look at the results for each of the P-value thresholds.")
 
         # Find the largest P-value threshold for which the FDR is below the chosen threshold
         idx = 0
         while idx < len(fdr_list) and fdr_list[idx] < chosen_fdr_thresh:
             idx += 1
+
+        if verbose:
+            print("\t\t[INFO] P-value threshold: " + "{:.5f}".format(pval_thresh_list[idx-1]))
+            print("\t\t[INFO] -ln(P-value) threshold: " + "{:.5f}".format(nnl_pval_thresh_list[idx - 1]))
+            print("\t\t[INFO] Number of randomized significant interactions: " + str(sig_num_r_list[idx - 1]))
+            print("\t\t[INFO] Number of observed significant interactions: " + str(sig_num_o_list[idx - 1]))
+            print("\t\t[INFO] Estimated FDR: " + "{:.5f}".format(fdr_list[idx - 1]))
+
+        if verbose:
+            print("[INFO] ... done.")
 
         # Prepare and return dictionary for report
         report_dict = {

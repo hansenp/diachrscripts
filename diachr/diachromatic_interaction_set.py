@@ -2,7 +2,7 @@ import gzip
 import os
 import copy
 import warnings
-from numpy import log
+from numpy import arange, log
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
@@ -181,7 +181,7 @@ class DiachromaticInteractionSet:
 
         # The interaction read has already been evaluated and categorized
         if len(F) == 11:
-            nln_p_val = F[9]
+            nnl_p_val = float(F[9])
             i_cat = F[10]
             di_11_inter = DiachromaticInteraction11(
                 chrA=chrA,
@@ -194,7 +194,7 @@ class DiachromaticInteractionSet:
                 statusB=statusB,
                 simple=simple,
                 twisted=twisted,
-                nln_pval=nln_p_val)
+                nln_pval=nnl_p_val)
 
             # Set interaction category
             di_11_inter.set_category(i_cat)
@@ -401,6 +401,80 @@ class DiachromaticInteractionSet:
 
         self._write_file_info_dict = report_dict
         return report_dict
+
+    def write_diachromatic_interaction_fdr_test_file(self, target_file: str = None, p_value_max: float = 0.05,
+                                                     p_value_step: float = 0.00025, i_per_interval_requested: int = 10,
+                                                     verbose: bool = False):
+        """
+        Generates a test file that contains the same number of interactions for consecutive P-value intervals.
+        that can be used to test to check whether the P-value thresholds are used correctly during the FDR analysis.
+
+        :param target_file: Output interaction file
+        :param p_value_max: Maximum P-value
+        :param p_value_step: P-value step size
+        :param i_per_interval_requested: Requested number of interactions per interval
+        :param verbose: If true, messages about progress will be written to the screen
+        :return: Dictionary that contains intermediate results and summary statistics
+        """
+
+        if verbose:
+            print("[INFO] Generating test file for FDR procedure ...")
+
+        # Open interaction file for writing
+        out_fh = open(target_file, 'wt')
+
+        # Create list of ascending P-value thresholds
+        p_threshs = arange(p_value_step, p_value_max + p_value_step, p_value_step)
+
+        # Prepare lists for intermediate results
+        pval_interval_list = []
+        i_selected_list = []
+        i_selected_cum_list = []
+
+        # Iterate interaction set and write requested number of interactions for each P-value interval to file
+        if verbose:
+            print("\t[INFO] Iterating interaction set and writing interactions to test file ...")
+        i_selected_cum = 0
+        for p_thresh in p_threshs:
+            i_selected = 0
+            for d_inter in self.interaction_list:
+                pval = self._p_values.get_binomial_p_value(d_inter.n_simple, d_inter.n_twisted)
+                if (p_thresh - p_value_step) < pval and pval <= p_thresh:
+                    i_selected += 1
+                    out_fh.write(d_inter.get_diachromatic_interaction_line() + '\n')
+                    i_selected_cum += 1
+                if i_selected == i_per_interval_requested:
+                    break
+
+            # Collect intermediate results
+            pval_interval = ']' + "{:.5f}".format(p_thresh - p_value_step) + ';' + "{:.5f}".format(p_thresh) + ']'
+            pval_interval_list.append(pval_interval)
+            i_selected_list.append(i_selected)
+            i_selected_cum_list.append(i_selected_cum)
+
+            # If the requested number of interactions could not be selected for the current interval, issue a warning
+            if i_selected < i_per_interval_requested:
+                warnings.warn("[WARNING] Could not select the required number of interactions (only "
+                      + str(i_selected) + " of " + str(i_per_interval_requested) +
+                      ") for the P-value range " + pval_interval + '!')
+
+        # Close interaction file
+        out_fh.close()
+
+        if verbose:
+            print("[INFO] ... done.")
+
+        # Prepare dictionary for report
+        report_dict = {
+            'TARGET_FILE': target_file,
+            'RESULTS_TABLE':
+                {'PVAL_INTERVAL': pval_interval_list,
+                 'I_SELECTED': i_selected_list,
+                 'I_SELECTED_CUM': i_selected_cum_list
+            }
+        }
+        return report_dict
+
 
     def get_read_file_info_dict(self):
         """

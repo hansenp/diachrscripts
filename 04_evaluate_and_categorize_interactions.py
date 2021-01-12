@@ -51,6 +51,8 @@ interaction_set = DiachromaticInteractionSet()
 interaction_set.parse_file(diachromatic_interaction_file, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 
+# FDR?
+
 # Calculate P-values and assign interactions to 'DI' or 'UI'
 interaction_set.evaluate_and_categorize_interactions(p_value_threshold, verbose=True)
 eval_cat_info_report = interaction_set.get_eval_cat_info_report()
