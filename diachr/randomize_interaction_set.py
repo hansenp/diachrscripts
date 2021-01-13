@@ -2,7 +2,9 @@ from scipy.stats import binom
 from numpy import arange, log, random
 import warnings
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
+
 warnings.filterwarnings('always')
+
 
 class RandomizeInteractionSet:
 
@@ -65,6 +67,8 @@ class RandomizeInteractionSet:
         # Create list of ascending P-value thresholds and prepare lists for results
         pval_thresh_list = arange(pval_thresh_step_size, pval_thresh_max + pval_thresh_step_size, pval_thresh_step_size)
         nnl_pval_thresh_list = []
+        min_rp_num_list = []
+        min_rp_num_pval_list = []
         sig_num_r_list = []
         sig_num_o_list = []
         fdr_list = []
@@ -75,6 +79,11 @@ class RandomizeInteractionSet:
 
         # Go through list of ascending P-value thresholds
         for p_thresh in pval_thresh_list:
+
+            # Get minimum number of read pairs required for significance at current  threshold
+            min_rp_num, min_rp_num_pval = self._interaction_set._p_values.find_smallest_significant_n(p_thresh)
+            min_rp_num_list.append(min_rp_num)
+            min_rp_num_pval_list.append(min_rp_num_pval)
 
             # Get negative natural logarithm of P-value threshold
             nnl_pval_thresh = -log(p_thresh)
@@ -98,7 +107,7 @@ class RandomizeInteractionSet:
             print("\t[INFO] Looking for largest P-value threshold for which the FDR is below the chosen threshold ...")
 
         # Check whether FDR increases monotonically
-        if not all(x<=y for x, y in zip(fdr_list,fdr_list[1:])):
+        if not all(x <= y for x, y in zip(fdr_list, fdr_list[1:])):
             warnings.warn("FDR did not grow monotonically with P-value threshold!" + '\n' + \
                           "Take a close look at the results for each of the P-value thresholds.")
 
@@ -108,7 +117,7 @@ class RandomizeInteractionSet:
             idx += 1
 
         if verbose:
-            print("\t\t[INFO] P-value threshold: " + "{:.5f}".format(pval_thresh_list[idx-1]))
+            print("\t\t[INFO] P-value threshold: " + "{:.5f}".format(pval_thresh_list[idx - 1]))
             print("\t\t[INFO] -ln(P-value) threshold: " + "{:.5f}".format(nnl_pval_thresh_list[idx - 1]))
             print("\t\t[INFO] Number of randomized significant interactions: " + str(sig_num_r_list[idx - 1]))
             print("\t\t[INFO] Number of observed significant interactions: " + str(sig_num_o_list[idx - 1]))
@@ -119,15 +128,23 @@ class RandomizeInteractionSet:
 
         # Prepare and return dictionary for report
         report_dict = {
+            'INPUT_PARAMETERS':
+                {
+                    'CHOSEN_FDR_THRESH': [chosen_fdr_thresh],
+                    'PVAL_THRESH_MAX': [pval_thresh_max],
+                    'PVAL_THRESH_STEP_SIZE': [pval_thresh_step_size]
+                },
             'RESULTS_TABLE':
                 {
-                'P_VAL_TRESH': pval_thresh_list,
-                'NNL_P_VAL_TRESH': nnl_pval_thresh_list,
-                'SIG_NUM_R': sig_num_r_list,
-                'SIG_NUM_O': sig_num_o_list,
-                'FDR': fdr_list
+                    'PVAL_THRESH': pval_thresh_list,
+                    'NNL_PVAL_THRESH': nnl_pval_thresh_list,
+                    'MIN_RP_NUM': min_rp_num_list,
+                    'MIN_RP_NUM_PVAL': min_rp_num_pval_list,
+                    'SIG_NUM_R': sig_num_r_list,
+                    'SIG_NUM_O': sig_num_o_list,
+                    'FDR': fdr_list
                 },
-            'ROW_INDEX': [idx-1]
+            'RESULT_INDEX': [idx - 1]
         }
         return report_dict
 
@@ -153,7 +170,6 @@ class RandomizeInteractionSet:
                 rp_inter_dict[d_inter.rp_total] = 1
         return rp_inter_dict
 
-
     def _get_list_of_p_values_from_randomized_data(self, rp_inter_dict: dict = None):
 
         random_pval_list = []
@@ -165,7 +181,15 @@ class RandomizeInteractionSet:
 
             # Calculate P-values and append to list
             for simple_count in simple_count_list:
-                pval = self._interaction_set._p_values.get_binomial_nnl_p_value(simple_count, rp_num-simple_count)
+                pval = self._interaction_set._p_values.get_binomial_nnl_p_value(simple_count, rp_num - simple_count)
                 random_pval_list.append(pval)
 
         return random_pval_list
+
+    def get_fdr_info_plot(self, pdf_file_name: str = None, analysis_name: str = None):
+
+        # Set plot parameters
+        hv_lwd = 0.5  # line width of horizontal and vertical red dashed lines
+        hv_col = 'red'  # color of horizontal and vertical red dashed lines
+
+

@@ -82,7 +82,7 @@ class BinomialModel:
             #return log(sys.float_info.min * sys.float_info.epsilon)
 
 
-    def find_smallest_significant_n(self, p_val_thresh, verbose=True):
+    def find_smallest_significant_n(self, p_val_thresh, verbose=False):
         """
         This function finds the smallest n that gives a significant P-value at a chosen threshold.
         A tuple consisting of the smallest n and the associated P-value is returned.
