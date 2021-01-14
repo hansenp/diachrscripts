@@ -1,5 +1,8 @@
 from scipy.stats import binom
 from numpy import arange, log, random
+import pandas
+#import seaborn as sns
+import matplotlib.pyplot as plt
 import warnings
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
@@ -12,6 +15,8 @@ class RandomizeInteractionSet:
         self._random_seed = random_seed
         random.seed(random_seed)
         self._interaction_set = interaction_set
+
+        self._fdr_info_dict = None
 
     def get_pval_tresh_at_chosen_fdr_tresh(self,
                                            chosen_fdr_thresh: float = 0.05,
@@ -132,7 +137,8 @@ class RandomizeInteractionSet:
                 {
                     'CHOSEN_FDR_THRESH': [chosen_fdr_thresh],
                     'PVAL_THRESH_MAX': [pval_thresh_max],
-                    'PVAL_THRESH_STEP_SIZE': [pval_thresh_step_size]
+                    'PVAL_THRESH_STEP_SIZE': [pval_thresh_step_size],
+                    'INPUT_INTERACTIONS_NUM': [len(self._interaction_set._inter_dict)]
                 },
             'RESULTS_TABLE':
                 {
@@ -146,7 +152,47 @@ class RandomizeInteractionSet:
                 },
             'RESULT_INDEX': [idx - 1]
         }
+        self._fdr_info_dict = report_dict
         return report_dict
+
+    def get_fdr_info_report(self):
+        """
+        :return: String that contains information about the  last FDR procedure performed.
+        """
+
+        report = "[INFO] Report on FDR procedure:" + '\n'
+        report += "\t[INFO] Input parameters:" + '\n'
+        report += "\t\t[INFO] Chosen FDR threshold: "\
+                  + "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['CHOSEN_FDR_THRESH'][0]) + '\n'
+        report += "\t\t[INFO] Maximum P-value threshold: "\
+                  + "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_MAX'][0]) + '\n'
+        report += "\t\t[INFO] P-value threshold step size: "\
+                  + "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_STEP_SIZE'][0]) + '\n'
+        report += "\t\t[INFO] Total number of interactions: "\
+                  + "{:,}".format(self._fdr_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]) + '\n'
+
+        result_index = self._fdr_info_dict['RESULT_INDEX'][0]
+
+        report += "\t[INFO] Results:" + '\n'
+        report += "\t\t[INFO] Determined P-value threshold: "\
+                  + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['PVAL_THRESH'][result_index]) + '\n'
+        report += "\t\t[INFO] Determined -ln(P-value) threshold: "\
+                  + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['NNL_PVAL_THRESH'][result_index]) + '\n'
+        report += "\t\t[INFO] Minimum read pair number: "\
+                  + str(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM'][result_index]) + '\n'
+        report += "\t\t[INFO] Actual P-value threshold: "\
+                  + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM_PVAL'][result_index]) + '\n'
+        report += "\t\t[INFO] Number of significant interactions: "\
+                  + "{:,}".format(self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_O'][result_index]) + '\n'
+        report += "\t\t[INFO] Number of randomized significant interactions: "\
+                  + "{:,}".format(self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_R'][result_index]) + '\n'
+        report += "\t\t[INFO] Estimated FDR: "\
+                  + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['FDR'][result_index]) + '\n'
+
+        report += "[INFO] End of report." + '\n'
+
+        return report
+
 
     def perform_randomization_analysis(self, nominal_alpha: float = 0.01, n_iter: int = 1000):
 
@@ -187,9 +233,121 @@ class RandomizeInteractionSet:
         return random_pval_list
 
     def get_fdr_info_plot(self, pdf_file_name: str = None, analysis_name: str = None):
+        """
+        This function creates a graphical representation of the results from the last FDR procedure performed.
 
-        # Set plot parameters
+        :param pdf_file_name: Name of the PDF file that will be created
+        :param analysis_name: Name of of the analysis that will be shown in the graphical representation
+        :return: Nothing, if no FDR procedure has been performed yet or otherwise a 'Figure' object of matplotlib
+        that can be displayed in a Jupyter notebook
+        """
+
+        # Check whether an analysis has already been performed
+        if self._fdr_info_dict is None:
+            print("[ERROR] No analysis has been performed yet! There is nothing to plot.")
+            return
+
+        # Set parameters that all plots have in common
         hv_lwd = 0.5  # line width of horizontal and vertical red dashed lines
         hv_col = 'red'  # color of horizontal and vertical red dashed lines
+        header_font_size = 8
 
+        # Extract data from fdr_info_dict
+        # -------------------------------
 
+        # Input parameters
+        fdr_df = pandas.DataFrame(self._fdr_info_dict['RESULTS_TABLE'])
+        chosen_fdr_thresh = self._fdr_info_dict['INPUT_PARAMETERS']['CHOSEN_FDR_THRESH'][0]
+        pval_thresh_max = self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_MAX'][0]
+        pval_thresh_step_size = self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_STEP_SIZE'][0]
+        input_interactions_num = self._fdr_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]
+        result_index = self._fdr_info_dict['RESULT_INDEX'][0]
+
+        # Results
+        pval_thresh_column = self._fdr_info_dict['RESULTS_TABLE']['PVAL_THRESH']
+        pval_thresh_result = self._fdr_info_dict['RESULTS_TABLE']['PVAL_THRESH'][result_index]
+        min_rp_num_column = self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM']
+        min_rp_num_result = self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM'][result_index]
+        min_rp_num_pval_column = self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM_PVAL']
+        min_rp_num_pval_result = self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM_PVAL'][result_index]
+        sig_num_o_column = self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_O']
+        sig_num_o_result = self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_O'][result_index]
+        sig_num_r_column = self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_R']
+        sig_num_r_result = self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_R'][result_index]
+        fdr_column = self._fdr_info_dict['RESULTS_TABLE']['FDR']
+        fdr_result = self._fdr_info_dict['RESULTS_TABLE']['FDR'][result_index]
+
+        # Create figure with plots for individual columns
+        # -----------------------------------------------
+
+        fig, ax = plt.subplots(6, figsize=(6, 15))
+
+        # Add field with information about analysis
+        plt.plot(ax=ax[0])
+        ax[0].spines['left'].set_color('white')
+        ax[0].spines['right'].set_color('white')
+        ax[0].spines['top'].set_color('white')
+        ax[0].spines['bottom'].set_color('white')
+        ax[0].tick_params(axis='x', colors='white')
+        ax[0].tick_params(axis='y', colors='white')
+        ax[0].text(-0.2, 1.05, 'FDR results', fontsize=15, fontweight='bold')
+        ax[0].text(-0.18, 0.9, 'Analysis name: ' + analysis_name, fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.8, 'Chosen FDR threshold: ' + "{:.5f}".format(chosen_fdr_thresh), fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.7, 'Maximum P-value threshold: ' + "{:.5f}".format(pval_thresh_max), fontsize=header_font_size)
+        ax[0].text(-0.18, 0.6, 'P-value threshold step size: ' + "{:.5f}".format(pval_thresh_step_size), fontsize=header_font_size)
+        ax[0].text(-0.18, 0.5, 'Total number of interactions: ' + "{:,}".format(input_interactions_num), fontsize=header_font_size, fontweight='bold')
+
+        ax[0].text(-0.18, 0.35, 'Determined P-value threshold: ' + "{:.5f}".format(pval_thresh_result), fontsize=header_font_size,
+                   fontweight='bold')
+        ax[0].text(-0.18, 0.25, 'Minimum read pair number: ' + str(min_rp_num_result), fontsize=header_font_size)
+        ax[0].text(-0.18, 0.15, 'Actual P-value threshold: ' + "{:.5f}".format(min_rp_num_pval_result), fontsize=header_font_size)
+        ax[0].text(-0.18, 0.05, 'Number of significant interactions: ' + "{:,}".format(sig_num_o_result), fontsize=header_font_size,
+                   fontweight='bold')
+        ax[0].text(-0.18, -0.05, 'Number of randomized significant interactions: ' + "{:,}".format(sig_num_r_result), fontsize=header_font_size)
+        ax[0].text(-0.18, -0.15, 'Estimated FDR: ' + "{:.5f}".format(fdr_result), fontsize=header_font_size, fontweight='bold')
+
+        # Plot P-value thresholds
+        ax[1].plot(pval_thresh_column, pval_thresh_column)
+        ax[1].set_title('P-value threshold: ' + "{:.5f}".format(pval_thresh_result), loc='left')
+        ax[1].set(xlabel='P-value threshold')
+        ax[1].set(ylabel='PVAL_TRESH')
+        ax[1].axhline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+        ax[1].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+
+        # Plot minimum read pair numbers
+        ax[2].plot(pval_thresh_column, min_rp_num_column)
+        ax[2].set_title('Minimum read pair number: ' + str(min_rp_num_result), loc='left')
+        ax[2].set(xlabel='P-value threshold')
+        ax[2].set(ylabel='MIN_RP_NUM')
+        ax[2].axhline(min_rp_num_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+        ax[2].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+
+        # Plot actual P-value thresholds
+        ax[3].plot(pval_thresh_column, min_rp_num_pval_column)
+        ax[3].set_title('Actual P-value threshold: ' + "{:.5f}".format(min_rp_num_pval_result), loc='left')
+        ax[3].set(xlabel='P-value threshold')
+        ax[3].set(ylabel='MIN_RP_NUM_PVAL')
+        ax[3].axhline(min_rp_num_pval_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+        ax[3].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+
+        # Plot number of significant interactions
+        ax[4].plot(pval_thresh_column, sig_num_r_column, label='SIG_NUM_R')
+        ax[4].plot(pval_thresh_column, sig_num_o_column, label='SIG_NUM_O')
+        ax[4].set_title('Number of significant interactions: ' + "{:,}".format(sig_num_o_result) + ' (' + "{:,}".format(sig_num_r_result) +  ')', loc='left')
+        ax[4].set(xlabel='P-value threshold')
+        ax[4].legend(fontsize=8)
+        ax[4].axhline(sig_num_o_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+        ax[4].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+
+        # Plot estimated FDR
+        ax[5].plot(pval_thresh_column, fdr_column)
+        ax[5].set_title('Estimated FDR: ' + "{:.5f}".format(fdr_result), loc='left')
+        ax[5].set(xlabel='P-value threshold')
+        ax[5].set(ylabel='FDR')
+        ax[5].axhline(fdr_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+        ax[5].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+
+        # Finalize save to PDF and return Figure object
+        fig.tight_layout()
+        fig.savefig(pdf_file_name)
+        return fig
