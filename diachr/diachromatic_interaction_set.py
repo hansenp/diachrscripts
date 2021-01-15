@@ -667,3 +667,16 @@ class DiachromaticInteractionSet:
     @property
     def interaction_list(self):
         return self._inter_dict.values()
+
+    def get_num_of_inter_with_as_many_or_more_read_pairs(self, min_rp_num: int = None):
+        """
+        Determine the number of interactions that have a given number of more read pairs.
+
+        :param min_rp_num: Minimum number of read pairs
+        :return: Number of interactions with given number or more read pairs
+        """
+        i_num = 0
+        for d_inter in self.interaction_list:
+            if min_rp_num <= d_inter.rp_total:
+                i_num += 1
+        return i_num
