@@ -26,14 +26,18 @@ class TestRandomizeFDR(TestCase):
         next larger P-value threshold. This is what is tested here.
         """
 
-        cls.interaction_set = DiachromaticInteractionSet()
-        cls.interaction_set.parse_file("data/test_03/diachromatic_interaction_file_fdr_1.tsv")
-        cls.randomize_fdr = RandomizeInteractionSet(interaction_set=cls.interaction_set)
+        cls.interaction_set_1 = DiachromaticInteractionSet()
+        cls.interaction_set_1.parse_file("data/test_03/diachromatic_interaction_file_fdr_1.tsv.gz")
+        cls.randomize_1 = RandomizeInteractionSet(interaction_set=cls.interaction_set_1)
+
+        cls.interaction_set_1000 = DiachromaticInteractionSet()
+        cls.interaction_set_1000.parse_file("data/test_03/diachromatic_interaction_file_fdr_top_1000.tsv.gz")
+        cls.randomize_1000 = RandomizeInteractionSet(interaction_set=cls.interaction_set_1000)
 
     def test_interactions_numbers_at_different_pval_thresholds(self):
 
         # The function for the FDR procedure returns a table containing the nnumbers that are being tested here
-        fdr_info_dict = self.randomize_fdr.get_pval_tresh_at_chosen_fdr_tresh(
+        fdr_info_dict_1 = self.randomize_1.get_pval_tresh_at_chosen_fdr_tresh(
             chosen_fdr_thresh=0.05,
             pval_thresh_max=0.05,
             pval_thresh_step_size=0.00025,
@@ -41,6 +45,9 @@ class TestRandomizeFDR(TestCase):
 
         # We test the number of significant interactions for all P-value thresholds
         sig_num_o_expected = 10
-        for sig_num_o in fdr_info_dict['RESULTS_TABLE']['SIG_NUM_O']:
+        for sig_num_o in fdr_info_dict_1['RESULTS_TABLE']['SIG_NUM_O']:
             self.assertEqual(sig_num_o_expected,sig_num_o, msg='Number of significant interactions did not increase by 10!')
             sig_num_o_expected += 10
+
+    def test_top_1000_interactions_results(self):
+        pass
