@@ -37,7 +37,7 @@ class TestRandomizeFDR(TestCase):
     def test_interactions_numbers_at_different_pval_thresholds(self):
 
         # The function for the FDR procedure returns a table containing the nnumbers that are being tested here
-        fdr_info_dict_1 = self.randomize_1.get_pval_tresh_at_chosen_fdr_tresh(
+        fdr_info_dict_1 = self.randomize_1.get_pval_thresh_at_chosen_fdr_thresh(
             chosen_fdr_thresh=0.05,
             pval_thresh_max=0.05,
             pval_thresh_step_size=0.00025,

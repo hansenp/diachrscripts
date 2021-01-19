@@ -32,12 +32,12 @@ class RandomizeInteractionSet:
         # smaller
         self._FDR_WARN_RAND_SIG_INTER_NUM = 20
 
-    def get_pval_tresh_at_chosen_fdr_tresh(self,
-                                           chosen_fdr_thresh: float = 0.05,
-                                           pval_thresh_max: float = 0.05,
-                                           pval_thresh_step_size: float = 0.00025,
-                                           verbose: bool = False
-                                           ):
+    def get_pval_thresh_at_chosen_fdr_thresh(self,
+                                             chosen_fdr_thresh: float = 0.05,
+                                             pval_thresh_max: float = 0.05,
+                                             pval_thresh_step_size: float = 0.00025,
+                                             verbose: bool = False
+                                             ):
         """
         This function executes the FDR procedure.
 
