@@ -13,32 +13,43 @@ The individual steps that are carried out in this script are demonstrated in the
 import argparse
 from numpy import log
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
+from diachr.randomize_interaction_set import RandomizeInteractionSet
 
 
 ### Parse command line
 ######################
 
-parser = argparse.ArgumentParser(description='Evaluate and categorize interactions and select unndirected reference interactions.')
+parser = argparse.ArgumentParser(description='Evaluate and categorize interactions and select unndirected reference '
+                                             'interactions.')
 parser.add_argument('-o','--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('-i', '--diachromatic-interaction-file', help='Diachromatic interaction file.', required=True)
-parser.add_argument('--p-value-threshold', help='P-value threshold for directed interactions.', default=0.01)
+parser.add_argument('--fdr-threshold', help='FDR threshold for defining directed interactions.', default=0.05)
+parser.add_argument('--p-value-threshold', help='P-value threshold for defining directed interactions.', default=None)
 parser.add_argument('--enriched-digests-file', help='BED file with digests that were selected for target enrichment.', required=False)
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
 diachromatic_interaction_file = args.diachromatic_interaction_file
-p_value_threshold = float(args.p_value_threshold)
+fdr_threshold = float(args.fdr_threshold)
+p_value_threshold = args.p_value_threshold
 enriched_digests_file = args.enriched_digests_file
 
 parameter_info = "[INFO] " + "Input parameters" + '\n'
 parameter_info += "\t[INFO] --out-prefix: " + out_prefix + '\n'
 parameter_info += "\t[INFO] --diachromatic-interaction-file: " + diachromatic_interaction_file + '\n'
+parameter_info += "\t[INFO] --fdr-threshold: " + str(fdr_threshold) + '\n'
 parameter_info += "\t[INFO] --p-value-threshold: " + str(p_value_threshold) + '\n'
-if enriched_digests_file != None:
-    parameter_info += "\t[INFO] --enriched-digests-file: " + enriched_digests_file
+if p_value_threshold is None:
+    parameter_info += "\t\t[INFO] No P-value threshold has been passed. Will determine a P-value threshold so that the " \
+                      "FDR is kept below " + str(fdr_threshold) + ". Use '--fdr-threshold' to set your own FDR threshold." + '\n'
+else:
+    parameter_info += "\t\t[INFO] Will use this P-value threshold. The FDR is not controlled." + '\n'
+    p_value_threshold = float(p_value_threshold)
+    parameter_info += "\t\t[INFO] We use the negative of the natural logarithm of the P-values." + '\n'
+    parameter_info += "\t\t\t[INFO] The chosen threshold corresponds to: -ln(" + str(p_value_threshold) + ") = " + str(-log(p_value_threshold)) + '\n'
 
-parameter_info += "\t[INFO] We use the negative of the natural logarithm of the P-values." + '\n'
-parameter_info += "\t\t[INFO] The chosen threshold corresponds to: -ln(" + str(p_value_threshold) + ") = " + str(-log(p_value_threshold)) + '\n'
+if enriched_digests_file is not None:
+    parameter_info += "\t[INFO] --enriched-digests-file: " + enriched_digests_file
 
 print(parameter_info)
 
@@ -51,7 +62,16 @@ interaction_set = DiachromaticInteractionSet()
 interaction_set.parse_file(diachromatic_interaction_file, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 
-# FDR?
+# Determine P-value threshold so that the FDR is kept below a threshold
+if p_value_threshold is None:
+    randomize_fdr = RandomizeInteractionSet(interaction_set=interaction_set)
+    fdr_info_dict = randomize_fdr.get_pval_thresh_at_chosen_fdr_thresh(
+        chosen_fdr_thresh = fdr_threshold,
+        pval_thresh_max = 0.05,
+        pval_thresh_step_size = 0.00025,
+        verbose = True)
+    fdr_info_info_report = randomize_fdr.get_fdr_info_report()
+    p_value_threshold = fdr_info_dict['RESULTS_TABLE']['PVAL_THRESH'][fdr_info_dict['RESULT_INDEX'][0]]
 
 # Calculate P-values and assign interactions to 'DI' or 'UI'
 interaction_set.evaluate_and_categorize_interactions(p_value_threshold, verbose=True)
@@ -80,6 +100,11 @@ out_fh.write(parameter_info + '\n')
 
 # Report on reading files
 out_fh.write(read_file_info_report + '\n')
+
+# Report on the determination of the P-value threshold using the FDR procedure
+if args.p_value_threshold is None:
+    out_fh.write(fdr_info_info_report + '\n')
+    #out_fh.write(eval_cat_info_table_row + '\n')
 
 # Report on evaluation and categorization interactions
 out_fh.write(eval_cat_info_report + '\n')
