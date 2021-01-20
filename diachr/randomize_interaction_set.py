@@ -341,6 +341,7 @@ class RandomizeInteractionSet:
         sig_num_r_result = self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_R'][result_index]
         fdr_column = self._fdr_info_dict['RESULTS_TABLE']['FDR']
         fdr_result = self._fdr_info_dict['RESULTS_TABLE']['FDR'][result_index]
+        fdr_max = max(self._fdr_info_dict['RESULTS_TABLE']['FDR'])
         if self._fdr_info_dict['WARNINGS'][0] == 1:
             warn_input_inter_col = 'r'
         else:
@@ -440,6 +441,12 @@ class RandomizeInteractionSet:
         ax[5].set(ylabel='FDR')
         ax[5].axhline(fdr_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[5].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+
+        ax[5].text(pval_thresh_max - pval_thresh_max/5, fdr_result + fdr_max/14, 'FDR: ' + "{:.5f}".format(fdr_result),
+                 bbox={'color': 'lightblue', 'alpha': 0.5, 'pad': 4})
+
+        ax[5].text(pval_thresh_result + pval_thresh_max/45, fdr_result - fdr_max/8, 'P-value: ' + "{:.5f}".format(pval_thresh_result),
+                 bbox={'color': 'lightblue', 'alpha': 0.5, 'pad': 4})
 
         # Finalize save to PDF and return Figure object
         fig.tight_layout()
