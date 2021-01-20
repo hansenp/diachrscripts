@@ -206,7 +206,7 @@ class RandomizeInteractionSet:
         report += "\t\t[INFO] Determined P-value threshold: " \
                   + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['PVAL_THRESH'][result_index]) + '\n'
         report += "\t\t[INFO] Determined -ln(P-value threshold): " \
-                  + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['NNL_PVAL_THRESH'][result_index]) + '\n'
+                      + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['NNL_PVAL_THRESH'][result_index]) + '\n'
         report += "\t\t[INFO] Minimum read pair number: " \
                   + str(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM'][result_index]) + '\n'
         report += "\t\t[INFO] Smallest possible P-value with " \
@@ -214,7 +214,7 @@ class RandomizeInteractionSet:
                   + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM_PVAL'][result_index]) + '\n'
         report += "\t\t[INFO] Number of interactions with " \
                   + str(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM'][result_index]) + " or more read pairs: " \
-                  + "{:,}".format(self._fdr_info_dict['MIN_RP_NUM_INTER_NUM']) + '\n'
+                      + "{:,}".format(self._fdr_info_dict['MIN_RP_NUM_INTER_NUM']) + '\n'
         report += "\t\t[INFO] Number of significant interactions: " \
                   + "{:,}".format(self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_O'][result_index]) + '\n'
         report += "\t\t[INFO] Number of randomized significant interactions: " \
