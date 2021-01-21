@@ -1,5 +1,5 @@
 from scipy.stats import binom
-from numpy import arange, log, random
+from numpy import arange, log, random, mean, std
 import matplotlib.pyplot as plt
 import warnings
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
@@ -131,8 +131,6 @@ class RandomizeInteractionSet:
         while idx < len(fdr_list) and fdr_list[idx] < chosen_fdr_thresh:
             idx += 1
 
-
-
         # Look for irregularities and issue warnings if necessary
         issued_warnings = [0,0,0]
         if len(self._interaction_set.interaction_list) < self._FDR_WARN_INPUT_INTER_NUM:
@@ -247,17 +245,106 @@ class RandomizeInteractionSet:
 
         return report
 
-    def perform_randomization_analysis(self, nominal_alpha: float = 0.01, n_iter: int = 1000):
+    def get_fdr_info_table_row(self, out_prefix: str = None):
+        """
+        :return: String consisting of a header line and a line with values relating to last performed FDR procedure
+        """
+
+        # Table tag and prefix for output
+        table_row = ":TR_FDR:" + '\t'
+        table_row += "OUT_PREFIX" + '\t'
+
+        # Input parameters for FDR procedure
+        table_row += "CHOSEN_FDR_THRESH" + '\t'
+        table_row += "PVAL_THRESH_MAX" + '\t'
+        table_row += "PVAL_THRESH_STEP_SIZE" + '\t'
+        table_row += "INPUT_INTER_NUM" + '\t'
+
+        # Results
+        table_row += "PVAL_THRESH" + '\t'
+        table_row += "NNL_PVAL_THRESH" + '\t'
+        table_row += "MIN_RP_NUM" + '\t'
+        table_row += "MIN_RP_NUM_PVAL" + '\t'
+        table_row += "MIN_RP_NUM_INTER_NUM" + '\t'
+        table_row += "SIG_NUM_R" + '\t'
+        table_row += "SIG_NUM_O" + '\t'
+        table_row += "FDR" + '\t'
+
+        # Warnings
+        table_row += "WARNINGS" + '\n'
+
+
+        # Table tag and prefix for output
+        table_row += ":TR_FDR:" + '\t'
+        table_row += out_prefix + '\t'
+
+        # Input parameters for FDR procedure
+        table_row += "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['CHOSEN_FDR_THRESH'][0]) + '\t'
+        table_row += "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_MAX'][0]) + '\t'
+        table_row += "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_STEP_SIZE'][0]) + '\t'
+        table_row += str(self._fdr_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]) + '\t'
+
+        # Results
+        result_index = self._fdr_info_dict['RESULT_INDEX'][0]
+        table_row += "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['PVAL_THRESH'][result_index]) + '\t'
+        table_row += "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['NNL_PVAL_THRESH'][result_index]) + '\t'
+        table_row += str(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM'][result_index]) + '\t'
+        table_row += "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM_PVAL'][result_index]) + '\t'
+        table_row += str(self._fdr_info_dict['MIN_RP_NUM_INTER_NUM']) + '\t'
+        table_row += str(self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_R'][result_index]) + '\t'
+        table_row += str(self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_O'][result_index]) + '\t'
+        table_row += "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['FDR'][result_index]) + '\t'
+
+        # Warnings
+        table_row += str(self._fdr_info_dict['WARNINGS'][0]) + ','
+        table_row += str(self._fdr_info_dict['WARNINGS'][1]) + ','
+        table_row += str(self._fdr_info_dict['WARNINGS'][2]) + '\n'
+
+        return table_row
+
+
+    def perform_randomization_analysis(self, nominal_alpha: float = 0.01, iter_num: int = 1000):
+        """
+
+        :param nominal_alpha:
+        :param iter_num:
+        :return:
+        """
 
         # Check input parameters
         if nominal_alpha <= 0 or 1.0 < nominal_alpha:
             raise ValueError("Nominal alpha must be in ]0,1]!")
 
+        # Get negative natural logarithm of nominal alpha
+        nnl_nominal_alpha = -log(nominal_alpha)
+
         # Determine number of significant interactions at nominal alpha
+        sig_num_o = 0
+        for d_inter in self._interaction_set.interaction_list:
+            nnl_pval = self._interaction_set._p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
+            if nnl_nominal_alpha < nnl_pval:
+                sig_num_o += 1
+        print("Number of significant interactions: " + str(sig_num_o))
 
         # Get dictionary that stores the numbers of interactions with n read pairs
+        rp_inter_dict = self._get_rp_inter_dict()
 
         # Use dictionary to get list of P-values for randomized data and determine number of significant interactions
+        sig_num_r_list = self._perform_n_iterations(rp_inter_dict=rp_inter_dict,nnl_pval_thresh=nnl_nominal_alpha, iter_num=iter_num)
+
+        print(sig_num_r_list)
+
+        # Calculate average number of significant randomized interactions
+        sig_num_r_mean = mean(sig_num_r_list)
+        print(sig_num_r_mean)
+
+        # Calculate standard deviation of significant randomized interactions
+        sig_num_r_std = std(sig_num_r_list)
+        print(sig_num_r_std)
+
+        # Calculate Z-score
+        z_score = "{0:.2f}".format((sig_num_o - sig_num_r_mean) / sig_num_r_std)
+        print(z_score)
 
     def _get_rp_inter_dict(self):
         """
@@ -291,10 +378,26 @@ class RandomizeInteractionSet:
 
             # Calculate P-values and append to list
             for simple_count in simple_count_list:
-                pval = self._interaction_set._p_values.get_binomial_nnl_p_value(simple_count, rp_num - simple_count)
-                random_pval_list.append(pval)
+                nnl_pval = self._interaction_set._p_values.get_binomial_nnl_p_value(simple_count, rp_num - simple_count)
+                random_pval_list.append(nnl_pval)
 
         return random_pval_list
+
+    def _perform_one_iteration(self, rp_inter_dict: dict = None, nnl_pval_thresh: float = None):
+        randomized_nnl_pvals = self._get_list_of_p_values_from_randomized_data(rp_inter_dict)
+        return len([1 for nnl_pval in randomized_nnl_pvals if nnl_pval > nnl_pval_thresh])
+
+    def _perform_n_iterations(self, rp_inter_dict: dict = None, nnl_pval_thresh: float = None, iter_num: int = None):
+
+        sig_num_r_list = []
+
+        print("\t[INFO] Batch: Performing " + str(iter_num) + " iterations ...")
+
+        for i in range(1, iter_num + 1):
+            print(i)
+            sig_num_r_list.append(self._perform_one_iteration(rp_inter_dict=rp_inter_dict, nnl_pval_thresh=nnl_pval_thresh))
+
+        return sig_num_r_list
 
     def get_fdr_info_plot(self, pdf_file_name: str = None, analysis_name: str = None):
         """
@@ -442,10 +545,10 @@ class RandomizeInteractionSet:
         ax[5].axhline(fdr_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[5].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
 
-        ax[5].text(pval_thresh_max - pval_thresh_max/5, fdr_result + fdr_max/14, 'FDR: ' + "{:.5f}".format(fdr_result),
+        ax[5].text(pval_thresh_max - pval_thresh_max/5, fdr_result + fdr_max/16, 'FDR: ' + "{:.5f}".format(fdr_result),
                  bbox={'color': 'lightblue', 'alpha': 0.5, 'pad': 4})
 
-        ax[5].text(pval_thresh_result + pval_thresh_max/45, fdr_result - fdr_max/8, 'P-value: ' + "{:.5f}".format(pval_thresh_result),
+        ax[5].text(pval_thresh_result + pval_thresh_max/60, fdr_result - fdr_max/9, 'P-value: ' + "{:.5f}".format(pval_thresh_result),
                  bbox={'color': 'lightblue', 'alpha': 0.5, 'pad': 4})
 
         # Finalize save to PDF and return Figure object

@@ -58,7 +58,7 @@ class DiachromaticInteractionSet:
                 for line in fp:
                     chr, sta, end = line.rstrip().split('\t')
                     self._enriched_digests_set.add(chr + '\t' + str(sta) + '\t' + str(end))
-            print("\t[INFO] Read " + str(len(self._enriched_digests_set)) + " digests ...")
+            print("\t[INFO] Read " + "{:,}".format(len(self._enriched_digests_set)) + " digests ...")
             print("[INFO] ... done.")
 
     def parse_file(self, i_file: str = None, verbose: bool = False):
@@ -91,7 +91,7 @@ class DiachromaticInteractionSet:
                     n_lines += 1
                     if verbose:
                         if n_lines % 1000000 == 0:
-                            print("\t[INFO] Parsed " + str(n_lines) + " interaction lines ...")
+                            print("\t[INFO] Parsed " + "{:,}".format(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
                     if d_inter.key in self._inter_dict:
                         self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple,
@@ -105,7 +105,7 @@ class DiachromaticInteractionSet:
                     n_lines += 1
                     if verbose:
                         if n_lines % 1000000 == 0:
-                            print("\t[INFO] Parsed " + str(n_lines) + " interaction lines ...")
+                            print("\t[INFO] Parsed " + "{:,}".format(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
                     if d_inter.key in self._inter_dict:
                         self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple,
@@ -233,7 +233,7 @@ class DiachromaticInteractionSet:
             n_processed += 1
             if verbose:
                 if n_processed % 1000000 == 0:
-                    print("\t[INFO] Processed " + str(n_processed) + " interactions ...")
+                    print("\t[INFO] Processed " + "{:,}".format(n_processed) + " interactions ...")
 
             # Discard interactions that don't have enough read pairs to be significant
             if d_inter.rp_total < min_rp:
@@ -492,11 +492,11 @@ class DiachromaticInteractionSet:
         report = "[INFO] Report on reading files:" + '\n'
         report += "\t[INFO] Read interaction data from " + str(file_num) + " files:" + '\n'
         for i in range(0, file_num):
-            report += "\t\t[INFO] " + str(self._read_file_info_dict['I_NUM'][i]) + " interactions from: \n" + \
+            report += "\t\t[INFO] " + "{:,}".format(self._read_file_info_dict['I_NUM'][i]) + " interactions from: \n" + \
                       "\t\t\t[INFO] " + self._read_file_info_dict['I_FILE'][i] + '\n' \
-                      '\t\t\t[INFO] Set size: ' + str(self._read_file_info_dict['I_SET_SIZE'][i]) + '\n'
+                      '\t\t\t[INFO] Set size: ' + "{:,}".format(self._read_file_info_dict['I_SET_SIZE'][i]) + '\n'
         report += "\t[INFO] The interaction set has " + \
-                  str(self._read_file_info_dict['I_SET_SIZE'][-1]) + " interactions." + '\n'
+                  "{:,}".format(self._read_file_info_dict['I_SET_SIZE'][-1]) + " interactions." + '\n'
         report += "[INFO] End of report." + '\n'
 
         return report
@@ -518,9 +518,9 @@ class DiachromaticInteractionSet:
         report += "\t\t[INFO] " + self._write_file_info_dict['TARGET_FILE'][0] + '\n'
         report += "\t[INFO] Interactions that occur in at least " + \
                   str(self._write_file_info_dict['REQUIRED_REPLICATES'][0]) + " replicates: " + \
-                  str(self._write_file_info_dict['N_COMPLETE_DATA'][0]) + '\n'
+                  "{:,}".format(self._write_file_info_dict['N_COMPLETE_DATA'][0]) + '\n'
         report += "\t[INFO] Other interactions: " + \
-                  str(self._write_file_info_dict['N_INCOMPLETE_DATA'][0]) + '\n'
+                  "{:,}".format(self._write_file_info_dict['N_INCOMPLETE_DATA'][0]) + '\n'
         report += "[INFO] End of report." + '\n'
 
         return report
@@ -553,17 +553,16 @@ class DiachromaticInteractionSet:
         """
 
         report = "[INFO] Report on evaluation and categorization interactions:" + '\n'
-        report += "\t[INFO] P-value threshold: " + "{:.7f}".format(
+        report += "\t[INFO] P-value threshold: " + "{:.5f}".format(
             self._eval_cat_info_dict['PVAL_THRESH'][0]) + '\n'
         report += "\t[INFO] Minimum number of read pairs required for significance: " + str(
             self._eval_cat_info_dict['MIN_RP'][0]) + '\n'
-        report += "\t[INFO] Corresponding largest P-value: " + "{:.7f}".format(
+        report += "\t[INFO] Corresponding largest P-value: " + "{:.5f}".format(
             self._eval_cat_info_dict['MIN_RP_PVAL'][0]) + '\n'
-        report += "\t[INFO] Processed interactions: " + str(self._eval_cat_info_dict['N_PROCESSED'][0]) + '\n'
-        report += "\t[INFO] Discarded interactions: " + str(self._eval_cat_info_dict['N_DISCARDED'][0]) + '\n'
-        report += "\t[INFO] Not significant interactions (UI): " + str(
-            self._eval_cat_info_dict['N_UNDIRECTED'][0]) + '\n'
-        report += "\t[INFO] Significant interactions (DI): " + str(self._eval_cat_info_dict['N_DIRECTED'][0]) + '\n'
+        report += "\t[INFO] Processed interactions: " + "{:,}".format(self._eval_cat_info_dict['N_PROCESSED'][0]) + '\n'
+        report += "\t[INFO] Discarded interactions: " + "{:,}".format(self._eval_cat_info_dict['N_DISCARDED'][0]) + '\n'
+        report += "\t[INFO] Not significant interactions (UI): " + "{:,}".format(self._eval_cat_info_dict['N_UNDIRECTED'][0]) + '\n'
+        report += "\t[INFO] Significant interactions (DI): " + "{:,}".format(self._eval_cat_info_dict['N_DIRECTED'][0]) + '\n'
         report += "[INFO] End of report." + '\n'
 
         return report
@@ -574,7 +573,8 @@ class DiachromaticInteractionSet:
         of interactions
         """
 
-        table_row = "OUT_PREFIX" + '\t' + \
+        table_row = ":TR_EVAL_CAT:" + '\t' + \
+                    "OUT_PREFIX" + '\t' + \
                     "PVAL_THRESH" + '\t' + \
                     "MIN_RP" + '\t' + \
                     "MIN_RP_PVAL" + '\t' + \
@@ -583,10 +583,11 @@ class DiachromaticInteractionSet:
                     "N_UNDIRECTED" + '\t' \
                                      "N_DIRECTED" + '\n'
 
-        table_row += str(out_prefix) + '\t' + \
-                     "{:.7f}".format(self._eval_cat_info_dict['PVAL_THRESH'][0]) + '\t' + \
+        table_row += ":TR_EVAL_CAT:" + '\t' + \
+                     str(out_prefix) + '\t' + \
+                     "{:.5f}".format(self._eval_cat_info_dict['PVAL_THRESH'][0]) + '\t' + \
                      str(self._eval_cat_info_dict['MIN_RP'][0]) + '\t' + \
-                     "{:.7f}".format(self._eval_cat_info_dict['MIN_RP_PVAL'][0]) + '\t' + \
+                     "{:.5f}".format(self._eval_cat_info_dict['MIN_RP_PVAL'][0]) + '\t' + \
                      str(self._eval_cat_info_dict['N_PROCESSED'][0]) + '\t' + \
                      str(self._eval_cat_info_dict['N_DISCARDED'][0]) + '\t' + \
                      str(self._eval_cat_info_dict['N_UNDIRECTED'][0]) + '\t' + \
@@ -610,30 +611,30 @@ class DiachromaticInteractionSet:
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             total += self._select_ref_info_dict[enr_cat]['DI'][0]
-            report += "\t\t[INFO] Interactions in " + enr_cat + ": " + str(
+            report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
                 self._select_ref_info_dict[enr_cat]['DI'][0]) + '\n'
-        report += "\t\t[INFO] Total: " + str(total) + '\n'
+        report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
         report += "\t[INFO] Numbers of undirected reference interactions" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             total += self._select_ref_info_dict[enr_cat]['UIR'][0]
-            report += "\t\t[INFO] Interactions in " + enr_cat + ": " + str(
+            report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
                 self._select_ref_info_dict[enr_cat]['UIR'][0]) + '\n'
-        report += "\t\t[INFO] Total: " + str(total) + '\n'
+        report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
         report += "\t[INFO] Numbers of missing undirected reference interactions" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             total += self._select_ref_info_dict[enr_cat]['M_UIR'][0]
-            report += "\t\t[INFO] Interactions in " + enr_cat + ": " + str(
+            report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
                 self._select_ref_info_dict[enr_cat]['M_UIR'][0]) + '\n'
-        report += "\t\t[INFO] Total: " + str(total) + '\n'
+        report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
         report += "\t[INFO] Numbers undirected interactions" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             total += self._select_ref_info_dict[enr_cat]['UI'][0]
-            report += "\t\t[INFO] Interactions in " + enr_cat + ": " + str(
+            report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
                 self._select_ref_info_dict[enr_cat]['UI'][0]) + '\n'
-        report += "\t\t[INFO] Total: " + str(total) + '\n'
+        report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
         report += "[INFO] End of report." + '\n'
 
         return report
@@ -645,7 +646,8 @@ class DiachromaticInteractionSet:
         """
 
         # Header line
-        table_row = "OUT_PREFIX" + '\t'
+        table_row = ":TR_SELECT:" + '\t'
+        table_row += "OUT_PREFIX" + '\t'
         for i_cat in ['DI', 'UIR', 'M_UIR', 'UI']:
             for enr_cat in ['NN', 'NE', 'EN', 'EE']:
                 if not (i_cat == 'UI' and enr_cat == 'EE'):
@@ -654,6 +656,7 @@ class DiachromaticInteractionSet:
                     table_row += i_cat + '_' + enr_cat + '\n'
 
         # Line with values
+        table_row += ":TR_SELECT:" + '\t'
         table_row += str(out_prefix) + '\t'
         for i_cat in ['DI','UIR','M_UIR','UI']:
             for enr_cat in ['NN','NE','EN','EE']:
