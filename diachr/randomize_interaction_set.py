@@ -2,6 +2,9 @@ from scipy.stats import binom
 from numpy import arange, log, random, mean, std
 import matplotlib.pyplot as plt
 import warnings
+import multiprocessing as mp
+import itertools
+import time
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
 warnings.filterwarnings('always')
@@ -20,6 +23,9 @@ class RandomizeInteractionSet:
 
         # Dictionary with all information on the last FDR procedure performed
         self._fdr_info_dict = None
+
+        # Dictionary with all information on the last randomization performed
+        self._randomization_info_dict = None
 
         # Issue a warning, if the FDR procedure was performed on an interaction set with fewer interactions
         self._FDR_WARN_INPUT_INTER_NUM = 16000
@@ -303,7 +309,7 @@ class RandomizeInteractionSet:
         return table_row
 
 
-    def perform_randomization_analysis(self, nominal_alpha: float = 0.01, iter_num: int = 1000):
+    def perform_randomization_analysis(self, nominal_alpha: float = 0.01, iter_num: int = 1000, thread_num: int = 0):
         """
 
         :param nominal_alpha:
@@ -324,27 +330,85 @@ class RandomizeInteractionSet:
             nnl_pval = self._interaction_set._p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
             if nnl_nominal_alpha < nnl_pval:
                 sig_num_o += 1
-        print("Number of significant interactions: " + str(sig_num_o))
+
+        print("[INFO] Number of significant interactions: " + str(sig_num_o))
 
         # Get dictionary that stores the numbers of interactions with n read pairs
         rp_inter_dict = self._get_rp_inter_dict()
 
         # Use dictionary to get list of P-values for randomized data and determine number of significant interactions
-        sig_num_r_list = self._perform_n_iterations(rp_inter_dict=rp_inter_dict,nnl_pval_thresh=nnl_nominal_alpha, iter_num=iter_num)
 
-        print(sig_num_r_list)
+        args_dict = {
+            'RP_INTER_DICT': rp_inter_dict,
+            'NNL_PVAL_THRESH': nnl_nominal_alpha,
+            'ITER_IDX_RANGE': [],
+            'VERBOSE': True
+        }
+
+        # Perform randomization without or with multithreading
+        if thread_num == 0:
+            args_dict['ITER_IDX_RANGE'] = range(0, iter_num)
+            sig_num_r_list = self._perform_n_iterations(args_dict)
+        else:
+
+            # Perform permutation for 'thread_num' batches with balanced numbers of iterations
+            pool = mp.Pool(processes=thread_num)
+
+            # Divide iterations into 'thread_num' batches of equal size
+            batch_iter_nums = list(itertools.repeat(int(iter_num / thread_num), thread_num))
+            if 0 < iter_num - thread_num * int(iter_num / thread_num):
+                # If there is a remainder, add it to the first element of list
+                batch_iter_nums[0] = batch_iter_nums[0] + iter_num - thread_num * int(iter_num / thread_num)
+
+            # Process batches in a separate process
+            results = []
+            iter_start_idx = 0
+            for batch_iter_num in batch_iter_nums:
+                args_dict['ITER_IDX_RANGE'] = range(iter_start_idx, iter_start_idx + batch_iter_num)
+                results.append(pool.apply_async(self._perform_n_iterations, args=(args_dict,)))
+                time.sleep(1)
+                iter_start_idx += batch_iter_num
+
+            # Combine results from different processes
+            batch_results = [p.get() for p in results]
+            sig_num_r_list = list(itertools.chain.from_iterable(batch_results))
+
+        print("[INFO] List randomized significant interaction numbers: " + str(sig_num_r_list))
 
         # Calculate average number of significant randomized interactions
         sig_num_r_mean = mean(sig_num_r_list)
-        print(sig_num_r_mean)
+        print("[INFO] Mean number of randomized significant interactions: " + str(sig_num_r_mean))
 
         # Calculate standard deviation of significant randomized interactions
         sig_num_r_std = std(sig_num_r_list)
-        print(sig_num_r_std)
+        print("[INFO] Standard deviation of randomized significant interactions: " + str(sig_num_r_std))
 
         # Calculate Z-score
         z_score = "{0:.2f}".format((sig_num_o - sig_num_r_mean) / sig_num_r_std)
-        print(z_score)
+        print("[INFO] Z-score: " + z_score)
+
+        # Prepare and return dictionary for report
+        report_dict = {
+            'INPUT_PARAMETERS':
+                {
+                    'NOMINAL_ALPHA': [nominal_alpha],
+                    'ITER_NUM': [iter_num],
+                    'INPUT_INTERACTIONS_NUM': [len(self._interaction_set.interaction_list)]
+                },
+            'RESULTS':
+                {
+                    'SIG_NUM_R_LIST': sig_num_r_list,
+                    'SUMMARY':
+                         {
+                            'SIG_NUM_O': [sig_num_o],
+                            'SIG_NUM_R_MEAN': [sig_num_r_mean],
+                            'SIG_NUM_R_STD': [sig_num_r_std],
+                            'Z_SCORE': [z_score]
+                         }
+                }
+        }
+        self._randomization_info_dict = report_dict
+        return report_dict
 
     def _get_rp_inter_dict(self):
         """
@@ -362,7 +426,7 @@ class RandomizeInteractionSet:
 
     def _get_list_of_p_values_from_randomized_data(self, rp_inter_dict: dict = None):
         """
-        This function generates randomized simple and twisted read pair counts for all interactions of  the
+        This function generates randomized simple and twisted read pair counts for all interactions of the
         interaction set of this object and calculates associated P-values.
 
         :param rp_inter_dict: Dictionary generated with function '_get_rp_inter_dict'
@@ -383,19 +447,53 @@ class RandomizeInteractionSet:
 
         return random_pval_list
 
-    def _perform_one_iteration(self, rp_inter_dict: dict = None, nnl_pval_thresh: float = None):
+    def _perform_one_iteration(self, rp_inter_dict: dict = None, nnl_pval_thresh: float = None, random_seed: int =  42):
+        """
+        This function performs a single iteration of the randomization procedure.
+
+        :param rp_inter_dict: Dictionary that contains the number of interactions for different numbers of read pairs
+        :param nnl_pval_thresh: Negative natural logarithm of P-value threshold
+        :param random_seed: Number used to init random generator
+        :return: Number of randomized significant interactions
+        """
+
+        # Init random generator
+        random.seed(random_seed)
+
+        # Get list of P-values for randomized interactions
         randomized_nnl_pvals = self._get_list_of_p_values_from_randomized_data(rp_inter_dict)
-        return len([1 for nnl_pval in randomized_nnl_pvals if nnl_pval > nnl_pval_thresh])
 
-    def _perform_n_iterations(self, rp_inter_dict: dict = None, nnl_pval_thresh: float = None, iter_num: int = None):
+        # Determine number of randomized significant interactions at given P-value threshold
+        sig_num_r = len([1 for nnl_pval in randomized_nnl_pvals if nnl_pval > nnl_pval_thresh])
 
+        return sig_num_r
+
+    def _perform_n_iterations(self, args_dict: dict = None):
+        """
+        This function performs a given number of iterations of the randomization procedure.
+
+        :param param_dict: Dictionary containing all function arguments
+        :return: List of numbers of randomized significant interactions for each iteration
+        """
+
+        # We pass all function parameters in a dictionary, because that's easier to use with 'pool.apply_async'
+        rp_inter_dict = args_dict['RP_INTER_DICT']
+        nnl_pval_thresh = args_dict['NNL_PVAL_THRESH']
+        iter_idx_range = args_dict['ITER_IDX_RANGE']
+        verbose = args_dict['VERBOSE']
+
+        # Init list with numbers of randomized significant interactions for each iteration
         sig_num_r_list = []
 
-        print("\t[INFO] Batch: Performing " + str(iter_num) + " iterations ...")
+        if verbose:
+            print("[INFO] Batch: Performing " + str(len(iter_idx_range)) + " iterations ...")
+            print("\t[INFO] Iteration indices: " + str(list(iter_idx_range)))
 
-        for i in range(1, iter_num + 1):
-            print(i)
-            sig_num_r_list.append(self._perform_one_iteration(rp_inter_dict=rp_inter_dict, nnl_pval_thresh=nnl_pval_thresh))
+        # Perform each iteration with its own random seed that corresponds to the iteration index
+        for iter_idx in iter_idx_range:
+            sig_num_r_list.append(self._perform_one_iteration(rp_inter_dict=rp_inter_dict,
+                                                              nnl_pval_thresh=nnl_pval_thresh,
+                                                              random_seed=iter_idx))
 
         return sig_num_r_list
 
