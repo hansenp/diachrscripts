@@ -308,14 +308,23 @@ class RandomizeInteractionSet:
 
         return table_row
 
+    def _call_back_func(self, result):
+        print(result.logLev)
+        print(result.msg)
 
-    def perform_randomization_analysis(self, nominal_alpha: float = 0.01, iter_num: int = 1000, thread_num: int = 0):
+    def perform_randomization_analysis(self, nominal_alpha: float = 0.01, iter_num: int = 1000, thread_num: int = 0,
+                                       verbose: bool = False):
         """
 
         :param nominal_alpha:
         :param iter_num:
+        :param thread_num:
+        :param verbose:
         :return:
         """
+
+        if verbose:
+            print("[INFO] Performing randomization analysis with " + str(iter_num) + " iterations ...")
 
         # Check input parameters
         if nominal_alpha <= 0 or 1.0 < nominal_alpha:
@@ -324,14 +333,17 @@ class RandomizeInteractionSet:
         # Get negative natural logarithm of nominal alpha
         nnl_nominal_alpha = -log(nominal_alpha)
 
-        # Determine number of significant interactions at nominal alpha
+        if verbose:
+            print("\t[INFO] Determining number of significant interactions at nominal alpha ...")
+
         sig_num_o = 0
         for d_inter in self._interaction_set.interaction_list:
             nnl_pval = self._interaction_set._p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
             if nnl_nominal_alpha < nnl_pval:
                 sig_num_o += 1
 
-        print("[INFO] Number of significant interactions: " + str(sig_num_o))
+        if verbose:
+            print("\t[INFO] Randomizing interactions ...")
 
         # Get dictionary that stores the numbers of interactions with n read pairs
         rp_inter_dict = self._get_rp_inter_dict()
@@ -342,10 +354,10 @@ class RandomizeInteractionSet:
             'RP_INTER_DICT': rp_inter_dict,
             'NNL_PVAL_THRESH': nnl_nominal_alpha,
             'ITER_IDX_RANGE': [],
-            'VERBOSE': True
+            'VERBOSE': verbose
         }
 
-        # Perform randomization without or with multithreading
+        # Perform randomization without or with multiprocessing package
         if thread_num == 0:
             args_dict['ITER_IDX_RANGE'] = range(0, iter_num)
             sig_num_r_list = self._perform_n_iterations(args_dict)
@@ -365,27 +377,32 @@ class RandomizeInteractionSet:
             iter_start_idx = 0
             for batch_iter_num in batch_iter_nums:
                 args_dict['ITER_IDX_RANGE'] = range(iter_start_idx, iter_start_idx + batch_iter_num)
-                results.append(pool.apply_async(self._perform_n_iterations, args=(args_dict,)))
+                result = pool.apply_async(self._perform_n_iterations, args=(args_dict,))
+                results.append(result)
                 time.sleep(1)
                 iter_start_idx += batch_iter_num
+
+            # Wait until all processes are finished
+            [result.wait() for result in results]
 
             # Combine results from different processes
             batch_results = [p.get() for p in results]
             sig_num_r_list = list(itertools.chain.from_iterable(batch_results))
 
-        print("[INFO] List randomized significant interaction numbers: " + str(sig_num_r_list))
+        if verbose:
+            print("\t[INFO] Calculating summary statistics ...")
 
         # Calculate average number of significant randomized interactions
         sig_num_r_mean = mean(sig_num_r_list)
-        print("[INFO] Mean number of randomized significant interactions: " + str(sig_num_r_mean))
 
         # Calculate standard deviation of significant randomized interactions
         sig_num_r_std = std(sig_num_r_list)
-        print("[INFO] Standard deviation of randomized significant interactions: " + str(sig_num_r_std))
 
         # Calculate Z-score
-        z_score = "{0:.2f}".format((sig_num_o - sig_num_r_mean) / sig_num_r_std)
-        print("[INFO] Z-score: " + z_score)
+        z_score = (sig_num_o - sig_num_r_mean) / sig_num_r_std
+
+        if verbose:
+            print("[INFO] ... done.")
 
         # Prepare and return dictionary for report
         report_dict = {
@@ -409,6 +426,41 @@ class RandomizeInteractionSet:
         }
         self._randomization_info_dict = report_dict
         return report_dict
+
+    def get_randomization_info_report(self):
+        """
+        :return: String that contains information about the last randomization performed.
+        """
+
+        report = "[INFO] Report on randomization analysis:" + '\n'
+
+        report += "\t[INFO] Input parameters:" + '\n'
+        report += "\t\t[INFO] Nominal alpha: " \
+                  + "{:.5f}".format(self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHA'][0]) + '\n'
+        report += "\t\t[INFO] Number of iterations: " \
+                  + "{:,}".format(self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]) + '\n'
+        report += "\t\t[INFO] Number of input interactions: " \
+                  + "{:,}".format(self._randomization_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]) + '\n'
+
+        report += "\t[INFO] Results:" + '\n'
+        report += "\t\t[INFO] Original number of significant interactions: " \
+                  + "{:,}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_O'][0]) + '\n'
+        report += "\t\t[INFO] First 10 significant randomized interaction numbers: " + '\n' \
+                  + "\t\t\t[" + ", ".join(str(i) for i in self._randomization_info_dict['RESULTS']['SIG_NUM_R_LIST'][:10])
+        if 10 < self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]:
+            report += " ,..." + '\n'
+        else:
+            report += "]" + '\n'
+        report += "\t\t[INFO] Mean number of significant randomized interactions: " \
+                  + "{:,.0f}".format(round(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_MEAN'][0])) + '\n'
+        report += "\t\t[INFO] Standard deviation of significant randomized interactions: " \
+                  + "{:.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_STD'][0]) + '\n'
+        report += "\t\t[INFO] Z-score: " \
+                  + "{:.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['Z_SCORE'][0]) + '\n'
+
+        report += "[INFO] End of report." + '\n'
+
+        return report
 
     def _get_rp_inter_dict(self):
         """
@@ -486,8 +538,8 @@ class RandomizeInteractionSet:
         sig_num_r_list = []
 
         if verbose:
-            print("[INFO] Batch: Performing " + str(len(iter_idx_range)) + " iterations ...")
-            print("\t[INFO] Iteration indices: " + str(list(iter_idx_range)))
+            print("\t\t[INFO] Batch: Performing " + str(len(iter_idx_range)) + " iterations ...")
+            print("\t\t\t[INFO] First iteration indices: [" + ", ".join(str(i) for i in iter_idx_range[:10]) + " ,...")
 
         # Perform each iteration with its own random seed that corresponds to the iteration index
         for iter_idx in iter_idx_range:
