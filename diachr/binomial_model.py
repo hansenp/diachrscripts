@@ -81,25 +81,27 @@ class BinomialModel:
             # or return natural log of smallest possible float
             #return log(sys.float_info.min * sys.float_info.epsilon)
 
-
-    def find_smallest_significant_n(self, p_val_thresh, verbose=False):
+    def find_smallest_significant_n(self, p_val_thresh: float = 0.01, verbose: bool = False):
         """
-        This function finds the smallest n that gives a significant P-value at a chosen threshold.
-        A tuple consisting of the smallest n and the associated P-value is returned.
+        This function finds the smallest number of read pairs that gives a significant P-value at a chosen threshold.
+        A tuple consisting of this smallest number and the associated largest significant P-value is returned.
 
-        :param p_val_thresh:float
-        :return: (n:int, p_val:float)
+        :param p_val_thresh: P-value threshold
+        :param verbose: If true, messages about progress will be written to the screen
+        :return: (Smallest number of read pairs, Associated P-value):
         """
 
         if verbose:
-            print("[INFO] Looking for smallest n with a significant P-value at the chosen threshold of " + str(p_val_thresh) + ".")
+            print("[INFO] Looking for smallest number of read pairs with a significant P-value at the chosen "
+                  "threshold of " + str(p_val_thresh) + ".")
 
-        for n in range(1, 1000):
-            p_val = self.get_binomial_p_value(n, 0)
+        for rp_num in range(1, 1000):
+            p_val = self.get_binomial_p_value(rp_num, 0)
             if p_val < p_val_thresh:
                 if verbose:
-                    print("\t[INFO] Smallest n: " + str(n) + " read pairs (" + str(p_val) + ")")
-                return n, p_val
+                    print("\t[INFO] Smallest number of read pairs: " + str(rp_num) + " read pairs (" + str(p_val) + ")")
+                    print("[INFO] ... done.")
+                return rp_num, p_val
 
     def measure_time_savings_due_to_pval_dict(self):
         """

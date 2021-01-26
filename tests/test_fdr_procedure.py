@@ -17,8 +17,8 @@ class TestRandomizeFDR(TestCase):
     def setUpClass(cls):
         """
         Here it is tested whether the P-value thresholds are used correctly during the FDR procedure and whether the
-        results for two test files with 1,000 and 64,000 interactions. More information about the creation of the
-        test files can be found in the Jupyter notebook on the FDR procedure.
+        results for two test files with 1,000 and 64,000 interactions remain unchanged. More information about the
+        creation of the test files can be found in the Jupyter notebook on the FDR procedure.
         """
 
         # Mute warnings

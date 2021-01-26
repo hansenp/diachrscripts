@@ -308,10 +308,6 @@ class RandomizeInteractionSet:
 
         return table_row
 
-    def _call_back_func(self, result):
-        print(result.logLev)
-        print(result.msg)
-
     def perform_randomization_analysis(self, nominal_alpha: float = 0.01, iter_num: int = 1000, thread_num: int = 0,
                                        verbose: bool = False):
         """
@@ -346,7 +342,11 @@ class RandomizeInteractionSet:
             print("\t[INFO] Randomizing interactions ...")
 
         # Get dictionary that stores the numbers of interactions with n read pairs
-        rp_inter_dict = self._get_rp_inter_dict()
+        min_rp_num, max_p_val = self._interaction_set._p_values.find_smallest_significant_n(nominal_alpha)
+        rp_inter_dict = self._get_rp_inter_dict(min_rp_num=min_rp_num)
+        i_num_randomized = 0 # Determine number of randomized interactions
+        for i_num in rp_inter_dict.values():
+            i_num_randomized += i_num
 
         # Use dictionary to get list of P-values for randomized data and determine number of significant interactions
 
@@ -418,6 +418,7 @@ class RandomizeInteractionSet:
                     'SUMMARY':
                          {
                             'SIG_NUM_O': [sig_num_o],
+                            'I_NUM_RANDOMIZED': [i_num_randomized],
                             'SIG_NUM_R_MEAN': [sig_num_r_mean],
                             'SIG_NUM_R_STD': [sig_num_r_std],
                             'Z_SCORE': [z_score]
@@ -445,6 +446,8 @@ class RandomizeInteractionSet:
         report += "\t[INFO] Results:" + '\n'
         report += "\t\t[INFO] Original number of significant interactions: " \
                   + "{:,}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_O'][0]) + '\n'
+        report += "\t\t[INFO] Number of randomized interactions: " \
+                  + "{:,}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['I_NUM_RANDOMIZED'][0]) + '\n'
         report += "\t\t[INFO] First 10 significant randomized interaction numbers: " + '\n' \
                   + "\t\t\t[" + ", ".join(str(i) for i in self._randomization_info_dict['RESULTS']['SIG_NUM_R_LIST'][:10])
         if 10 < self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]:
@@ -462,7 +465,7 @@ class RandomizeInteractionSet:
 
         return report
 
-    def _get_rp_inter_dict(self):
+    def _get_rp_inter_dict(self, min_rp_num: int = 0):
         """
         :return: Dictionary that contains the number of interactions (values) for all occurring read pair numbers
         (keys) for the interaction set of this object.
@@ -470,10 +473,11 @@ class RandomizeInteractionSet:
 
         rp_inter_dict = {}
         for d_inter in self._interaction_set.interaction_list:
-            if d_inter.rp_total in rp_inter_dict:
-                rp_inter_dict[d_inter.rp_total] += 1
-            else:
-                rp_inter_dict[d_inter.rp_total] = 1
+            if min_rp_num <= d_inter.rp_total:
+                if d_inter.rp_total in rp_inter_dict:
+                    rp_inter_dict[d_inter.rp_total] += 1
+                else:
+                    rp_inter_dict[d_inter.rp_total] = 1
         return rp_inter_dict
 
     def _get_list_of_p_values_from_randomized_data(self, rp_inter_dict: dict = None):
