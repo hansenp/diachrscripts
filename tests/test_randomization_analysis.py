@@ -81,9 +81,9 @@ class TestRandomizationAnalysis(TestCase):
             thread_num=0)
 
         # The following results were obtained with an earlier version
-        expected_sig_num_r_mean = 0
-        expected_sig_num_r_sd = 0
-        expected_z_score = 0
+        expected_sig_num_r_mean = 51.01
+        expected_sig_num_r_sd = 6.902891
+        expected_z_score = 198.90073
 
         # The following results are obtained with the current version
         observed_sig_num_r_mean = random_analysis_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_MEAN'][0]
@@ -91,11 +91,11 @@ class TestRandomizationAnalysis(TestCase):
         observed_z_score = random_analysis_info_dict['RESULTS']['SUMMARY']['Z_SCORE'][0]
 
         # Compare previous and current results
-        self.assertEqual(observed_sig_num_r_mean, observed_sig_num_r_mean,
+        self.assertAlmostEqual(expected_sig_num_r_mean, observed_sig_num_r_mean, places=5,
                          msg='A different mean number of randomized significant interactions was obtained for an '
                              'earlier version!')
-        self.assertEqual(observed_sig_num_r_sd, observed_sig_num_r_sd,
+        self.assertAlmostEqual(expected_sig_num_r_sd, observed_sig_num_r_sd, places=5,
                          msg='A different standard deviation for the number of randomized significant interactions was '
                              'obtained for an earlier version!')
-        self.assertEqual(observed_z_score, observed_z_score,
+        self.assertAlmostEqual(expected_z_score, observed_z_score, places=5,
                          msg='A different Z-score was obtained for an earlier version!')

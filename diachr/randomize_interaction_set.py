@@ -543,7 +543,7 @@ class RandomizeInteractionSet:
 
         if verbose:
             print("\t\t[INFO] Batch: Performing " + str(len(iter_idx_range)) + " iterations ...")
-            print("\t\t\t[INFO] First iteration indices: [" + ", ".join(str(i) for i in iter_idx_range[:10]) + " ,...")
+            print("\t\t\t[INFO] First iteration indices: " + ", ".join(str(i) for i in iter_idx_range[:10]) + ", ...")
 
         # Perform each iteration with its own random seed that corresponds to the iteration index
         for iter_idx in iter_idx_range:
