@@ -1,5 +1,6 @@
 from scipy.stats import binom
 from numpy import arange, log, random, mean, std
+from math import floor, ceil
 import matplotlib.pyplot as plt
 import warnings
 import multiprocessing as mp
@@ -311,6 +312,7 @@ class RandomizeInteractionSet:
     def perform_randomization_analysis(self, nominal_alpha: float = 0.01, iter_num: int = 1000, thread_num: int = 0,
                                        verbose: bool = False):
         """
+        This function implements the entire randomization analysis.
 
         :param nominal_alpha:
         :param iter_num:
@@ -392,6 +394,9 @@ class RandomizeInteractionSet:
         if verbose:
             print("\t[INFO] Calculating summary statistics ...")
 
+        # Determine number of interactions with more significant interactions than originally observed
+        sig_num_r_gt_obs = len([sig_num_r for sig_num_r in sig_num_r_list if sig_num_o < sig_num_r])
+
         # Calculate average number of significant randomized interactions
         sig_num_r_mean = mean(sig_num_r_list)
 
@@ -419,6 +424,7 @@ class RandomizeInteractionSet:
                          {
                             'SIG_NUM_O': [sig_num_o],
                             'I_NUM_RANDOMIZED': [i_num_randomized],
+                            'SIG_NUM_R_GT_OBS': [sig_num_r_gt_obs],
                             'SIG_NUM_R_MEAN': [sig_num_r_mean],
                             'SIG_NUM_R_STD': [sig_num_r_std],
                             'Z_SCORE': [z_score]
@@ -436,12 +442,12 @@ class RandomizeInteractionSet:
         report = "[INFO] Report on randomization analysis:" + '\n'
 
         report += "\t[INFO] Input parameters:" + '\n'
+        report += "\t\t[INFO] Number of input interactions: " \
+                  + "{:,}".format(self._randomization_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]) + '\n'
         report += "\t\t[INFO] Nominal alpha: " \
                   + "{:.5f}".format(self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHA'][0]) + '\n'
         report += "\t\t[INFO] Number of iterations: " \
                   + "{:,}".format(self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]) + '\n'
-        report += "\t\t[INFO] Number of input interactions: " \
-                  + "{:,}".format(self._randomization_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]) + '\n'
 
         report += "\t[INFO] Results:" + '\n'
         report += "\t\t[INFO] Original number of significant interactions: " \
@@ -449,13 +455,12 @@ class RandomizeInteractionSet:
         report += "\t\t[INFO] Number of randomized interactions: " \
                   + "{:,}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['I_NUM_RANDOMIZED'][0]) + '\n'
         report += "\t\t[INFO] First 10 significant randomized interaction numbers: " + '\n' \
-                  + "\t\t\t[" + ", ".join(str(i) for i in self._randomization_info_dict['RESULTS']['SIG_NUM_R_LIST'][:10])
-        if 10 < self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]:
-            report += " ,..." + '\n'
-        else:
-            report += "]" + '\n'
+                  + "\t\t\t" + ", ".join(str(i) for i in self._randomization_info_dict['RESULTS']['SIG_NUM_R_LIST'][:10]) \
+                  + ", ..." + '\n'
+        report += "\t\t[INFO] Iterations with more significant interactions than observed: " \
+                  + "{:,}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_GT_OBS'][0]) + '\n'
         report += "\t\t[INFO] Mean number of significant randomized interactions: " \
-                  + "{:,.0f}".format(round(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_MEAN'][0])) + '\n'
+                  + "{0:,.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_MEAN'][0]) + '\n'
         report += "\t\t[INFO] Standard deviation of significant randomized interactions: " \
                   + "{:.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_STD'][0]) + '\n'
         report += "\t\t[INFO] Z-score: " \
@@ -467,6 +472,9 @@ class RandomizeInteractionSet:
 
     def _get_rp_inter_dict(self, min_rp_num: int = 0):
         """
+        Create dictionary required needed for randomization of interactions.
+
+        :param min_rp_num: Interactions with fewer read pairs are not taken into account
         :return: Dictionary that contains the number of interactions (values) for all occurring read pair numbers
         (keys) for the interaction set of this object.
         """
@@ -542,7 +550,7 @@ class RandomizeInteractionSet:
         sig_num_r_list = []
 
         if verbose:
-            print("\t\t[INFO] Batch: Performing " + str(len(iter_idx_range)) + " iterations ...")
+            print("\t\t[INFO] Performing " + str(len(iter_idx_range)) + " iterations ...")
             print("\t\t\t[INFO] First iteration indices: " + ", ".join(str(i) for i in iter_idx_range[:10]) + ", ...")
 
         # Perform each iteration with its own random seed that corresponds to the iteration index
@@ -559,7 +567,7 @@ class RandomizeInteractionSet:
 
         :param pdf_file_name: Name of the PDF file that will be created
         :param analysis_name: Name of of the analysis that will be shown in the graphical representation
-        :return: Nothing, if no FDR procedure has been performed yet or otherwise a 'Figure' object of matplotlib
+        :return: Nothing, if no FDR procedure has been performed yet or otherwise a 'Figure' object of 'matplotlib'
         that can be displayed in a Jupyter notebook
         """
 
@@ -568,7 +576,7 @@ class RandomizeInteractionSet:
             print("[ERROR] No analysis has been performed yet! There is nothing to plot.")
             return
 
-        # Set parameters that all plots have in common
+        # Set common plot parameters
         hv_lwd = 0.5  # line width of horizontal and vertical red dashed lines
         hv_col = 'red'  # color of horizontal and vertical red dashed lines
         header_font_size = 10
@@ -705,7 +713,148 @@ class RandomizeInteractionSet:
         ax[5].text(pval_thresh_result + pval_thresh_max/60, fdr_result - fdr_max/9, 'P-value: ' + "{:.5f}".format(pval_thresh_result),
                  bbox={'color': 'lightblue', 'alpha': 0.5, 'pad': 4})
 
-        # Finalize save to PDF and return Figure object
+        # Finalize save to PDF and return 'Figure' object
         fig.tight_layout()
         fig.savefig(pdf_file_name)
         return fig
+
+    def get_randomization_info_plot(self, pdf_file_name: str = None, analysis_name: str = None):
+        """
+        This function creates a graphical representation of the results from the last randomization analysis performed.
+
+        :param pdf_file_name: Name of the PDF file that will be created
+        :param analysis_name: Name of of the analysis that will be shown in the graphical representation
+        :return: Nothing, if no FDR procedure has been performed yet or otherwise a 'Figure' object of 'matplotlib'
+        that can be displayed in a Jupyter notebook
+        """
+
+        # Check whether an analysis has already been performed
+        if self._randomization_info_dict is None:
+            print("[ERROR] No analysis has been performed yet! There is nothing to plot.")
+            return
+
+        # Set common plot parameters
+        header_font_size = 10
+        bin_face_color = 'blue'
+        bin_edge_color = 'darkblue'
+
+        # Extract data from fdr_info_dict
+        # -------------------------------
+
+        # Input parameters
+        pdf_file_name = 'randomization_analysis.pdf'
+        analysis_name = 'Test'
+        nominal_alpha = self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHA'][0]
+        iter_num = self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]
+        input_interactions_num = self._randomization_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]
+
+        # Results
+        sig_num_r_list = self._randomization_info_dict['RESULTS']['SIG_NUM_R_LIST']
+        sig_num_o = self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_O'][0]
+        i_num_randomized = self._randomization_info_dict['RESULTS']['SUMMARY']['I_NUM_RANDOMIZED'][0]
+        sig_num_r_gt_obs = self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_GT_OBS'][0]
+        sig_num_r_mean = self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_MEAN'][0]
+        sig_num_r_sd = self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_STD'][0]
+        z_score = float(self._randomization_info_dict['RESULTS']['SUMMARY']['Z_SCORE'][0])
+
+        # Highlight text if there are iterations with more significant interactions than originally observed
+        if 0 < sig_num_r_gt_obs:
+            sig_num_r_gt_obs_color = 'red'
+            sig_num_r_gt_obs_fontweight = 'bold'
+        else:
+            sig_num_r_gt_obs_color = 'black'
+            sig_num_r_gt_obs_fontweight = 'normal'
+
+        # Create figure with text field and two histograms
+        # ------------------------------------------------
+
+        fig, ax = plt.subplots(3, figsize=(7, 10.86), gridspec_kw={'height_ratios': [2, 1, 1]})
+
+        # Add field with information about analysis
+        plt.plot(ax=ax[0])
+        ax[0].spines['left'].set_color('white')
+        ax[0].spines['right'].set_color('white')
+        ax[0].spines['top'].set_color('white')
+        ax[0].spines['bottom'].set_color('white')
+        ax[0].tick_params(axis='x', colors='white')
+        ax[0].tick_params(axis='y', colors='white')
+        ax[0].text(-0.2, 1.00, 'Randomization analysis results', fontsize=18, fontweight='bold')
+        ax[0].text(-0.18, 0.90, 'Analysis name: ' + analysis_name, fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.85, 'Number of input interactions: ' + "{:,}".format(input_interactions_num),
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.80, 'Nominal alpha: ' + "{:.5f}".format(nominal_alpha),
+                   fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.75, 'Number of iterations: ' + "{:,}".format(iter_num),
+                   fontsize=header_font_size)
+
+        ax[0].text(-0.18, 0.65, 'Number of observed significant interactions: ' + "{:,}".format(sig_num_o),
+                   fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.60, 'Number of randomized interactions: ' + "{:,}".format(i_num_randomized),
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.55,
+                   'Iterations with more significant interactions than observed: ' + "{:,}".format(sig_num_r_gt_obs),
+                   fontsize=header_font_size, color=sig_num_r_gt_obs_color, fontweight=sig_num_r_gt_obs_fontweight)
+        ax[0].text(-0.18, 0.50,
+                   'Mean number of significant randomized interactions: ' + "{:,.2f}".format(sig_num_r_mean),
+                   fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.45,
+                   'Standard deviation of significant randomized interactions: ' + "{:.2f}".format(sig_num_r_sd),
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.40, 'Z-score: ' + "{:.2f}".format(z_score), fontsize=header_font_size, fontweight='bold')
+
+        # Plot distribution of iterations centered on mean of randomized significant interaction numbers
+        x_lim_left = floor(sig_num_r_mean - 5 * sig_num_r_sd)
+        x_lim_right = ceil(sig_num_r_mean + 5 * sig_num_r_sd)
+        bin_width = ceil(sig_num_r_sd / 3)
+        bins = range(x_lim_left, x_lim_right + bin_width, bin_width)
+        n, bins, patches = ax[1].hist(sig_num_r_list, bins=bins, density=False, facecolor=bin_face_color,
+                                      edgecolor=bin_edge_color, alpha=0.75)
+        ax[1].set_xlim(x_lim_left, x_lim_right)
+        ax[1].set_title('Centered on mean of randomized significant interaction numbers', loc='left')
+        ax[1].set_xlabel('Randomized significant interactions')
+        ax[1].set_ylabel('Iterations')
+        ax[1].axvspan(sig_num_r_mean - 3 * sig_num_r_sd, sig_num_r_mean + 3 * sig_num_r_sd, color='lightblue',
+                      alpha=0.9, zorder=0)
+        ax[1].axvline(sig_num_r_mean, linestyle='--', color='red', linewidth=1)
+        ax[1].axvline(sig_num_r_mean - 2 * sig_num_r_sd, linestyle='--', color='w', linewidth=1, zorder=0)
+        ax[1].axvline(sig_num_r_mean - 1 * sig_num_r_sd, linestyle='--', color='w', linewidth=1, zorder=0)
+        ax[1].axvline(sig_num_r_mean + 1 * sig_num_r_sd, linestyle='--', color='w', linewidth=1, zorder=0)
+        ax[1].axvline(sig_num_r_mean + 2 * sig_num_r_sd, linestyle='--', color='w', linewidth=1, zorder=0)
+        y_pos_lab = max(n) - max(n) / 15
+        x_pos_lab = sig_num_r_mean - 4.75 * sig_num_r_sd
+        ax[1].text(x_pos_lab, y_pos_lab, 'Mean: ' + "{:.2f}".format(sig_num_r_mean),
+                   bbox={'color': 'w', 'alpha': 0.5, 'pad': 4})
+        y_pos_lab = max(n) - 3 * (max(n) / 15)
+        ax[1].text(x_pos_lab, y_pos_lab, 'Standard deviation: ' + "{:.2f}".format(sig_num_r_sd),
+                   bbox={'color': 'w', 'alpha': 0.5, 'pad': 4})
+
+        # Plot distribution of iterations in relation to observed number of significant interactions
+        x_lim_left = floor(sig_num_r_mean - 5 * sig_num_r_sd)
+        x_lim_right = ceil(sig_num_o + 5 * sig_num_r_sd)
+        bin_width = ceil(sig_num_r_sd / 3)
+        bins = range(x_lim_left, x_lim_right + bin_width, bin_width)
+        n, bins, patches = ax[2].hist(sig_num_r_list, bins=bins, density=False, facecolor=bin_face_color,
+                                      edgecolor=bin_edge_color, alpha=0.75)
+        ax[2].set_xlim(sig_num_r_mean - 5 * sig_num_r_sd, sig_num_o + 5 * sig_num_r_sd)
+        ax[2].set_title('In relation to observed number of significant interactions', loc='left')
+        ax[2].set_xlabel('Randomized significant interactions')
+        ax[2].set_ylabel('Iterations')
+        ax[2].axvspan(sig_num_r_mean - 3 * sig_num_r_sd, sig_num_r_mean + 3 * sig_num_r_sd, color='lightblue',
+                      alpha=0.9, zorder=0)
+        ax[2].axvline(sig_num_r_mean, linestyle='--', color='red', linewidth=1)
+        ax[2].axvline(sig_num_o, linestyle='--', color='red', linewidth=1)
+        y_pos_lab = max(n) - max(n) / 15
+        x_pos_lab = sig_num_r_mean + 6 * sig_num_r_sd
+        ax[2].text(x_pos_lab, y_pos_lab, 'Observed: ' + "{:,}".format(sig_num_o),
+                   bbox={'color': 'w', 'alpha': 0.5, 'pad': 4})
+        y_pos_lab = max(n) - 3 * (max(n) / 15)
+        ax[2].text(x_pos_lab, y_pos_lab, 'Z-score: ' + "{:.2f}".format(z_score),
+                   bbox={'color': 'w', 'alpha': 0.5, 'pad': 4})
+
+        # Finalize save to PDF and return 'Figure' object
+        fig.tight_layout()
+        fig.savefig(pdf_file_name)
+        return fig
+
+
+
