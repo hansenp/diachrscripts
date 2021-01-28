@@ -391,6 +391,9 @@ class RandomizeInteractionSet:
             batch_results = [p.get() for p in results]
             sig_num_r_list = list(itertools.chain.from_iterable(batch_results))
 
+            # Shut down the pool
+            pool.close()
+
         if verbose:
             print("\t[INFO] Calculating summary statistics ...")
 
