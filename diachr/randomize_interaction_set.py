@@ -74,8 +74,8 @@ class RandomizeInteractionSet:
 
         pvals_observed = []
         for d_inter in self._interaction_set.interaction_list:
-            nnnl_pval = self._interaction_set._p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
-            pvals_observed.append(nnnl_pval)
+            nnl_pval = self._interaction_set._p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
+            pvals_observed.append(nnl_pval)
 
         if verbose:
             print("\t[INFO] Getting list of randomized P-values ...")
