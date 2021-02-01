@@ -52,7 +52,7 @@ class RandomizeInteractionSet:
         :param pval_thresh_max: Largest P-value threshold
         :param pval_thresh_step_size: Step size to increase the P-value threshold
         :param verbose: If true, messages about progress will be written to the screen
-        :return:
+        :return: If true, messages about progress will be written to the screen
         """
 
         if verbose:
@@ -310,15 +310,15 @@ class RandomizeInteractionSet:
         return table_row
 
     def perform_randomization_analysis(self, nominal_alpha: float = 0.01, iter_num: int = 1000, thread_num: int = 0,
-                                       verbose: bool = False):
+                                       random_seed: int = None, verbose: bool = False):
         """
         This function implements the entire randomization analysis.
 
-        :param nominal_alpha:
-        :param iter_num:
-        :param thread_num:
-        :param verbose:
-        :return:
+        :param nominal_alpha: Interactions with a larger P-value are classified as significant
+        :param iter_num: Number of iterations performed
+        :param thread_num: Number of parallel processes in which the iterations are preformed
+        :param random_seed: Number used to shift random seeds for random number generators
+        :param verbose: If true, messages about progress will be written to the screen
         """
 
         if verbose:
@@ -351,10 +351,12 @@ class RandomizeInteractionSet:
             i_num_randomized += i_num
 
         # Use dictionary to get list of P-values for randomized data and determine number of significant interactions
-
+        if random_seed is None:
+            random_seed = int(time.time())
         args_dict = {
             'RP_INTER_DICT': rp_inter_dict,
             'NNL_PVAL_THRESH': nnl_nominal_alpha,
+            'RANDOM_SEED_SHIFT': random_seed,
             'ITER_IDX_RANGE': [],
             'VERBOSE': verbose
         }
@@ -409,6 +411,9 @@ class RandomizeInteractionSet:
         # Calculate Z-score
         z_score = (sig_num_o - sig_num_r_mean) / sig_num_r_std
 
+        # Estimate FDR
+        fdr = sig_num_r_mean/sig_num_o
+
         if verbose:
             print("[INFO] ... done.")
 
@@ -418,7 +423,8 @@ class RandomizeInteractionSet:
                 {
                     'NOMINAL_ALPHA': [nominal_alpha],
                     'ITER_NUM': [iter_num],
-                    'INPUT_INTERACTIONS_NUM': [len(self._interaction_set.interaction_list)]
+                    'INPUT_INTERACTIONS_NUM': [len(self._interaction_set.interaction_list)],
+                    'RANDOM_SEED': [random_seed]
                 },
             'RESULTS':
                 {
@@ -430,7 +436,8 @@ class RandomizeInteractionSet:
                             'SIG_NUM_R_GT_OBS': [sig_num_r_gt_obs],
                             'SIG_NUM_R_MEAN': [sig_num_r_mean],
                             'SIG_NUM_R_STD': [sig_num_r_std],
-                            'Z_SCORE': [z_score]
+                            'Z_SCORE': [z_score],
+                            'FDR':[fdr]
                          }
                 }
         }
@@ -451,6 +458,8 @@ class RandomizeInteractionSet:
                   + "{:.5f}".format(self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHA'][0]) + '\n'
         report += "\t\t[INFO] Number of iterations: " \
                   + "{:,}".format(self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]) + '\n'
+        report += "\t\t[INFO] Random seed: " \
+                  + str(self._randomization_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0]) + '\n'
 
         report += "\t[INFO] Results:" + '\n'
         report += "\t\t[INFO] Original number of significant interactions: " \
@@ -468,6 +477,8 @@ class RandomizeInteractionSet:
                   + "{:.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_STD'][0]) + '\n'
         report += "\t\t[INFO] Z-score: " \
                   + "{:.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['Z_SCORE'][0]) + '\n'
+        report += "\t\t[INFO] Estimated FDR: " \
+                  + "{:.5f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['FDR'][0]) + '\n'
 
         report += "[INFO] End of report." + '\n'
 
@@ -514,7 +525,7 @@ class RandomizeInteractionSet:
 
         return random_pval_list
 
-    def _perform_one_iteration(self, rp_inter_dict: dict = None, nnl_pval_thresh: float = None, random_seed: int =  42):
+    def _perform_one_iteration(self, rp_inter_dict: dict = None, nnl_pval_thresh: float = None, random_seed: int = None):
         """
         This function performs a single iteration of the randomization procedure.
 
@@ -546,6 +557,7 @@ class RandomizeInteractionSet:
         # We pass all function parameters in a dictionary, because that's easier to use with 'pool.apply_async'
         rp_inter_dict = args_dict['RP_INTER_DICT']
         nnl_pval_thresh = args_dict['NNL_PVAL_THRESH']
+        random_seed_shift = args_dict['RANDOM_SEED_SHIFT']
         iter_idx_range = args_dict['ITER_IDX_RANGE']
         verbose = args_dict['VERBOSE']
 
@@ -560,7 +572,7 @@ class RandomizeInteractionSet:
         for iter_idx in iter_idx_range:
             sig_num_r_list.append(self._perform_one_iteration(rp_inter_dict=rp_inter_dict,
                                                               nnl_pval_thresh=nnl_pval_thresh,
-                                                              random_seed=iter_idx))
+                                                              random_seed=iter_idx + random_seed_shift))
 
         return sig_num_r_list
 
@@ -745,11 +757,12 @@ class RandomizeInteractionSet:
         # -------------------------------
 
         # Input parameters
-        pdf_file_name = 'randomization_analysis.pdf'
-        analysis_name = 'Test'
+        pdf_file_name = pdf_file_name
+        analysis_name = analysis_name
         nominal_alpha = self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHA'][0]
         iter_num = self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]
         input_interactions_num = self._randomization_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]
+        random_seed = self._randomization_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0]
 
         # Results
         sig_num_r_list = self._randomization_info_dict['RESULTS']['SIG_NUM_R_LIST']
@@ -759,6 +772,7 @@ class RandomizeInteractionSet:
         sig_num_r_mean = self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_MEAN'][0]
         sig_num_r_sd = self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_STD'][0]
         z_score = float(self._randomization_info_dict['RESULTS']['SUMMARY']['Z_SCORE'][0])
+        fdr = float(self._randomization_info_dict['RESULTS']['SUMMARY']['FDR'][0])
 
         # Highlight text if there are iterations with more significant interactions than originally observed
         if 0 < sig_num_r_gt_obs:
@@ -789,21 +803,24 @@ class RandomizeInteractionSet:
                    fontsize=header_font_size, fontweight='bold')
         ax[0].text(-0.18, 0.75, 'Number of iterations: ' + "{:,}".format(iter_num),
                    fontsize=header_font_size)
-
-        ax[0].text(-0.18, 0.65, 'Number of observed significant interactions: ' + "{:,}".format(sig_num_o),
-                   fontsize=header_font_size, fontweight='bold')
-        ax[0].text(-0.18, 0.60, 'Number of randomized interactions: ' + "{:,}".format(i_num_randomized),
+        ax[0].text(-0.18, 0.70, 'Random seed: ' + str(random_seed),
                    fontsize=header_font_size)
-        ax[0].text(-0.18, 0.55,
+
+        ax[0].text(-0.18, 0.60, 'Number of observed significant interactions: ' + "{:,}".format(sig_num_o),
+                   fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.55, 'Number of randomized interactions: ' + "{:,}".format(i_num_randomized),
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.50,
                    'Iterations with more significant interactions than observed: ' + "{:,}".format(sig_num_r_gt_obs),
                    fontsize=header_font_size, color=sig_num_r_gt_obs_color, fontweight=sig_num_r_gt_obs_fontweight)
-        ax[0].text(-0.18, 0.50,
+        ax[0].text(-0.18, 0.45,
                    'Mean number of significant randomized interactions: ' + "{:,.2f}".format(sig_num_r_mean),
                    fontsize=header_font_size, fontweight='bold')
-        ax[0].text(-0.18, 0.45,
+        ax[0].text(-0.18, 0.40,
                    'Standard deviation of significant randomized interactions: ' + "{:.2f}".format(sig_num_r_sd),
                    fontsize=header_font_size)
-        ax[0].text(-0.18, 0.40, 'Z-score: ' + "{:.2f}".format(z_score), fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.35, 'Z-score: ' + "{:.2f}".format(z_score), fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.30, 'Estimated FDR : ' + "{:.5f}".format(fdr), fontsize=header_font_size, fontweight='bold')
 
         # Plot distribution of iterations centered on mean of randomized significant interaction numbers
         x_lim_left = floor(sig_num_r_mean - 5 * sig_num_r_sd)

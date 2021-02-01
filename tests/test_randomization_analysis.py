@@ -34,25 +34,29 @@ class TestRandomizationAnalysis(TestCase):
         random_analysis_thread_num_0_info_dict = self.randomize_64000.perform_randomization_analysis(
             nominal_alpha=nominal_alpha,
             iter_num=iter_num,
-            thread_num=0)
+            thread_num=0,
+            random_seed=0)
 
         # Perform randomization analysis with 'multiprocessing' package but only in one process
         random_analysis_thread_num_1_info_dict = self.randomize_64000.perform_randomization_analysis(
             nominal_alpha=nominal_alpha,
             iter_num=iter_num,
-            thread_num=1)
+            thread_num=1,
+            random_seed=0)
 
         # Perform randomization analysis with 'multiprocessing' package in two parallel processes
         random_analysis_thread_num_2_info_dict = self.randomize_64000.perform_randomization_analysis(
             nominal_alpha=nominal_alpha,
             iter_num=iter_num,
-            thread_num=2)
+            thread_num=2,
+            random_seed=0)
 
         # Perform randomization analysis with 'multiprocessing' package in three parallel processes
         random_analysis_thread_num_3_info_dict = self.randomize_64000.perform_randomization_analysis(
             nominal_alpha=nominal_alpha,
             iter_num=iter_num,
-            thread_num=3)
+            thread_num=3,
+            random_seed=0)
 
         # Compare results
         for iter_idx in range(0,iter_num):
@@ -78,7 +82,8 @@ class TestRandomizationAnalysis(TestCase):
         random_analysis_info_dict = self.randomize_64000.perform_randomization_analysis(
             nominal_alpha=0.0025,
             iter_num=100,
-            thread_num=0)
+            thread_num=0,
+            random_seed=0)
 
         # The following results were obtained with an earlier version
         expected_sig_num_r_mean = 51.01

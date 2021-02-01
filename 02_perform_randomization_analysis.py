@@ -19,8 +19,6 @@ import numpy as np
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.binomial_model import BinomialModel
 
-from diachr.random_permutation import RandomPermutation
-
 
 ### Parse command line
 ######################
@@ -30,10 +28,9 @@ parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFI
 parser.add_argument('-i','--interaction-file', help='Diachromatic interaction file.', required=True)
 parser.add_argument('-n','--iter-num', help='Number of iterations.', default=1000)
 parser.add_argument('-a','--nominal-alpha', help='Nominal alpha. P-value threshold used to define significant interactions.', default=0.05)
-parser.add_argument('-s','--random-seed', help='Seed for randomization of simple and twisted read pairs.', default=42)
+parser.add_argument('-s','--random-seed', help='Seed for randomization of simple and twisted read pairs.')
 parser.add_argument('-t','--thread-num', help='Number of threads.', default=1)
 
-parser.add_argument('-m','--usemod', help="Use new module", dest='usemod', action='store_true')
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -53,13 +50,18 @@ print("\t\t[INFO] Negative of natural logarithm: " + str(NLN_NOMINAL_ALPHA))
 print("\t[INFO] --random-seed: " + str(random_seed))
 print("\t[INFO] --thread-num: " + str(thread_num))
 
-if args.usemod:
-    print("[INFO] Using module")
-    randomP = RandomPermutation(combined_interaction_file=diachromatic_interaction_file, alpha=NOMINAL_ALPHA, threads=thread_num,
-                    prefix=out_prefix)
-    randomP.permute(ITER_NUM=ITER_NUM)
-    exit(1)
 
+### Perform analysis
+####################
+
+# Load interactions
+interaction_set = DiachromaticInteractionSet()
+interaction_set.parse_file(diachromatic_interaction_file, verbose=True)
+read_file_info_report = interaction_set.get_read_file_info_report()
+
+
+
+exit(0)
 
 ### Define auxiliary functions
 ##############################
