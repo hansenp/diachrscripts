@@ -15,53 +15,83 @@ from numpy import log
 import multiprocessing as mp
 import itertools
 import numpy as np
+import sys
 
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
-from diachr.binomial_model import BinomialModel
+from diachr.randomize_interaction_set import RandomizeInteractionSet
 
 
-### Parse command line
-######################
+# Parse command line
+####################
 
 parser = argparse.ArgumentParser(description='Determine overall significance of directed interactions by randomization of simple and twisted read pairs.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('-i','--interaction-file', help='Diachromatic interaction file.', required=True)
 parser.add_argument('-n','--iter-num', help='Number of iterations.', default=1000)
 parser.add_argument('-a','--nominal-alpha', help='Nominal alpha. P-value threshold used to define significant interactions.', default=0.05)
-parser.add_argument('-s','--random-seed', help='Seed for randomization of simple and twisted read pairs.')
+parser.add_argument('-s','--random-seed', help='Seed for randomization of simple and twisted read pairs.', default=None)
 parser.add_argument('-t','--thread-num', help='Number of threads.', default=1)
-
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
 diachromatic_interaction_file = args.interaction_file
-ITER_NUM = int(args.iter_num)
-NOMINAL_ALPHA = float(args.nominal_alpha)
-NLN_NOMINAL_ALPHA = -log(NOMINAL_ALPHA)
-random_seed = int(args.random_seed)
+iter_num = int(args.iter_num)
+nominal_alpha = float(args.nominal_alpha)
+nnl_nominal_alpha = -log(nominal_alpha)
+if args.random_seed is None:
+    random_seed = args.random_seed
+else:
+    random_seed = int(args.random_seed)
 thread_num = int(args.thread_num)
 
-print("[INFO] " + "Input parameters")
-print("\t[INFO] --out_prefix: " + out_prefix)
-print("\t[INFO] --interaction-file: " + diachromatic_interaction_file)
-print("\t[INFO] --iter-num: " + str(ITER_NUM))
-print("\t[INFO] --nominal-alpha: " + str(NOMINAL_ALPHA))
-print("\t\t[INFO] Negative of natural logarithm: " + str(NLN_NOMINAL_ALPHA))
-print("\t[INFO] --random-seed: " + str(random_seed))
-print("\t[INFO] --thread-num: " + str(thread_num))
+parameter_info = "[INFO] " + "Input parameters" + '\n'
+parameter_info += "\t[INFO] --out-prefix: " + out_prefix + '\n'
+parameter_info += "\t[INFO] --interaction-file: " + diachromatic_interaction_file + '\n'
+parameter_info += "\t[INFO] --iter-num: " + str(iter_num) + '\n'
+parameter_info += "\t[INFO] --nominal-alpha: " + str(nominal_alpha) + '\n'
+parameter_info += "\t[INFO] --random-seed: " + str(random_seed) + '\n'
+parameter_info += "\t[INFO] --thread-num: " + str(thread_num) + '\n'
+
+print(parameter_info)
 
 
-### Perform analysis
-####################
+# Perform analysis
+##################
 
 # Load interactions
 interaction_set = DiachromaticInteractionSet()
 interaction_set.parse_file(diachromatic_interaction_file, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 
+# Create RandomizeInteractionSet object and perform analysis
+randomize_interactions = RandomizeInteractionSet(interaction_set=interaction_set, random_seed=random_seed)
+randomize_interactions_info_dict = randomize_interactions.perform_randomization_analysis(
+    nominal_alpha = nominal_alpha,
+    iter_num = iter_num,
+    thread_num = thread_num,
+    verbose = True)
 
 
-exit(0)
+# Create plot and file with summary statistics
+##############################################
+
+# Create plot with a histogram for the randomized significant interaction numbers from all iterations
+randomize_interactions.get_randomization_info_plot(
+    pdf_file_name = out_prefix + '_randomization_analysis.pdf',
+    analysis_name = out_prefix)
+
+f_name_summary = out_prefix + "_randomization_analysis_summary.txt"
+out_fh = open(f_name_summary, 'wt')
+
+# Chosen parameters
+out_fh.write(parameter_info + '\n')
+
+# Report on reading files
+out_fh.write(randomize_interactions.get_randomization_info_report() + '\n')
+
+out_fh.close()
+
+sys.exit(0)
 
 ### Define auxiliary functions
 ##############################

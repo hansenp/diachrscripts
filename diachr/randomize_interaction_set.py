@@ -13,11 +13,12 @@ warnings.filterwarnings('always')
 
 class RandomizeInteractionSet:
 
-    def __init__(self, random_seed: int = 42, interaction_set: DiachromaticInteractionSet = None):
+    def __init__(self, random_seed: int = None, interaction_set: DiachromaticInteractionSet = None):
 
         # Set random seed to be able to reproduce results
         self._random_seed = random_seed
-        random.seed(random_seed)
+        if random_seed is None:
+            self._random_seed = int(time.time())
 
         # Interaction set on which analyzes are performed
         self._interaction_set = interaction_set
@@ -46,7 +47,7 @@ class RandomizeInteractionSet:
                                              verbose: bool = False
                                              ):
         """
-        This function executes the FDR procedure.
+        This function implements the FDR procedure.
 
         :param chosen_fdr_thresh: Predefined FDR threshold
         :param pval_thresh_max: Largest P-value threshold
@@ -57,9 +58,6 @@ class RandomizeInteractionSet:
 
         if verbose:
             print("[INFO] Performing FDR procedure ...")
-
-        # Set random seed
-        random.seed(self._random_seed)
 
         # Check input parameters
         if chosen_fdr_thresh <= 0 or 1.0 < chosen_fdr_thresh:
@@ -82,7 +80,8 @@ class RandomizeInteractionSet:
 
         # Get dictionary that stores the numbers of interactions with n read pairs and list of random P-values
         rp_inter_dict = self._get_rp_inter_dict()
-        pvals_randomized = self._get_list_of_p_values_from_randomized_data(rp_inter_dict=rp_inter_dict)
+        pvals_randomized = self._get_list_of_p_values_from_randomized_data(rp_inter_dict=rp_inter_dict,
+                                                                           random_seed=self._random_seed)
 
         if verbose:
             print("\t[INFO] Going through list of P-value thresholds and estimate FDR ...")
@@ -170,7 +169,8 @@ class RandomizeInteractionSet:
                     'CHOSEN_FDR_THRESH': [chosen_fdr_thresh],
                     'PVAL_THRESH_MAX': [pval_thresh_max],
                     'PVAL_THRESH_STEP_SIZE': [pval_thresh_step_size],
-                    'INPUT_INTERACTIONS_NUM': [len(self._interaction_set.interaction_list)]
+                    'INPUT_INTERACTIONS_NUM': [len(self._interaction_set.interaction_list)],
+                    'RANDOM_SEED': [self._random_seed]
                 },
             'RESULTS_TABLE':
                 {
@@ -204,6 +204,8 @@ class RandomizeInteractionSet:
                   + "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_STEP_SIZE'][0]) + '\n'
         report += "\t\t[INFO] Total number of interactions: " \
                   + "{:,}".format(self._fdr_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]) + '\n'
+        report += "\t\t[INFO] Random seed: " \
+                  + str(self._fdr_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0]) + '\n'
 
         result_index = self._fdr_info_dict['RESULT_INDEX'][0]
 
@@ -266,6 +268,7 @@ class RandomizeInteractionSet:
         table_row += "PVAL_THRESH_MAX" + '\t'
         table_row += "PVAL_THRESH_STEP_SIZE" + '\t'
         table_row += "INPUT_INTER_NUM" + '\t'
+        table_row += "RANDOM_SEED" + '\t'
 
         # Results
         table_row += "PVAL_THRESH" + '\t'
@@ -290,6 +293,7 @@ class RandomizeInteractionSet:
         table_row += "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_MAX'][0]) + '\t'
         table_row += "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_STEP_SIZE'][0]) + '\t'
         table_row += str(self._fdr_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]) + '\t'
+        table_row += str(self._fdr_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0]) + '\t'
 
         # Results
         result_index = self._fdr_info_dict['RESULT_INDEX'][0]
@@ -310,14 +314,13 @@ class RandomizeInteractionSet:
         return table_row
 
     def perform_randomization_analysis(self, nominal_alpha: float = 0.01, iter_num: int = 1000, thread_num: int = 0,
-                                       random_seed: int = None, verbose: bool = False):
+                                       verbose: bool = False):
         """
         This function implements the entire randomization analysis.
 
         :param nominal_alpha: Interactions with a larger P-value are classified as significant
         :param iter_num: Number of iterations performed
         :param thread_num: Number of parallel processes in which the iterations are preformed
-        :param random_seed: Number used to shift random seeds for random number generators
         :param verbose: If true, messages about progress will be written to the screen
         """
 
@@ -351,12 +354,9 @@ class RandomizeInteractionSet:
             i_num_randomized += i_num
 
         # Use dictionary to get list of P-values for randomized data and determine number of significant interactions
-        if random_seed is None:
-            random_seed = int(time.time())
         args_dict = {
             'RP_INTER_DICT': rp_inter_dict,
             'NNL_PVAL_THRESH': nnl_nominal_alpha,
-            'RANDOM_SEED_SHIFT': random_seed,
             'ITER_IDX_RANGE': [],
             'VERBOSE': verbose
         }
@@ -424,7 +424,7 @@ class RandomizeInteractionSet:
                     'NOMINAL_ALPHA': [nominal_alpha],
                     'ITER_NUM': [iter_num],
                     'INPUT_INTERACTIONS_NUM': [len(self._interaction_set.interaction_list)],
-                    'RANDOM_SEED': [random_seed]
+                    'RANDOM_SEED': [self._random_seed]
                 },
             'RESULTS':
                 {
@@ -502,7 +502,7 @@ class RandomizeInteractionSet:
                     rp_inter_dict[d_inter.rp_total] = 1
         return rp_inter_dict
 
-    def _get_list_of_p_values_from_randomized_data(self, rp_inter_dict: dict = None):
+    def _get_list_of_p_values_from_randomized_data(self, rp_inter_dict: dict = None, random_seed: int = None):
         """
         This function generates randomized simple and twisted read pair counts for all interactions of the
         interaction set of this object and calculates associated P-values.
@@ -510,6 +510,9 @@ class RandomizeInteractionSet:
         :param rp_inter_dict: Dictionary generated with function '_get_rp_inter_dict'
         :return: List of P-values for randomized interactions
         """
+
+        # Init random generator
+        random.seed(random_seed)
 
         random_pval_list = []
 
@@ -535,11 +538,8 @@ class RandomizeInteractionSet:
         :return: Number of randomized significant interactions
         """
 
-        # Init random generator
-        random.seed(random_seed)
-
         # Get list of P-values for randomized interactions
-        randomized_nnl_pvals = self._get_list_of_p_values_from_randomized_data(rp_inter_dict)
+        randomized_nnl_pvals = self._get_list_of_p_values_from_randomized_data(rp_inter_dict, random_seed=random_seed)
 
         # Determine number of randomized significant interactions at given P-value threshold
         sig_num_r = len([1 for nnl_pval in randomized_nnl_pvals if nnl_pval > nnl_pval_thresh])
@@ -557,7 +557,6 @@ class RandomizeInteractionSet:
         # We pass all function parameters in a dictionary, because that's easier to use with 'pool.apply_async'
         rp_inter_dict = args_dict['RP_INTER_DICT']
         nnl_pval_thresh = args_dict['NNL_PVAL_THRESH']
-        random_seed_shift = args_dict['RANDOM_SEED_SHIFT']
         iter_idx_range = args_dict['ITER_IDX_RANGE']
         verbose = args_dict['VERBOSE']
 
@@ -568,11 +567,11 @@ class RandomizeInteractionSet:
             print("\t\t[INFO] Performing " + str(len(iter_idx_range)) + " iterations ...")
             print("\t\t\t[INFO] First iteration indices: " + ", ".join(str(i) for i in iter_idx_range[:10]) + ", ...")
 
-        # Perform each iteration with its own random seed that corresponds to the iteration index
+        # Perform each iteration with its own random seed that corresponds by adding the iteration index
         for iter_idx in iter_idx_range:
             sig_num_r_list.append(self._perform_one_iteration(rp_inter_dict=rp_inter_dict,
                                                               nnl_pval_thresh=nnl_pval_thresh,
-                                                              random_seed=iter_idx + random_seed_shift))
+                                                              random_seed=self._random_seed + iter_idx))
 
         return sig_num_r_list
 
@@ -604,6 +603,7 @@ class RandomizeInteractionSet:
         pval_thresh_max = self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_MAX'][0]
         pval_thresh_step_size = self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_STEP_SIZE'][0]
         input_interactions_num = self._fdr_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]
+        random_seed = self._fdr_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0]
         result_index = self._fdr_info_dict['RESULT_INDEX'][0]
 
         # Results
@@ -658,25 +658,27 @@ class RandomizeInteractionSet:
                    fontsize=header_font_size)
         ax[0].text(-0.18, 0.70, 'Total number of interactions: ' + "{:,}".format(input_interactions_num),
                    fontsize=header_font_size, fontweight='bold', color=warn_input_inter_col)
+        ax[0].text(-0.18, 0.65, 'Random seed: ' + str(random_seed),
+                   fontsize=header_font_size)
 
-        ax[0].text(-0.18, 0.60, 'Determined P-value threshold: ' + "{:.5f}".format(pval_thresh_result),
+        ax[0].text(-0.18, 0.55, 'Determined P-value threshold: ' + "{:.5f}".format(pval_thresh_result),
                    fontsize=header_font_size,
                    fontweight='bold')
-        ax[0].text(-0.18, 0.55, 'Determined -ln(P-value threshold): ' + "{:.5f}".format(nnl_pval_thresh_result),
+        ax[0].text(-0.18, 0.50, 'Determined -ln(P-value threshold): ' + "{:.5f}".format(nnl_pval_thresh_result),
                    fontsize=header_font_size)
-        ax[0].text(-0.18, 0.50, 'Minimum read pair number: ' + str(min_rp_num_result), fontsize=header_font_size)
-        ax[0].text(-0.18, 0.45,
+        ax[0].text(-0.18, 0.45, 'Minimum read pair number: ' + str(min_rp_num_result), fontsize=header_font_size)
+        ax[0].text(-0.18, 0.40,
                    'Smallest possible P-value with ' + str(min_rp_num_result) + ' read pairs: ' + "{:.5f}".format(
                        min_rp_num_pval_result), fontsize=header_font_size)
-        ax[0].text(-0.18, 0.40,
+        ax[0].text(-0.18, 0.35,
                    'Number of interactions with ' + str(min_rp_num_result) + ' or more read pairs: ' + "{:,}".format(
                        min_rp_num_inter_num), fontsize=header_font_size, fontweight='bold', color=warn_min_rp_inter_col)
-        ax[0].text(-0.18, 0.35, 'Number of significant interactions: ' + "{:,}".format(sig_num_o_result),
+        ax[0].text(-0.18, 0.30, 'Number of significant interactions: ' + "{:,}".format(sig_num_o_result),
                    fontsize=header_font_size,
                    fontweight='bold')
-        ax[0].text(-0.18, 0.30, 'Number of randomized significant interactions: ' + "{:,}".format(sig_num_r_result),
+        ax[0].text(-0.18, 0.25, 'Number of randomized significant interactions: ' + "{:,}".format(sig_num_r_result),
                    fontsize=header_font_size, color=warn_rand_sig_inter_col)
-        ax[0].text(-0.18, 0.25, 'Estimated FDR: ' + "{:.5f}".format(fdr_result), fontsize=header_font_size,
+        ax[0].text(-0.18, 0.20, 'Estimated FDR: ' + "{:.5f}".format(fdr_result), fontsize=header_font_size,
                    fontweight='bold')
 
         # Plot P-value thresholds
