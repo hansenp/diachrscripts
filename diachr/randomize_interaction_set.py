@@ -138,7 +138,7 @@ class RandomizeInteractionSet:
             idx += 1
 
         # Look for irregularities and issue warnings if necessary
-        issued_warnings = [0,0,0]
+        issued_warnings = [0, 0, 0]
         if len(self._interaction_set.interaction_list) < self._FDR_WARN_INPUT_INTER_NUM:
             issued_warnings[0] = 1
             warnings.warn('Only ' + str(len(self._interaction_set.interaction_list)) + ' input interactions! ' +
@@ -213,7 +213,7 @@ class RandomizeInteractionSet:
         report += "\t\t[INFO] Determined P-value threshold: " \
                   + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['PVAL_THRESH'][result_index]) + '\n'
         report += "\t\t[INFO] Determined -ln(P-value threshold): " \
-                      + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['NNL_PVAL_THRESH'][result_index]) + '\n'
+                  + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['NNL_PVAL_THRESH'][result_index]) + '\n'
         report += "\t\t[INFO] Minimum read pair number: " \
                   + str(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM'][result_index]) + '\n'
         report += "\t\t[INFO] Smallest possible P-value with " \
@@ -221,7 +221,7 @@ class RandomizeInteractionSet:
                   + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM_PVAL'][result_index]) + '\n'
         report += "\t\t[INFO] Number of interactions with " \
                   + str(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM'][result_index]) + " or more read pairs: " \
-                      + "{:,}".format(self._fdr_info_dict['MIN_RP_NUM_INTER_NUM']) + '\n'
+                  + "{:,}".format(self._fdr_info_dict['MIN_RP_NUM_INTER_NUM']) + '\n'
         report += "\t\t[INFO] Number of significant interactions: " \
                   + "{:,}".format(self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_O'][result_index]) + '\n'
         report += "\t\t[INFO] Number of randomized significant interactions: " \
@@ -234,18 +234,18 @@ class RandomizeInteractionSet:
 
             if self._fdr_info_dict['WARNINGS'][0] == 1:
                 report += "\t\t[INFO] Not enough input interactions!" + '\n'
-                report += "\t\t\t[INFO] Only "\
-                        + "{:,}".format(self._fdr_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0])\
-                        + ' of ' + "{:,}".format(self._FDR_WARN_INPUT_INTER_NUM) +  '\n'
+                report += "\t\t\t[INFO] Only " \
+                          + "{:,}".format(self._fdr_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]) \
+                          + ' of ' + "{:,}".format(self._FDR_WARN_INPUT_INTER_NUM) + '\n'
 
             if self._fdr_info_dict['WARNINGS'][1] == 1:
-                report += "\t\t[INFO] Not enough interactions with enough read pairs required for significance!"  + '\n'
+                report += "\t\t[INFO] Not enough interactions with enough read pairs required for significance!" + '\n'
                 report += "\t\t\t[INFO] Only " \
                           + "{:,}".format(self._fdr_info_dict['MIN_RP_NUM_INTER_NUM']) \
                           + ' of ' + "{:,}".format(self._FDR_WARN_MIN_RP_INTER_NUM) + '\n'
 
             if self._fdr_info_dict['WARNINGS'][2] == 1:
-                report += "\t\t[INFO] Not enough randomized significant interactions!"  + '\n'
+                report += "\t\t[INFO] Not enough randomized significant interactions!" + '\n'
                 report += "\t\t\t[INFO] Only " \
                           + "{:,}".format(self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_R'][result_index]) \
                           + ' of ' + "{:,}".format(self._FDR_WARN_RAND_SIG_INTER_NUM) + '\n'
@@ -282,7 +282,6 @@ class RandomizeInteractionSet:
 
         # Warnings
         table_row += "WARNINGS" + '\n'
-
 
         # Table tag and prefix for output
         table_row += ":TR_FDR:" + '\t'
@@ -349,7 +348,7 @@ class RandomizeInteractionSet:
         # Get dictionary that stores the numbers of interactions with n read pairs
         min_rp_num, max_p_val = self._interaction_set._p_values.find_smallest_significant_n(nominal_alpha)
         rp_inter_dict = self._get_rp_inter_dict(min_rp_num=min_rp_num)
-        i_num_randomized = 0 # Determine number of randomized interactions
+        i_num_randomized = 0  # Determine number of randomized interactions
         for i_num in rp_inter_dict.values():
             i_num_randomized += i_num
 
@@ -412,7 +411,7 @@ class RandomizeInteractionSet:
         z_score = (sig_num_o - sig_num_r_mean) / sig_num_r_std
 
         # Estimate FDR
-        fdr = sig_num_r_mean/sig_num_o
+        fdr = sig_num_r_mean / sig_num_o
 
         if verbose:
             print("[INFO] ... done.")
@@ -430,15 +429,15 @@ class RandomizeInteractionSet:
                 {
                     'SIG_NUM_R_LIST': sig_num_r_list,
                     'SUMMARY':
-                         {
+                        {
                             'SIG_NUM_O': [sig_num_o],
                             'I_NUM_RANDOMIZED': [i_num_randomized],
                             'SIG_NUM_R_GT_OBS': [sig_num_r_gt_obs],
                             'SIG_NUM_R_MEAN': [sig_num_r_mean],
                             'SIG_NUM_R_STD': [sig_num_r_std],
                             'Z_SCORE': [z_score],
-                            'FDR':[fdr]
-                         }
+                            'FDR': [fdr]
+                        }
                 }
         }
         self._randomization_info_dict = report_dict
@@ -467,7 +466,8 @@ class RandomizeInteractionSet:
         report += "\t\t[INFO] Number of randomized interactions: " \
                   + "{:,}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['I_NUM_RANDOMIZED'][0]) + '\n'
         report += "\t\t[INFO] First 10 significant randomized interaction numbers: " + '\n' \
-                  + "\t\t\t" + ", ".join(str(i) for i in self._randomization_info_dict['RESULTS']['SIG_NUM_R_LIST'][:10]) \
+                  + "\t\t\t" + ", ".join(
+            str(i) for i in self._randomization_info_dict['RESULTS']['SIG_NUM_R_LIST'][:10]) \
                   + ", ..." + '\n'
         report += "\t\t[INFO] Iterations with more significant interactions than observed: " \
                   + "{:,}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_GT_OBS'][0]) + '\n'
@@ -483,6 +483,66 @@ class RandomizeInteractionSet:
         report += "[INFO] End of report." + '\n'
 
         return report
+
+    def get_randomization_info_table_row(self, out_prefix: str = None):
+        """
+        :return: String consisting of a header line and a line with values relating to last performed randomization
+        analysis
+        """
+
+        # Extract and format values from dictionary
+        input_i_num = str(self._randomization_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0])
+        nominal_alpha = "{:.5f}".format(self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHA'][0])
+        iter_num = str(self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0])
+        random_seed = str(self._randomization_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0])
+
+        sig_num_o = str(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_O'][0])
+        rand_i_num = str(self._randomization_info_dict['RESULTS']['SUMMARY']['I_NUM_RANDOMIZED'][0])
+        sig_num_r_gto = str(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_GT_OBS'][0])
+        sig_num_r_mean = "{:.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_MEAN'][0])
+        sig_num_r_sd = "{:.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_STD'][0])
+        z_score = "{:.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['Z_SCORE'][0])
+        fdr = "{:.5f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['FDR'][0])
+
+        # Table tag and prefix for output
+        table_row = ":TR_RANDOM:" + '\t'
+        table_row += "OUT_PREFIX" + '\t'
+
+        # Input parameters
+        table_row += "INPUT_I_NUM" + '\t'
+        table_row += "NOMINAL_ALPHA" + '\t'
+        table_row += "ITER_NUM" + '\t'
+        table_row += "RANDOM_SEED" + '\t'
+
+        # Results
+        table_row += "SIG_NUM_O" + '\t'
+        table_row += "RAND_I_NUM" + '\t'
+        table_row += "SIG_NUM_R_GTO" + '\t'
+        table_row += "SIG_NUM_R_MEAN" + '\t'
+        table_row += "SIG_NUM_R_SD" + '\t'
+        table_row += "Z_SCORE" + '\t'
+        table_row += "FDR" + '\n'
+
+        # Table tag and prefix for output
+        table_row += ":TR_RANDOM:" + '\t'
+        table_row += out_prefix + '\t'
+
+        # Input parameters
+        table_row += input_i_num + '\t'
+        table_row += nominal_alpha + '\t'
+        table_row += iter_num + '\t'
+        table_row += random_seed + '\t'
+
+        # Results
+        table_row += sig_num_o + '\t'
+        table_row += rand_i_num + '\t'
+        table_row += sig_num_r_gto + '\t'
+        table_row += sig_num_r_mean + '\t'
+        table_row += sig_num_r_sd + '\t'
+        table_row += z_score + '\t'
+        table_row += fdr + '\n'
+
+        return table_row
 
     def _get_rp_inter_dict(self, min_rp_num: int = 0):
         """
@@ -528,7 +588,8 @@ class RandomizeInteractionSet:
 
         return random_pval_list
 
-    def _perform_one_iteration(self, rp_inter_dict: dict = None, nnl_pval_thresh: float = None, random_seed: int = None):
+    def _perform_one_iteration(self, rp_inter_dict: dict = None, nnl_pval_thresh: float = None,
+                               random_seed: int = None):
         """
         This function performs a single iteration of the randomization procedure.
 
@@ -557,7 +618,7 @@ class RandomizeInteractionSet:
         # We pass all function parameters in a dictionary, because that's easier to use with 'pool.apply_async'
         rp_inter_dict = args_dict['RP_INTER_DICT']
         nnl_pval_thresh = args_dict['NNL_PVAL_THRESH']
-        iter_idx_range = args_dict['ITER_IDX_RANGE']
+        iter_idx_range = args_dict['ITER_IDX_RANGE'] # For each element of this list one iteration is performed
         verbose = args_dict['VERBOSE']
 
         # Init list with numbers of randomized significant interactions for each iteration
@@ -577,7 +638,7 @@ class RandomizeInteractionSet:
 
     def get_fdr_info_plot(self, pdf_file_name: str = None, analysis_name: str = None):
         """
-        This function creates a graphical representation of the results from the last FDR procedure performed.
+        This function creates a graphical representation of the results of the last FDR procedure performed.
 
         :param pdf_file_name: Name of the PDF file that will be created
         :param analysis_name: Name of of the analysis that will be shown in the graphical representation
@@ -724,11 +785,13 @@ class RandomizeInteractionSet:
         ax[5].axhline(fdr_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[5].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
 
-        ax[5].text(pval_thresh_max - pval_thresh_max/5, fdr_result + fdr_max/16, 'FDR: ' + "{:.5f}".format(fdr_result),
-                 bbox={'color': 'lightblue', 'alpha': 0.5, 'pad': 4})
+        ax[5].text(pval_thresh_max - pval_thresh_max / 5, fdr_result + fdr_max / 16,
+                   'FDR: ' + "{:.5f}".format(fdr_result),
+                   bbox={'color': 'lightblue', 'alpha': 0.5, 'pad': 4})
 
-        ax[5].text(pval_thresh_result + pval_thresh_max/60, fdr_result - fdr_max/9, 'P-value: ' + "{:.5f}".format(pval_thresh_result),
-                 bbox={'color': 'lightblue', 'alpha': 0.5, 'pad': 4})
+        ax[5].text(pval_thresh_result + pval_thresh_max / 60, fdr_result - fdr_max / 9,
+                   'P-value: ' + "{:.5f}".format(pval_thresh_result),
+                   bbox={'color': 'lightblue', 'alpha': 0.5, 'pad': 4})
 
         # Finalize save to PDF and return 'Figure' object
         fig.tight_layout()
@@ -877,6 +940,3 @@ class RandomizeInteractionSet:
         fig.tight_layout()
         fig.savefig(pdf_file_name)
         return fig
-
-
-

@@ -25,6 +25,8 @@ parser.add_argument('-i', '--diachromatic-interaction-file', help='Diachromatic 
 parser.add_argument('--fdr-threshold', help='FDR threshold for defining directed interactions.', default=0.05)
 parser.add_argument('--fdr-pval-thresh-step-size', help='P-value threshold step size used for FDR procedure.',
                     default=0.00025)
+parser.add_argument('--fdr-random-seed', help='Random seed used for FDR procedure.',
+                    default=None)
 parser.add_argument('--p-value-threshold', help='P-value threshold for defining directed interactions.', default=None)
 parser.add_argument('--enriched-digests-file', help='BED file with digests that were selected for target enrichment.',
                     required=False)
@@ -34,6 +36,10 @@ out_prefix = args.out_prefix
 diachromatic_interaction_file = args.diachromatic_interaction_file
 fdr_threshold = float(args.fdr_threshold)
 fdr_pval_thresh_step_size = float(args.fdr_pval_thresh_step_size)
+if args.fdr_random_seed is None:
+    fdr_random_seed = args.fdr_random_seed
+else:
+    fdr_random_seed = int(args.fdr_random_seed)
 p_value_threshold = args.p_value_threshold
 enriched_digests_file = args.enriched_digests_file
 
@@ -45,6 +51,7 @@ if args.p_value_threshold is None:
     parameter_info += "\t\t[INFO] Will determine a P-value threshold so that the FDR is kept below: " + str(
         fdr_threshold) + '\n'
     parameter_info += "\t\t[INFO] Will use a P-value threshold step size of: " + str(fdr_pval_thresh_step_size) + '\n'
+    parameter_info += "\t\t[INFO] Random seed: " + str(fdr_random_seed) + '\n'
     parameter_info += "\t\t[INFO] Use '--fdr-threshold' to set your own FDR threshold." + '\n'
     parameter_info += "\t\t[INFO] Or use '--p-value-threshold' to skip the FDR procedure." + '\n'
 else:
@@ -67,15 +74,17 @@ print(parameter_info)
 interaction_set = DiachromaticInteractionSet()
 interaction_set.parse_file(diachromatic_interaction_file, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
+print()
 
 # Determine P-value threshold so that the FDR is kept below a threshold
 if p_value_threshold is None:
-    randomize_fdr = RandomizeInteractionSet(interaction_set=interaction_set)
+    randomize_fdr = RandomizeInteractionSet(interaction_set=interaction_set, random_seed=fdr_random_seed)
     fdr_info_dict = randomize_fdr.get_pval_thresh_at_chosen_fdr_thresh(
         chosen_fdr_thresh=fdr_threshold,
         pval_thresh_max=fdr_threshold,
         pval_thresh_step_size=fdr_pval_thresh_step_size,
         verbose=True)
+    print()
     fdr_info_info_report = randomize_fdr.get_fdr_info_report()
     fdr_info_info_table_row = randomize_fdr.get_fdr_info_table_row(out_prefix)
     randomize_fdr.get_fdr_info_plot(pdf_file_name=out_prefix + "_fdr_info_plot.pdf", analysis_name=out_prefix)
@@ -85,16 +94,19 @@ if p_value_threshold is None:
 interaction_set.evaluate_and_categorize_interactions(p_value_threshold, verbose=True)
 eval_cat_info_report = interaction_set.get_eval_cat_info_report()
 eval_cat_info_table_row = interaction_set.get_eval_cat_info_table_row(out_prefix)
+print()
 
 # Select undirected reference interactions from 'UI'
 interaction_set.select_reference_interactions(verbose=True)
 select_ref_info_report = interaction_set.get_select_ref_info_report()
 select_ref_info_table_row = interaction_set.get_select_ref_info_table_row(out_prefix)
+print()
 
 # Write Diachromatic interaction file with two additional columns
 f_name_interactions = out_prefix + "_evaluated_and_categorized_interactions.tsv.gz"
 interaction_set.write_diachromatic_interaction_file(target_file=f_name_interactions, verbose=True)
 write_file_info_report = interaction_set.get_write_file_info_report()
+print()
 
 ### Create file with summary statistics
 #######################################

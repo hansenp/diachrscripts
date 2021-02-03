@@ -27,17 +27,17 @@ class TestRandomizeFDR(TestCase):
         # Prepare test data to test correct use of P-value thresholds
         cls.interaction_set_1 = DiachromaticInteractionSet()
         cls.interaction_set_1.parse_file("data/test_03/diachromatic_interaction_file_fdr_1.tsv.gz")
-        cls.randomize_1 = RandomizeInteractionSet(interaction_set=cls.interaction_set_1)
+        cls.randomize_1 = RandomizeInteractionSet(interaction_set=cls.interaction_set_1, random_seed=42)
 
         # Prepare test data to detect changes in the results for the test file with 1,000 interactions
         cls.interaction_set_1000 = DiachromaticInteractionSet()
         cls.interaction_set_1000.parse_file("data/test_03/diachromatic_interaction_file_fdr_top_1000.tsv.gz")
-        cls.randomize_1000 = RandomizeInteractionSet(interaction_set=cls.interaction_set_1000)
+        cls.randomize_1000 = RandomizeInteractionSet(interaction_set=cls.interaction_set_1000, random_seed=42)
 
         # Prepare test data to detect changes in the results for the test file with 64,000 interactions
         cls.interaction_set_64000 = DiachromaticInteractionSet()
         cls.interaction_set_64000.parse_file("data/test_03/diachromatic_interaction_file_fdr_top_64000.tsv.gz")
-        cls.randomize_64000 = RandomizeInteractionSet(interaction_set=cls.interaction_set_64000)
+        cls.randomize_64000 = RandomizeInteractionSet(interaction_set=cls.interaction_set_64000, random_seed=42)
 
     def test_interactions_numbers_at_different_pval_thresholds(self):
         """
