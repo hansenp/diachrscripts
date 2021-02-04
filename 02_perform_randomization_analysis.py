@@ -27,6 +27,7 @@ parser.add_argument('-a','--nominal-alpha', help='Nominal alpha. P-value thresho
                                                  'interactions.', default=0.05)
 parser.add_argument('-s','--random-seed', help='Seed for randomization of simple and twisted read pairs.', default=None)
 parser.add_argument('-t','--thread-num', help='Number of threads.', default=0)
+parser.add_argument('--analysis-name', help='Name for the analysis shown in the plot.', default='ANALYSIS_NAME')
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -38,6 +39,7 @@ if args.random_seed is None:
 else:
     random_seed = int(args.random_seed)
 thread_num = int(args.thread_num)
+analysis_name = args.analysis_name
 
 parameter_info = "[INFO] " + "Input parameters" + '\n'
 parameter_info += "\t[INFO] --out-prefix: " + out_prefix + '\n'
@@ -46,6 +48,7 @@ parameter_info += "\t[INFO] --iter-num: " + str(iter_num) + '\n'
 parameter_info += "\t[INFO] --nominal-alpha: " + str(nominal_alpha) + '\n'
 parameter_info += "\t[INFO] --random-seed: " + str(random_seed) + '\n'
 parameter_info += "\t[INFO] --thread-num: " + str(thread_num) + '\n'
+parameter_info += "\t[INFO] --analysis-name: " + analysis_name + '\n'
 
 print(parameter_info)
 
@@ -75,7 +78,7 @@ print()
 f_name_plot = out_prefix + '_randomization_analysis.pdf'
 randomize_interactions.get_randomization_info_plot(
     pdf_file_name = f_name_plot,
-    analysis_name = out_prefix)
+    analysis_name = analysis_name)
 
 f_name_summary = out_prefix + "_randomization_analysis_summary.txt"
 out_fh = open(f_name_summary, 'wt')
