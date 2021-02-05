@@ -23,6 +23,9 @@ class RandomizeInteractionSet:
         # Interaction set on which analyzes are performed
         self._interaction_set = interaction_set
 
+        # Read pair interaction dictionary
+        self._rp_inter_dict = None
+
         # Dictionary with all information on the last FDR procedure performed
         self._fdr_info_dict = None
 
@@ -79,9 +82,8 @@ class RandomizeInteractionSet:
             print("\t[INFO] Getting list of randomized P-values ...")
 
         # Get dictionary that stores the numbers of interactions with n read pairs and list of random P-values
-        rp_inter_dict = self._get_rp_inter_dict()
-        pvals_randomized = self._get_list_of_p_values_from_randomized_data(rp_inter_dict=rp_inter_dict,
-                                                                           random_seed=self._random_seed)
+        self._rp_inter_dict = self._get_rp_inter_dict()
+        pvals_randomized = self._get_list_of_p_values_from_randomized_data(random_seed=self._random_seed)
 
         if verbose:
             print("\t[INFO] Going through list of P-value thresholds and estimate FDR ...")
@@ -347,14 +349,13 @@ class RandomizeInteractionSet:
 
         # Get dictionary that stores the numbers of interactions with n read pairs
         min_rp_num, max_p_val = self._interaction_set._p_values.find_smallest_significant_n(nominal_alpha)
-        rp_inter_dict = self._get_rp_inter_dict(min_rp_num=min_rp_num)
+        self._rp_inter_dict = self._get_rp_inter_dict(min_rp_num=min_rp_num)
         i_num_randomized = 0  # Determine number of randomized interactions
-        for i_num in rp_inter_dict.values():
+        for i_num in self._rp_inter_dict.values():
             i_num_randomized += i_num
 
         # Use dictionary to get list of P-values for randomized data and determine number of significant interactions
         args_dict = {
-            'RP_INTER_DICT': rp_inter_dict,
             'NNL_PVAL_THRESH': nnl_nominal_alpha,
             'ITER_IDX_RANGE': [],
             'VERBOSE': verbose
@@ -562,12 +563,11 @@ class RandomizeInteractionSet:
                     rp_inter_dict[d_inter.rp_total] = 1
         return rp_inter_dict
 
-    def _get_list_of_p_values_from_randomized_data(self, rp_inter_dict: dict = None, random_seed: int = None):
+    def _get_list_of_p_values_from_randomized_data(self, random_seed: int = None):
         """
         This function generates randomized simple and twisted read pair counts for all interactions of the
         interaction set of this object and calculates associated P-values.
 
-        :param rp_inter_dict: Dictionary generated with function '_get_rp_inter_dict'
         :return: List of P-values for randomized interactions
         """
 
@@ -576,7 +576,7 @@ class RandomizeInteractionSet:
 
         random_pval_list = []
 
-        for rp_num, i_num in rp_inter_dict.items():
+        for rp_num, i_num in self._rp_inter_dict.items():
 
             # Generate random simple read pair counts for current read pair number
             simple_count_list = list(binom.rvs(rp_num, p=0.5, size=i_num))
@@ -588,19 +588,18 @@ class RandomizeInteractionSet:
 
         return random_pval_list
 
-    def _perform_one_iteration(self, rp_inter_dict: dict = None, nnl_pval_thresh: float = None,
+    def _perform_one_iteration(self, nnl_pval_thresh: float = None,
                                random_seed: int = None):
         """
         This function performs a single iteration of the randomization procedure.
 
-        :param rp_inter_dict: Dictionary that contains the number of interactions for different numbers of read pairs
         :param nnl_pval_thresh: Negative natural logarithm of P-value threshold
         :param random_seed: Number used to init random generator
         :return: Number of randomized significant interactions
         """
 
         # Get list of P-values for randomized interactions
-        randomized_nnl_pvals = self._get_list_of_p_values_from_randomized_data(rp_inter_dict, random_seed=random_seed)
+        randomized_nnl_pvals = self._get_list_of_p_values_from_randomized_data(random_seed=random_seed)
 
         # Determine number of randomized significant interactions at given P-value threshold
         sig_num_r = len([1 for nnl_pval in randomized_nnl_pvals if nnl_pval > nnl_pval_thresh])
@@ -616,7 +615,6 @@ class RandomizeInteractionSet:
         """
 
         # We pass all function parameters in a dictionary, because that's easier to use with 'pool.apply_async'
-        rp_inter_dict = args_dict['RP_INTER_DICT']
         nnl_pval_thresh = args_dict['NNL_PVAL_THRESH']
         iter_idx_range = args_dict['ITER_IDX_RANGE'] # For each element of this list one iteration is performed
         verbose = args_dict['VERBOSE']
@@ -630,8 +628,7 @@ class RandomizeInteractionSet:
 
         # Perform each iteration with its own random seed that corresponds by adding the iteration index
         for iter_idx in iter_idx_range:
-            sig_num_r_list.append(self._perform_one_iteration(rp_inter_dict=rp_inter_dict,
-                                                              nnl_pval_thresh=nnl_pval_thresh,
+            sig_num_r_list.append(self._perform_one_iteration(nnl_pval_thresh=nnl_pval_thresh,
                                                               random_seed=self._random_seed + iter_idx))
 
         return sig_num_r_list
