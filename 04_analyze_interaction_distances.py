@@ -64,10 +64,8 @@ EN and NN. The twelve resulting distributions are then shown in a boxplot with t
 import argparse
 import gzip
 import diachrscripts_toolkit
-import numpy
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import matplotlib.backends.backend_pdf
 
 ### Parse command line
 ######################

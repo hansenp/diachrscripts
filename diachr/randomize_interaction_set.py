@@ -23,8 +23,11 @@ class RandomizeInteractionSet:
         # Interaction set on which analyzes are performed
         self._interaction_set = interaction_set
 
-        # Read pair interaction dictionary
+        # Read pair interaction dictionary used to get random simple read pair counts
         self._rp_inter_dict = None
+
+        # Nominal alpha
+        self._nominal_alpha = None
 
         # Dictionary with all information on the last FDR procedure performed
         self._fdr_info_dict = None
@@ -360,11 +363,13 @@ class RandomizeInteractionSet:
             'ITER_IDX_RANGE': [],
             'VERBOSE': verbose
         }
+        self._nnl_nominal_alpha = nnl_nominal_alpha
 
         # Perform randomization without or with multiprocessing package
         if thread_num == 0:
             args_dict['ITER_IDX_RANGE'] = range(0, iter_num)
-            sig_num_r_list = self._perform_n_iterations(args_dict)
+            iter_start_idx = 0
+            sig_num_r_list = self._perform_n_iterations(iter_start_idx, iter_num)
         else:
 
             # Perform permutation for 'thread_num' batches with balanced numbers of iterations
@@ -381,9 +386,9 @@ class RandomizeInteractionSet:
             iter_start_idx = 0
             for batch_iter_num in batch_iter_nums:
                 args_dict['ITER_IDX_RANGE'] = range(iter_start_idx, iter_start_idx + batch_iter_num)
-                result = pool.apply_async(self._perform_n_iterations, args=(args_dict,))
+                result = pool.apply_async(self._perform_n_iterations, args=(iter_start_idx, iter_start_idx + batch_iter_num))
                 results.append(result)
-                time.sleep(1)
+                #time.sleep(1)
                 iter_start_idx += batch_iter_num
 
             # Wait until all processes are finished
@@ -606,7 +611,7 @@ class RandomizeInteractionSet:
 
         return sig_num_r
 
-    def _perform_n_iterations(self, args_dict: dict = None):
+    def _perform_n_iterations(self, iter_start_idx, n):
         """
         This function performs a given number of iterations of the randomization procedure.
 
@@ -615,9 +620,9 @@ class RandomizeInteractionSet:
         """
 
         # We pass all function parameters in a dictionary, because that's easier to use with 'pool.apply_async'
-        nnl_pval_thresh = args_dict['NNL_PVAL_THRESH']
-        iter_idx_range = args_dict['ITER_IDX_RANGE'] # For each element of this list one iteration is performed
-        verbose = args_dict['VERBOSE']
+        nnl_pval_thresh = self._nnl_nominal_alpha #args_dict['NNL_PVAL_THRESH']
+        iter_idx_range = range(iter_start_idx, n)#args_dict['ITER_IDX_RANGE'] # For each element of this list one iteration is performed
+        verbose = True#args_dict['VERBOSE']
 
         # Init list with numbers of randomized significant interactions for each iteration
         sig_num_r_list = []

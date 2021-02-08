@@ -11,13 +11,9 @@ In between, interactive plot windows open that have to closed for the script to 
 """
 
 import os
-import sys
 import argparse
 from diachr import BinomialInteractionModel
-from diachr import EnhancedInteraction
-from diachr import EnhancedInteractionParser
 import matplotlib.pyplot as plt
-import scipy, scipy.stats, numpy
 
 parser = argparse.ArgumentParser(description='Explore binomial model using simuated and real interactions.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUTPREFIX')
