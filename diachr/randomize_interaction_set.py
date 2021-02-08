@@ -357,6 +357,9 @@ class RandomizeInteractionSet:
         for i_num in self._rp_inter_dict.values():
             i_num_randomized += i_num
 
+        if verbose:
+            print("\t\t[INFO] Created RP_INTER_DICT for " + "{:,}".format(i_num_randomized) + " interactions ...")
+
         # Perform randomization without or with multiprocessing package
         if thread_num == 0:
             iter_start_idx = 0
