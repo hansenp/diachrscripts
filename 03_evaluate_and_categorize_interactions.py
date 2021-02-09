@@ -78,8 +78,9 @@ print()
 
 # Determine P-value threshold so that the FDR is kept below a threshold
 if p_value_threshold is None:
-    randomize_fdr = RandomizeInteractionSet(interaction_set=interaction_set, random_seed=fdr_random_seed)
+    randomize_fdr = RandomizeInteractionSet(random_seed=fdr_random_seed)
     fdr_info_dict = randomize_fdr.get_pval_thresh_at_chosen_fdr_thresh(
+        interaction_set=interaction_set,
         chosen_fdr_thresh=fdr_threshold,
         pval_thresh_max=fdr_threshold,
         pval_thresh_step_size=fdr_pval_thresh_step_size,

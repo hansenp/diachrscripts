@@ -7,24 +7,25 @@ import multiprocessing as mp
 import itertools
 import time
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
+from diachr.diachromatic_interaction_set import BinomialModel
 
 warnings.filterwarnings('always')
 
 
 class RandomizeInteractionSet:
 
-    def __init__(self, random_seed: int = None, interaction_set: DiachromaticInteractionSet = None):
+    def __init__(self, random_seed: int = None):
 
         # Set random seed to be able to reproduce results
         self._random_seed = random_seed
         if random_seed is None:
             self._random_seed = int(time.time())
 
-        # Interaction set on which analyzes are performed
-        self._interaction_set = interaction_set
-
         # Read pair interaction dictionary used to get random simple read pair counts
         self._rp_inter_dict = None
+
+        # Object for the calculation and storage of already calculated P-values
+        self.p_values = BinomialModel()
 
         # Negative natural logarithm of nominal alpha
         self._nnl_nominal_alpha = None
@@ -47,6 +48,7 @@ class RandomizeInteractionSet:
         self._FDR_WARN_RAND_SIG_INTER_NUM = 20
 
     def get_pval_thresh_at_chosen_fdr_thresh(self,
+                                             interaction_set: DiachromaticInteractionSet = None,
                                              chosen_fdr_thresh: float = 0.05,
                                              pval_thresh_max: float = 0.05,
                                              pval_thresh_step_size: float = 0.00025,
@@ -77,16 +79,17 @@ class RandomizeInteractionSet:
             print("\t[INFO] Getting list of observed P-values ...")
 
         pvals_observed = []
-        for d_inter in self._interaction_set.interaction_list:
-            nnl_pval = self._interaction_set._p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
+        for d_inter in interaction_set.interaction_list:
+            nnl_pval = self.p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
             pvals_observed.append(nnl_pval)
 
         if verbose:
             print("\t[INFO] Getting list of randomized P-values ...")
 
         # Get dictionary that stores the numbers of interactions with n read pairs and list of random P-values
-        self._rp_inter_dict = self._get_rp_inter_dict()
-        pvals_randomized = self._get_list_of_p_values_from_randomized_data(random_seed=self._random_seed)
+        self._rp_inter_dict = self._get_rp_inter_dict(interaction_set=interaction_set)
+        pvals_randomized = self._get_list_of_p_values_from_randomized_data(interaction_set=interaction_set,
+                                                                           random_seed=self._random_seed)
 
         if verbose:
             print("\t[INFO] Going through list of P-value thresholds and estimate FDR ...")
@@ -112,7 +115,7 @@ class RandomizeInteractionSet:
         for p_thresh in pval_thresh_list:
 
             # Get minimum number of read pairs required for significance at current  threshold
-            min_rp_num, min_rp_num_pval = self._interaction_set._p_values.find_smallest_significant_n(p_thresh)
+            min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(p_thresh)
             min_rp_num_list.append(min_rp_num)
             min_rp_num_pval_list.append(min_rp_num_pval)
 
@@ -144,12 +147,12 @@ class RandomizeInteractionSet:
 
         # Look for irregularities and issue warnings if necessary
         issued_warnings = [0, 0, 0]
-        if len(self._interaction_set.interaction_list) < self._FDR_WARN_INPUT_INTER_NUM:
+        if len(interaction_set.interaction_list) < self._FDR_WARN_INPUT_INTER_NUM:
             issued_warnings[0] = 1
-            warnings.warn('Only ' + str(len(self._interaction_set.interaction_list)) + ' input interactions! ' +
+            warnings.warn('Only ' + str(len(interaction_set.interaction_list)) + ' input interactions! ' +
                           'Probably not enough to estimate the FDR.')
 
-        min_rp_num_inter_num = self._interaction_set.get_num_of_inter_with_as_many_or_more_read_pairs(
+        min_rp_num_inter_num = interaction_set.get_num_of_inter_with_as_many_or_more_read_pairs(
             min_rp_num_list[idx - 1])
         if min_rp_num_inter_num < self._FDR_WARN_MIN_RP_INTER_NUM:
             issued_warnings[1] = 1
@@ -174,7 +177,7 @@ class RandomizeInteractionSet:
                     'CHOSEN_FDR_THRESH': [chosen_fdr_thresh],
                     'PVAL_THRESH_MAX': [pval_thresh_max],
                     'PVAL_THRESH_STEP_SIZE': [pval_thresh_step_size],
-                    'INPUT_INTERACTIONS_NUM': [len(self._interaction_set.interaction_list)],
+                    'INPUT_INTERACTIONS_NUM': [len(interaction_set.interaction_list)],
                     'RANDOM_SEED': [self._random_seed]
                 },
             'RESULTS_TABLE':
@@ -317,7 +320,11 @@ class RandomizeInteractionSet:
 
         return table_row
 
-    def perform_randomization_analysis(self, nominal_alpha: float = 0.01, iter_num: int = 1000, thread_num: int = 0,
+    def perform_randomization_analysis(self,
+                                       interaction_set: DiachromaticInteractionSet = None,
+                                       nominal_alpha: float = 0.01,
+                                       iter_num: int = 1000,
+                                       thread_num: int = 0,
                                        verbose: bool = False):
         """
         This function implements the entire randomization analysis.
@@ -342,8 +349,8 @@ class RandomizeInteractionSet:
             print("\t[INFO] Determining number of significant interactions at nominal alpha ...")
 
         sig_num_o = 0
-        for d_inter in self._interaction_set.interaction_list:
-            nnl_pval = self._interaction_set._p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
+        for d_inter in interaction_set.interaction_list:
+            nnl_pval = self.p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
             if nnl_nominal_alpha < nnl_pval:
                 sig_num_o += 1
 
@@ -351,8 +358,8 @@ class RandomizeInteractionSet:
             print("\t[INFO] Randomizing interactions ...")
 
         # Get dictionary that stores the numbers of interactions with n read pairs
-        min_rp_num, max_p_val = self._interaction_set._p_values.find_smallest_significant_n(nominal_alpha)
-        self._rp_inter_dict = self._get_rp_inter_dict(min_rp_num=min_rp_num)
+        min_rp_num, max_p_val = interaction_set._p_values.find_smallest_significant_n(nominal_alpha)
+        self._rp_inter_dict = self._get_rp_inter_dict(interaction_set=interaction_set, min_rp_num=min_rp_num)
         i_num_randomized = 0  # Determine number of randomized interactions
         for i_num in self._rp_inter_dict.values():
             i_num_randomized += i_num
@@ -420,7 +427,7 @@ class RandomizeInteractionSet:
                 {
                     'NOMINAL_ALPHA': [nominal_alpha],
                     'ITER_NUM': [iter_num],
-                    'INPUT_INTERACTIONS_NUM': [len(self._interaction_set.interaction_list)],
+                    'INPUT_INTERACTIONS_NUM': [len(interaction_set.interaction_list)],
                     'RANDOM_SEED': [self._random_seed]
                 },
             'RESULTS':
@@ -542,7 +549,9 @@ class RandomizeInteractionSet:
 
         return table_row
 
-    def _get_rp_inter_dict(self, min_rp_num: int = 0):
+    def _get_rp_inter_dict(self,
+                           interaction_set: DiachromaticInteractionSet = None,
+                           min_rp_num: int = 0):
         """
         Create dictionary required needed for randomization of interactions.
 
@@ -552,7 +561,7 @@ class RandomizeInteractionSet:
         """
 
         rp_inter_dict = {}
-        for d_inter in self._interaction_set.interaction_list:
+        for d_inter in interaction_set.interaction_list:
             if min_rp_num <= d_inter.rp_total:
                 if d_inter.rp_total in rp_inter_dict:
                     rp_inter_dict[d_inter.rp_total] += 1
@@ -560,7 +569,9 @@ class RandomizeInteractionSet:
                     rp_inter_dict[d_inter.rp_total] = 1
         return rp_inter_dict
 
-    def _get_list_of_p_values_from_randomized_data(self, random_seed: int = None):
+    def _get_list_of_p_values_from_randomized_data(self,
+                                                   interaction_set: DiachromaticInteractionSet = None,
+                                                   random_seed: int = None):
         """
         This function generates randomized simple and twisted read pair counts for all interactions of the
         interaction set of this object and calculates associated P-values.
@@ -580,7 +591,7 @@ class RandomizeInteractionSet:
 
             # Calculate P-values and append to list
             for simple_count in simple_count_list:
-                nnl_pval = self._interaction_set._p_values.get_binomial_nnl_p_value(simple_count, rp_num - simple_count)
+                nnl_pval = self.p_values.get_binomial_nnl_p_value(simple_count, rp_num - simple_count)
                 random_pval_list.append(nnl_pval)
 
         return random_pval_list

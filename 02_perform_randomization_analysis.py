@@ -63,8 +63,9 @@ read_file_info_report = interaction_set.get_read_file_info_report()
 print()
 
 # Create RandomizeInteractionSet object and perform analysis
-randomize_interactions = RandomizeInteractionSet(interaction_set=interaction_set, random_seed=random_seed)
+randomize_interactions = RandomizeInteractionSet(random_seed=random_seed)
 randomize_interactions_info_dict = randomize_interactions.perform_randomization_analysis(
+    interaction_set=interaction_set,
     nominal_alpha = nominal_alpha,
     iter_num = iter_num,
     thread_num = thread_num,

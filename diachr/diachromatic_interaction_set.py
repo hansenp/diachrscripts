@@ -165,7 +165,7 @@ class DiachromaticInteractionSet:
                 statusB = 'N'
 
         # The interaction read has not yet been evaluated and categorized
-        if len(F) == 9:
+        if len(F) < 11 :
             di_inter = DiachromaticInteraction(
                 chrA=chrA,
                 fromA=fromA,

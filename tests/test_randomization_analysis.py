@@ -17,12 +17,12 @@ class TestRandomizationAnalysis(TestCase):
         # Prepare interaction set using the test file with 1,000 interactions
         cls.interaction_set_1000 = DiachromaticInteractionSet()
         cls.interaction_set_1000.parse_file("data/test_03/diachromatic_interaction_file_fdr_top_1000.tsv.gz")
-        cls.randomize_1000 = RandomizeInteractionSet(interaction_set=cls.interaction_set_1000, random_seed=0)
+        cls.randomize_1000 = RandomizeInteractionSet(random_seed=0)
 
         # Prepare interaction set using the test file with 64,000 interactions
         cls.interaction_set_64000 = DiachromaticInteractionSet()
         cls.interaction_set_64000.parse_file("data/test_03/diachromatic_interaction_file_fdr_top_64000.tsv.gz")
-        cls.randomize_64000 = RandomizeInteractionSet(interaction_set=cls.interaction_set_64000, random_seed=0)
+        cls.randomize_64000 = RandomizeInteractionSet(random_seed=0)
 
     def test_parallel_processing(self):
         """
@@ -35,24 +35,28 @@ class TestRandomizationAnalysis(TestCase):
 
         # Perform randomization analysis without 'multiprocessing' package
         random_analysis_thread_num_0_info_dict = self.randomize_64000.perform_randomization_analysis(
+            interaction_set=self.interaction_set_64000,
             nominal_alpha=nominal_alpha,
             iter_num=iter_num,
             thread_num=0)
 
         # Perform randomization analysis with 'multiprocessing' package but only in one process
         random_analysis_thread_num_1_info_dict = self.randomize_64000.perform_randomization_analysis(
+            interaction_set=self.interaction_set_64000,
             nominal_alpha=nominal_alpha,
             iter_num=iter_num,
             thread_num=1)
 
         # Perform randomization analysis with 'multiprocessing' package in two parallel processes
         random_analysis_thread_num_2_info_dict = self.randomize_64000.perform_randomization_analysis(
+            interaction_set=self.interaction_set_64000,
             nominal_alpha=nominal_alpha,
             iter_num=iter_num,
             thread_num=2)
 
         # Perform randomization analysis with 'multiprocessing' package in three parallel processes
         random_analysis_thread_num_3_info_dict = self.randomize_64000.perform_randomization_analysis(
+            interaction_set=self.interaction_set_64000,
             nominal_alpha=nominal_alpha,
             iter_num=iter_num,
             thread_num=3)
@@ -79,6 +83,7 @@ class TestRandomizationAnalysis(TestCase):
         """
 
         random_analysis_info_dict = self.randomize_64000.perform_randomization_analysis(
+            interaction_set=self.interaction_set_64000,
             nominal_alpha=0.0025,
             iter_num=100,
             thread_num=0)
@@ -111,21 +116,23 @@ class TestRandomizationAnalysis(TestCase):
 
         # Perform analysis for RandomizeInteractionSet object of this class (random seed: 0)
         random_analysis_info_dict = self.randomize_1000.perform_randomization_analysis(
+            interaction_set=self.interaction_set_1000,
             nominal_alpha=0.005,
             iter_num=100,
             thread_num=0)
 
         # Create a new RandomizeInteractionSet object with the same random seed and perform the same analysis
-        randomize_1000_same_seed = RandomizeInteractionSet(interaction_set=self.interaction_set_1000, random_seed=0)
+        randomize_1000_same_seed = RandomizeInteractionSet(random_seed=0)
         random_analysis_info_dict_same_seed = randomize_1000_same_seed.perform_randomization_analysis(
+            interaction_set=self.interaction_set_1000,
             nominal_alpha=0.005,
             iter_num=100,
             thread_num=0)
 
         # Create a new RandomizeInteractionSet object with the different random seed and perform the same analysis
-        randomize_1000_different_seed = RandomizeInteractionSet(interaction_set=self.interaction_set_1000,
-                                                                random_seed=42)
+        randomize_1000_different_seed = RandomizeInteractionSet(random_seed=42)
         random_analysis_info_dict_different_seed = randomize_1000_different_seed.perform_randomization_analysis(
+            interaction_set=self.interaction_set_1000,
             nominal_alpha=0.005,
             iter_num=100,
             thread_num=0)
@@ -148,18 +155,21 @@ class TestRandomizationAnalysis(TestCase):
 
         # Perform analysis without multiprocessing (random seed: 0)
         random_analysis_info_dict_0 = self.randomize_1000.perform_randomization_analysis(
+            interaction_set=self.interaction_set_1000,
             nominal_alpha=0.005,
             iter_num=100,
             thread_num=0)
 
         # Perform analysis with multiprocessing but only one process (random seed: 0)
         random_analysis_info_dict_1 = self.randomize_1000.perform_randomization_analysis(
+            interaction_set=self.interaction_set_1000,
             nominal_alpha=0.005,
             iter_num=100,
             thread_num=1)
 
         # Perform analysis with multiprocessing but only one process (random seed: 0)
         random_analysis_info_dict_2 = self.randomize_1000.perform_randomization_analysis(
+            interaction_set=self.interaction_set_1000,
             nominal_alpha=0.005,
             iter_num=100,
             thread_num=2)
