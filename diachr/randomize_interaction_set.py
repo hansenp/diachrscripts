@@ -6,6 +6,7 @@ import warnings
 import multiprocessing as mp
 import itertools
 import time
+import sys
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.diachromatic_interaction_set import BinomialModel
 
@@ -370,7 +371,7 @@ class RandomizeInteractionSet:
         # Perform randomization without or with multiprocessing package
         if thread_num == 0:
             iter_start_idx = 0
-            sig_num_r_list = self._perform_n_iterations(iter_start_idx, iter_num, nnl_nominal_alpha, True)
+            sig_num_r_list = self._perform_n_iterations(iter_start_idx, iter_num, nnl_nominal_alpha, verbose)
         else:
 
             # Perform permutation for 'thread_num' batches with balanced numbers of iterations
@@ -386,7 +387,7 @@ class RandomizeInteractionSet:
             results = []
             iter_start_idx = 0
             for batch_iter_num in batch_iter_nums:
-                result = pool.apply_async(self._perform_n_iterations, args=(iter_start_idx, iter_start_idx + batch_iter_num, nnl_nominal_alpha, True))
+                result = pool.apply_async(self._perform_n_iterations, args=(iter_start_idx, iter_start_idx + batch_iter_num, nnl_nominal_alpha, verbose))
                 results.append(result)
                 iter_start_idx += batch_iter_num
 
@@ -864,7 +865,7 @@ class RandomizeInteractionSet:
         ax[0].spines['bottom'].set_color('white')
         ax[0].tick_params(axis='x', colors='white')
         ax[0].tick_params(axis='y', colors='white')
-        ax[0].text(-0.2, 1.00, 'Randomization analysis results', fontsize=18, fontweight='bold')
+        ax[0].text(-0.2, 1.00, 'Randomization results', fontsize=18, fontweight='bold')
         ax[0].text(-0.18, 0.90, 'Analysis name: ' + analysis_name, fontsize=header_font_size, fontweight='bold')
         ax[0].text(-0.18, 0.85, 'Number of input interactions: ' + "{:,}".format(input_interactions_num),
                    fontsize=header_font_size)

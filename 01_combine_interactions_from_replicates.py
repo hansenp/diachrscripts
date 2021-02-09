@@ -93,5 +93,3 @@ generated_file_info += "\t[INFO] " + f_name_interactions + '\n'
 out_fh.write(generated_file_info)
 
 out_fh.close()
-
-print(generated_file_info)
