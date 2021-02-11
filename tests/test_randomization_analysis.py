@@ -1,6 +1,7 @@
 from unittest import TestCase
 import os
 import sys
+from numpy import log
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.randomize_interaction_set import RandomizeInteractionSet
 
@@ -36,28 +37,28 @@ class TestRandomizationAnalysis(TestCase):
         # Perform randomization analysis without 'multiprocessing' package
         random_analysis_thread_num_0_info_dict = self.randomize_64000.perform_randomization_analysis(
             interaction_set=self.interaction_set_64000,
-            nominal_alpha=nominal_alpha,
+            nominal_alphas=[nominal_alpha],
             iter_num=iter_num,
             thread_num=0)
 
         # Perform randomization analysis with 'multiprocessing' package but only in one process
         random_analysis_thread_num_1_info_dict = self.randomize_64000.perform_randomization_analysis(
             interaction_set=self.interaction_set_64000,
-            nominal_alpha=nominal_alpha,
+            nominal_alphas=[nominal_alpha],
             iter_num=iter_num,
             thread_num=1)
 
         # Perform randomization analysis with 'multiprocessing' package in two parallel processes
         random_analysis_thread_num_2_info_dict = self.randomize_64000.perform_randomization_analysis(
             interaction_set=self.interaction_set_64000,
-            nominal_alpha=nominal_alpha,
+            nominal_alphas=[nominal_alpha],
             iter_num=iter_num,
             thread_num=2)
 
         # Perform randomization analysis with 'multiprocessing' package in three parallel processes
         random_analysis_thread_num_3_info_dict = self.randomize_64000.perform_randomization_analysis(
             interaction_set=self.interaction_set_64000,
-            nominal_alpha=nominal_alpha,
+            nominal_alphas=[nominal_alpha],
             iter_num=iter_num,
             thread_num=3)
 
@@ -84,7 +85,7 @@ class TestRandomizationAnalysis(TestCase):
 
         random_analysis_info_dict = self.randomize_64000.perform_randomization_analysis(
             interaction_set=self.interaction_set_64000,
-            nominal_alpha=0.0025,
+            nominal_alphas=[0.0025],
             iter_num=100,
             thread_num=0)
 
@@ -117,7 +118,7 @@ class TestRandomizationAnalysis(TestCase):
         # Perform analysis for RandomizeInteractionSet object of this class (random seed: 0)
         random_analysis_info_dict = self.randomize_1000.perform_randomization_analysis(
             interaction_set=self.interaction_set_1000,
-            nominal_alpha=0.005,
+            nominal_alphas=[0.005],
             iter_num=100,
             thread_num=0)
 
@@ -125,7 +126,7 @@ class TestRandomizationAnalysis(TestCase):
         randomize_1000_same_seed = RandomizeInteractionSet(random_seed=0)
         random_analysis_info_dict_same_seed = randomize_1000_same_seed.perform_randomization_analysis(
             interaction_set=self.interaction_set_1000,
-            nominal_alpha=0.005,
+            nominal_alphas=[0.005],
             iter_num=100,
             thread_num=0)
 
@@ -133,7 +134,7 @@ class TestRandomizationAnalysis(TestCase):
         randomize_1000_different_seed = RandomizeInteractionSet(random_seed=42)
         random_analysis_info_dict_different_seed = randomize_1000_different_seed.perform_randomization_analysis(
             interaction_set=self.interaction_set_1000,
-            nominal_alpha=0.005,
+            nominal_alphas=[0.005],
             iter_num=100,
             thread_num=0)
 
@@ -156,21 +157,21 @@ class TestRandomizationAnalysis(TestCase):
         # Perform analysis without multiprocessing (random seed: 0)
         random_analysis_info_dict_0 = self.randomize_1000.perform_randomization_analysis(
             interaction_set=self.interaction_set_1000,
-            nominal_alpha=0.005,
+            nominal_alphas=[0.005],
             iter_num=100,
             thread_num=0)
 
         # Perform analysis with multiprocessing but only one process (random seed: 0)
         random_analysis_info_dict_1 = self.randomize_1000.perform_randomization_analysis(
             interaction_set=self.interaction_set_1000,
-            nominal_alpha=0.005,
+            nominal_alphas=[0.005],
             iter_num=100,
             thread_num=1)
 
         # Perform analysis with multiprocessing but only one process (random seed: 0)
         random_analysis_info_dict_2 = self.randomize_1000.perform_randomization_analysis(
             interaction_set=self.interaction_set_1000,
-            nominal_alpha=0.005,
+            nominal_alphas=[0.005],
             iter_num=100,
             thread_num=2)
 
@@ -182,3 +183,28 @@ class TestRandomizationAnalysis(TestCase):
                                                                  'multiprocessing!')
         self.assertEqual(sig_num_r_mean_0, sig_num_r_mean_2, msg='Get different results with the same random depending '
                                                                  'multiprocessing!')
+
+    def test_determine_significant_pvals_at_nominal_alphas_nnl(self):
+        """
+        Here the function that determines the number of significant P-values for a list of nominal alphas is tested on
+        a small example.
+        """
+
+        # Create list of nominal alphas
+        nominal_alphas = [0.01, 0.02, 0.03, 0.04, 0.05]
+        nominal_alphas_nnl = -log(nominal_alphas)
+
+        # Create list of P-values
+        p_values = [0.01, 0.011, 0.02, 0.02, 0.03, 0.03, 0.04, 0.041, 0.05, 0.05]
+        p_values_nnl = -log(p_values)
+
+        # Test the function implemented inn class RandomizeInteractionSet
+        randomize = RandomizeInteractionSet()
+        sig_num_list_nnl = randomize._determine_significant_pvals_at_nominal_alphas_nnl(
+            nnl_nominal_alphas=nominal_alphas_nnl,
+            nnl_p_values=p_values_nnl)
+
+        # Compare the returned list with the expected list
+        expected_list = [1, 4, 6, 7, 10]
+        for idx in range(0, len(sig_num_list_nnl)):
+            self.assertEqual(expected_list[idx], sig_num_list_nnl[idx])

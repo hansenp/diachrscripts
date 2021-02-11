@@ -323,16 +323,16 @@ class RandomizeInteractionSet:
 
     def perform_randomization_analysis(self,
                                        interaction_set: DiachromaticInteractionSet = None,
-                                       nominal_alpha: float = 0.01,
+                                       nominal_alphas: [float] = [0.01],
                                        iter_num: int = 1000,
                                        thread_num: int = 0,
                                        verbose: bool = False):
         """
         This function implements the entire randomization analysis.
 
-        :param nominal_alpha: Interactions with a larger P-value are classified as significant
-        :param iter_num: Number of iterations performed
-        :param thread_num: Number of parallel processes in which the iterations are preformed
+        :param nominal_alphas: List of nominal alphas
+        :param iter_num: Number of iterations that will be performed
+        :param thread_num: Number of parallel processes in which batches iterations are preformed
         :param verbose: If true, messages about progress will be written to the screen
         """
 
@@ -340,26 +340,30 @@ class RandomizeInteractionSet:
             print("[INFO] Performing randomization analysis with " + str(iter_num) + " iterations ...")
 
         # Check input parameters
-        if nominal_alpha <= 0 or 1.0 < nominal_alpha:
-            raise ValueError("Nominal alpha must be in ]0,1]!")
+        for nominal_alpha in nominal_alphas:
+            if nominal_alpha <= 0 or 1.0 < nominal_alpha:
+                raise ValueError("Nominal alpha must be in ]0,1]!")
 
         # Get negative natural logarithm of nominal alpha
-        nnl_nominal_alpha = -log(nominal_alpha)
+        nnl_nominal_alphas = -log(nominal_alphas)
 
         if verbose:
-            print("\t[INFO] Determining number of significant interactions at nominal alpha ...")
+            print("\t[INFO] Determining number of significant interactions at each nominal alpha ...")
 
-        sig_num_o = 0
+        # Get list of observed P-values
+        nnl_pval_list = []
         for d_inter in interaction_set.interaction_list:
-            nnl_pval = self.p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
-            if nnl_nominal_alpha < nnl_pval:
-                sig_num_o += 1
+            nnl_pval_list.append(self.p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted))
+
+        # Determine number of significant interactions for each nominal alpha
+        sig_num_o_list = self._determine_significant_pvals_at_nominal_alphas_nnl(nnl_nominal_alphas=nnl_nominal_alphas, nnl_p_values=nnl_pval_list)
+        sig_num_o = sig_num_o_list[0]
 
         if verbose:
             print("\t[INFO] Randomizing interactions ...")
 
         # Get dictionary that stores the numbers of interactions with n read pairs
-        min_rp_num, max_p_val = interaction_set._p_values.find_smallest_significant_n(nominal_alpha)
+        min_rp_num, max_p_val = interaction_set._p_values.find_smallest_significant_n(max(nominal_alphas))
         self._rp_inter_dict = self._get_rp_inter_dict(interaction_set=interaction_set, min_rp_num=min_rp_num)
         i_num_randomized = 0  # Determine number of randomized interactions
         for i_num in self._rp_inter_dict.values():
@@ -371,7 +375,7 @@ class RandomizeInteractionSet:
         # Perform randomization without or with multiprocessing package
         if thread_num == 0:
             iter_start_idx = 0
-            sig_num_r_list = self._perform_n_iterations(iter_start_idx, iter_num, nnl_nominal_alpha, verbose)
+            sig_num_r_list_of_lists = self._perform_n_iterations(iter_start_idx, iter_num, nnl_nominal_alphas, verbose)
         else:
 
             # Perform permutation for 'thread_num' batches with balanced numbers of iterations
@@ -387,7 +391,7 @@ class RandomizeInteractionSet:
             results = []
             iter_start_idx = 0
             for batch_iter_num in batch_iter_nums:
-                result = pool.apply_async(self._perform_n_iterations, args=(iter_start_idx, iter_start_idx + batch_iter_num, nnl_nominal_alpha, verbose))
+                result = pool.apply_async(self._perform_n_iterations, args=(iter_start_idx, iter_start_idx + batch_iter_num, nnl_nominal_alphas, verbose))
                 results.append(result)
                 iter_start_idx += batch_iter_num
 
@@ -396,13 +400,18 @@ class RandomizeInteractionSet:
 
             # Combine results from different processes
             batch_results = [p.get() for p in results]
-            sig_num_r_list = list(itertools.chain.from_iterable(batch_results))
+            sig_num_r_list_of_lists = list(itertools.chain.from_iterable(batch_results))
 
             # Shut down the pool
             pool.close()
 
         if verbose:
             print("\t[INFO] Calculating summary statistics ...")
+
+        # For now, the list of nominal alphas has only one element and we can summarize as follows
+        sig_num_r_list = sum(sig_num_r_list_of_lists, [])
+
+        # Get mean number and standard deviations of significant randomized interactions for each nominal alpha
 
         # Determine number of interactions with more significant interactions than originally observed
         sig_num_r_gt_obs = len([sig_num_r for sig_num_r in sig_num_r_list if sig_num_o < sig_num_r])
@@ -597,38 +606,41 @@ class RandomizeInteractionSet:
 
         return random_pval_list
 
-    def _perform_one_iteration(self, nnl_pval_thresh: float = None,
-                               random_seed: int = None):
+    def _perform_one_iteration(self, nnl_nominal_alphas: [float] = None, random_seed: int = None):
         """
         This function performs a single iteration of the randomization procedure.
 
-        :param nnl_pval_thresh: Negative natural logarithm of P-value threshold
+        :param nnl_nominal_alphas: List of nominal alphas (negative natural logarithm)
         :param random_seed: Number used to init random generator
-        :return: Number of randomized significant interactions
+        :return: List of numbers of randomized significant interactions for each nominal alpha
         """
 
         # Get list of P-values for randomized interactions
         randomized_nnl_pvals = self._get_list_of_p_values_from_randomized_data(random_seed=random_seed)
 
-        # Determine number of randomized significant interactions at given P-value threshold
-        sig_num_r = len([1 for nnl_pval in randomized_nnl_pvals if nnl_pval > nnl_pval_thresh])
+        # Determine number of randomized significant interactions for each nominal alpha in 'nnl_nominal_alphas'
+        sig_num_r_list = self._determine_significant_pvals_at_nominal_alphas_nnl(nnl_nominal_alphas=nnl_nominal_alphas,
+                                                                                 nnl_p_values=randomized_nnl_pvals)
 
-        return sig_num_r
+        return sig_num_r_list
 
-    def _perform_n_iterations(self, iter_start_idx, n, nnl_nominal_alpha, verbose):
+    def _perform_n_iterations(self, iter_start_idx: int, n, nnl_nominal_alphas: [float], verbose: bool=False):
         """
         This function performs a given number of iterations of the randomization procedure.
 
-        :param param_dict: Dictionary containing all function arguments
-        :return: List of numbers of randomized significant interactions for each iteration
+        :param iter_start_idx: First iteration index
+        :param n: Number of iterations performed in the function call
+        :param nnl_nominal_alphas: List of nominal alphas (negative natural logarithm)
+        :param verbose: If true, messages about progress will be written to the screen
+        :return: List of lists with numbers of randomized significant interactions. Each list contains the numbers of
+        significant interactions for the different nominal alphas in 'nnl_nominal_alphas'.
         """
 
-        # We pass all function parameters in a dictionary, because that's easier to use with 'pool.apply_async'
-        nnl_pval_thresh = nnl_nominal_alpha
+        # Iteration indices are added to the subordinate random seed
         iter_idx_range = range(iter_start_idx, n)
 
-        # Init list with numbers of randomized significant interactions for each iteration
-        sig_num_r_list = []
+        # Init list of lists with numbers of randomized significant interactions for each iteration
+        sig_num_r_list_of_lists = []
 
         if verbose:
             print("\t\t[INFO] Performing " + str(len(iter_idx_range)) + " iterations ...")
@@ -636,10 +648,48 @@ class RandomizeInteractionSet:
 
         # Perform each iteration with its own random seed that corresponds by adding the iteration index
         for iter_idx in iter_idx_range:
-            sig_num_r_list.append(self._perform_one_iteration(nnl_pval_thresh=nnl_pval_thresh,
-                                                              random_seed=self._random_seed + iter_idx))
+            sig_num_r_list_of_lists.append(self._perform_one_iteration(nnl_nominal_alphas=nnl_nominal_alphas,
+                                                                       random_seed=self._random_seed + iter_idx))
 
-        return sig_num_r_list
+        return sig_num_r_list_of_lists
+
+    def _determine_significant_pvals_at_nominal_alphas_nnl(self, nnl_nominal_alphas: [float], nnl_p_values: [float]):
+        """
+        Determine numbers of significant P-values at different nominal alphas (thresholds).
+
+        :param nnl_nominal_alphas: List of nominal alphas (negative natural logarithm)
+        :param nnl_p_values: List of P-values (negative natural logarithm)
+        :return: List which has the same length as 'nominal_alphas' and contains, for each nominal alpha 'a',
+        that number of P-values that are smaller or equal than 'a'.
+        """
+
+        # Sort input lists in ascending order
+        nnl_nominal_alphas = sorted(nnl_nominal_alphas, reverse=True)
+        nnl_p_values = sorted(nnl_p_values, reverse=True)
+
+        # List of singnificant P-value numbers that will be returned
+        sig_num_list = []
+
+        # Index variable for the list of P-values
+        nnl_p_value_idx = 0
+
+        # Counting variable for the cumulative number of significant P-values
+        sig_num = 0
+
+        # Go through the list of nominal alphas sorted in ascending order
+        for nnl_nominal_alpha in nnl_nominal_alphas:
+
+            # As long as the P-values are smaller than the current nominal alpha,
+            # increment index and counter variable
+            while nnl_p_value_idx < len(nnl_p_values) and nnl_nominal_alpha <= nnl_p_values[nnl_p_value_idx]:
+                sig_num += 1
+                nnl_p_value_idx += 1
+
+            # As  soon as the P-value is larger than the current nominal alpha,
+            # add the current number of interactions to the list that will be returned
+            sig_num_list.append(sig_num)
+
+        return sig_num_list
 
     def get_fdr_info_plot(self, pdf_file_name: str = None, analysis_name: str = None):
         """

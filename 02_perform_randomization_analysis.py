@@ -26,6 +26,10 @@ parser.add_argument('-i','--interaction-file', help='Diachromatic interaction fi
 parser.add_argument('-n','--iter-num', help='Number of iterations.', default=1000)
 parser.add_argument('-a','--nominal-alpha', help='Nominal alpha. P-value threshold used to define significant '
                                                  'interactions.', default=0.05)
+parser.add_argument('-m','--nominal-alpha-max', help='Maximal nominal alpha used to define significant interactions.',
+                    default=0.05)
+parser.add_argument('-x','--nominal-alpha-step', help='Increment by which nominal alphas are increased.',
+                    default=0.0025)
 parser.add_argument('-s','--random-seed', help='Seed for randomization of simple and twisted read pairs.', default=None)
 parser.add_argument('-t','--thread-num', help='Number of threads.', default=0)
 parser.add_argument('--analysis-name', help='Name for the analysis shown in the plot.', default='ANALYSIS_NAME')
@@ -35,6 +39,8 @@ out_prefix = args.out_prefix
 diachromatic_interaction_file = args.interaction_file
 iter_num = int(args.iter_num)
 nominal_alpha = float(args.nominal_alpha)
+nominal_alpha_max = float(args.nominal_alpha_max)
+nominal_alpha_step = float(args.nominal_alpha_step)
 if args.random_seed is None:
     random_seed = args.random_seed
 else:
@@ -68,7 +74,7 @@ print()
 randomize_interactions = RandomizeInteractionSet(random_seed=random_seed)
 randomize_interactions_info_dict = randomize_interactions.perform_randomization_analysis(
     interaction_set=interaction_set,
-    nominal_alpha = nominal_alpha,
+    nominal_alphas = [nominal_alpha],
     iter_num = iter_num,
     thread_num = thread_num,
     verbose = True)
