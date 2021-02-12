@@ -343,6 +343,7 @@ class RandomizeInteractionSet:
         for nominal_alpha in nominal_alphas:
             if nominal_alpha <= 0 or 1.0 < nominal_alpha:
                 raise ValueError("Nominal alpha must be in ]0,1]!")
+        nominal_alphas = sorted(nominal_alphas)
 
         # Get negative natural logarithm of nominal alpha
         nnl_nominal_alphas = -log(nominal_alphas)
@@ -411,7 +412,50 @@ class RandomizeInteractionSet:
         # For now, the list of nominal alphas has only one element and we can summarize as follows
         sig_num_r_list = sum(sig_num_r_list_of_lists, [])
 
-        # Get mean number and standard deviations of significant randomized interactions for each nominal alpha
+        # Combine the results from all iterations for different nominal alphas
+        sig_num_r_mean_list = []
+        sig_num_r_sd_list = []
+        sig_num_r_gt_obs_list = []
+        z_score_list = []
+        fdr_list = []
+        chosen_fdr_threshold = 0.05
+        chosen_fdr_threshold_idx = -1
+        for nominal_alpha_idx in range(0, len(nominal_alphas)):
+
+            # Extract numbers of significant randomized interactions for current nominal alpha
+            sig_num_r_list_nominal_alpha = []
+            for iter_idx in range(0, len(sig_num_r_list_of_lists)):
+                sig_num_r_list_nominal_alpha.append(sig_num_r_list_of_lists[iter_idx][nominal_alpha_idx])
+
+            # Collect and calculate results for current alpha
+            nominal_alpha = nominal_alphas[nominal_alpha_idx]
+            sig_num_r_mean = mean(sig_num_r_list_nominal_alpha)
+            sig_num_r_sd = std(sig_num_r_list_nominal_alpha)
+            sig_num_o = sig_num_o_list[nominal_alpha_idx]
+            sig_num_r_gt_obs = len([sig_num_r for sig_num_r in sig_num_r_list_nominal_alpha if sig_num_o < sig_num_r])
+            if 1 < iter_num:
+                z_score = (sig_num_o - sig_num_r_mean) / sig_num_r_sd
+            else:
+                z_score = "NA"
+            fdr = sig_num_r_mean / sig_num_o
+
+            # Find largest nominal for which the FDR is below the given threshold
+            if fdr < chosen_fdr_threshold:
+                chosen_fdr_threshold_idx = nominal_alpha_idx
+
+            # Append results to list
+            sig_num_r_mean_list.append(sig_num_r_mean)
+            sig_num_r_sd_list.append(sig_num_r_sd)
+            sig_num_r_gt_obs_list.append(sig_num_r_gt_obs)
+            z_score_list.append(sig_num_o - sig_num_r_mean)
+            fdr_list.append(fdr)
+
+        # Issue a warning if there is no nominal alpha for which the FDR is below the chosen threshold
+        if chosen_fdr_threshold_idx == -1:
+            warnings.warn('There is no nominal alpha for which the FDR is below ' + "{:.2f}".format(chosen_fdr_threshold)
+                          + '! Choose a larger FDR threshold or smaller nominal alphas.')
+        else:
+            print(nominal_alphas[chosen_fdr_threshold_idx])
 
         # Determine number of interactions with more significant interactions than originally observed
         sig_num_r_gt_obs = len([sig_num_r for sig_num_r in sig_num_r_list if sig_num_o < sig_num_r])
@@ -435,13 +479,22 @@ class RandomizeInteractionSet:
         report_dict = {
             'INPUT_PARAMETERS':
                 {
-                    'NOMINAL_ALPHA': [nominal_alpha],
                     'ITER_NUM': [iter_num],
                     'INPUT_INTERACTIONS_NUM': [len(interaction_set.interaction_list)],
-                    'RANDOM_SEED': [self._random_seed]
+                    'RANDOM_SEED': [self._random_seed],
+                    'NOMINAL_ALPHAS': nominal_alphas
                 },
             'RESULTS':
                 {
+                    'COMPLETE':
+                        {
+                            'SIG_NUM_O': sig_num_o_list,
+                            'SIG_NUM_R_MEAN': sig_num_r_mean_list,
+                            'SIG_NUM_R_SD': sig_num_r_sd_list,
+                            'SIG_NUM_GT_OBS': sig_num_r_gt_obs_list,
+                            'Z_SCORE': z_score_list,
+                            'FDR': fdr_list
+                        },
                     'SIG_NUM_R_LIST': sig_num_r_list,
                     'SUMMARY':
                         {
@@ -463,18 +516,21 @@ class RandomizeInteractionSet:
         :return: String that contains information about the last randomization performed.
         """
 
-        report = "[INFO] Report on randomization analysis:" + '\n'
+        report = "[INFO] Report on randomization:" + '\n'
 
         report += "\t[INFO] Input parameters:" + '\n'
         report += "\t\t[INFO] Number of input interactions: " \
                   + "{:,}".format(self._randomization_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]) + '\n'
-        report += "\t\t[INFO] Nominal alpha: " \
-                  + "{:.5f}".format(self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHA'][0]) + '\n'
         report += "\t\t[INFO] Number of iterations: " \
                   + "{:,}".format(self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]) + '\n'
         report += "\t\t[INFO] Random seed: " \
                   + str(self._randomization_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0]) + '\n'
-
+        report += "\t\t[INFO] Nominal alphas: "
+        nominal_alphas = self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS']
+        if len(nominal_alphas) < 5:
+            report += ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas) + '\n'
+        else:
+            report +=  ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas[:3]) + ", ..., " + "{:.5f}".format(nominal_alphas[-1]) +'\n'
         report += "\t[INFO] Results:" + '\n'
         report += "\t\t[INFO] Original number of significant interactions: " \
                   + "{:,}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_O'][0]) + '\n'
@@ -507,7 +563,7 @@ class RandomizeInteractionSet:
 
         # Extract and format values from dictionary
         input_i_num = str(self._randomization_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0])
-        nominal_alpha = "{:.5f}".format(self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHA'][0])
+        nominal_alpha = "{:.5f}".format(self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS'][0])
         iter_num = str(self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0])
         random_seed = str(self._randomization_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0])
 
@@ -853,7 +909,7 @@ class RandomizeInteractionSet:
         fig.savefig(pdf_file_name)
         return fig
 
-    def get_randomization_info_plot(self, pdf_file_name: str = None, analysis_name: str = None):
+    def get_randomization_info_plot(self, pdf_file_name: str = "randomization.pdf", analysis_name: str = "ANALYSIS_NAME"):
         """
         This function creates a graphical representation of the results from the last randomization analysis performed.
 
@@ -873,13 +929,17 @@ class RandomizeInteractionSet:
         bin_face_color = 'blue'
         bin_edge_color = 'darkblue'
 
-        # Extract data from fdr_info_dict
-        # -------------------------------
+        # Extract data from randomization_info_dict
+        # -----------------------------------------
 
         # Input parameters
         pdf_file_name = pdf_file_name
         analysis_name = analysis_name
-        nominal_alpha = self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHA'][0]
+        nominal_alphas = self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS']
+        if len(nominal_alphas) < 5:
+            nominal_alphas_formatted = ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas)
+        else:
+            nominal_alphas_formatted =  ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas[:3]) + ", ..., " + "{:.5f}".format(nominal_alphas[-1])
         iter_num = self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]
         input_interactions_num = self._randomization_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]
         random_seed = self._randomization_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0]
@@ -919,12 +979,12 @@ class RandomizeInteractionSet:
         ax[0].text(-0.18, 0.90, 'Analysis name: ' + analysis_name, fontsize=header_font_size, fontweight='bold')
         ax[0].text(-0.18, 0.85, 'Number of input interactions: ' + "{:,}".format(input_interactions_num),
                    fontsize=header_font_size)
-        ax[0].text(-0.18, 0.80, 'Nominal alpha: ' + "{:.5f}".format(nominal_alpha),
+        ax[0].text(-0.18, 0.80, 'Number of iterations: ' + "{:,}".format(iter_num),
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.75, 'Random seed: ' + str(random_seed),
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.70, 'Nominal alphas: ' + str(nominal_alphas_formatted),
                    fontsize=header_font_size, fontweight='bold')
-        ax[0].text(-0.18, 0.75, 'Number of iterations: ' + "{:,}".format(iter_num),
-                   fontsize=header_font_size)
-        ax[0].text(-0.18, 0.70, 'Random seed: ' + str(random_seed),
-                   fontsize=header_font_size)
 
         ax[0].text(-0.18, 0.60, 'Number of observed significant interactions: ' + "{:,}".format(sig_num_o),
                    fontsize=header_font_size, fontweight='bold')
