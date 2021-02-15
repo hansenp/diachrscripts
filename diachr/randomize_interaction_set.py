@@ -330,6 +330,7 @@ class RandomizeInteractionSet:
         """
         This function implements the entire randomization analysis.
 
+        :param interaction_set: Input interaction set
         :param nominal_alphas: List of nominal alphas
         :param iter_num: Number of iterations that will be performed
         :param thread_num: Number of parallel processes in which batches iterations are preformed
@@ -344,6 +345,7 @@ class RandomizeInteractionSet:
             if nominal_alpha <= 0 or 1.0 < nominal_alpha:
                 raise ValueError("Nominal alpha must be in ]0,1]!")
         nominal_alphas = sorted(nominal_alphas)
+        nominal_alphas = [float("{:.5f}".format(i)) for i in nominal_alphas]
 
         # Get negative natural logarithm of nominal alpha
         nnl_nominal_alphas = -log(nominal_alphas)
@@ -358,7 +360,6 @@ class RandomizeInteractionSet:
 
         # Determine number of significant interactions for each nominal alpha
         sig_num_o_list = self._determine_significant_pvals_at_nominal_alphas_nnl(nnl_nominal_alphas=nnl_nominal_alphas, nnl_p_values=nnl_pval_list)
-        sig_num_o = sig_num_o_list[0]
 
         if verbose:
             print("\t[INFO] Randomizing interactions ...")
@@ -407,70 +408,41 @@ class RandomizeInteractionSet:
             pool.close()
 
         if verbose:
-            print("\t[INFO] Calculating summary statistics ...")
+            print("\t[INFO] Combining results from all iterations for different nominal alphas ...")
 
-        # For now, the list of nominal alphas has only one element and we can summarize as follows
-        sig_num_r_list = sum(sig_num_r_list_of_lists, [])
-
-        # Combine the results from all iterations for different nominal alphas
+        sig_num_r_lists_list = {}
         sig_num_r_mean_list = []
         sig_num_r_sd_list = []
         sig_num_r_gt_obs_list = []
         z_score_list = []
         fdr_list = []
-        chosen_fdr_threshold = 0.05
-        chosen_fdr_threshold_idx = -1
         for nominal_alpha_idx in range(0, len(nominal_alphas)):
 
+            # Get current nominal alpha
+            nominal_alpha = nominal_alphas[nominal_alpha_idx]
+            sig_num_r_lists_list[nominal_alpha] = []
+
             # Extract numbers of significant randomized interactions for current nominal alpha
-            sig_num_r_list_nominal_alpha = []
             for iter_idx in range(0, len(sig_num_r_list_of_lists)):
-                sig_num_r_list_nominal_alpha.append(sig_num_r_list_of_lists[iter_idx][nominal_alpha_idx])
+                sig_num_r_lists_list[nominal_alpha].append(sig_num_r_list_of_lists[iter_idx][nominal_alpha_idx])
 
             # Collect and calculate results for current alpha
-            nominal_alpha = nominal_alphas[nominal_alpha_idx]
-            sig_num_r_mean = mean(sig_num_r_list_nominal_alpha)
-            sig_num_r_sd = std(sig_num_r_list_nominal_alpha)
+            sig_num_r_mean = mean(sig_num_r_lists_list[nominal_alpha])
+            sig_num_r_sd = std(sig_num_r_lists_list[nominal_alpha])
             sig_num_o = sig_num_o_list[nominal_alpha_idx]
-            sig_num_r_gt_obs = len([sig_num_r for sig_num_r in sig_num_r_list_nominal_alpha if sig_num_o < sig_num_r])
-            if 1 < iter_num:
+            sig_num_r_gt_obs = len([sig_num_r for sig_num_r in sig_num_r_lists_list[nominal_alpha] if sig_num_o < sig_num_r])
+            if sig_num_r_sd == 0:
                 z_score = (sig_num_o - sig_num_r_mean) / sig_num_r_sd
             else:
                 z_score = "NA"
             fdr = sig_num_r_mean / sig_num_o
 
-            # Find largest nominal for which the FDR is below the given threshold
-            if fdr < chosen_fdr_threshold:
-                chosen_fdr_threshold_idx = nominal_alpha_idx
-
             # Append results to list
             sig_num_r_mean_list.append(sig_num_r_mean)
             sig_num_r_sd_list.append(sig_num_r_sd)
             sig_num_r_gt_obs_list.append(sig_num_r_gt_obs)
-            z_score_list.append(sig_num_o - sig_num_r_mean)
+            z_score_list.append(z_score)
             fdr_list.append(fdr)
-
-        # Issue a warning if there is no nominal alpha for which the FDR is below the chosen threshold
-        if chosen_fdr_threshold_idx == -1:
-            warnings.warn('There is no nominal alpha for which the FDR is below ' + "{:.2f}".format(chosen_fdr_threshold)
-                          + '! Choose a larger FDR threshold or smaller nominal alphas.')
-        else:
-            print(nominal_alphas[chosen_fdr_threshold_idx])
-
-        # Determine number of interactions with more significant interactions than originally observed
-        sig_num_r_gt_obs = len([sig_num_r for sig_num_r in sig_num_r_list if sig_num_o < sig_num_r])
-
-        # Calculate average number of significant randomized interactions
-        sig_num_r_mean = mean(sig_num_r_list)
-
-        # Calculate standard deviation of significant randomized interactions
-        sig_num_r_std = std(sig_num_r_list)
-
-        # Calculate Z-score
-        z_score = (sig_num_o - sig_num_r_mean) / sig_num_r_std
-
-        # Estimate FDR
-        fdr = sig_num_r_mean / sig_num_o
 
         if verbose:
             print("[INFO] ... done.")
@@ -486,35 +458,34 @@ class RandomizeInteractionSet:
                 },
             'RESULTS':
                 {
-                    'COMPLETE':
-                        {
-                            'SIG_NUM_O': sig_num_o_list,
-                            'SIG_NUM_R_MEAN': sig_num_r_mean_list,
-                            'SIG_NUM_R_SD': sig_num_r_sd_list,
-                            'SIG_NUM_GT_OBS': sig_num_r_gt_obs_list,
-                            'Z_SCORE': z_score_list,
-                            'FDR': fdr_list
-                        },
-                    'SIG_NUM_R_LIST': sig_num_r_list,
-                    'SUMMARY':
-                        {
-                            'SIG_NUM_O': [sig_num_o],
-                            'I_NUM_RANDOMIZED': [i_num_randomized],
-                            'SIG_NUM_R_GT_OBS': [sig_num_r_gt_obs],
-                            'SIG_NUM_R_MEAN': [sig_num_r_mean],
-                            'SIG_NUM_R_STD': [sig_num_r_std],
-                            'Z_SCORE': [z_score],
-                            'FDR': [fdr]
-                        }
+                    'I_NUM_RANDOMIZED': i_num_randomized,
+                    'SIG_NUM_R_LISTS': sig_num_r_lists_list,
+                    'SIG_NUM_O': sig_num_o_list,
+                    'SIG_NUM_R_MEAN': sig_num_r_mean_list,
+                    'SIG_NUM_R_SD': sig_num_r_sd_list,
+                    'SIG_NUM_R_GT_OBS': sig_num_r_gt_obs_list,
+                    'Z_SCORE': z_score_list,
+                    'FDR': fdr_list
                 }
         }
         self._randomization_info_dict = report_dict
         return report_dict
 
-    def get_randomization_info_report(self):
+    def get_randomization_info_report(self, nominal_alpha: float = None):
         """
         :return: String that contains information about the last randomization performed.
         """
+
+        # Check if there are any results for the passed nominal alpha
+        nominal_alphas = self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS']
+        if nominal_alpha not in nominal_alphas:
+            if nominal_alpha is None:
+                report = "[ERROR] No nominal alpha was passed!" + '\n'
+            else:
+                report = "[ERROR] No results available for a nominal alpha of " + "{:.5f}".format(nominal_alpha) + '!' + '\n'
+            report += "\t[ERROR] Results available for: " + ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas) +  '\n'
+            return report
+        nominal_alpha_idx = nominal_alphas.index(nominal_alpha)
 
         report = "[INFO] Report on randomization:" + '\n'
 
@@ -525,55 +496,59 @@ class RandomizeInteractionSet:
                   + "{:,}".format(self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]) + '\n'
         report += "\t\t[INFO] Random seed: " \
                   + str(self._randomization_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0]) + '\n'
-        report += "\t\t[INFO] Nominal alphas: "
-        nominal_alphas = self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS']
+        report += "\t\t[INFO] Available nominal alphas: " + '\n'
         if len(nominal_alphas) < 5:
-            report += ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas) + '\n'
+            report += '\t\t\t' + ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas) + '\n'
         else:
-            report +=  ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas[:3]) + ", ..., " + "{:.5f}".format(nominal_alphas[-1]) +'\n'
-        report += "\t[INFO] Results:" + '\n'
-        report += "\t\t[INFO] Original number of significant interactions: " \
-                  + "{:,}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_O'][0]) + '\n'
+            report += '\t\t\t' + ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas[:3]) + ", ..., " + "{:.5f}".format(nominal_alphas[-1]) +'\n'
+
+        report += "\t[INFO] Results for a nominal alpha of " + "{:.5f}".format(nominal_alphas[nominal_alpha_idx]) + ":" + '\n'
         report += "\t\t[INFO] Number of randomized interactions: " \
-                  + "{:,}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['I_NUM_RANDOMIZED'][0]) + '\n'
-        report += "\t\t[INFO] First 10 significant randomized interaction numbers: " + '\n' \
-                  + "\t\t\t" + ", ".join(
-            str(i) for i in self._randomization_info_dict['RESULTS']['SIG_NUM_R_LIST'][:10]) \
-                  + ", ..." + '\n'
+                  + "{:,}".format(self._randomization_info_dict['RESULTS']['I_NUM_RANDOMIZED']) + '\n'
+        report += "\t\t[INFO] Significant randomized interaction numbers: " + '\n'
+        if len(self._randomization_info_dict['RESULTS']['SIG_NUM_R_LISTS'][nominal_alphas[nominal_alpha_idx]]) < 10:
+            report += '\t\t\t' + ", ".join(str(i) for i in self._randomization_info_dict['RESULTS']['SIG_NUM_R_LISTS'][nominal_alphas[nominal_alpha_idx]]) +  '\n'
+        else:
+            report += '\t\t\t' + ", ".join(str(i) for i in self._randomization_info_dict['RESULTS']['SIG_NUM_R_LISTS'][nominal_alphas[nominal_alpha_idx]][:9]) + ", ..." + '\n'
         report += "\t\t[INFO] Iterations with more significant interactions than observed: " \
-                  + "{:,}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_GT_OBS'][0]) + '\n'
+                  + "{:,}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_R_GT_OBS'][nominal_alpha_idx]) + '\n'
+        report += "\t\t[INFO] Original number of significant interactions: " \
+                  + "{:,}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_O'][nominal_alpha_idx]) + '\n'
         report += "\t\t[INFO] Mean number of significant randomized interactions: " \
-                  + "{0:,.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_MEAN'][0]) + '\n'
+                  + "{0:,.2f}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_R_MEAN'][nominal_alpha_idx]) + '\n'
         report += "\t\t[INFO] Standard deviation of significant randomized interactions: " \
-                  + "{:.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_STD'][0]) + '\n'
-        report += "\t\t[INFO] Z-score: " \
-                  + "{:.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['Z_SCORE'][0]) + '\n'
+                  + "{:.2f}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_R_SD'][nominal_alpha_idx]) + '\n'
+        report += "\t\t[INFO] Z-score: "
+        if 1 < self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]:
+            report += "{:.2f}".format(self._randomization_info_dict['RESULTS']['Z_SCORE'][nominal_alpha_idx]) + '\n'
+        else:
+            report += "NA (Do more than one iteration!)" + '\n'
         report += "\t\t[INFO] Estimated FDR: " \
-                  + "{:.5f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['FDR'][0]) + '\n'
+                  + "{:.5f}".format(self._randomization_info_dict['RESULTS']['FDR'][nominal_alpha_idx]) + '\n'
 
         report += "[INFO] End of report." + '\n'
 
         return report
 
-    def get_randomization_info_table_row(self, out_prefix: str = None):
+    def get_randomization_info_table_row(self, out_prefix: str = None, nominal_alphas_selected: [float] = None):
         """
         :return: String consisting of a header line and a line with values relating to last performed randomization
         analysis
         """
 
-        # Extract and format values from dictionary
-        input_i_num = str(self._randomization_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0])
-        nominal_alpha = "{:.5f}".format(self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS'][0])
-        iter_num = str(self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0])
-        random_seed = str(self._randomization_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0])
+        # Get list of available nominal alphas
+        nominal_alphas = self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS']
 
-        sig_num_o = str(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_O'][0])
-        rand_i_num = str(self._randomization_info_dict['RESULTS']['SUMMARY']['I_NUM_RANDOMIZED'][0])
-        sig_num_r_gto = str(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_GT_OBS'][0])
-        sig_num_r_mean = "{:.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_MEAN'][0])
-        sig_num_r_sd = "{:.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_STD'][0])
-        z_score = "{:.2f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['Z_SCORE'][0])
-        fdr = "{:.5f}".format(self._randomization_info_dict['RESULTS']['SUMMARY']['FDR'][0])
+        # Check if there are any results for the passed list of nominal alphas
+        if nominal_alphas_selected is not None:
+            for nom_a in nominal_alphas_selected:
+                if nom_a not in nominal_alphas:
+                    report = "[ERROR] No results available for a nominal alpha of " + "{:.5f}".format(nom_a) + '!' + '\n'
+                    report += "\t[ERROR] Results available for: " + ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas) +  '\n'
+                    return report
+
+        # Header row
+        # ----------
 
         # Table tag and prefix for output
         table_row = ":TR_RANDOM:" + '\t'
@@ -581,37 +556,60 @@ class RandomizeInteractionSet:
 
         # Input parameters
         table_row += "INPUT_I_NUM" + '\t'
-        table_row += "NOMINAL_ALPHA" + '\t'
         table_row += "ITER_NUM" + '\t'
         table_row += "RANDOM_SEED" + '\t'
+        table_row += "NOMINAL_ALPHA" + '\t'
 
         # Results
-        table_row += "SIG_NUM_O" + '\t'
         table_row += "RAND_I_NUM" + '\t'
-        table_row += "SIG_NUM_R_GTO" + '\t'
+        table_row += "SIG_NUM_R_GT_OBS" + '\t'
+        table_row += "SIG_NUM_O" + '\t'
         table_row += "SIG_NUM_R_MEAN" + '\t'
         table_row += "SIG_NUM_R_SD" + '\t'
         table_row += "Z_SCORE" + '\t'
         table_row += "FDR" + '\n'
 
-        # Table tag and prefix for output
-        table_row += ":TR_RANDOM:" + '\t'
-        table_row += out_prefix + '\t'
+        # Row with values
+        # ---------------
 
-        # Input parameters
-        table_row += input_i_num + '\t'
-        table_row += nominal_alpha + '\t'
-        table_row += iter_num + '\t'
-        table_row += random_seed + '\t'
+        for nominal_alpha in nominal_alphas:
+            if nominal_alphas_selected is not None and nominal_alpha not in nominal_alphas_selected:
+                continue
+            nominal_alpha_idx = nominal_alphas.index(nominal_alpha)
 
-        # Results
-        table_row += sig_num_o + '\t'
-        table_row += rand_i_num + '\t'
-        table_row += sig_num_r_gto + '\t'
-        table_row += sig_num_r_mean + '\t'
-        table_row += sig_num_r_sd + '\t'
-        table_row += z_score + '\t'
-        table_row += fdr + '\n'
+            # Extract and format values from dictionary
+            input_i_num = str(self._randomization_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0])
+            iter_num = str(self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0])
+            random_seed = str(self._randomization_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0])
+            nominal_alpha = "{:.5f}".format(
+                self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS'][nominal_alpha_idx])
+
+            rand_i_num = str(self._randomization_info_dict['RESULTS']['I_NUM_RANDOMIZED'])
+            sig_num_r_gto = str(self._randomization_info_dict['RESULTS']['SIG_NUM_R_GT_OBS'][nominal_alpha_idx])
+            sig_num_o = str(self._randomization_info_dict['RESULTS']['SIG_NUM_O'][nominal_alpha_idx])
+            sig_num_r_mean = "{:.2f}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_R_MEAN'][nominal_alpha_idx])
+            sig_num_r_sd = "{:.2f}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_R_SD'][nominal_alpha_idx])
+            z_score = "{:.2f}".format(self._randomization_info_dict['RESULTS']['Z_SCORE'][nominal_alpha_idx])
+            fdr = "{:.5f}".format(self._randomization_info_dict['RESULTS']['FDR'][nominal_alpha_idx])
+
+            # Table tag and prefix for output
+            table_row += ":TR_RANDOM:" + '\t'
+            table_row += out_prefix + '\t'
+
+            # Input parameters
+            table_row += input_i_num + '\t'
+            table_row += iter_num + '\t'
+            table_row += random_seed + '\t'
+            table_row += nominal_alpha + '\t'
+
+            # Results
+            table_row += rand_i_num + '\t'
+            table_row += sig_num_r_gto + '\t'
+            table_row += sig_num_o + '\t'
+            table_row += sig_num_r_mean + '\t'
+            table_row += sig_num_r_sd + '\t'
+            table_row += z_score + '\t'
+            table_row += fdr + '\n'
 
         return table_row
 
@@ -909,10 +907,11 @@ class RandomizeInteractionSet:
         fig.savefig(pdf_file_name)
         return fig
 
-    def get_randomization_info_plot(self, pdf_file_name: str = "randomization.pdf", analysis_name: str = "ANALYSIS_NAME"):
+    def get_randomization_info_plot(self, nominal_alpha_selected: float = None, pdf_file_name: str = "randomization.pdf", analysis_name: str = "ANALYSIS_NAME"):
         """
         This function creates a graphical representation of the results from the last randomization analysis performed.
 
+        :param nominal_alpha_selected: Nominal alpha for which the plot should be created
         :param pdf_file_name: Name of the PDF file that will be created
         :param analysis_name: Name of of the analysis that will be shown in the graphical representation
         :return: Nothing, if no FDR procedure has been performed yet or otherwise a 'Figure' object of 'matplotlib'
@@ -922,6 +921,20 @@ class RandomizeInteractionSet:
         # Check whether an analysis has already been performed
         if self._randomization_info_dict is None:
             print("[ERROR] No analysis has been performed yet! There is nothing to plot.")
+            return
+
+        # Check if there are results for the nominal alpha passed
+        nominal_alphas_available = self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS']
+
+        # Check if there are any results for the passed list of nominal alphas
+        if nominal_alpha_selected not in nominal_alphas_available:
+            if nominal_alpha_selected is None:
+                nominal_alpha_selected_formatted = "None"
+            else:
+                nominal_alpha_selected_formatted = "{:.5f}".format(nominal_alpha_selected)
+            report = "[ERROR] No results available for a nominal alpha of: " + nominal_alpha_selected_formatted + '!' + '\n'
+            report += "\t[ERROR] Results available for: " + ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas_available) +  '\n'
+            print(report)
             return
 
         # Set common plot parameters
@@ -935,6 +948,7 @@ class RandomizeInteractionSet:
         # Input parameters
         pdf_file_name = pdf_file_name
         analysis_name = analysis_name
+
         nominal_alphas = self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS']
         if len(nominal_alphas) < 5:
             nominal_alphas_formatted = ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas)
@@ -945,14 +959,15 @@ class RandomizeInteractionSet:
         random_seed = self._randomization_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0]
 
         # Results
-        sig_num_r_list = self._randomization_info_dict['RESULTS']['SIG_NUM_R_LIST']
-        sig_num_o = self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_O'][0]
-        i_num_randomized = self._randomization_info_dict['RESULTS']['SUMMARY']['I_NUM_RANDOMIZED'][0]
-        sig_num_r_gt_obs = self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_GT_OBS'][0]
-        sig_num_r_mean = self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_MEAN'][0]
-        sig_num_r_sd = self._randomization_info_dict['RESULTS']['SUMMARY']['SIG_NUM_R_STD'][0]
-        z_score = float(self._randomization_info_dict['RESULTS']['SUMMARY']['Z_SCORE'][0])
-        fdr = float(self._randomization_info_dict['RESULTS']['SUMMARY']['FDR'][0])
+        nominal_alpha_selected_idx = nominal_alphas.index(nominal_alpha_selected)
+        sig_num_r_list = self._randomization_info_dict['RESULTS']['SIG_NUM_R_LISTS'][nominal_alpha_selected]
+        sig_num_o = self._randomization_info_dict['RESULTS']['SIG_NUM_O'][nominal_alpha_selected_idx]
+        i_num_randomized = self._randomization_info_dict['RESULTS']['I_NUM_RANDOMIZED']
+        sig_num_r_gt_obs = self._randomization_info_dict['RESULTS']['SIG_NUM_R_GT_OBS'][nominal_alpha_selected_idx]
+        sig_num_r_mean = self._randomization_info_dict['RESULTS']['SIG_NUM_R_MEAN'][nominal_alpha_selected_idx]
+        sig_num_r_sd = self._randomization_info_dict['RESULTS']['SIG_NUM_R_SD'][nominal_alpha_selected_idx]
+        z_score = float(self._randomization_info_dict['RESULTS']['Z_SCORE'][nominal_alpha_selected_idx])
+        fdr = float(self._randomization_info_dict['RESULTS']['FDR'][nominal_alpha_selected_idx])
 
         # Highlight text if there are iterations with more significant interactions than originally observed
         if 0 < sig_num_r_gt_obs:
@@ -983,24 +998,26 @@ class RandomizeInteractionSet:
                    fontsize=header_font_size)
         ax[0].text(-0.18, 0.75, 'Random seed: ' + str(random_seed),
                    fontsize=header_font_size)
-        ax[0].text(-0.18, 0.70, 'Nominal alphas: ' + str(nominal_alphas_formatted),
+        ax[0].text(-0.18, 0.70, 'Available nominal alphas: ' + str(nominal_alphas_formatted),
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.65, 'Selected nominal alpha: ' + "{:.5f}".format(nominal_alpha_selected),
                    fontsize=header_font_size, fontweight='bold')
 
-        ax[0].text(-0.18, 0.60, 'Number of observed significant interactions: ' + "{:,}".format(sig_num_o),
-                   fontsize=header_font_size, fontweight='bold')
         ax[0].text(-0.18, 0.55, 'Number of randomized interactions: ' + "{:,}".format(i_num_randomized),
                    fontsize=header_font_size)
         ax[0].text(-0.18, 0.50,
                    'Iterations with more significant interactions than observed: ' + "{:,}".format(sig_num_r_gt_obs),
                    fontsize=header_font_size, color=sig_num_r_gt_obs_color, fontweight=sig_num_r_gt_obs_fontweight)
-        ax[0].text(-0.18, 0.45,
-                   'Mean number of significant randomized interactions: ' + "{:,.2f}".format(sig_num_r_mean),
+        ax[0].text(-0.18, 0.45, 'Number of observed significant interactions: ' + "{:,}".format(sig_num_o),
                    fontsize=header_font_size, fontweight='bold')
         ax[0].text(-0.18, 0.40,
+                   'Mean number of significant randomized interactions: ' + "{:,.2f}".format(sig_num_r_mean),
+                   fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.35,
                    'Standard deviation of significant randomized interactions: ' + "{:.2f}".format(sig_num_r_sd),
                    fontsize=header_font_size)
-        ax[0].text(-0.18, 0.35, 'Z-score: ' + "{:.2f}".format(z_score), fontsize=header_font_size, fontweight='bold')
-        ax[0].text(-0.18, 0.30, 'Estimated FDR : ' + "{:.5f}".format(fdr), fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.30, 'Z-score: ' + "{:.2f}".format(z_score), fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.25, 'Estimated FDR : ' + "{:.5f}".format(fdr), fontsize=header_font_size, fontweight='bold')
 
         # Plot distribution of iterations centered on mean of randomized significant interaction numbers
         x_lim_left = floor(sig_num_r_mean - 5 * sig_num_r_sd)
@@ -1043,12 +1060,15 @@ class RandomizeInteractionSet:
                       alpha=0.9, zorder=0)
         ax[2].axvline(sig_num_r_mean, linestyle='--', color='red', linewidth=1)
         ax[2].axvline(sig_num_o, linestyle='--', color='red', linewidth=1)
-        y_pos_lab = max(n) - max(n) / 15
+        y_pos_lab = max(n) - 1 * (max(n) / 15)
         x_pos_lab = sig_num_r_mean + 6 * sig_num_r_sd
         ax[2].text(x_pos_lab, y_pos_lab, 'Observed: ' + "{:,}".format(sig_num_o),
                    bbox={'color': 'w', 'alpha': 0.5, 'pad': 4})
         y_pos_lab = max(n) - 3 * (max(n) / 15)
         ax[2].text(x_pos_lab, y_pos_lab, 'Z-score: ' + "{:.2f}".format(z_score),
+                   bbox={'color': 'w', 'alpha': 0.5, 'pad': 4})
+        y_pos_lab = max(n) - 5 * (max(n) / 15)
+        ax[2].text(x_pos_lab, y_pos_lab, 'FDR: ' + "{:.5f}".format(fdr),
                    bbox={'color': 'w', 'alpha': 0.5, 'pad': 4})
 
         # Finalize save to PDF and return 'Figure' object
