@@ -552,7 +552,7 @@ class RandomizeInteractionSet:
 
         return report
 
-    def get_randomization_info_table_row(self, out_prefix: str = None, nominal_alphas_selected: [float] = None):
+    def get_randomization_info_table_row(self, out_prefix: str = "OUT_PREFIX", nominal_alphas_selected: [float] = None):
         """
         :return: String consisting of a header line and a line with values relating to last performed randomization
         analysis
