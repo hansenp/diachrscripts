@@ -471,6 +471,28 @@ class RandomizeInteractionSet:
         self._randomization_info_dict = report_dict
         return report_dict
 
+    def get_largest_nominal_alpha_index_at_chosen_fdr_thresh(self, chosen_fdr_thresh: float = 0.05):
+        """
+        This function determines the index of the largest nominal alpha for which the FDR is still below the passed
+        threshold.
+
+        :param chosen_fdr_thresh: FDR threshold
+        :return: Index of the largest nominal alpha for which the FDR is still below the passed threshold
+        """
+
+        # Check whether an analysis has already been performed
+        if self._randomization_info_dict is None:
+            print("[ERROR] No analysis has been performed yet! Cannot determine P-value threshold.")
+            return
+
+        # Determine results index for chosen FDR threshold
+        result_index = 0
+        for fdr_idx in range(0, len(self._randomization_info_dict['RESULTS']['FDR'])):
+            if self._randomization_info_dict['RESULTS']['FDR'][fdr_idx] <= chosen_fdr_thresh:
+                result_index = fdr_idx
+
+        return result_index
+
     def get_randomization_info_report(self, nominal_alpha: float = None):
         """
         :return: String that contains information about the last randomization performed.
@@ -519,10 +541,10 @@ class RandomizeInteractionSet:
         report += "\t\t[INFO] Standard deviation of significant randomized interactions: " \
                   + "{:.2f}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_R_SD'][nominal_alpha_idx]) + '\n'
         report += "\t\t[INFO] Z-score: "
-        if 1 < self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]:
+        if self._randomization_info_dict['RESULTS']['Z_SCORE'][nominal_alpha_idx] != "NA":
             report += "{:.2f}".format(self._randomization_info_dict['RESULTS']['Z_SCORE'][nominal_alpha_idx]) + '\n'
         else:
-            report += "NA (Do more than one iteration!)" + '\n'
+            report += "NA (Increase number of iterations!)" + '\n'
         report += "\t\t[INFO] Estimated FDR: " \
                   + "{:.5f}".format(self._randomization_info_dict['RESULTS']['FDR'][nominal_alpha_idx]) + '\n'
 
@@ -589,7 +611,10 @@ class RandomizeInteractionSet:
             sig_num_o = str(self._randomization_info_dict['RESULTS']['SIG_NUM_O'][nominal_alpha_idx])
             sig_num_r_mean = "{:.2f}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_R_MEAN'][nominal_alpha_idx])
             sig_num_r_sd = "{:.2f}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_R_SD'][nominal_alpha_idx])
-            z_score = "{:.2f}".format(self._randomization_info_dict['RESULTS']['Z_SCORE'][nominal_alpha_idx])
+            if self._randomization_info_dict['RESULTS']['Z_SCORE'][nominal_alpha_idx] != "NA":
+                z_score = "{:.2f}".format(self._randomization_info_dict['RESULTS']['Z_SCORE'][nominal_alpha_idx])
+            else:
+                z_score = "NA"
             fdr = "{:.5f}".format(self._randomization_info_dict['RESULTS']['FDR'][nominal_alpha_idx])
 
             # Table tag and prefix for output
@@ -745,168 +770,6 @@ class RandomizeInteractionSet:
 
         return sig_num_list
 
-    def get_fdr_info_plot(self, pdf_file_name: str = None, analysis_name: str = None):
-        """
-        This function creates a graphical representation of the results of the last FDR procedure performed.
-
-        :param pdf_file_name: Name of the PDF file that will be created
-        :param analysis_name: Name of of the analysis that will be shown in the graphical representation
-        :return: Nothing, if no FDR procedure has been performed yet or otherwise a 'Figure' object of 'matplotlib'
-        that can be displayed in a Jupyter notebook
-        """
-
-        # Check whether an analysis has already been performed
-        if self._fdr_info_dict is None:
-            print("[ERROR] No analysis has been performed yet! There is nothing to plot.")
-            return
-
-        # Set common plot parameters
-        hv_lwd = 0.5  # line width of horizontal and vertical red dashed lines
-        hv_col = 'red'  # color of horizontal and vertical red dashed lines
-        header_font_size = 10
-
-        # Extract data from fdr_info_dict
-        # -------------------------------
-
-        # Input parameters
-        chosen_fdr_thresh = self._fdr_info_dict['INPUT_PARAMETERS']['CHOSEN_FDR_THRESH'][0]
-        pval_thresh_max = self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_MAX'][0]
-        pval_thresh_step_size = self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_STEP_SIZE'][0]
-        input_interactions_num = self._fdr_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]
-        random_seed = self._fdr_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0]
-        result_index = self._fdr_info_dict['RESULT_INDEX'][0]
-
-        # Results
-        pval_thresh_column = self._fdr_info_dict['RESULTS_TABLE']['PVAL_THRESH']
-        pval_thresh_result = self._fdr_info_dict['RESULTS_TABLE']['PVAL_THRESH'][result_index]
-        nnl_pval_thresh_result = self._fdr_info_dict['RESULTS_TABLE']['NNL_PVAL_THRESH'][result_index]
-        min_rp_num_column = self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM']
-        min_rp_num_result = self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM'][result_index]
-        min_rp_num_pval_column = self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM_PVAL']
-        min_rp_num_pval_result = self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM_PVAL'][result_index]
-        min_rp_num_inter_num = self._fdr_info_dict['MIN_RP_NUM_INTER_NUM']
-        sig_num_o_column = self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_O']
-        sig_num_o_result = self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_O'][result_index]
-        sig_num_r_column = self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_R']
-        sig_num_r_result = self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_R'][result_index]
-        fdr_column = self._fdr_info_dict['RESULTS_TABLE']['FDR']
-        fdr_result = self._fdr_info_dict['RESULTS_TABLE']['FDR'][result_index]
-        fdr_max = max(self._fdr_info_dict['RESULTS_TABLE']['FDR'])
-        if self._fdr_info_dict['WARNINGS'][0] == 1:
-            warn_input_inter_col = 'r'
-        else:
-            warn_input_inter_col = 'k'
-        if self._fdr_info_dict['WARNINGS'][1] == 1:
-            warn_min_rp_inter_col = 'r'
-        else:
-            warn_min_rp_inter_col = 'k'
-        if self._fdr_info_dict['WARNINGS'][2] == 1:
-            warn_rand_sig_inter_col = 'r'
-        else:
-            warn_rand_sig_inter_col = 'k'
-
-        # Create figure with plots for individual columns
-        # -----------------------------------------------
-
-        fig, ax = plt.subplots(6, figsize=(7, 19), gridspec_kw={'height_ratios': [2, 1, 1, 1, 1, 1]})
-
-        # Add field with information about analysis
-        plt.plot(ax=ax[0])
-        ax[0].spines['left'].set_color('white')
-        ax[0].spines['right'].set_color('white')
-        ax[0].spines['top'].set_color('white')
-        ax[0].spines['bottom'].set_color('white')
-        ax[0].tick_params(axis='x', colors='white')
-        ax[0].tick_params(axis='y', colors='white')
-        ax[0].text(-0.2, 1.00, 'FDR results', fontsize=18, fontweight='bold')
-        ax[0].text(-0.18, 0.90, 'Analysis name: ' + analysis_name, fontsize=header_font_size, fontweight='bold')
-        ax[0].text(-0.18, 0.85, 'Chosen FDR threshold: ' + "{:.5f}".format(chosen_fdr_thresh),
-                   fontsize=header_font_size, fontweight='bold')
-        ax[0].text(-0.18, 0.80, 'Maximum P-value threshold: ' + "{:.5f}".format(pval_thresh_max),
-                   fontsize=header_font_size)
-        ax[0].text(-0.18, 0.75, 'P-value threshold step size: ' + "{:.5f}".format(pval_thresh_step_size),
-                   fontsize=header_font_size)
-        ax[0].text(-0.18, 0.70, 'Total number of interactions: ' + "{:,}".format(input_interactions_num),
-                   fontsize=header_font_size, fontweight='bold', color=warn_input_inter_col)
-        ax[0].text(-0.18, 0.65, 'Random seed: ' + str(random_seed),
-                   fontsize=header_font_size)
-
-        ax[0].text(-0.18, 0.55, 'Determined P-value threshold: ' + "{:.5f}".format(pval_thresh_result),
-                   fontsize=header_font_size,
-                   fontweight='bold')
-        ax[0].text(-0.18, 0.50, 'Determined -ln(P-value threshold): ' + "{:.5f}".format(nnl_pval_thresh_result),
-                   fontsize=header_font_size)
-        ax[0].text(-0.18, 0.45, 'Minimum read pair number: ' + str(min_rp_num_result), fontsize=header_font_size)
-        ax[0].text(-0.18, 0.40,
-                   'Smallest possible P-value with ' + str(min_rp_num_result) + ' read pairs: ' + "{:.5f}".format(
-                       min_rp_num_pval_result), fontsize=header_font_size)
-        ax[0].text(-0.18, 0.35,
-                   'Number of interactions with ' + str(min_rp_num_result) + ' or more read pairs: ' + "{:,}".format(
-                       min_rp_num_inter_num), fontsize=header_font_size, fontweight='bold', color=warn_min_rp_inter_col)
-        ax[0].text(-0.18, 0.30, 'Number of significant interactions: ' + "{:,}".format(sig_num_o_result),
-                   fontsize=header_font_size,
-                   fontweight='bold')
-        ax[0].text(-0.18, 0.25, 'Number of randomized significant interactions: ' + "{:,}".format(sig_num_r_result),
-                   fontsize=header_font_size, color=warn_rand_sig_inter_col)
-        ax[0].text(-0.18, 0.20, 'Estimated FDR: ' + "{:.5f}".format(fdr_result), fontsize=header_font_size,
-                   fontweight='bold')
-
-        # Plot P-value thresholds
-        ax[1].plot(pval_thresh_column, pval_thresh_column)
-        ax[1].set_title('P-value threshold: ' + "{:.5f}".format(pval_thresh_result), loc='left')
-        ax[1].set(xlabel='P-value threshold')
-        ax[1].set(ylabel='PVAL_TRESH')
-        ax[1].axhline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
-        ax[1].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
-
-        # Plot minimum read pair numbers
-        ax[2].plot(pval_thresh_column, min_rp_num_column)
-        ax[2].set_title('Minimum read pair number: ' + str(min_rp_num_result), loc='left')
-        ax[2].set(xlabel='P-value threshold')
-        ax[2].set(ylabel='MIN_RP_NUM')
-        ax[2].axhline(min_rp_num_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
-        ax[2].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
-
-        # Smallest possible P-values with minimum read pair numbers
-        ax[3].plot(pval_thresh_column, min_rp_num_pval_column)
-        ax[3].set_title('Smallest possible P-value with ' + str(min_rp_num_result) + ' read pairs: ' + "{:.5f}".format(
-            min_rp_num_pval_result), loc='left')
-        ax[3].set(xlabel='P-value threshold')
-        ax[3].set(ylabel='MIN_RP_NUM_PVAL')
-        ax[3].axhline(min_rp_num_pval_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
-        ax[3].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
-
-        # Plot number of significant interactions
-        ax[4].plot(pval_thresh_column, sig_num_r_column, label='SIG_NUM_R')
-        ax[4].plot(pval_thresh_column, sig_num_o_column, label='SIG_NUM_O')
-        ax[4].set_title('Number of significant interactions: ' + "{:,}".format(sig_num_o_result) + ' (' + "{:,}".format(
-            sig_num_r_result) + ')', loc='left')
-        ax[4].set(xlabel='P-value threshold')
-        ax[4].legend(fontsize=8)
-        ax[4].axhline(sig_num_o_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
-        ax[4].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
-
-        # Plot estimated FDR
-        ax[5].plot(pval_thresh_column, fdr_column)
-        ax[5].set_title('Estimated FDR: ' + "{:.5f}".format(fdr_result), loc='left')
-        ax[5].set(xlabel='P-value threshold')
-        ax[5].set(ylabel='FDR')
-        ax[5].axhline(fdr_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
-        ax[5].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
-
-        ax[5].text(pval_thresh_max - pval_thresh_max / 5, fdr_result + fdr_max / 16,
-                   'FDR: ' + "{:.5f}".format(fdr_result),
-                   bbox={'color': 'lightblue', 'alpha': 0.5, 'pad': 4})
-
-        ax[5].text(pval_thresh_result + pval_thresh_max / 60, fdr_result - fdr_max / 9,
-                   'P-value: ' + "{:.5f}".format(pval_thresh_result),
-                   bbox={'color': 'lightblue', 'alpha': 0.5, 'pad': 4})
-
-        # Finalize save to PDF and return 'Figure' object
-        fig.tight_layout()
-        fig.savefig(pdf_file_name)
-        return fig
-
     def get_randomization_info_plot(self, nominal_alpha_selected: float = None, pdf_file_name: str = "randomization.pdf", analysis_name: str = "ANALYSIS_NAME"):
         """
         This function creates a graphical representation of the results from the last randomization analysis performed.
@@ -923,10 +786,11 @@ class RandomizeInteractionSet:
             print("[ERROR] No analysis has been performed yet! There is nothing to plot.")
             return
 
+        # Truncate string for analysis name
+        analysis_name_truncated = (analysis_name[:60] + " ...") if len(analysis_name) > 60 else analysis_name
+
         # Check if there are results for the nominal alpha passed
         nominal_alphas_available = self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS']
-
-        # Check if there are any results for the passed list of nominal alphas
         if nominal_alpha_selected not in nominal_alphas_available:
             if nominal_alpha_selected is None:
                 nominal_alpha_selected_formatted = "None"
@@ -946,8 +810,6 @@ class RandomizeInteractionSet:
         # -----------------------------------------
 
         # Input parameters
-        pdf_file_name = pdf_file_name
-        analysis_name = analysis_name
 
         nominal_alphas = self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS']
         if len(nominal_alphas) < 5:
@@ -960,6 +822,10 @@ class RandomizeInteractionSet:
 
         # Results
         nominal_alpha_selected_idx = nominal_alphas.index(nominal_alpha_selected)
+        if self._randomization_info_dict['RESULTS']['Z_SCORE'][nominal_alpha_selected_idx] == "NA":
+            report = "[ERROR] There is no Z-Score available. Cannot create plot!" + '\n'
+            print(report)
+            return
         sig_num_r_list = self._randomization_info_dict['RESULTS']['SIG_NUM_R_LISTS'][nominal_alpha_selected]
         sig_num_o = self._randomization_info_dict['RESULTS']['SIG_NUM_O'][nominal_alpha_selected_idx]
         i_num_randomized = self._randomization_info_dict['RESULTS']['I_NUM_RANDOMIZED']
@@ -991,25 +857,25 @@ class RandomizeInteractionSet:
         ax[0].tick_params(axis='x', colors='white')
         ax[0].tick_params(axis='y', colors='white')
         ax[0].text(-0.2, 1.00, 'Randomization results', fontsize=18, fontweight='bold')
-        ax[0].text(-0.18, 0.90, 'Analysis name: ' + analysis_name, fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.90, 'Analysis name: ' + analysis_name_truncated, fontsize=header_font_size, fontweight='bold')
         ax[0].text(-0.18, 0.85, 'Number of input interactions: ' + "{:,}".format(input_interactions_num),
                    fontsize=header_font_size)
-        ax[0].text(-0.18, 0.80, 'Number of iterations: ' + "{:,}".format(iter_num),
+        ax[0].text(-0.18, 0.80, 'Number of randomized interactions: ' + "{:,}".format(i_num_randomized),
                    fontsize=header_font_size)
-        ax[0].text(-0.18, 0.75, 'Random seed: ' + str(random_seed),
+        ax[0].text(-0.18, 0.75, 'Number of iterations: ' + "{:,}".format(iter_num),
                    fontsize=header_font_size)
-        ax[0].text(-0.18, 0.70, 'Available nominal alphas: ' + str(nominal_alphas_formatted),
+        ax[0].text(-0.18, 0.70, 'Random seed: ' + str(random_seed),
                    fontsize=header_font_size)
-        ax[0].text(-0.18, 0.65, 'Selected nominal alpha: ' + "{:.5f}".format(nominal_alpha_selected),
+        ax[0].text(-0.18, 0.65, 'Available nominal alphas: ' + str(nominal_alphas_formatted),
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.60, 'Selected nominal alpha: ' + "{:.5f}".format(nominal_alpha_selected),
                    fontsize=header_font_size, fontweight='bold')
 
-        ax[0].text(-0.18, 0.55, 'Number of randomized interactions: ' + "{:,}".format(i_num_randomized),
-                   fontsize=header_font_size)
-        ax[0].text(-0.18, 0.50,
+        ax[0].text(-0.18, 0.50, 'Observed number of significant interactions: ' + "{:,}".format(sig_num_o),
+                   fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.45,
                    'Iterations with more significant interactions than observed: ' + "{:,}".format(sig_num_r_gt_obs),
                    fontsize=header_font_size, color=sig_num_r_gt_obs_color, fontweight=sig_num_r_gt_obs_fontweight)
-        ax[0].text(-0.18, 0.45, 'Number of observed significant interactions: ' + "{:,}".format(sig_num_o),
-                   fontsize=header_font_size, fontweight='bold')
         ax[0].text(-0.18, 0.40,
                    'Mean number of significant randomized interactions: ' + "{:,.2f}".format(sig_num_r_mean),
                    fontsize=header_font_size, fontweight='bold')
@@ -1097,13 +963,25 @@ class RandomizeInteractionSet:
         hv_col = 'red'  # color of horizontal and vertical red dashed lines
         header_font_size = 10
 
+        # Truncate string for analysis name
+        analysis_name_truncated = (analysis_name[:60] + " ...") if len(analysis_name) > 60 else analysis_name
+
         # Extract data from fdr_info_dict
         # -------------------------------
 
         # Input parameters
         chosen_fdr_thresh = chosen_fdr_threshold
         pval_thresh_max = max(self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS'])
+        iter_num = self._randomization_info_dict['INPUT_PARAMETERS']['ITER_NUM'][0]
         random_seed = self._randomization_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0]
+        input_interactions_num = self._randomization_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]
+        nominal_alphas = self._randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS']
+        if len(nominal_alphas) < 5:
+            nominal_alphas_formatted = ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas)
+        else:
+            nominal_alphas_formatted =  ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas[:3]) + ", ..., " + "{:.5f}".format(nominal_alphas[-1])
+
+        i_num_randomized = self._randomization_info_dict['RESULTS']['I_NUM_RANDOMIZED']
 
         # Determine results index for chosen FDR threshold
         result_index = 0
@@ -1128,19 +1006,37 @@ class RandomizeInteractionSet:
         sig_num_o_column = self._randomization_info_dict['RESULTS']['SIG_NUM_O']
         sig_num_o_result = self._randomization_info_dict['RESULTS']['SIG_NUM_O'][result_index]
 
-        sig_num_r_column = self._randomization_info_dict['RESULTS']['SIG_NUM_R_MEAN']
-        sig_num_r_result = self._randomization_info_dict['RESULTS']['SIG_NUM_R_MEAN'][result_index]
+        sig_num_r_gt_obs = self._randomization_info_dict['RESULTS']['SIG_NUM_R_GT_OBS'][result_index]
 
-        fdr_column = self._randomization_info_dict['RESULTS']['FDR']
-        fdr_result = self._randomization_info_dict['RESULTS']['FDR'][result_index]
-        fdr_max = max(fdr_column)
+        # Highlight text if there are iterations with more significant interactions than originally observed
+        if 0 < sig_num_r_gt_obs:
+            sig_num_r_gt_obs_color = 'red'
+            sig_num_r_gt_obs_fontweight = 'bold'
+        else:
+            sig_num_r_gt_obs_color = 'black'
+            sig_num_r_gt_obs_fontweight = 'normal'
+
+        sig_num_r_mean_column = self._randomization_info_dict['RESULTS']['SIG_NUM_R_MEAN']
+        sig_num_r_mean_result = self._randomization_info_dict['RESULTS']['SIG_NUM_R_MEAN'][result_index]
+
+        sig_num_r_sd_result = self._randomization_info_dict['RESULTS']['SIG_NUM_R_SD'][result_index]
 
         z_score_column = self._randomization_info_dict['RESULTS']['Z_SCORE']
         z_score_result = self._randomization_info_dict['RESULTS']['Z_SCORE'][result_index]
+
         if "NA" in z_score_column:
             plot_z_scores = False
         else:
             plot_z_scores = True
+
+        if z_score_result == "NA":
+            z_score_result_formatted = "NA"
+        else:
+            z_score_result_formatted = "{0:,.2f}".format(z_score_result)
+
+        fdr_column = self._randomization_info_dict['RESULTS']['FDR']
+        fdr_result = self._randomization_info_dict['RESULTS']['FDR'][result_index]
+        fdr_max = max(fdr_column)
 
         # Create figure with plots for individual columns
         # -----------------------------------------------
@@ -1156,108 +1052,123 @@ class RandomizeInteractionSet:
         ax[0].tick_params(axis='x', colors='white')
         ax[0].tick_params(axis='y', colors='white')
         ax[0].text(-0.2, 1.00, 'FDR results', fontsize=18, fontweight='bold')
-        ax[0].text(-0.18, 0.90, 'Analysis name: ' + analysis_name, fontsize=header_font_size, fontweight='bold')
-        ax[0].text(-0.18, 0.85, 'Chosen FDR threshold: ' + "{:.5f}".format(chosen_fdr_thresh),
+        ax[0].text(-0.18, 0.90, 'Analysis name: ' + analysis_name_truncated, fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.85, 'Number of input interactions: ' + "{:,}".format(input_interactions_num),
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.80, 'Number of randomized interactions: ' + "{:,}".format(i_num_randomized),
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.75, 'Number of iterations: ' + "{:,}".format(iter_num),
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.70, 'Random seed: ' + str(random_seed),
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.65, 'Available nominal alphas: ' + nominal_alphas_formatted, fontsize=header_font_size)
+        ax[0].text(-0.18, 0.60, 'Chosen FDR threshold: ' + "{:.5f}".format(chosen_fdr_thresh),
                    fontsize=header_font_size, fontweight='bold')
-        ax[0].text(-0.18, 0.80, 'Maximum P-value threshold: ' + "{:.5f}".format(pval_thresh_max),
-                   fontsize=header_font_size)
-        ax[0].text(-0.18, 0.75, 'Random seed: ' + str(random_seed),
-                   fontsize=header_font_size)
 
-        ax[0].text(-0.18, 0.45, 'Determined P-value threshold: ' + "{:.5f}".format(pval_thresh_result),
-                   fontsize=header_font_size,
-                   fontweight='bold')
+        ax[0].text(-0.18, 0.50, 'Determined P-value threshold: ' + "{:.5f}".format(pval_thresh_result),
+                   fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.14, 0.45, '-ln(' + "{:.5f}".format(pval_thresh_result) + ") = " + "{:.2f}".format(-log(pval_thresh_result)),
+                   fontsize=header_font_size)
         ax[0].text(-0.18, 0.40, 'Minimum read pair number: ' + str(min_rp_num_result), fontsize=header_font_size)
         ax[0].text(-0.18, 0.35,
                    'Smallest possible P-value with ' + str(min_rp_num_result) + ' read pairs: ' + "{:.5f}".format(
                        min_rp_num_pval_result), fontsize=header_font_size)
-        ax[0].text(-0.18, 0.30, 'Number of significant interactions: ' + "{:,}".format(sig_num_o_result),
-                   fontsize=header_font_size,
-                   fontweight='bold')
-        ax[0].text(-0.18, 0.25, 'Mean number of randomized significant interactions: ' + "{:,}".format(sig_num_r_result),
+        ax[0].text(-0.18, 0.30, 'Observed number of significant interactions: ' + "{:,}".format(sig_num_o_result),
+                   fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.25,
+                   'Iterations with more significant interactions than observed: ' + "{:,}".format(sig_num_r_gt_obs),
+                   fontsize=header_font_size, color=sig_num_r_gt_obs_color, fontweight=sig_num_r_gt_obs_fontweight)
+        ax[0].text(-0.18, 0.20, 'Mean number of randomized significant interactions: ' + "{0:,.2f}".format(sig_num_r_mean_result),
                    fontsize=header_font_size)
-        ax[0].text(-0.18, 0.20, 'Estimated FDR: ' + "{:.5f}".format(fdr_result), fontsize=header_font_size,
+        ax[0].text(-0.18, 0.15, 'Standard deviation of randomized significant interactions: ' + "{0:,.2f}".format(sig_num_r_sd_result),
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.10, 'Z-score: ' + z_score_result_formatted,
+                   fontsize=header_font_size)
+        ax[0].text(-0.18, 0.05, 'Estimated FDR: ' + "{:.5f}".format(fdr_result), fontsize=header_font_size,
                    fontweight='bold')
 
         # Plot P-value thresholds
-        ax[1].plot(pval_thresh_column, pval_thresh_column)
-        ax[1].set_title('P-value threshold: ' + "{:.5f}".format(pval_thresh_result), loc='left')
-        ax[1].set(xlabel='P-value threshold')
-        ax[1].set(ylabel='PVAL_TRESH')
-        ax[1].axhline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+        ax[1].plot(pval_thresh_column, -log(pval_thresh_column))
+        ax[1].set_title("P-value threshold: " + "{:.5f}".format(pval_thresh_result), loc='left')
+        ax[1].set(xlabel="P-value threshold")
+        ax[1].set(ylabel="-ln(P-value threshold)")
+        ax[1].axhline(-log(pval_thresh_result), linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[1].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
 
         # Plot minimum read pair numbers
         ax[2].plot(pval_thresh_column, min_rp_num_column)
         ax[2].set_title('Minimum read pair number: ' + str(min_rp_num_result), loc='left')
         ax[2].set(xlabel='P-value threshold')
-        ax[2].set(ylabel='MIN_RP_NUM')
+        ax[2].set(ylabel='Read pair number')
         ax[2].axhline(min_rp_num_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[2].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
 
         # Smallest possible P-values with minimum read pair numbers
         ax[3].plot(pval_thresh_column, min_rp_num_pval_column)
-        ax[3].set_title('Smallest possible P-value with ' + str(min_rp_num_result) + ' read pairs: ' + "{:.5f}".format(
+        ax[3].set_title('Smallest P-value with ' + str(min_rp_num_result) + ' read pairs: ' + "{:.5f}".format(
             min_rp_num_pval_result), loc='left')
         ax[3].set(xlabel='P-value threshold')
-        ax[3].set(ylabel='MIN_RP_NUM_PVAL')
+        ax[3].set(ylabel='Smallest P-value')
         ax[3].axhline(min_rp_num_pval_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[3].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
 
         # Plot number of significant interactions
-        ax[4].plot(pval_thresh_column, sig_num_r_column, label='SIG_NUM_R')
+        ax[4].plot(pval_thresh_column, sig_num_r_mean_column, label='SIG_NUM_R')
         ax[4].plot(pval_thresh_column, sig_num_o_column, label='SIG_NUM_O')
         ax[4].set_title('Number of significant interactions: ' + "{:,}".format(sig_num_o_result) + ' (' + "{:,}".format(
-            sig_num_r_result) + ')', loc='left')
+            sig_num_r_mean_result) + ')', loc='left')
         ax[4].set(xlabel='P-value threshold')
+        ax[4].set(ylabel='Significant interactions')
         ax[4].legend(fontsize=8)
         ax[4].axhline(sig_num_o_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[4].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
 
-        # Plot estimated FDR
-        ax[5].plot(pval_thresh_column, fdr_column)
-        ax[5].set_title('Estimated FDR: ' + "{:.5f}".format(fdr_result), loc='left')
-        ax[5].set(xlabel='P-value threshold')
-        ax[5].set(ylabel='FDR')
-        ax[5].axhline(fdr_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
-        ax[5].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+        # Plot Z-score
+        if plot_z_scores:
+            ax[5].plot(pval_thresh_column, z_score_column)
+            ax[5].set_title('Z-score: ' + z_score_result_formatted, loc='left')
+            ax[5].set(xlabel='P-value threshold')
+            ax[5].set(ylabel='Z-score')
+            ax[5].axhline(z_score_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+            ax[5].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+        else:
+            plt.plot(ax=ax[5])
+            ax[5].spines['left'].set_color('white')
+            ax[5].spines['right'].set_color('white')
+            ax[5].spines['top'].set_color('white')
+            ax[5].spines['bottom'].set_color('white')
+            ax[5].tick_params(axis='x', colors='white')
+            ax[5].tick_params(axis='y', colors='white')
+            ax[5].text(-0.18, 0.90, 'The standard deviation of significant randomized interactions',
+                       fontsize=header_font_size, fontweight='bold')
+            ax[5].text(-0.18, 0.80, 'is zero for at least one nominal alpha!',
+                       fontsize=header_font_size, fontweight='bold')
+            ax[5].text(-0.18, 0.70, 'Therefore, the Z-scores cannot be plotted.',
+                       fontsize=header_font_size)
+            ax[5].text(-0.18, 0.60, 'The standard deviation is always zero, if only one iteration was performed.',
+                       fontsize=header_font_size)
+            ax[5].text(-0.18, 0.50, 'If only a few iterations (<20) have been performed,',
+                       fontsize=header_font_size)
+            ax[5].text(-0.18, 0.40, 'the standard deviation can sometimes also be zero.',
+                       fontsize=header_font_size)
+            ax[5].text(-0.18, 0.30, 'Try a larger number of iterations!.',
+                       fontsize=header_font_size)
 
-        ax[5].text(pval_thresh_max - pval_thresh_max / 5, fdr_result + fdr_max / 16,
+        # Plot estimated FDR
+        ax[6].plot(pval_thresh_column, fdr_column)
+        ax[6].set_title('Estimated FDR: ' + "{:.5f}".format(fdr_result), loc='left')
+        ax[6].set(xlabel='P-value threshold')
+        ax[6].set(ylabel='FDR')
+        ax[6].axhline(fdr_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+        ax[6].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
+
+        ax[6].text(pval_thresh_max - pval_thresh_max / 5, fdr_result + fdr_max / 16,
                    'FDR: ' + "{:.5f}".format(fdr_result),
                    bbox={'color': 'lightblue', 'alpha': 0.5, 'pad': 4})
 
-        ax[5].text(pval_thresh_result + pval_thresh_max / 60, fdr_result - fdr_max / 9,
+        ax[6].text(pval_thresh_result + pval_thresh_max / 60, fdr_result - fdr_max / 9,
                    'P-value: ' + "{:.5f}".format(pval_thresh_result),
                    bbox={'color': 'lightblue', 'alpha': 0.5, 'pad': 4})
-
-        # Plot Z-score
-        if plot_z_scores:
-            ax[6].plot(pval_thresh_column, z_score_column)
-            ax[6].set_title('Z-score: ' + "{:.5f}".format(z_score_result), loc='left')
-            ax[6].set(xlabel='P-value threshold')
-            ax[6].set(ylabel='Z-score')
-            ax[6].axhline(z_score_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
-            ax[6].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
-        else:
-            plt.plot(ax=ax[6])
-            ax[6].spines['left'].set_color('white')
-            ax[6].spines['right'].set_color('white')
-            ax[6].spines['top'].set_color('white')
-            ax[6].spines['bottom'].set_color('white')
-            ax[6].tick_params(axis='x', colors='white')
-            ax[6].tick_params(axis='y', colors='white')
-            ax[6].text(-0.18, 0.90, 'The standard deviation of significant randomized interactions is zero!',
-                       fontsize=header_font_size, fontweight='bold')
-            ax[6].text(-0.18, 0.80, 'Therefore, the Z-score cannot be calculated.',
-                       fontsize=header_font_size)
-            ax[6].text(-0.18, 0.70, 'The Z-score is always zero, if only one iteration was performed.',
-                       fontsize=header_font_size)
-            ax[6].text(-0.18, 0.60, 'If only a few iterations (<20) have been performed,',
-                       fontsize=header_font_size)
-            ax[6].text(-0.18, 0.50, 'the standard deviation can sometimes also be zero.',
-                       fontsize=header_font_size)
-            ax[6].text(-0.18, 0.40, 'Try a larger number of iterations!.',
-                       fontsize=header_font_size)
 
         # Finalize save to PDF and return 'Figure' object
         fig.tight_layout()

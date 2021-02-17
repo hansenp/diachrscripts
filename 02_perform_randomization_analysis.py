@@ -26,9 +26,9 @@ parser.add_argument('-i','--interaction-file', help='Diachromatic interaction fi
 parser.add_argument('-n','--iter-num', help='Number of iterations.', default=1000)
 parser.add_argument('-a','--nominal-alpha', help='Nominal alpha. P-value threshold used to define significant '
                                                  'interactions.', default=0.05)
-parser.add_argument('-m','--nominal-alpha-max', help='Maximal nominal alpha used to define significant interactions.',
+parser.add_argument('-x','--nominal-alpha-max', help='Maximal nominal alpha used to define significant interactions.',
                     default=0.05)
-parser.add_argument('-x','--nominal-alpha-step', help='Increment by which nominal alphas are increased.',
+parser.add_argument('-y','--nominal-alpha-step', help='Increment by which nominal alphas are increased.',
                     default=0.0025)
 parser.add_argument('-s','--random-seed', help='Seed for randomization of simple and twisted read pairs.', default=None)
 parser.add_argument('-t','--thread-num', help='Number of threads.', default=0)

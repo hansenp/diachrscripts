@@ -1,7 +1,7 @@
 from unittest import TestCase
 import os
 import sys
-from numpy import log
+from numpy import arange, log
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.randomize_interaction_set import RandomizeInteractionSet
 
@@ -14,6 +14,11 @@ class TestRandomizationAnalysis(TestCase):
 
     @classmethod
     def setUpClass(cls):
+
+        # Prepare test data to test correct use of P-value thresholds
+        cls.interaction_set_1 = DiachromaticInteractionSet()
+        cls.interaction_set_1.parse_file("data/test_03/diachromatic_interaction_file_fdr_1.tsv.gz")
+        cls.randomize_1 = RandomizeInteractionSet(random_seed=42)
 
         # Prepare interaction set using the test file with 1,000 interactions
         cls.interaction_set_1000 = DiachromaticInteractionSet()
@@ -143,12 +148,15 @@ class TestRandomizationAnalysis(TestCase):
 
         # Find indices of the passed nominal alphas
         nominal_alpha_idx = random_analysis_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(0.005)
-        nominal_alpha_idx_same_seed = random_analysis_info_dict_same_seed['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(0.005)
-        nominal_alpha_idx_different_seed = random_analysis_info_dict_different_seed['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(0.005)
+        nominal_alpha_idx_same_seed = random_analysis_info_dict_same_seed['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(
+            0.005)
+        nominal_alpha_idx_different_seed = random_analysis_info_dict_different_seed['INPUT_PARAMETERS'][
+            'NOMINAL_ALPHAS'].index(0.005)
 
         # Compare mean numbers of significant randomized interactions from the three objects
         sig_num_r_mean = random_analysis_info_dict['RESULTS']['SIG_NUM_R_MEAN'][nominal_alpha_idx]
-        sig_num_r_mean_same_seed = random_analysis_info_dict_same_seed['RESULTS']['SIG_NUM_R_MEAN'][nominal_alpha_idx_same_seed]
+        sig_num_r_mean_same_seed = random_analysis_info_dict_same_seed['RESULTS']['SIG_NUM_R_MEAN'][
+            nominal_alpha_idx_same_seed]
         sig_num_r_mean_different_seed = \
             random_analysis_info_dict_different_seed['RESULTS']['SIG_NUM_R_MEAN'][nominal_alpha_idx_different_seed]
         self.assertEqual(sig_num_r_mean, sig_num_r_mean_same_seed, msg='Get different results with the same random '
@@ -290,3 +298,77 @@ class TestRandomizationAnalysis(TestCase):
         self.assertEqual(z_score_0_2, z_score_1_2, msg='Results differ depending on how a nominal alpha was passed!')
         self.assertEqual(z_score_0_2, z_score_2_2, msg='Results differ depending on how a nominal alpha was passed!')
         self.assertEqual(z_score_0_2, z_score_3_2, msg='Results differ depending on how a nominal alpha was passed!')
+
+    def test_interactions_numbers_at_different_pval_thresholds(self):
+        """
+        Here it is tested whether the P-value thresholds are used correctly during the FDR procedure.
+        """
+
+        # Prepare list of nominal alphas
+        nominal_alpha_max = 0.05
+        nominal_alpha_step = 0.00025
+        nominal_alphas = arange(nominal_alpha_step, nominal_alpha_max + nominal_alpha_step, nominal_alpha_step)
+
+        # The randomization function returns a dictionary containing the numbers that are being tested here
+        randomization_info_dict = self.randomize_1.perform_randomization_analysis(
+            interaction_set=self.interaction_set_1,
+            nominal_alphas=nominal_alphas,
+            iter_num=1,
+            thread_num=0,
+            verbose=False)
+
+        # We test the number of significant interactions for all P-value thresholds
+        sig_num_o_expected = 10
+        for sig_num_o in randomization_info_dict['RESULTS']['SIG_NUM_O']:
+            self.assertEqual(sig_num_o_expected, sig_num_o,
+                             msg='Number of significant interactions did not increase by 10!')
+            sig_num_o_expected += 10
+
+    def test_for_changes_in_fdr_results_top_64000_interactions(self):
+        """
+        Here it is tested whether the results of the randomization procedure for the test file with 64,000 input
+        interactions have changed with respect to the determined P-value threshold that yields an FDR below 0.05.
+        """
+
+        # Prepare list of nominal alphas
+        nominal_alpha_max = 0.05
+        nominal_alpha_step = 0.00025
+        nominal_alphas = arange(nominal_alpha_step, nominal_alpha_max + nominal_alpha_step, nominal_alpha_step)
+
+        # The randomization function returns a dictionary containing the numbers that are being tested here
+        randomization_info_dict = self.randomize_64000.perform_randomization_analysis(
+            interaction_set=self.interaction_set_64000,
+            nominal_alphas=nominal_alphas,
+            iter_num=1,
+            thread_num=0,
+            verbose=False)
+
+        # Index of the determined P-value threshold
+        result_index = self.randomize_64000.get_largest_nominal_alpha_index_at_chosen_fdr_thresh(0.05)
+
+        # The determined P-value threshold must be 0.00375
+        determined_pval_thresh = randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS'][result_index]
+        self.assertAlmostEqual(0.00375, determined_pval_thresh, 5,
+                               msg='When this test was created, a different P-value threshold was determined!')
+
+        # At the determined P-value threshold the number of significant interactions must be 1,585
+        determined_sig_num_o = randomization_info_dict['RESULTS']['SIG_NUM_O'][result_index]
+        self.assertEqual(1585, determined_sig_num_o,
+                         msg='When this test was created, a different number of significant interactions was '
+                             'determined!')
+
+        # At the determined P-value threshold the number of randomized significant interactions must be 77
+        determined_sig_num_r = randomization_info_dict['RESULTS']['SIG_NUM_R_MEAN'][result_index]
+        self.assertEqual(77, determined_sig_num_r,
+                         msg='When this test was created, a different number of randomized significant interactions '
+                             'was determined!')
+
+        # At the determined P-value threshold the FDR must be 0.04858
+        determined_fdr = randomization_info_dict['RESULTS']['FDR'][result_index]
+        self.assertAlmostEqual(0.04858, determined_fdr, 5, msg='When this test was created, a different FDR was '
+                                                               'determined!')
+
+        # At the determined P-value threshold the Z-Score must be "NA"
+        determined_z_score = randomization_info_dict['RESULTS']['Z_SCORE'][result_index]
+        self.assertEqual("NA", determined_z_score, msg='When this test was created, a different Z-score was '
+                                                       'determined!')
