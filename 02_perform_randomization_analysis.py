@@ -87,7 +87,7 @@ print()
 f_name_plot = out_prefix + '_randomization_analysis.pdf'
 randomize_interactions.get_randomization_info_plot(
     pdf_file_name = f_name_plot,
-    analysis_name = analysis_name)
+    description= analysis_name)
 
 f_name_summary = out_prefix + "_randomization_analysis_summary.txt"
 out_fh = open(f_name_summary, 'wt')

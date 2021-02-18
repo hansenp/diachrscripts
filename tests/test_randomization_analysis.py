@@ -2,6 +2,7 @@ from unittest import TestCase
 import os
 import sys
 from numpy import arange, log
+import warnings
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.randomize_interaction_set import RandomizeInteractionSet
 
@@ -14,6 +15,9 @@ class TestRandomizationAnalysis(TestCase):
 
     @classmethod
     def setUpClass(cls):
+
+        # Mute warnings
+        warnings.simplefilter('ignore')
 
         # Prepare test data to test correct use of P-value thresholds
         cls.interaction_set_1 = DiachromaticInteractionSet()
@@ -69,10 +73,10 @@ class TestRandomizationAnalysis(TestCase):
 
         # Compare results
         for iter_idx in range(0, iter_num):
-            sig_num_r_0 = random_analysis_thread_num_0_info_dict['RESULTS']['SIG_NUM_R_LISTS'][nominal_alpha][iter_idx]
-            sig_num_r_1 = random_analysis_thread_num_1_info_dict['RESULTS']['SIG_NUM_R_LISTS'][nominal_alpha][iter_idx]
-            sig_num_r_2 = random_analysis_thread_num_2_info_dict['RESULTS']['SIG_NUM_R_LISTS'][nominal_alpha][iter_idx]
-            sig_num_r_3 = random_analysis_thread_num_3_info_dict['RESULTS']['SIG_NUM_R_LISTS'][nominal_alpha][iter_idx]
+            sig_num_r_0 = random_analysis_thread_num_0_info_dict['SIG_NUM_R_LISTS'][nominal_alpha][iter_idx]
+            sig_num_r_1 = random_analysis_thread_num_1_info_dict['SIG_NUM_R_LISTS'][nominal_alpha][iter_idx]
+            sig_num_r_2 = random_analysis_thread_num_2_info_dict['SIG_NUM_R_LISTS'][nominal_alpha][iter_idx]
+            sig_num_r_3 = random_analysis_thread_num_3_info_dict['SIG_NUM_R_LISTS'][nominal_alpha][iter_idx]
             self.assertEqual(sig_num_r_0, sig_num_r_1,
                              msg='Different numbers of randomized significant interactions depending on '
                                  'parallel processing!')
@@ -95,7 +99,7 @@ class TestRandomizationAnalysis(TestCase):
             thread_num=0)
 
         # Find index of the passed nominal alpha
-        nominal_alpha_idx = random_analysis_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(0.0025)
+        nominal_alpha_idx = random_analysis_info_dict['RESULTS']['NOMINAL_ALPHA'].index(0.0025)
 
         # The following results were obtained with an earlier version
         expected_sig_num_r_mean = 51.01
@@ -147,11 +151,11 @@ class TestRandomizationAnalysis(TestCase):
             thread_num=0)
 
         # Find indices of the passed nominal alphas
-        nominal_alpha_idx = random_analysis_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(0.005)
-        nominal_alpha_idx_same_seed = random_analysis_info_dict_same_seed['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(
+        nominal_alpha_idx = random_analysis_info_dict['RESULTS']['NOMINAL_ALPHA'].index(0.005)
+        nominal_alpha_idx_same_seed = random_analysis_info_dict_same_seed['RESULTS']['NOMINAL_ALPHA'].index(
             0.005)
-        nominal_alpha_idx_different_seed = random_analysis_info_dict_different_seed['INPUT_PARAMETERS'][
-            'NOMINAL_ALPHAS'].index(0.005)
+        nominal_alpha_idx_different_seed = random_analysis_info_dict_different_seed['RESULTS'][
+            'NOMINAL_ALPHA'].index(0.005)
 
         # Compare mean numbers of significant randomized interactions from the three objects
         sig_num_r_mean = random_analysis_info_dict['RESULTS']['SIG_NUM_R_MEAN'][nominal_alpha_idx]
@@ -192,9 +196,9 @@ class TestRandomizationAnalysis(TestCase):
             thread_num=2)
 
         # Find indices of the passed nominal alphas
-        nominal_alpha_idx_0 = random_analysis_info_dict_0['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(0.005)
-        nominal_alpha_idx_1 = random_analysis_info_dict_1['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(0.005)
-        nominal_alpha_idx_2 = random_analysis_info_dict_2['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(0.005)
+        nominal_alpha_idx_0 = random_analysis_info_dict_0['RESULTS']['NOMINAL_ALPHA'].index(0.005)
+        nominal_alpha_idx_1 = random_analysis_info_dict_1['RESULTS']['NOMINAL_ALPHA'].index(0.005)
+        nominal_alpha_idx_2 = random_analysis_info_dict_2['RESULTS']['NOMINAL_ALPHA'].index(0.005)
 
         # Compare mean numbers of significant randomized interactions from the three randomizations
         sig_num_r_mean_0 = random_analysis_info_dict_0['RESULTS']['SIG_NUM_R_MEAN'][nominal_alpha_idx_0]
@@ -273,27 +277,27 @@ class TestRandomizationAnalysis(TestCase):
             thread_num=0)
 
         # Compare Z-scores for first nominal alpha of the original list
-        nominal_alpha_idx = random_analysis_info_dict_0['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(nominal_alphas_0[0])
+        nominal_alpha_idx = random_analysis_info_dict_0['RESULTS']['NOMINAL_ALPHA'].index(nominal_alphas_0[0])
         z_score_0_0 = random_analysis_info_dict_0['RESULTS']['Z_SCORE'][nominal_alpha_idx]
-        nominal_alpha_idx = random_analysis_info_dict_1['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(nominal_alphas_0[0])
+        nominal_alpha_idx = random_analysis_info_dict_1['RESULTS']['NOMINAL_ALPHA'].index(nominal_alphas_0[0])
         z_score_1_0 = random_analysis_info_dict_1['RESULTS']['Z_SCORE'][nominal_alpha_idx]
         self.assertEqual(z_score_0_0, z_score_1_0, msg='Results differ depending on how a nominal alpha was passed!')
 
         # Compare Z-scores for second nominal alpha of the original list
-        nominal_alpha_idx = random_analysis_info_dict_0['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(nominal_alphas_0[1])
+        nominal_alpha_idx = random_analysis_info_dict_0['RESULTS']['NOMINAL_ALPHA'].index(nominal_alphas_0[1])
         z_score_0_1 = random_analysis_info_dict_0['RESULTS']['Z_SCORE'][nominal_alpha_idx]
-        nominal_alpha_idx = random_analysis_info_dict_2['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(nominal_alphas_0[1])
+        nominal_alpha_idx = random_analysis_info_dict_2['RESULTS']['NOMINAL_ALPHA'].index(nominal_alphas_0[1])
         z_score_2_1 = random_analysis_info_dict_2['RESULTS']['Z_SCORE'][nominal_alpha_idx]
         self.assertEqual(z_score_0_1, z_score_2_1, msg='Results differ depending on how a nominal alpha was passed!')
 
         # Compare Z-scores for third nominal alpha of the original list
-        nominal_alpha_idx = random_analysis_info_dict_0['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(nominal_alphas_0[2])
+        nominal_alpha_idx = random_analysis_info_dict_0['RESULTS']['NOMINAL_ALPHA'].index(nominal_alphas_0[2])
         z_score_0_2 = random_analysis_info_dict_0['RESULTS']['Z_SCORE'][nominal_alpha_idx]
-        nominal_alpha_idx = random_analysis_info_dict_1['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(nominal_alphas_0[2])
+        nominal_alpha_idx = random_analysis_info_dict_1['RESULTS']['NOMINAL_ALPHA'].index(nominal_alphas_0[2])
         z_score_1_2 = random_analysis_info_dict_1['RESULTS']['Z_SCORE'][nominal_alpha_idx]
-        nominal_alpha_idx = random_analysis_info_dict_2['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(nominal_alphas_0[2])
+        nominal_alpha_idx = random_analysis_info_dict_2['RESULTS']['NOMINAL_ALPHA'].index(nominal_alphas_0[2])
         z_score_2_2 = random_analysis_info_dict_2['RESULTS']['Z_SCORE'][nominal_alpha_idx]
-        nominal_alpha_idx = random_analysis_info_dict_3['INPUT_PARAMETERS']['NOMINAL_ALPHAS'].index(nominal_alphas_0[2])
+        nominal_alpha_idx = random_analysis_info_dict_3['RESULTS']['NOMINAL_ALPHA'].index(nominal_alphas_0[2])
         z_score_3_2 = random_analysis_info_dict_3['RESULTS']['Z_SCORE'][nominal_alpha_idx]
         self.assertEqual(z_score_0_2, z_score_1_2, msg='Results differ depending on how a nominal alpha was passed!')
         self.assertEqual(z_score_0_2, z_score_2_2, msg='Results differ depending on how a nominal alpha was passed!')
@@ -347,7 +351,7 @@ class TestRandomizationAnalysis(TestCase):
         result_index = self.randomize_64000.get_largest_nominal_alpha_index_at_chosen_fdr_thresh(0.05)
 
         # The determined P-value threshold must be 0.00375
-        determined_pval_thresh = randomization_info_dict['INPUT_PARAMETERS']['NOMINAL_ALPHAS'][result_index]
+        determined_pval_thresh = randomization_info_dict['RESULTS']['NOMINAL_ALPHA'][result_index]
         self.assertAlmostEqual(0.00375, determined_pval_thresh, 5,
                                msg='When this test was created, a different P-value threshold was determined!')
 

@@ -11,20 +11,22 @@ The individual steps that are carried out in this script are demonstrated in the
 """
 
 import argparse
-from numpy import log
+from numpy import arange, log
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.randomize_interaction_set import RandomizeInteractionSet
 
 ### Parse command line
 ######################
 
-parser = argparse.ArgumentParser(description='Evaluate and categorize interactions and select unndirected reference '
+parser = argparse.ArgumentParser(description='Evaluate and categorize interactions and select undirected reference '
                                              'interactions.')
 parser.add_argument('-o', '--out-prefix', help='Prefix for output.', default='OUTPREFIX')
 parser.add_argument('-i', '--diachromatic-interaction-file', help='Diachromatic interaction file.', required=True)
 parser.add_argument('--fdr-threshold', help='FDR threshold for defining directed interactions.', default=0.05)
+parser.add_argument('--fdr-pval-thresh-max', help='Maximum P-value threshold used for FDR procedure.',
+                    default=0.025)
 parser.add_argument('--fdr-pval-thresh-step-size', help='P-value threshold step size used for FDR procedure.',
-                    default=0.00025)
+                    default=0.00001)
 parser.add_argument('--fdr-random-seed', help='Random seed used for FDR procedure.',
                     default=None)
 parser.add_argument('--p-value-threshold', help='P-value threshold for defining directed interactions.', default=None)
@@ -35,6 +37,7 @@ args = parser.parse_args()
 out_prefix = args.out_prefix
 diachromatic_interaction_file = args.diachromatic_interaction_file
 fdr_threshold = float(args.fdr_threshold)
+fdr_pval_thresh_max = float(args.fdr_pval_thresh_max)
 fdr_pval_thresh_step_size = float(args.fdr_pval_thresh_step_size)
 if args.fdr_random_seed is None:
     fdr_random_seed = args.fdr_random_seed
@@ -78,18 +81,47 @@ print()
 
 # Determine P-value threshold so that the FDR is kept below a threshold
 if p_value_threshold is None:
+
+    # Create list of nominal alphas
+    nominal_alphas = arange(fdr_pval_thresh_step_size, fdr_pval_thresh_max + fdr_pval_thresh_step_size, fdr_pval_thresh_step_size)
+
+    # Perform randomization procedure
     randomize_fdr = RandomizeInteractionSet(random_seed=fdr_random_seed)
-    fdr_info_dict = randomize_fdr.get_pval_thresh_at_chosen_fdr_thresh(
+    fdr_info_dict = randomize_fdr.perform_randomization_analysis(
         interaction_set=interaction_set,
-        chosen_fdr_thresh=fdr_threshold,
-        pval_thresh_max=fdr_threshold,
-        pval_thresh_step_size=fdr_pval_thresh_step_size,
+        nominal_alphas=nominal_alphas,
+        iter_num=100,
+        thread_num=2,
         verbose=True)
     print()
-    fdr_info_info_report = randomize_fdr.get_fdr_info_report()
-    fdr_info_info_table_row = randomize_fdr.get_fdr_info_table_row(out_prefix)
-    randomize_fdr.get_fdr_info_plot(pdf_file_name=out_prefix + "_fdr_info_plot.pdf", analysis_name=out_prefix)
-    p_value_threshold = fdr_info_dict['RESULTS_TABLE']['PVAL_THRESH'][fdr_info_dict['RESULT_INDEX'][0]]
+
+    # Determine P-value threshold
+    result_index = randomize_fdr.get_largest_nominal_alpha_index_at_chosen_fdr_thresh(fdr_threshold)
+    p_value_threshold = fdr_info_dict['RESULTS']['NOMINAL_ALPHA'][result_index]
+
+    # Get randomization report for the determined P-value threshold
+    fdr_info_info_report = randomize_fdr.get_randomization_info_report(p_value_threshold)
+
+    # Get table row for randomization for the determined P-value threshold
+    fdr_info_info_table_row = randomize_fdr.get_randomization_info_table_row(
+        nominal_alphas_selected = [p_value_threshold],
+        description="Description")
+
+    # Get entire table with results
+    fdr_info_info_table = randomize_fdr.get_randomization_info_table_row(
+        description="Description")
+
+    # Create plot with Z-score and FDR for each nominal alpha
+    randomize_fdr.get_randomization_info_plot_at_chosen_fdr_threshold(
+        chosen_fdr_threshold = fdr_threshold,
+        pdf_file_name = out_prefix + "_randomization_info_plot_at_chosen_fdr_threshold.pdf",
+        description = "Description")
+
+    # Create randomization plot for the determined P-value threshold
+    randomize_fdr.get_randomization_info_plot(
+        nominal_alpha_selected = p_value_threshold,
+        pdf_file_name  = out_prefix + "_randomization_info_plot.pdf",
+        description = "Description")
 
 # Calculate P-values and assign interactions to 'DI' or 'UI'
 interaction_set.evaluate_and_categorize_interactions(p_value_threshold, verbose=True)
@@ -111,6 +143,12 @@ print()
 
 ### Create file with summary statistics
 #######################################
+
+# Write entire FDR table to file
+f_name_fdr_info_info_table = out_prefix + "_fdr_info_info_table.txt"
+out_fh = open(f_name_fdr_info_info_table, 'wt')
+out_fh.write(fdr_info_info_table + '\n')
+out_fh.close()
 
 f_name_summary = out_prefix + "_evaluated_and_categorized_summary.txt"
 out_fh = open(f_name_summary, 'wt')
@@ -142,9 +180,10 @@ generated_file_info = "[INFO] Generated files:" + '\n'
 generated_file_info += "\t[INFO] " + f_name_summary + '\n'
 generated_file_info += "\t[INFO] " + f_name_interactions + '\n'
 if args.p_value_threshold is None:
-    generated_file_info += "\t[INFO] " + out_prefix + "_fdr_info_plot.pdf" + '\n'
+    generated_file_info += "\t[INFO] " + f_name_fdr_info_info_table + '\n'
+    generated_file_info += "\t[INFO] " + out_prefix + "_randomization_info_plot_at_chosen_fdr_threshold.pdf" + '\n'
+    generated_file_info += "\t[INFO] " + out_prefix + "_randomization_info_plot.pdf" + '\n'
 out_fh.write(generated_file_info)
-
 out_fh.close()
 
 print(generated_file_info)
