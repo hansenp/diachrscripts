@@ -1,5 +1,5 @@
 from scipy.stats import binom
-from numpy import arange, log, random, mean, std
+from numpy import log, random, mean, std
 from math import floor, ceil
 import matplotlib.pyplot as plt
 import warnings
@@ -46,279 +46,6 @@ class RandomizeInteractionSet:
         # Issue a warning, if the number of randomized significant interactions at the determined P-value threshold is
         # smaller
         self._FDR_WARN_RAND_SIG_INTER_NUM = 20
-
-    def get_pval_thresh_at_chosen_fdr_thresh(self,
-                                             interaction_set: DiachromaticInteractionSet = None,
-                                             chosen_fdr_thresh: float = 0.05,
-                                             pval_thresh_max: float = 0.05,
-                                             pval_thresh_step_size: float = 0.00025,
-                                             verbose: bool = False
-                                             ):
-        """
-        This function implements the FDR procedure.
-
-        :param chosen_fdr_thresh: Predefined FDR threshold
-        :param pval_thresh_max: Largest P-value threshold
-        :param pval_thresh_step_size: Step size to increase the P-value threshold
-        :param verbose: If true, messages about progress will be written to the screen
-        :return: If true, messages about progress will be written to the screen
-        """
-
-        if verbose:
-            print("[INFO] Performing FDR procedure ...")
-
-        # Check input parameters
-        if chosen_fdr_thresh <= 0 or 1.0 < chosen_fdr_thresh:
-            raise ValueError("FDR threshold must be in ]0,1]!")
-        if pval_thresh_max <= 0 or 1.0 < pval_thresh_max:
-            raise ValueError("Maximum P-value threshold must be in ]0,1]!")
-        if pval_thresh_max <= pval_thresh_step_size:
-            raise ValueError("Step size must be smaller than maximum P-value threshold!")
-
-        if verbose:
-            print("\t[INFO] Getting list of observed P-values ...")
-
-        pvals_observed = []
-        for d_inter in interaction_set.interaction_list:
-            nnl_pval = self.p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted)
-            pvals_observed.append(nnl_pval)
-
-        if verbose:
-            print("\t[INFO] Getting list of randomized P-values ...")
-
-        # Get dictionary that stores the numbers of interactions with n read pairs and list of random P-values
-        self._rp_inter_dict = self._get_rp_inter_dict(interaction_set=interaction_set)
-        pvals_randomized = self._get_list_of_p_values_from_randomized_data(interaction_set=interaction_set,
-                                                                           random_seed=self._random_seed)
-
-        if verbose:
-            print("\t[INFO] Going through list of P-value thresholds and estimate FDR ...")
-
-        # Sort lists of P-values
-        pvals_observed.sort(key=float, reverse=True)
-        pvals_randomized.sort(key=float, reverse=True)
-
-        # Create list of ascending P-value thresholds and prepare lists for results
-        pval_thresh_list = arange(pval_thresh_step_size, pval_thresh_max + pval_thresh_step_size, pval_thresh_step_size)
-        nnl_pval_thresh_list = []
-        min_rp_num_list = []
-        min_rp_num_pval_list = []
-        sig_num_r_list = []
-        sig_num_o_list = []
-        fdr_list = []
-
-        # Set start indices in sorted lists (index corresponds to number of significant interactions)
-        sig_num_o = 0
-        sig_num_r = 0
-
-        # Go through list of ascending P-value thresholds
-        for p_thresh in pval_thresh_list:
-
-            # Get minimum number of read pairs required for significance at current  threshold
-            min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(p_thresh)
-            min_rp_num_list.append(min_rp_num)
-            min_rp_num_pval_list.append(min_rp_num_pval)
-
-            # Get negative natural logarithm of P-value threshold
-            nnl_pval_thresh = -log(p_thresh)
-            nnl_pval_thresh_list.append(nnl_pval_thresh)
-
-            # Determine number of observed significant interactions for current threshold
-            while sig_num_o < len(pvals_observed) and pvals_observed[sig_num_o] > nnl_pval_thresh:
-                sig_num_o += 1
-            sig_num_o_list.append(sig_num_o)
-
-            # Determine number of randomized significant interactions for current threshold
-            while sig_num_r < len(pvals_randomized) and pvals_randomized[sig_num_r] > nnl_pval_thresh:
-                sig_num_r += 1
-            sig_num_r_list.append(sig_num_r)
-
-            # Estimate FDR
-            fdr = sig_num_r / sig_num_o
-            fdr_list.append(fdr)
-
-        if verbose:
-            print("\t[INFO] Looking for largest P-value threshold for which the FDR is below the chosen threshold ...")
-
-        # Find the largest P-value threshold for which the FDR is below the chosen threshold
-        idx = 0
-        while idx < len(fdr_list) and fdr_list[idx] < chosen_fdr_thresh:
-            idx += 1
-
-        # Look for irregularities and issue warnings if necessary
-        issued_warnings = [0, 0, 0]
-        if len(interaction_set.interaction_list) < self._FDR_WARN_INPUT_INTER_NUM:
-            issued_warnings[0] = 1
-            warnings.warn('Only ' + str(len(interaction_set.interaction_list)) + ' input interactions! ' +
-                          'Probably not enough to estimate the FDR.')
-
-        min_rp_num_inter_num = interaction_set.get_num_of_inter_with_as_many_or_more_read_pairs(
-            min_rp_num_list[idx - 1])
-        if min_rp_num_inter_num < self._FDR_WARN_MIN_RP_INTER_NUM:
-            issued_warnings[1] = 1
-            warnings.warn('Only ' + str(min_rp_num_inter_num) +
-                          ' interactions with minimum number of ' + str(min_rp_num_list[idx - 1]) +
-                          ' read pairs required for significance at the determined threshold! ' +
-                          'Probably not enough to estimate the FDR.')
-
-        if sig_num_r_list[idx - 1] < self._FDR_WARN_RAND_SIG_INTER_NUM:
-            issued_warnings[2] = 1
-            warnings.warn('Only ' + str(sig_num_r_list[idx - 1]) + ' significant interactions after randomization ' +
-                          'at determined threshold. ' +
-                          'Probably not enough to estimate the FDR.')
-
-        if verbose:
-            print("[INFO] ... done.")
-
-        # Prepare and return dictionary for report
-        report_dict = {
-            'INPUT_PARAMETERS':
-                {
-                    'CHOSEN_FDR_THRESH': [chosen_fdr_thresh],
-                    'PVAL_THRESH_MAX': [pval_thresh_max],
-                    'PVAL_THRESH_STEP_SIZE': [pval_thresh_step_size],
-                    'INPUT_INTERACTIONS_NUM': [len(interaction_set.interaction_list)],
-                    'RANDOM_SEED': [self._random_seed]
-                },
-            'RESULTS_TABLE':
-                {
-                    'PVAL_THRESH': pval_thresh_list,
-                    'NNL_PVAL_THRESH': nnl_pval_thresh_list,
-                    'MIN_RP_NUM': min_rp_num_list,
-                    'MIN_RP_NUM_PVAL': min_rp_num_pval_list,
-                    'SIG_NUM_R': sig_num_r_list,
-                    'SIG_NUM_O': sig_num_o_list,
-                    'FDR': fdr_list
-                },
-            'RESULT_INDEX': [idx - 1],
-            'MIN_RP_NUM_INTER_NUM': min_rp_num_inter_num,
-            'WARNINGS': issued_warnings
-        }
-        self._fdr_info_dict = report_dict
-        return report_dict
-
-    def get_fdr_info_report(self):
-        """
-        :return: String that contains information about the last FDR procedure performed.
-        """
-
-        report = "[INFO] Report on FDR procedure:" + '\n'
-        report += "\t[INFO] Input parameters:" + '\n'
-        report += "\t\t[INFO] Chosen FDR threshold: " \
-                  + "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['CHOSEN_FDR_THRESH'][0]) + '\n'
-        report += "\t\t[INFO] Maximum P-value threshold: " \
-                  + "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_MAX'][0]) + '\n'
-        report += "\t\t[INFO] P-value threshold step size: " \
-                  + "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_STEP_SIZE'][0]) + '\n'
-        report += "\t\t[INFO] Total number of interactions: " \
-                  + "{:,}".format(self._fdr_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]) + '\n'
-        report += "\t\t[INFO] Random seed: " \
-                  + str(self._fdr_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0]) + '\n'
-
-        result_index = self._fdr_info_dict['RESULT_INDEX'][0]
-
-        report += "\t[INFO] Results:" + '\n'
-        report += "\t\t[INFO] Determined P-value threshold: " \
-                  + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['PVAL_THRESH'][result_index]) + '\n'
-        report += "\t\t[INFO] Determined -ln(P-value threshold): " \
-                  + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['NNL_PVAL_THRESH'][result_index]) + '\n'
-        report += "\t\t[INFO] Minimum read pair number: " \
-                  + str(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM'][result_index]) + '\n'
-        report += "\t\t[INFO] Smallest possible P-value with " \
-                  + str(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM'][result_index]) + " read pairs: " \
-                  + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM_PVAL'][result_index]) + '\n'
-        report += "\t\t[INFO] Number of interactions with " \
-                  + str(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM'][result_index]) + " or more read pairs: " \
-                  + "{:,}".format(self._fdr_info_dict['MIN_RP_NUM_INTER_NUM']) + '\n'
-        report += "\t\t[INFO] Number of significant interactions: " \
-                  + "{:,}".format(self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_O'][result_index]) + '\n'
-        report += "\t\t[INFO] Number of randomized significant interactions: " \
-                  + "{:,}".format(self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_R'][result_index]) + '\n'
-        report += "\t\t[INFO] Estimated FDR: " \
-                  + "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['FDR'][result_index]) + '\n'
-
-        if 0 < sum(self._fdr_info_dict['WARNINGS']):
-            report += "\t[INFO] Warnings: " + '\n'
-
-            if self._fdr_info_dict['WARNINGS'][0] == 1:
-                report += "\t\t[INFO] Not enough input interactions!" + '\n'
-                report += "\t\t\t[INFO] Only " \
-                          + "{:,}".format(self._fdr_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]) \
-                          + ' of ' + "{:,}".format(self._FDR_WARN_INPUT_INTER_NUM) + '\n'
-
-            if self._fdr_info_dict['WARNINGS'][1] == 1:
-                report += "\t\t[INFO] Not enough interactions with enough read pairs required for significance!" + '\n'
-                report += "\t\t\t[INFO] Only " \
-                          + "{:,}".format(self._fdr_info_dict['MIN_RP_NUM_INTER_NUM']) \
-                          + ' of ' + "{:,}".format(self._FDR_WARN_MIN_RP_INTER_NUM) + '\n'
-
-            if self._fdr_info_dict['WARNINGS'][2] == 1:
-                report += "\t\t[INFO] Not enough randomized significant interactions!" + '\n'
-                report += "\t\t\t[INFO] Only " \
-                          + "{:,}".format(self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_R'][result_index]) \
-                          + ' of ' + "{:,}".format(self._FDR_WARN_RAND_SIG_INTER_NUM) + '\n'
-
-        report += "[INFO] End of report." + '\n'
-
-        return report
-
-    def get_fdr_info_table_row(self, out_prefix: str = None):
-        """
-        :return: String consisting of a header line and a line with values relating to last performed FDR procedure
-        """
-
-        # Table tag and prefix for output
-        table_row = ":TR_FDR:" + '\t'
-        table_row += "OUT_PREFIX" + '\t'
-
-        # Input parameters for FDR procedure
-        table_row += "CHOSEN_FDR_THRESH" + '\t'
-        table_row += "PVAL_THRESH_MAX" + '\t'
-        table_row += "PVAL_THRESH_STEP_SIZE" + '\t'
-        table_row += "INPUT_INTER_NUM" + '\t'
-        table_row += "RANDOM_SEED" + '\t'
-
-        # Results
-        table_row += "PVAL_THRESH" + '\t'
-        table_row += "NNL_PVAL_THRESH" + '\t'
-        table_row += "MIN_RP_NUM" + '\t'
-        table_row += "MIN_RP_NUM_PVAL" + '\t'
-        table_row += "MIN_RP_NUM_INTER_NUM" + '\t'
-        table_row += "SIG_NUM_R" + '\t'
-        table_row += "SIG_NUM_O" + '\t'
-        table_row += "FDR" + '\t'
-
-        # Warnings
-        table_row += "WARNINGS" + '\n'
-
-        # Table tag and prefix for output
-        table_row += ":TR_FDR:" + '\t'
-        table_row += out_prefix + '\t'
-
-        # Input parameters for FDR procedure
-        table_row += "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['CHOSEN_FDR_THRESH'][0]) + '\t'
-        table_row += "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_MAX'][0]) + '\t'
-        table_row += "{:.5f}".format(self._fdr_info_dict['INPUT_PARAMETERS']['PVAL_THRESH_STEP_SIZE'][0]) + '\t'
-        table_row += str(self._fdr_info_dict['INPUT_PARAMETERS']['INPUT_INTERACTIONS_NUM'][0]) + '\t'
-        table_row += str(self._fdr_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0]) + '\t'
-
-        # Results
-        result_index = self._fdr_info_dict['RESULT_INDEX'][0]
-        table_row += "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['PVAL_THRESH'][result_index]) + '\t'
-        table_row += "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['NNL_PVAL_THRESH'][result_index]) + '\t'
-        table_row += str(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM'][result_index]) + '\t'
-        table_row += "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['MIN_RP_NUM_PVAL'][result_index]) + '\t'
-        table_row += str(self._fdr_info_dict['MIN_RP_NUM_INTER_NUM']) + '\t'
-        table_row += str(self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_R'][result_index]) + '\t'
-        table_row += str(self._fdr_info_dict['RESULTS_TABLE']['SIG_NUM_O'][result_index]) + '\t'
-        table_row += "{:.5f}".format(self._fdr_info_dict['RESULTS_TABLE']['FDR'][result_index]) + '\t'
-
-        # Warnings
-        table_row += str(self._fdr_info_dict['WARNINGS'][0]) + ','
-        table_row += str(self._fdr_info_dict['WARNINGS'][1]) + ','
-        table_row += str(self._fdr_info_dict['WARNINGS'][2]) + '\n'
-
-        return table_row
 
     def perform_randomization_analysis(self,
                                        interaction_set: DiachromaticInteractionSet = None,
@@ -475,6 +202,144 @@ class RandomizeInteractionSet:
         }
         self._randomization_info_dict = report_dict
         return report_dict
+
+    # Secondary functions used for randomization
+    # ------------------------------------------
+
+    def _get_rp_inter_dict(self,
+                           interaction_set: DiachromaticInteractionSet = None,
+                           min_rp_num: int = 0):
+        """
+        Create dictionary required needed for randomization of interactions.
+
+        :param min_rp_num: Interactions with fewer read pairs are not taken into account
+        :return: Dictionary that contains the number of interactions (values) for all occurring read pair numbers
+        (keys) for the interaction set of this object.
+        """
+
+        rp_inter_dict = {}
+        for d_inter in interaction_set.interaction_list:
+            if min_rp_num <= d_inter.rp_total:
+                if d_inter.rp_total in rp_inter_dict:
+                    rp_inter_dict[d_inter.rp_total] += 1
+                else:
+                    rp_inter_dict[d_inter.rp_total] = 1
+        return rp_inter_dict
+
+    def _get_list_of_p_values_from_randomized_data(self,
+                                                   interaction_set: DiachromaticInteractionSet = None,
+                                                   random_seed: int = None):
+        """
+        This function generates randomized simple and twisted read pair counts for all interactions of the
+        interaction set of this object and calculates associated P-values.
+
+        :return: List of P-values for randomized interactions
+        """
+
+        # Init random generator
+        random.seed(random_seed)
+
+        random_pval_list = []
+
+        for rp_num, i_num in self._rp_inter_dict.items():
+
+            # Generate random simple read pair counts for current read pair number
+            simple_count_list = list(binom.rvs(rp_num, p=0.5, size=i_num))
+
+            # Calculate P-values and append to list
+            for simple_count in simple_count_list:
+                nnl_pval = self.p_values.get_binomial_nnl_p_value(simple_count, rp_num - simple_count)
+                random_pval_list.append(nnl_pval)
+
+        return random_pval_list
+
+    def _perform_one_iteration(self, nnl_nominal_alphas: [float] = None, random_seed: int = None):
+        """
+        This function performs a single iteration of the randomization procedure.
+
+        :param nnl_nominal_alphas: List of nominal alphas (negative natural logarithm)
+        :param random_seed: Number used to init random generator
+        :return: List of numbers of randomized significant interactions for each nominal alpha
+        """
+
+        # Get list of P-values for randomized interactions
+        randomized_nnl_pvals = self._get_list_of_p_values_from_randomized_data(random_seed=random_seed)
+
+        # Determine number of randomized significant interactions for each nominal alpha in 'nnl_nominal_alphas'
+        sig_num_r_list = self._determine_significant_pvals_at_nominal_alphas_nnl(nnl_nominal_alphas=nnl_nominal_alphas,
+                                                                                 nnl_p_values=randomized_nnl_pvals)
+
+        return sig_num_r_list
+
+    def _perform_n_iterations(self, iter_start_idx: int, n, nnl_nominal_alphas: [float], verbose: bool=False):
+        """
+        This function performs a given number of iterations of the randomization procedure.
+
+        :param iter_start_idx: First iteration index
+        :param n: Number of iterations performed in the function call
+        :param nnl_nominal_alphas: List of nominal alphas (negative natural logarithm)
+        :param verbose: If true, messages about progress will be written to the screen
+        :return: List of lists with numbers of randomized significant interactions. Each list contains the numbers of
+        significant interactions for the different nominal alphas in 'nnl_nominal_alphas'.
+        """
+
+        # Iteration indices are added to the subordinate random seed
+        iter_idx_range = range(iter_start_idx, n)
+
+        # Init list of lists with numbers of randomized significant interactions for each iteration
+        sig_num_r_list_of_lists = []
+
+        if verbose:
+            print("\t\t[INFO] Performing " + str(len(iter_idx_range)) + " iterations ...")
+            print("\t\t\t[INFO] First iteration indices: " + ", ".join(str(i) for i in iter_idx_range[:10]) + ", ...")
+
+        # Perform each iteration with its own random seed that corresponds by adding the iteration index
+        for iter_idx in iter_idx_range:
+            sig_num_r_list_of_lists.append(self._perform_one_iteration(nnl_nominal_alphas=nnl_nominal_alphas,
+                                                                       random_seed=self._random_seed + iter_idx))
+
+        return sig_num_r_list_of_lists
+
+    def _determine_significant_pvals_at_nominal_alphas_nnl(self, nnl_nominal_alphas: [float], nnl_p_values: [float]):
+        """
+        Determine numbers of significant P-values at different nominal alphas (thresholds).
+
+        :param nnl_nominal_alphas: List of nominal alphas (negative natural logarithm)
+        :param nnl_p_values: List of P-values (negative natural logarithm)
+        :return: List which has the same length as 'nominal_alphas' and contains, for each nominal alpha 'a',
+        that number of P-values that are smaller or equal than 'a'.
+        """
+
+        # Sort input lists in ascending order
+        nnl_nominal_alphas = sorted(nnl_nominal_alphas, reverse=True)
+        nnl_p_values = sorted(nnl_p_values, reverse=True)
+
+        # List of significant P-value numbers that will be returned
+        sig_num_list = []
+
+        # Index variable for the list of P-values
+        nnl_p_value_idx = 0
+
+        # Counting variable for the cumulative number of significant P-values
+        sig_num = 0
+
+        # Go through the list of nominal alphas sorted in ascending order
+        for nnl_nominal_alpha in nnl_nominal_alphas:
+
+            # As long as the P-values are smaller than the current nominal alpha,
+            # increment index and counter variable
+            while nnl_p_value_idx < len(nnl_p_values) and nnl_nominal_alpha <= nnl_p_values[nnl_p_value_idx]:
+                sig_num += 1
+                nnl_p_value_idx += 1
+
+            # As  soon as the P-value is larger than the current nominal alpha,
+            # add the current number of interactions to the list that will be returned
+            sig_num_list.append(sig_num)
+
+        return sig_num_list
+
+    # Functions for the output of results
+    # -----------------------------------
 
     def get_largest_nominal_alpha_index_at_chosen_fdr_thresh(self, chosen_fdr_thresh: float = 0.05):
         """
@@ -651,138 +516,6 @@ class RandomizeInteractionSet:
 
         return table_row
 
-    def _get_rp_inter_dict(self,
-                           interaction_set: DiachromaticInteractionSet = None,
-                           min_rp_num: int = 0):
-        """
-        Create dictionary required needed for randomization of interactions.
-
-        :param min_rp_num: Interactions with fewer read pairs are not taken into account
-        :return: Dictionary that contains the number of interactions (values) for all occurring read pair numbers
-        (keys) for the interaction set of this object.
-        """
-
-        rp_inter_dict = {}
-        for d_inter in interaction_set.interaction_list:
-            if min_rp_num <= d_inter.rp_total:
-                if d_inter.rp_total in rp_inter_dict:
-                    rp_inter_dict[d_inter.rp_total] += 1
-                else:
-                    rp_inter_dict[d_inter.rp_total] = 1
-        return rp_inter_dict
-
-    def _get_list_of_p_values_from_randomized_data(self,
-                                                   interaction_set: DiachromaticInteractionSet = None,
-                                                   random_seed: int = None):
-        """
-        This function generates randomized simple and twisted read pair counts for all interactions of the
-        interaction set of this object and calculates associated P-values.
-
-        :return: List of P-values for randomized interactions
-        """
-
-        # Init random generator
-        random.seed(random_seed)
-
-        random_pval_list = []
-
-        for rp_num, i_num in self._rp_inter_dict.items():
-
-            # Generate random simple read pair counts for current read pair number
-            simple_count_list = list(binom.rvs(rp_num, p=0.5, size=i_num))
-
-            # Calculate P-values and append to list
-            for simple_count in simple_count_list:
-                nnl_pval = self.p_values.get_binomial_nnl_p_value(simple_count, rp_num - simple_count)
-                random_pval_list.append(nnl_pval)
-
-        return random_pval_list
-
-    def _perform_one_iteration(self, nnl_nominal_alphas: [float] = None, random_seed: int = None):
-        """
-        This function performs a single iteration of the randomization procedure.
-
-        :param nnl_nominal_alphas: List of nominal alphas (negative natural logarithm)
-        :param random_seed: Number used to init random generator
-        :return: List of numbers of randomized significant interactions for each nominal alpha
-        """
-
-        # Get list of P-values for randomized interactions
-        randomized_nnl_pvals = self._get_list_of_p_values_from_randomized_data(random_seed=random_seed)
-
-        # Determine number of randomized significant interactions for each nominal alpha in 'nnl_nominal_alphas'
-        sig_num_r_list = self._determine_significant_pvals_at_nominal_alphas_nnl(nnl_nominal_alphas=nnl_nominal_alphas,
-                                                                                 nnl_p_values=randomized_nnl_pvals)
-
-        return sig_num_r_list
-
-    def _perform_n_iterations(self, iter_start_idx: int, n, nnl_nominal_alphas: [float], verbose: bool=False):
-        """
-        This function performs a given number of iterations of the randomization procedure.
-
-        :param iter_start_idx: First iteration index
-        :param n: Number of iterations performed in the function call
-        :param nnl_nominal_alphas: List of nominal alphas (negative natural logarithm)
-        :param verbose: If true, messages about progress will be written to the screen
-        :return: List of lists with numbers of randomized significant interactions. Each list contains the numbers of
-        significant interactions for the different nominal alphas in 'nnl_nominal_alphas'.
-        """
-
-        # Iteration indices are added to the subordinate random seed
-        iter_idx_range = range(iter_start_idx, n)
-
-        # Init list of lists with numbers of randomized significant interactions for each iteration
-        sig_num_r_list_of_lists = []
-
-        if verbose:
-            print("\t\t[INFO] Performing " + str(len(iter_idx_range)) + " iterations ...")
-            print("\t\t\t[INFO] First iteration indices: " + ", ".join(str(i) for i in iter_idx_range[:10]) + ", ...")
-
-        # Perform each iteration with its own random seed that corresponds by adding the iteration index
-        for iter_idx in iter_idx_range:
-            sig_num_r_list_of_lists.append(self._perform_one_iteration(nnl_nominal_alphas=nnl_nominal_alphas,
-                                                                       random_seed=self._random_seed + iter_idx))
-
-        return sig_num_r_list_of_lists
-
-    def _determine_significant_pvals_at_nominal_alphas_nnl(self, nnl_nominal_alphas: [float], nnl_p_values: [float]):
-        """
-        Determine numbers of significant P-values at different nominal alphas (thresholds).
-
-        :param nnl_nominal_alphas: List of nominal alphas (negative natural logarithm)
-        :param nnl_p_values: List of P-values (negative natural logarithm)
-        :return: List which has the same length as 'nominal_alphas' and contains, for each nominal alpha 'a',
-        that number of P-values that are smaller or equal than 'a'.
-        """
-
-        # Sort input lists in ascending order
-        nnl_nominal_alphas = sorted(nnl_nominal_alphas, reverse=True)
-        nnl_p_values = sorted(nnl_p_values, reverse=True)
-
-        # List of significant P-value numbers that will be returned
-        sig_num_list = []
-
-        # Index variable for the list of P-values
-        nnl_p_value_idx = 0
-
-        # Counting variable for the cumulative number of significant P-values
-        sig_num = 0
-
-        # Go through the list of nominal alphas sorted in ascending order
-        for nnl_nominal_alpha in nnl_nominal_alphas:
-
-            # As long as the P-values are smaller than the current nominal alpha,
-            # increment index and counter variable
-            while nnl_p_value_idx < len(nnl_p_values) and nnl_nominal_alpha <= nnl_p_values[nnl_p_value_idx]:
-                sig_num += 1
-                nnl_p_value_idx += 1
-
-            # As  soon as the P-value is larger than the current nominal alpha,
-            # add the current number of interactions to the list that will be returned
-            sig_num_list.append(sig_num)
-
-        return sig_num_list
-
     def get_randomization_info_plot(self,
                                     nominal_alpha_selected: float = None,
                                     pdf_file_name: str = "randomization.pdf",
@@ -792,7 +525,7 @@ class RandomizeInteractionSet:
 
         :param nominal_alpha_selected: Nominal alpha for which the plot should be created
         :param pdf_file_name: Name of the PDF file that will be created
-        :param description: Name of of the analysis that will be shown in the graphical representation
+        :param description: Short description that will be shown in the graphical representation
         :return: Nothing, if no FDR procedure has been performed yet or otherwise a 'Figure' object of 'matplotlib'
         that can be displayed in a Jupyter notebook
         """
@@ -803,7 +536,7 @@ class RandomizeInteractionSet:
             return
 
         # Truncate description string
-        description_truncated = (description[:30] + " ...") if len(description) > 30 else description
+        description_truncated = (description[:60] + " ...") if len(description) > 60 else description
 
         # Check if there are results for the nominal alpha passed
         nominal_alphas_available = self._randomization_info_dict['RESULTS']['NOMINAL_ALPHA']
@@ -983,7 +716,7 @@ class RandomizeInteractionSet:
         header_font_size = 10
 
         # Truncate string for analysis name
-        description_truncated = (description[:30] + " ...") if len(description) > 30 else description
+        description_truncated = (description[:60] + " ...") if len(description) > 60 else description
 
         # Extract data from fdr_info_dict
         # -------------------------------

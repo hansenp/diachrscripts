@@ -299,7 +299,7 @@ class DiachromaticInteractionSet:
         }
 
         if verbose:
-            print("[INFO] ...done.")
+            print("[INFO] ... done.")
 
         self._eval_cat_info_dict = report_dict
         return report_dict
@@ -370,7 +370,7 @@ class DiachromaticInteractionSet:
             report_dict[enr_cat]['UI'] = [ui_inter_dict[enr_cat]]
 
         if verbose:
-            print("[INFO] ...done.")
+            print("[INFO] ... done.")
 
         self._select_ref_info_dict = report_dict
         return report_dict
@@ -594,8 +594,8 @@ class DiachromaticInteractionSet:
             self._eval_cat_info_dict['PVAL_THRESH'][0]) + '\n'
         report += "\t[INFO] Minimum number of read pairs required for significance: " + str(
             self._eval_cat_info_dict['MIN_RP'][0]) + '\n'
-        report += "\t[INFO] Corresponding largest P-value: " + "{:.5f}".format(
-            self._eval_cat_info_dict['MIN_RP_PVAL'][0]) + '\n'
+        report += "\t[INFO] Smallest P-value with " + str(self._eval_cat_info_dict['MIN_RP'][0]) + " read pairs: " +\
+                  "{:.5f}".format( self._eval_cat_info_dict['MIN_RP_PVAL'][0]) + '\n'
         report += "\t[INFO] Processed interactions: " + "{:,}".format(self._eval_cat_info_dict['N_PROCESSED'][0]) + '\n'
         report += "\t[INFO] Discarded interactions: " + "{:,}".format(self._eval_cat_info_dict['N_DISCARDED'][0]) + '\n'
         report += "\t[INFO] Not significant interactions (UI): " + "{:,}".format(self._eval_cat_info_dict['N_UNDIRECTED'][0]) + '\n'
