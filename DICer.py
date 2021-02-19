@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 This script takes a file in Diachromatic interaction format and an FDR or P-value threshold, calculates the P-values of
 interactions, assigns interactions to directed (DI) and undirected interactions (UI), selects undirected reference
