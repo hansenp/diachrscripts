@@ -606,7 +606,7 @@ class RandomizeInteractionSet:
         ax[0].tick_params(axis='x', colors='white')
         ax[0].tick_params(axis='y', colors='white')
         ax[0].text(-0.2, 1.00, 'Randomization results', fontsize=18, fontweight='bold')
-        ax[0].text(-0.18, 0.90, 'Analysis name: ' + description_truncated, fontsize=header_font_size, fontweight='bold')
+        ax[0].text(-0.18, 0.90, 'Description: ' + description_truncated, fontsize=header_font_size, fontweight='bold')
         ax[0].text(-0.18, 0.85, 'Number of input interactions: ' + "{:,}".format(input_interactions_num),
                    fontsize=header_font_size)
         ax[0].text(-0.18, 0.80, 'Number of randomized interactions: ' + "{:,}".format(i_num_randomized),

@@ -22,7 +22,7 @@ from diachr.randomize_interaction_set import RandomizeInteractionSet
 parser = argparse.ArgumentParser(description='Determine overall significance of directed interactions by '
                                              'randomization of simple and twisted read pairs.')
 parser.add_argument('--out-prefix', help='Prefix for output.', default='OUT_PREFIX')
-parser.add_argument('-i','--interaction-file', help='Diachromatic interaction file.', required=True)
+parser.add_argument('-i','--diachromatic-interaction-file', help='Diachromatic interaction file.', required=True)
 parser.add_argument('-n','--iter-num', help='Number of iterations.', default=1000)
 parser.add_argument('-a','--nominal-alpha', help='Nominal alpha. P-value threshold used to define significant '
                                                  'interactions.', default=0.05)
@@ -36,7 +36,7 @@ parser.add_argument('--analysis-name', help='Name for the analysis shown in the 
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
-diachromatic_interaction_file = args.interaction_file
+diachromatic_interaction_file = args.diachromatic_interaction_file
 iter_num = int(args.iter_num)
 nominal_alpha = float(args.nominal_alpha)
 nominal_alpha_max = float(args.nominal_alpha_max)
