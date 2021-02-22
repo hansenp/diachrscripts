@@ -10,8 +10,6 @@ The individual steps that are carried out in this script are demonstrated in the
 """
 
 import argparse
-import sys
-
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.randomize_interaction_set import RandomizeInteractionSet
 

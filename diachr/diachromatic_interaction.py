@@ -143,9 +143,9 @@ class DiachromaticInteraction:
             str(self._twisted)
 
         if type(self).__name__ == "DiachromaticInteraction11":
-            nln_pval = round(self._nln_pval, 2)
-            nln_pval += 0. # Get rid of negative sign on numbers close to zero
-            di_line = di_line + "\t" + "{:.2f}".format(nln_pval) + "\t" + self.get_category()
+            log10_pval = round(self._log10_pval, 2)
+            log10_pval += 0. # Get rid of negative sign on numbers close to zero
+            di_line = di_line + "\t" + "{:.2f}".format(log10_pval) + "\t" + self.get_category()
 
         return di_line
 
@@ -166,11 +166,11 @@ class DiachromaticInteraction11(DiachromaticInteraction):
     This is an extension of the class DiachromaticInteraction that can store also a P-value and a category.
     """
 
-    def __init__(self, chrA: str, fromA: int, toA: int, statusA:str, chrB: str, fromB: int, toB: int, statusB: str, simple: int, twisted: int, nln_pval: float):
+    def __init__(self, chrA: str, fromA: int, toA: int, statusA:str, chrB: str, fromB: int, toB: int, statusB: str, simple: int, twisted: int, log10_pval: float):
         super().__init__(chrA, fromA, toA, statusA, chrB, fromB, toB, statusB, simple, twisted)
 
-        # Negative of the natural logarithm of P-values
-        self._nln_pval = nln_pval
+        # Negative of the decadic logarithm of P-values
+        self._log10_pval = log10_pval
 
         # Interaction category
         self._category = None
@@ -206,4 +206,4 @@ class DiachromaticInteraction11(DiachromaticInteraction):
             raise NameError("Interaction category not yet defined.")
 
     def get_pval(self):
-        return exp(-self._nln_pval)
+        return 10 ** -self._log10_pval

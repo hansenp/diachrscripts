@@ -2,7 +2,7 @@ import gzip
 import os
 import copy
 import warnings
-from numpy import arange, log
+from numpy import arange, log, log10
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
@@ -196,7 +196,7 @@ class DiachromaticInteractionSet:
 
         # The interaction read has already been evaluated and categorized
         if len(F) == 11:
-            nnl_p_val = float(F[9])
+            log10_p_val = float(F[9])
             i_cat = F[10]
             di_11_inter = DiachromaticInteraction11(
                 chrA=chrA,
@@ -209,7 +209,7 @@ class DiachromaticInteractionSet:
                 statusB=statusB,
                 simple=simple,
                 twisted=twisted,
-                nln_pval=nnl_p_val)
+                log10_pval=log10_p_val)
 
             # Set interaction category
             di_11_inter.set_category(i_cat)
@@ -236,7 +236,7 @@ class DiachromaticInteractionSet:
         min_rp, min_rp_pval = self._p_values.find_smallest_significant_n(pval_thresh, verbose=False)
 
         # Transform P-value threshold
-        nln_pval_thresh = -log(pval_thresh)
+        log10_pval_thresh = -log10(pval_thresh)
 
         # Iterate interaction objects
         d11_inter_dict = {}
@@ -256,10 +256,10 @@ class DiachromaticInteractionSet:
                 continue
 
             # Get P-value
-            nln_p_val = self._p_values.get_binomial_nnl_p_value(d_inter._simple, d_inter._twisted)
+            log10_p_val = self._p_values.get_binomial_log10_p_value(d_inter._simple, d_inter._twisted)
 
             # Determine interaction category
-            if nln_pval_thresh <= nln_p_val:
+            if log10_pval_thresh <= log10_p_val:
                 i_category = "DI"
                 n_di += 1
             else:
@@ -278,7 +278,7 @@ class DiachromaticInteractionSet:
                 statusB=d_inter.enrichment_status_tag_pair[1],
                 simple=d_inter.n_simple,
                 twisted=d_inter.n_twisted,
-                nln_pval=nln_p_val)
+                log10_pval=log10_p_val)
 
             # Set interaction category
             di_11_inter.set_category(i_category)

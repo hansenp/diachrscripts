@@ -1,5 +1,5 @@
 from scipy.stats import binom
-from numpy import log, random, mean, std
+from numpy import log10, random, mean, std
 from math import floor, ceil
 import matplotlib.pyplot as plt
 import warnings
@@ -27,8 +27,8 @@ class RandomizeInteractionSet:
         # Object for the calculation and storage of already calculated P-values
         self.p_values = BinomialModel()
 
-        # Negative natural logarithm of nominal alpha
-        self._nnl_nominal_alpha = None
+        # Negative decadic logarithm of nominal alpha
+        self._log10_nominal_alpha = None
 
         # Dictionary with all information on the last FDR procedure performed
         self._fdr_info_dict = None
@@ -73,19 +73,20 @@ class RandomizeInteractionSet:
         nominal_alphas = sorted(nominal_alphas)
         nominal_alphas = [float("{:.5f}".format(i)) for i in nominal_alphas]
 
-        # Get negative natural logarithm of nominal alpha
-        nnl_nominal_alphas = -log(nominal_alphas)
+        # Get negative decadic logarithm of nominal alpha
+        log10_nominal_alphas = -log10(nominal_alphas)
 
         if verbose:
             print("\t[INFO] Determining number of significant interactions at each nominal alpha ...")
 
         # Get list of observed P-values
-        nnl_pval_list = []
+        log10_pval_list = []
         for d_inter in interaction_set.interaction_list:
-            nnl_pval_list.append(self.p_values.get_binomial_nnl_p_value(d_inter.n_simple, d_inter.n_twisted))
+            log10_pval_list.append(self.p_values.get_binomial_log10_p_value(d_inter.n_simple, d_inter.n_twisted))
 
         # Determine number of significant interactions for each nominal alpha
-        sig_num_o_list = self._determine_significant_pvals_at_nominal_alphas_nnl(nnl_nominal_alphas=nnl_nominal_alphas, nnl_p_values=nnl_pval_list)
+        sig_num_o_list = self._determine_significant_pvals_at_nominal_alphas_log10(
+            log10_nominal_alphas=log10_nominal_alphas, log10_p_values=log10_pval_list)
 
         if verbose:
             print("\t[INFO] Randomizing interactions ...")
@@ -103,7 +104,7 @@ class RandomizeInteractionSet:
         # Perform randomization without or with multiprocessing package
         if thread_num == 0:
             iter_start_idx = 0
-            sig_num_r_list_of_lists = self._perform_n_iterations(iter_start_idx, iter_num, nnl_nominal_alphas, verbose)
+            sig_num_r_list_of_lists = self._perform_n_iterations(iter_start_idx, iter_num, log10_nominal_alphas, verbose)
         else:
 
             # Perform permutation for 'thread_num' batches with balanced numbers of iterations
@@ -119,7 +120,7 @@ class RandomizeInteractionSet:
             results = []
             iter_start_idx = 0
             for batch_iter_num in batch_iter_nums:
-                result = pool.apply_async(self._perform_n_iterations, args=(iter_start_idx, iter_start_idx + batch_iter_num, nnl_nominal_alphas, verbose))
+                result = pool.apply_async(self._perform_n_iterations, args=(iter_start_idx, iter_start_idx + batch_iter_num, log10_nominal_alphas, verbose))
                 results.append(result)
                 iter_start_idx += batch_iter_num
 
@@ -248,39 +249,40 @@ class RandomizeInteractionSet:
 
             # Calculate P-values and append to list
             for simple_count in simple_count_list:
-                nnl_pval = self.p_values.get_binomial_nnl_p_value(simple_count, rp_num - simple_count)
-                random_pval_list.append(nnl_pval)
+                log10_pval = self.p_values.get_binomial_log10_p_value(simple_count, rp_num - simple_count)
+                random_pval_list.append(log10_pval)
 
         return random_pval_list
 
-    def _perform_one_iteration(self, nnl_nominal_alphas: [float] = None, random_seed: int = None):
+    def _perform_one_iteration(self, log10_nominal_alphas: [float] = None, random_seed: int = None):
         """
         This function performs a single iteration of the randomization procedure.
 
-        :param nnl_nominal_alphas: List of nominal alphas (negative natural logarithm)
+        :param log10_nominal_alphas: List of nominal alphas
         :param random_seed: Number used to init random generator
         :return: List of numbers of randomized significant interactions for each nominal alpha
         """
 
         # Get list of P-values for randomized interactions
-        randomized_nnl_pvals = self._get_list_of_p_values_from_randomized_data(random_seed=random_seed)
+        randomized_log10_pvals = self._get_list_of_p_values_from_randomized_data(random_seed=random_seed)
 
-        # Determine number of randomized significant interactions for each nominal alpha in 'nnl_nominal_alphas'
-        sig_num_r_list = self._determine_significant_pvals_at_nominal_alphas_nnl(nnl_nominal_alphas=nnl_nominal_alphas,
-                                                                                 nnl_p_values=randomized_nnl_pvals)
+        # Determine number of randomized significant interactions for each nominal alpha in 'log10_nominal_alphas'
+        sig_num_r_list = self._determine_significant_pvals_at_nominal_alphas_log10(
+            log10_nominal_alphas=log10_nominal_alphas,
+            log10_p_values=randomized_log10_pvals)
 
         return sig_num_r_list
 
-    def _perform_n_iterations(self, iter_start_idx: int, n, nnl_nominal_alphas: [float], verbose: bool=False):
+    def _perform_n_iterations(self, iter_start_idx: int, n, log10_nominal_alphas: [float], verbose: bool=False):
         """
         This function performs a given number of iterations of the randomization procedure.
 
         :param iter_start_idx: First iteration index
         :param n: Number of iterations performed in the function call
-        :param nnl_nominal_alphas: List of nominal alphas (negative natural logarithm)
+        :param log10_nominal_alphas: List of nominal alphas (negative decadic logarithm)
         :param verbose: If true, messages about progress will be written to the screen
         :return: List of lists with numbers of randomized significant interactions. Each list contains the numbers of
-        significant interactions for the different nominal alphas in 'nnl_nominal_alphas'.
+        significant interactions for the different nominal alphas in 'log10_nominal_alphas'.
         """
 
         # Iteration indices are added to the subordinate random seed
@@ -295,42 +297,42 @@ class RandomizeInteractionSet:
 
         # Perform each iteration with its own random seed that corresponds by adding the iteration index
         for iter_idx in iter_idx_range:
-            sig_num_r_list_of_lists.append(self._perform_one_iteration(nnl_nominal_alphas=nnl_nominal_alphas,
+            sig_num_r_list_of_lists.append(self._perform_one_iteration(log10_nominal_alphas=log10_nominal_alphas,
                                                                        random_seed=self._random_seed + iter_idx))
 
         return sig_num_r_list_of_lists
 
-    def _determine_significant_pvals_at_nominal_alphas_nnl(self, nnl_nominal_alphas: [float], nnl_p_values: [float]):
+    def _determine_significant_pvals_at_nominal_alphas_log10(self, log10_nominal_alphas: [float], log10_p_values: [float]):
         """
         Determine numbers of significant P-values at different nominal alphas (thresholds).
 
-        :param nnl_nominal_alphas: List of nominal alphas (negative natural logarithm)
-        :param nnl_p_values: List of P-values (negative natural logarithm)
+        :param log10_nominal_alphas: List of nominal alphas (negative decadic logarithm)
+        :param log10_p_values: List of P-values (negative decadic logarithm)
         :return: List which has the same length as 'nominal_alphas' and contains, for each nominal alpha 'a',
         that number of P-values that are smaller or equal than 'a'.
         """
 
         # Sort input lists in ascending order
-        nnl_nominal_alphas = sorted(nnl_nominal_alphas, reverse=True)
-        nnl_p_values = sorted(nnl_p_values, reverse=True)
+        log10_nominal_alphas = sorted(log10_nominal_alphas, reverse=True)
+        log10_p_values = sorted(log10_p_values, reverse=True)
 
         # List of significant P-value numbers that will be returned
         sig_num_list = []
 
         # Index variable for the list of P-values
-        nnl_p_value_idx = 0
+        log10_p_value_idx = 0
 
         # Counting variable for the cumulative number of significant P-values
         sig_num = 0
 
         # Go through the list of nominal alphas sorted in ascending order
-        for nnl_nominal_alpha in nnl_nominal_alphas:
+        for log10_nominal_alpha in log10_nominal_alphas:
 
             # As long as the P-values are smaller than the current nominal alpha,
             # increment index and counter variable
-            while nnl_p_value_idx < len(nnl_p_values) and nnl_nominal_alpha <= nnl_p_values[nnl_p_value_idx]:
+            while log10_p_value_idx < len(log10_p_values) and log10_nominal_alpha <= log10_p_values[log10_p_value_idx]:
                 sig_num += 1
-                nnl_p_value_idx += 1
+                log10_p_value_idx += 1
 
             # As  soon as the P-value is larger than the current nominal alpha,
             # add the current number of interactions to the list that will be returned
@@ -819,7 +821,7 @@ class RandomizeInteractionSet:
 
         ax[0].text(-0.18, 0.50, 'Determined P-value threshold: ' + "{:.5f}".format(pval_thresh_result),
                    fontsize=header_font_size, fontweight='bold')
-        ax[0].text(-0.14, 0.45, '-ln(' + "{:.5f}".format(pval_thresh_result) + ") = " + "{:.2f}".format(-log(pval_thresh_result)),
+        ax[0].text(-0.14, 0.45, '-log10(' + "{:.5f}".format(pval_thresh_result) + ") = " + "{:.2f}".format(-log10(pval_thresh_result)),
                    fontsize=header_font_size)
         ax[0].text(-0.18, 0.40, 'Minimum read pair number: ' + str(min_rp_num_result), fontsize=header_font_size)
         ax[0].text(-0.18, 0.35,
@@ -840,17 +842,17 @@ class RandomizeInteractionSet:
                    fontweight='bold')
 
         # Plot P-value thresholds
-        ax[1].plot(pval_thresh_column, -log(pval_thresh_column))
-        ax[1].set_title("P-value threshold: " + "{:.5f}".format(pval_thresh_result), loc='left')
-        ax[1].set(xlabel="P-value threshold")
-        ax[1].set(ylabel="-ln(P-value threshold)")
-        ax[1].axhline(-log(pval_thresh_result), linestyle='--', color=hv_col, linewidth=hv_lwd)
+        ax[1].plot(pval_thresh_column, -log10(pval_thresh_column))
+        ax[1].set_title("Determined P-value threshold: " + "{:.5f}".format(pval_thresh_result), loc='left')
+        ax[1].set(xlabel="Nominal alpha")
+        ax[1].set(ylabel="-log10(Nominal alpha)")
+        ax[1].axhline(-log10(pval_thresh_result), linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[1].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
 
         # Plot minimum read pair numbers
         ax[2].plot(pval_thresh_column, min_rp_num_column)
         ax[2].set_title('Minimum read pair number: ' + str(min_rp_num_result), loc='left')
-        ax[2].set(xlabel='P-value threshold')
+        ax[2].set(xlabel='Nominal alpha')
         ax[2].set(ylabel='Read pair number')
         ax[2].axhline(min_rp_num_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[2].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
@@ -859,7 +861,7 @@ class RandomizeInteractionSet:
         ax[3].plot(pval_thresh_column, min_rp_num_pval_column)
         ax[3].set_title('Smallest P-value with ' + str(min_rp_num_result) + ' read pairs: ' + "{:.5f}".format(
             min_rp_num_pval_result), loc='left')
-        ax[3].set(xlabel='P-value threshold')
+        ax[3].set(xlabel='Nominal alpha')
         ax[3].set(ylabel='Smallest P-value')
         ax[3].axhline(min_rp_num_pval_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[3].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
@@ -869,7 +871,7 @@ class RandomizeInteractionSet:
         ax[4].plot(pval_thresh_column, sig_num_o_column, label='SIG_NUM_O')
         ax[4].set_title('Number of significant interactions: ' + "{:,}".format(sig_num_o_result) + ' (' + "{:,}".format(
             sig_num_r_mean_result) + ')', loc='left')
-        ax[4].set(xlabel='P-value threshold')
+        ax[4].set(xlabel='Nominal alpha')
         ax[4].set(ylabel='Significant interactions')
         ax[4].legend(loc="upper left", fontsize=8)
         ax[4].axhline(sig_num_o_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
@@ -879,7 +881,7 @@ class RandomizeInteractionSet:
         if plot_z_scores:
             ax[5].plot(pval_thresh_column, z_score_column)
             ax[5].set_title('Z-score: ' + z_score_result_formatted, loc='left')
-            ax[5].set(xlabel='P-value threshold')
+            ax[5].set(xlabel='Nominal alpha')
             ax[5].set(ylabel='Z-score')
             ax[5].axhline(z_score_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
             ax[5].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
@@ -909,7 +911,7 @@ class RandomizeInteractionSet:
         # Plot estimated FDR
         ax[6].plot(pval_thresh_column, fdr_column)
         ax[6].set_title('Estimated FDR: ' + "{:.5f}".format(fdr_result), loc='left')
-        ax[6].set(xlabel='P-value threshold')
+        ax[6].set(xlabel='Nominal alpha')
         ax[6].set(ylabel='FDR')
         ax[6].axhline(fdr_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[6].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)

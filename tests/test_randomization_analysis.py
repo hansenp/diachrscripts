@@ -225,9 +225,9 @@ class TestRandomizationAnalysis(TestCase):
 
         # Test the function implemented inn class RandomizeInteractionSet
         randomize = RandomizeInteractionSet()
-        sig_num_list_nnl = randomize._determine_significant_pvals_at_nominal_alphas_nnl(
-            nnl_nominal_alphas=nominal_alphas_nnl,
-            nnl_p_values=p_values_nnl)
+        sig_num_list_nnl = randomize._determine_significant_pvals_at_nominal_alphas_log10(
+            log10_nominal_alphas=nominal_alphas_nnl,
+            log10_p_values=p_values_nnl)
 
         # Compare the returned list with the expected list
         expected_list = [1, 4, 6, 7, 10]

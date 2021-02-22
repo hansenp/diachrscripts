@@ -1,10 +1,11 @@
 from typing import List, Tuple
 from collections import defaultdict
+from scipy import arange, interpolate
 from scipy.stats import binom
+import matplotlib.pyplot as plt
 from diachr.binomial_model import BinomialModel
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
-import scipy, scipy.stats
-import matplotlib.pyplot as plt
+
 
 class BinomialInteractionModel:
     """
@@ -22,9 +23,9 @@ class BinomialInteractionModel:
     """
 
     def __init__(
-        self,
-        p_value_cutoff: float=0.05,
-        out_prefix: str = "OUT_PREFIX") -> None:
+            self,
+            p_value_cutoff: float = 0.05,
+            out_prefix: str = "OUT_PREFIX") -> None:
 
         # Threshold used to define significant interactions
         self._p_value_cutoff = p_value_cutoff
@@ -53,11 +54,12 @@ class BinomialInteractionModel:
         self.n_sig_list = None
 
         # Define colors for directed, undirected reference and all undirected interactions
-        self._di_color = (255/255, 163/255, 0/255, 1)
-        self._uir_color = (171/255,215/255,230/255,1)
-        self._ui_color = (210/255,210/255,210/255,1)
+        self._di_color = (255 / 255, 163 / 255, 0 / 255, 1)
+        self._uir_color = (171 / 255, 215 / 255, 230 / 255, 1)
+        self._ui_color = (210 / 255, 210 / 255, 210 / 255, 1)
 
-    def simulate_interactions(self, n_max: int=500,  i_num: int=100000, pvt: float=0.05) -> Tuple[List, List, List]:
+    def simulate_interactions(self, n_max: int = 500, i_num: int = 100000, pvt: float = 0.05) -> Tuple[
+        List, List, List]:
         """
         Simulate interactions and return lists with counts of simulated and significant interactions with n read pairs.
 
@@ -88,11 +90,11 @@ class BinomialInteractionModel:
 
         # Iterate dictionary with numbers of interactions for each read pair number n
         for n in range(0, (n_max + 1)):
-            if n_sim_list[n]==0:
+            if n_sim_list[n] == 0:
                 continue
 
             # Generate random simple read pair counts for current n
-            simple_count_list = list(binom.rvs(n, p = 0.5, size = n_sim_list[n]))
+            simple_count_list = list(binom.rvs(n, p=0.5, size=n_sim_list[n]))
 
             # Determine P-values and count significant interactions
             for simple_count in simple_count_list:
@@ -105,8 +107,9 @@ class BinomialInteractionModel:
 
         return n_list, n_sim_list, n_sig_list
 
-    def simulate_interactions_plot(self, n_max: int=None,  i_num: int=None, pvt: float=None,
-                                   n_list: List=None, n_sim_list: List=None,  n_sig_list: List=None, CREATE_PDF=False):
+    def simulate_interactions_plot(self, n_max: int = None, i_num: int = None, pvt: float = None,
+                                   n_list: List = None, n_sim_list: List = None, n_sig_list: List = None,
+                                   CREATE_PDF=False):
         """
         Plot all simulated and simulated significant interactions.
 
@@ -147,10 +150,11 @@ class BinomialInteractionModel:
         ax2.tick_params(axis='y', labelcolor=color)
         fig.tight_layout()
         if CREATE_PDF:
-            plt.savefig(self._out_prefix + "_simulated_interactions_n_max_" + str(n_max)  + "_i_num_" + str(i_num)  + "_pvt_" + str(pvt) + ".pdf", format="pdf")
+            plt.savefig(self._out_prefix + "_simulated_interactions_n_max_" + str(n_max) + "_i_num_" + str(
+                i_num) + "_pvt_" + str(pvt) + ".pdf", format="pdf")
 
-
-    def analyze_N_binomial_distributions_with_fixed_p_thresh(self, N=40, pvt=0.05, CREATE_DIST_PLOTS=True, CREATE_PDF=False):
+    def analyze_N_binomial_distributions_with_fixed_p_thresh(self, N=40, pvt=0.05, CREATE_DIST_PLOTS=True,
+                                                             CREATE_PDF=False):
         """
         Plot PMF of binomial distributions for n=1,...,N and create a combined plot with maximal P-values and
         associated k.
@@ -178,8 +182,8 @@ class BinomialInteractionModel:
         for n in range(1, N + 1):
 
             # Get list of densities for current n
-            x = list(scipy.arange(0, n + 1, 1.0))
-            pmf = scipy.stats.binom.pmf(x, n, 0.5)
+            x = list(arange(0, n + 1, 1.0))
+            pmf = binom.pmf(x, n, 0.5)
 
             # Find largest k for which the sum of densities from 0 up to k is below the P-value threshold
             d_sum = 0.0
@@ -221,7 +225,7 @@ class BinomialInteractionModel:
                 plt.close()
 
         # Calculate trendline
-        spl = scipy.interpolate.UnivariateSpline(n_list, d_sum_prev_list)
+        spl = interpolate.UnivariateSpline(n_list, d_sum_prev_list)
         spl.set_smoothing_factor(0.5)
 
         # Set ticks for x-axis
@@ -262,7 +266,8 @@ class BinomialInteractionModel:
         fig.tight_layout()
 
         if CREATE_PDF:
-            plt.savefig(self._out_prefix + "_N_binom_dist_with_fixed_pvt_N_" + str(N) + "_pvt_" + str(pvt) + ".pdf", format="pdf")
+            plt.savefig(self._out_prefix + "_N_binom_dist_with_fixed_pvt_N_" + str(N) + "_pvt_" + str(pvt) + ".pdf",
+                        format="pdf")
 
         plt.show()
         plt.close()
@@ -335,16 +340,18 @@ class BinomialInteractionModel:
 
         # Get ordered list of interaction counts for different n
         for n in n_list:
-            n_di = n_dict_di.get(n,0)
+            n_di = n_dict_di.get(n, 0)
             n_di_list.append(n_di)
-            n_uir = n_dict_uir.get(n,0)
+            n_uir = n_dict_uir.get(n, 0)
             n_uir_list.append(n_uir)
             n_ui = n_dict_ui.get(n, 0)
             n_ui_list.append(n_ui)
 
         return n_list, n_di_list, n_uir_list, n_ui_list
 
-    def count_di_uir_and_ui_for_each_n_plot(self, n_list: List=None, n_di_list: List=None, n_uir_list: List=None, n_ui_list: List=None, x_max: int=None, y_max: int=None, l_wd: float=0.0):
+    def count_di_uir_and_ui_for_each_n_plot(self, n_list: List = None, n_di_list: List = None, n_uir_list: List = None,
+                                            n_ui_list: List = None, x_max: int = None, y_max: int = None,
+                                            l_wd: float = 0.0):
         """
         Create plots for empirical data.
 
@@ -396,7 +403,7 @@ class BinomialInteractionModel:
             y_max = max_rel
 
         # Set ticks for x-axes
-        xticks = list(range(0,x_max+1,int(x_max/10)))
+        xticks = list(range(0, x_max + 1, int(x_max / 10)))
 
         # Plot UI vs. DI
         plt.title('UI vs. DI')
@@ -409,7 +416,7 @@ class BinomialInteractionModel:
         plt.scatter(n_list, ui_rel, alpha=1, color=self._ui_color,
                     label='UI: ' + str("{:,d}".format(ui_sum)))
 
-        plt.plot(n_list, di_rel, color=self._di_color, linewidth = l_wd)
+        plt.plot(n_list, di_rel, color=self._di_color, linewidth=l_wd)
         plt.scatter(n_list, di_rel, alpha=0.5, color=self._di_color,
                     label='DI: ' + str("{:,d}".format(di_sum)))
         plt.legend()

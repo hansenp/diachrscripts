@@ -1,6 +1,7 @@
 from unittest import TestCase
 import os
 import sys
+from numpy import log
 
 from numpy.lib.function_base import place
 PACKAGE_PARENT = '..'
@@ -47,13 +48,13 @@ class TestBinomial(TestCase):
         In R
         binom.test(2, 36, 0.5, alternative="two.sided") 
         number of successes = 2, number of trials = 36, p-value = 1.941e-08
-        -1 * log( binom.test(2, 36, 0.5, alternative="two.sided")$p.value)
-        17.75736
+        -1 * log( binom.test(2, 36, 0.5, alternative="two.sided")$p.value,10)
+        7.711924
         """
         simple = 2
         twisted = 34
-        pval = self.binomial_model.get_binomial_nnl_p_value(n_simple=simple, n_twisted=twisted)
-        self.assertAlmostEqual(17.75736, pval, places=5) # equal up to 5 significant digits
+        pval = self.binomial_model.get_binomial_log10_p_value(n_simple=simple, n_twisted=twisted)
+        self.assertAlmostEqual(7.711924, pval, places=5) # equal up to 5 significant digits
 
     def test_binomial_pval_4_4_nnl(self):
         """
@@ -65,5 +66,5 @@ class TestBinomial(TestCase):
         """
         simple = 4
         twisted = 4
-        pval = self.binomial_model.get_binomial_nnl_p_value(n_simple=simple, n_twisted=twisted)
+        pval = self.binomial_model.get_binomial_log10_p_value(n_simple=simple, n_twisted=twisted)
         self.assertAlmostEqual(0, pval, places=5) # equal up to 5 significant digits

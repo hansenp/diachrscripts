@@ -13,7 +13,7 @@ The individual steps that are carried out in this script are demonstrated in the
 """
 
 import argparse
-from numpy import arange, log
+from numpy import arange, log10
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.randomize_interaction_set import RandomizeInteractionSet
 
@@ -74,9 +74,9 @@ if args.p_value_threshold is None:
 else:
     p_value_threshold = float(p_value_threshold)
     parameter_info += "\t\t[INFO] Will use this P-value threshold instead of the one determined by the FDR procedure." + '\n'
-    parameter_info += "\t\t[INFO] We use the negative of the natural logarithm of the P-values." + '\n'
-    parameter_info += "\t\t\t[INFO] The chosen threshold corresponds to: -ln(" + str(p_value_threshold) + ") = " + str(
-        -log(p_value_threshold)) + '\n'
+    parameter_info += "\t\t[INFO] We use the negative decadic logarithm of the P-values." + '\n'
+    parameter_info += "\t\t\t[INFO] The chosen threshold corresponds to: -log10(" + str(p_value_threshold) + ") = " + str(
+        -log10(p_value_threshold)) + '\n'
 
 if enriched_digests_file is not None:
     parameter_info += "\t[INFO] --enriched-digests-file: " + enriched_digests_file
@@ -131,7 +131,7 @@ if p_value_threshold is None:
     # Create plot with Z-score and FDR for each nominal alpha
     randomize_fdr.get_randomization_info_plot_at_chosen_fdr_threshold(
         chosen_fdr_threshold = fdr_threshold,
-        pdf_file_name = out_prefix + "_randomization_plot_fdr.pdf",
+        pdf_file_name = out_prefix + "_randomization_plot.pdf",
         description = description_tag)
 
     # Create randomization histogram for the determined P-value threshold
@@ -168,7 +168,7 @@ print()
 #######################################
 
 
-f_name_summary = out_prefix + "_evaluated_and_categorized_summary.txt"
+f_name_summary = out_prefix + "_reports.txt"
 out_fh_summary = open(f_name_summary, 'wt')
 
 # Chosen parameters
@@ -202,12 +202,12 @@ out_fh_summary.write(write_file_info_report + '\n')
 # Report on generated files
 generated_file_info = "[INFO] Generated files:" + '\n'
 generated_file_info += "\t[INFO] " + f_name_summary + '\n'
-generated_file_info += "\t[INFO] " + f_name_interactions + '\n'
 if args.p_value_threshold is None:
+    generated_file_info += "\t[INFO] " + out_prefix + "_randomization_plot.pdf" + '\n'
     generated_file_info += "\t[INFO] " + f_name_fdr_info_info_table + '\n'
-    generated_file_info += "\t[INFO] " + out_prefix + "_randomization_plot_fdr.pdf" + '\n'
-    generated_file_info += "\t[INFO] " + out_prefix + "_randomization_plot_threshold.pdf" + '\n'
-    generated_file_info += "\t[INFO] " + out_prefix + "_randomization_plot_001.pdf" + '\n'
+    generated_file_info += "\t[INFO] " + out_prefix + "_randomization_histogram_at_threshold.pdf" + '\n'
+    generated_file_info += "\t[INFO] " + out_prefix + "_randomization_histogram_at_001.pdf" + '\n'
+generated_file_info += "\t[INFO] " + f_name_interactions + '\n'
 out_fh_summary.write(generated_file_info)
 out_fh_summary.close()
 
