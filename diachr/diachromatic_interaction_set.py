@@ -611,7 +611,7 @@ class DiachromaticInteractionSet:
         """
 
         table_row = ":TR_EVAL_CAT:" + '\t' + \
-                    "OUT_PREFIX" + '\t' + \
+                    "DESCRIPTION" + '\t' + \
                     "PVAL_THRESH" + '\t' + \
                     "MIN_RP" + '\t' + \
                     "MIN_RP_PVAL" + '\t' + \
@@ -676,7 +676,7 @@ class DiachromaticInteractionSet:
 
         return report
 
-    def get_select_ref_info_table_row(self, out_prefix: str = None):
+    def get_select_ref_info_table_row(self, description: str = None):
         """
         :return: String consisting of a header line and a line with values relating to the last selection of reference
         interactions
@@ -684,23 +684,27 @@ class DiachromaticInteractionSet:
 
         # Header line
         table_row = ":TR_SELECT:" + '\t'
-        table_row += "OUT_PREFIX" + '\t'
+        table_row += "DESCRIPTION" + '\t'
         for i_cat in ['DI', 'UIR', 'M_UIR', 'UI']:
             for enr_cat in ['NN', 'NE', 'EN', 'EE']:
-                if not (i_cat == 'UI' and enr_cat == 'EE'):
-                    table_row += i_cat + '_' + enr_cat + '\t'
-                else:
-                    table_row += i_cat + '_' + enr_cat + '\n'
+                table_row += i_cat + '_' + enr_cat + '\t'
+            if i_cat != 'UI':
+                table_row += i_cat + '_TOTAL' + '\t'
+            else:
+                table_row += i_cat + '_TOTAL' + '\n'
 
         # Line with values
         table_row += ":TR_SELECT:" + '\t'
-        table_row += str(out_prefix) + '\t'
+        table_row += str(description) + '\t'
         for i_cat in ['DI','UIR','M_UIR','UI']:
+            total = 0
             for enr_cat in ['NN','NE','EN','EE']:
-                if not (i_cat == 'UI' and enr_cat == 'EE'):
-                    table_row += str(self._select_ref_info_dict[enr_cat][i_cat][0]) + '\t'
-                else:
-                    table_row += str(self._select_ref_info_dict[enr_cat][i_cat][0]) + '\n'
+                total += self._select_ref_info_dict[enr_cat][i_cat][0]
+                table_row += str(self._select_ref_info_dict[enr_cat][i_cat][0]) + '\t'
+            if i_cat != 'UI':
+                table_row += str(total) + '\t'
+            else:
+                table_row += str(total) + '\n'
 
         return table_row
 

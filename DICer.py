@@ -7,9 +7,10 @@ interactions (UIR) from UI and creates a new file with two additional columns fo
 
 You can find documentation on this script in the relevant section in the RTD of this repository.
 
-The individual steps that are carried out in this script are demonstrated in the following Jupyter notebook:
+The individual steps that are carried out in this script are demonstrated in the following Jupyter notebooks:
 
        diachrscripts/jupyter_notebooks/evaluate_and_categorize_interactions.ipynb
+       diachrscripts/jupyter_notebooks/Demonstration_of_DICer.ipynb
 """
 
 import argparse
@@ -17,27 +18,54 @@ from numpy import arange, log10
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.randomize_interaction_set import RandomizeInteractionSet
 
-### Parse command line
-######################
+# Parse command line
+####################
 
-parser = argparse.ArgumentParser(description='Evaluate and categorize interactions and select undirected reference '
-                                             'interactions.')
-parser.add_argument('-o', '--out-prefix', help='Prefix for output.', default='OUT_PREFIX')
-parser.add_argument('-d', '--description-tag', help='Tag that appears in generated tables and plots.', default='DESCRIPTION_TAG')
-parser.add_argument('-i', '--diachromatic-interaction-file', help='Diachromatic interaction file.', required=True)
-parser.add_argument('--fdr-threshold', help='FDR threshold for defining directed interactions.', default=0.05)
-parser.add_argument('--nominal-alpha-max', help='Maximum nominal alpha for which an FDR is estimated.',
+parser = argparse.ArgumentParser(description='Determine P-value threshold at a chosen FDR threshold, define directed '
+                                             'interactions at this P-value threshold, and select undirected '
+                                             'reference interactions.')
+parser.add_argument('-o', '--out-prefix',
+                    help='Common prefix for all generated files, which can also contain the path.',
+                    default='OUT_PREFIX')
+parser.add_argument('-d', '--description-tag',
+                    help='Short description that appears in generated tables and plots.',
+                    default='DESCRIPTION_TAG')
+parser.add_argument('-i', '--diachromatic-interaction-file',
+                    help='Input file in Diachromatic interaction format.',
+                    required=True)
+parser.add_argument('--fdr-threshold',
+                    help='The P-value is chosen so that the estimated FDR remains below this threshold.',
+                    default=0.05)
+parser.add_argument('--nominal-alpha-max',
+                    help='Maximum nominal alpha at which iteractions are classified as significant.',
                     default=0.025)
-parser.add_argument('--nominal-alpha-step', help='P-value threshold step size used for FDR procedure.',
+parser.add_argument('--nominal-alpha-step',
+                    help='Step size for nominal alphas.',
                     default=0.00001)
-parser.add_argument('-n','--iter-num', help='Number of iterations for randomization.', default=100)
-parser.add_argument('--random-seed', help='Random seed used for FDR procedure.',
+parser.add_argument('-n','--iter-num',
+                    help='Number of randomizations that will be performed.',
+                    default=100)
+parser.add_argument('--random-seed',
+                    help='Random seed that is used for the first iteration. The random seed is incremented by ``1`` '
+                         'for each further iteration.',
                     default=None)
-parser.add_argument('-t','--thread-num', help='Number of threads used for randomization.', default=0)
-parser.add_argument('--p-value-threshold', help='P-value threshold for defining directed interactions.', default=None)
-parser.add_argument('--enriched-digests-file', help='BED file with digests that were selected for target enrichment.',
+parser.add_argument('-t','--thread-num',
+                    help='Number of processes in which the iterations are performed in batches of the same size.',
+                    default=0)
+parser.add_argument('--p-value-threshold',
+                    help='By default, the final P-value threshold is determined via randomization. If a P-value is '
+                         'specified, then this P-value threshold will be used as the final threshold and no '
+                         'randomizations will be performed.',
+                    default=None)
+parser.add_argument('--enriched-digests-file',
+                    help='BED file with digests coordinates that were selected for target enrichment. The digest '
+                         'coordinates must match those in the digest file from GOPHER that was used as input for '
+                         'Diachromatic. If such a file is passed, the enrichment tags in columns 4 and 8 of the '
+                         'interaction file are overwritten accordingly.',
+                    default=None,
                     required=False)
 
+# Read command line arguments into variables
 args = parser.parse_args()
 out_prefix = args.out_prefix
 description_tag = args.description_tag
@@ -54,6 +82,7 @@ thread_num = int(args.thread_num)
 p_value_threshold = args.p_value_threshold
 enriched_digests_file = args.enriched_digests_file
 
+# Report on arguments
 parameter_info = "[INFO] " + "Input parameters" + '\n'
 parameter_info += "\t[INFO] --out-prefix: " + out_prefix + '\n'
 parameter_info += "\t[INFO] --description-tag: " + description_tag + '\n'
@@ -77,24 +106,22 @@ else:
     parameter_info += "\t\t[INFO] We use the negative decadic logarithm of the P-values." + '\n'
     parameter_info += "\t\t\t[INFO] The chosen threshold corresponds to: -log10(" + str(p_value_threshold) + ") = " + str(
         -log10(p_value_threshold)) + '\n'
-
 if enriched_digests_file is not None:
     parameter_info += "\t[INFO] --enriched-digests-file: " + enriched_digests_file
-
 print(parameter_info)
 
-### Perform analysis
-####################
+# Perform analysis
+##################
 
-# Load interactions
-interaction_set = DiachromaticInteractionSet()
+# Load interactions into a Diachromatic interaction set
+interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_digests_file)
 # To save memory, we only read interactions that can be significant at 0.05.
 min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(0.05)
 interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 print()
 
-# Determine P-value threshold so that the FDR is kept below a threshold
+# If no P-value threshold was passed, determine a P-value threshold so that the FDR is kept below a threshold
 if p_value_threshold is None:
 
     # Create list of nominal alphas
@@ -146,7 +173,7 @@ if p_value_threshold is None:
         pdf_file_name  = out_prefix + "_randomization_histogram_at_001.pdf",
         description = description_tag + " - At a nominal alpha of 0.01")
 
-# Calculate P-values and assign interactions to 'DI' or 'UI'
+# Calculate P-values of interactions and assign interactions to 'DI' or 'UI'
 interaction_set.evaluate_and_categorize_interactions(p_value_threshold, verbose=True)
 eval_cat_info_report = interaction_set.get_eval_cat_info_report()
 eval_cat_info_table_row = interaction_set.get_eval_cat_info_table_row(out_prefix)
@@ -164,9 +191,8 @@ interaction_set.write_diachromatic_interaction_file(target_file=f_name_interacti
 write_file_info_report = interaction_set.get_write_file_info_report()
 print()
 
-### Create file with summary statistics
-#######################################
-
+# Create a file with reports and a table with randomization results
+###################################################################
 
 f_name_summary = out_prefix + "_reports.txt"
 out_fh_summary = open(f_name_summary, 'wt')
@@ -210,5 +236,4 @@ if args.p_value_threshold is None:
 generated_file_info += "\t[INFO] " + f_name_interactions + '\n'
 out_fh_summary.write(generated_file_info)
 out_fh_summary.close()
-
 print(generated_file_info + '\n')
