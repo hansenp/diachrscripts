@@ -676,6 +676,12 @@ class RandomizeInteractionSet:
         ax[2].axvspan(sig_num_r_mean - 3 * sig_num_r_sd, sig_num_r_mean + 3 * sig_num_r_sd, color='lightblue',
                       alpha=0.9, zorder=0)
         ax[2].axvline(sig_num_r_mean, linestyle='--', color='red', linewidth=1)
+
+        ax[2].axvline(sig_num_r_mean - 2 * sig_num_r_sd, linestyle='--', color='w', linewidth=1, zorder=0)
+        ax[2].axvline(sig_num_r_mean - 1 * sig_num_r_sd, linestyle='--', color='w', linewidth=1, zorder=0)
+        ax[2].axvline(sig_num_r_mean + 1 * sig_num_r_sd, linestyle='--', color='w', linewidth=1, zorder=0)
+        ax[2].axvline(sig_num_r_mean + 2 * sig_num_r_sd, linestyle='--', color='w', linewidth=1, zorder=0)
+
         ax[2].axvline(sig_num_o, linestyle='--', color='red', linewidth=1)
         y_pos_lab = max(n) - 1 * (max(n) / 15)
         x_pos_lab = sig_num_r_mean + 6 * sig_num_r_sd

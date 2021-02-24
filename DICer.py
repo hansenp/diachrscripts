@@ -115,8 +115,8 @@ print(parameter_info)
 
 # Load interactions into a Diachromatic interaction set
 interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_digests_file)
-# To save memory, we only read interactions that can be significant at 0.05.
-min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(0.05)
+# To save memory, we only read interactions that can be significant at the maximum nominal alpha.
+min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(nominal_alpha_max)
 interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 print()
