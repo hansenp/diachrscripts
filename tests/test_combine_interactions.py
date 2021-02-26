@@ -42,8 +42,7 @@ class TestCombineInteractions(TestCase):
         """
 
         i_num = len(self.interaction_set.interaction_list)
-        self.assertEqual(4, i_num) # equal up to 5 significant digits
-
+        self.assertEqual(4, i_num)
 
     def test_num_of_combined_inter_with_required_num_of_rep(self):
         """

@@ -38,7 +38,7 @@ class DiachromaticInteractionSet:
         self._smallest_pval_thresh = 1.0
 
         # Dictionary with information about read files
-        self._read_file_info_dict = {'I_FILE': [], 'I_NUM': [], 'MIN_RP_NUM': [], 'I_NUM_SKIPPED': [], 'I_NUM_ADDED': [], 'I_SET_SIZE': []}
+        self._read_file_info_dict = {'I_FILE': [], 'I_NUM': [], 'MIN_RP_NUM': [], 'MIN_DIST': [], 'I_NUM_SKIPPED_RP': [], 'I_NUM_SKIPPED_DIST': [], 'I_NUM_ADDED': [], 'I_SET_SIZE': []}
 
         # Dictionary with information about the last writing process
         self._write_file_info_dict = {}
@@ -61,13 +61,14 @@ class DiachromaticInteractionSet:
             print("\t[INFO] Read " + "{:,}".format(len(self._enriched_digests_set)) + " digests ...")
             print("[INFO] ... done.")
 
-    def parse_file(self, i_file: str = None, min_rp_num: int = 0, verbose: bool = False):
+    def parse_file(self, i_file: str = None, min_rp_num: int = 0, min_dist: int = 0, verbose: bool = False):
         """
         Parses a file with interactions. For interactions that have already been parsed from another file,
         only the simple and twisted read pair counts are added.
 
         :param i_file: Diachromatic interaction file
         :param min_rp_num: Interactions with a smaller number of read pairs are skipped
+        :param min_dist: Interactions with shorter distances are skipped
         :param verbose:  If true, messages about progress will be written to the screen
         """
 
@@ -89,7 +90,8 @@ class DiachromaticInteractionSet:
         if i_file.endswith(".gz"):
             with gzip.open(i_file, 'rt') as fp:
                 n_lines = 0
-                n_skipped = 0
+                n_skipped_rp = 0
+                n_skipped_dist = 0
                 for line in fp:
                     n_lines += 1
                     if verbose:
@@ -97,7 +99,10 @@ class DiachromaticInteractionSet:
                             print("\t[INFO] Parsed " + "{:,}".format(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
                     if d_inter.rp_total < min_rp_num:
-                        n_skipped += 1
+                        n_skipped_rp += 1
+                        continue
+                    if d_inter.i_dist < min_dist:
+                        n_skipped_dist += 1
                         continue
                     elif d_inter.key in self._inter_dict:
                         self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple,
@@ -107,7 +112,8 @@ class DiachromaticInteractionSet:
         else:
             with open(i_file) as fp:
                 n_lines = 0
-                n_skipped = 0
+                n_skipped_rp = 0
+                n_skipped_dist = 0
                 for line in fp:
                     n_lines += 1
                     if verbose:
@@ -115,7 +121,10 @@ class DiachromaticInteractionSet:
                             print("\t[INFO] Parsed " + "{:,}".format(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
                     if d_inter.rp_total < min_rp_num:
-                        n_skipped += 1
+                        n_skipped_rp += 1
+                        continue
+                    if d_inter.i_dist < min_dist:
+                        n_skipped_dist += 1
                         continue
                     elif d_inter.key in self._inter_dict:
                         self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple,
@@ -127,8 +136,10 @@ class DiachromaticInteractionSet:
         self._read_file_info_dict['I_FILE'].append(i_file)
         self._read_file_info_dict['I_NUM'].append(n_lines)
         self._read_file_info_dict['MIN_RP_NUM'].append(min_rp_num)
-        self._read_file_info_dict['I_NUM_SKIPPED'].append(n_skipped)
-        self._read_file_info_dict['I_NUM_ADDED'].append(n_lines - n_skipped)
+        self._read_file_info_dict['MIN_DIST'].append(min_dist)
+        self._read_file_info_dict['I_NUM_SKIPPED_RP'].append(n_skipped_rp)
+        self._read_file_info_dict['I_NUM_SKIPPED_DIST'].append(n_skipped_dist)
+        self._read_file_info_dict['I_NUM_ADDED'].append(n_lines - n_skipped_rp - n_skipped_dist)
         i_set_size = len(self._inter_dict)
         self._read_file_info_dict['I_SET_SIZE'].append(i_set_size)
 
@@ -512,7 +523,10 @@ class DiachromaticInteractionSet:
                       "\t\t\t[INFO] Minimum number of read pairs: " + str(self._read_file_info_dict['MIN_RP_NUM'][i]) + '\n' \
                       '\t\t\t[INFO] Skipped because less than ' + str(self._read_file_info_dict['MIN_RP_NUM'][i]) + \
                       ' read pairs: ' + \
-                      "{:,}".format(self._read_file_info_dict['I_NUM_SKIPPED'][i]) + '\n' \
+                      "{:,}".format(self._read_file_info_dict['I_NUM_SKIPPED_RP'][i]) + '\n' + \
+                      '\t\t\t[INFO] Skipped because shorter than ' + "{:,}".format(self._read_file_info_dict['MIN_DIST'][i]) + \
+                      ' bp: ' + \
+                      "{:,}".format(self._read_file_info_dict['I_NUM_SKIPPED_DIST'][i]) + '\n' + \
                       '\t\t\t[INFO] Added to set: ' + "{:,}".format(self._read_file_info_dict['I_NUM_ADDED'][i]) + '\n' \
                       '\t\t\t[INFO] Set size: ' + "{:,}".format(self._read_file_info_dict['I_SET_SIZE'][i]) + '\n'
         report += "\t[INFO] The interaction set has " + \
@@ -531,7 +545,9 @@ class DiachromaticInteractionSet:
                     "I_FILE" + "\t" + \
                     "I_NUM" + "\t" + \
                     "MIN_RP_NUM" + "\t" + \
-                    "I_NUM_SKIPPED" + "\t" + \
+                    "I_NUM_SKIPPED_RP" + "\t" + \
+                    "MIN_DIST" + "\t" + \
+                    "I_NUM_SKIPPED_DIST" + "\t" + \
                     "I_NUM_ADDED" + "\t" + \
                     "I_SET_SIZE" + '\n'
 
@@ -542,7 +558,9 @@ class DiachromaticInteractionSet:
             table_row += self._read_file_info_dict['I_FILE'][i] + '\t'
             table_row += str(self._read_file_info_dict['I_NUM'][i]) + '\t'
             table_row += str(self._read_file_info_dict['MIN_RP_NUM'][i]) + '\t'
-            table_row += str(self._read_file_info_dict['I_NUM_SKIPPED'][i]) + '\t'
+            table_row += str(self._read_file_info_dict['I_NUM_SKIPPED_RP'][i]) + '\t'
+            table_row += str(self._read_file_info_dict['MIN_DIST'][i]) + '\t'
+            table_row += str(self._read_file_info_dict['I_NUM_SKIPPED_DIST'][i]) + '\t'
             table_row += str(self._read_file_info_dict['I_NUM_ADDED'][i]) + '\t'
             table_row += str(self._read_file_info_dict['I_SET_SIZE'][i]) + '\n'
 

@@ -99,17 +99,6 @@ class BinomialModel:
                     print("[INFO] ... done.")
                 return rp_num, p_val
 
-    def find_largest_significant_pval_below_threshold(self, p_val_thresh: float = 0.01, verbose: bool = False):
-        """
-        This function finds the largest possible p-value that is below a specified threshold.
-        :return:
-        """
-        for rp_total in range(1, 1000):
-            for rp_simple in range(0,rp_total):
-                rp_twisted = rp_total - rp_simple
-                print(rp_total + rp_simple)
-
-
     def measure_time_savings_due_to_pval_dict(self):
         """
         This function determines time saved by using the dictionary for P-values.

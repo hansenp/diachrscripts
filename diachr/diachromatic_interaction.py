@@ -94,6 +94,10 @@ class DiachromaticInteraction:
         return self._simple + self._twisted
 
     @property
+    def i_dist(self):
+        return self._fromB - self._toA
+
+    @property
     def enrichment_status_tag_pair(self):
         if self.s_flag_int == 0:
             return 'NN'

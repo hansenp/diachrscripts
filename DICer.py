@@ -14,7 +14,7 @@ The individual steps that are carried out in this script are demonstrated in the
 """
 
 import argparse
-from numpy import arange, log10
+from numpy import append, arange, log10
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.randomize_interaction_set import RandomizeInteractionSet
 
@@ -33,6 +33,9 @@ parser.add_argument('-d', '--description-tag',
 parser.add_argument('-i', '--diachromatic-interaction-file',
                     help='Input file in Diachromatic interaction format.',
                     required=True)
+parser.add_argument('--min-inter-dist',
+                    help='Minimum interaction distance. Shorter interactions are not taken into account.',
+                    default=0)
 parser.add_argument('--fdr-threshold',
                     help='The P-value is chosen so that the estimated FDR remains below this threshold.',
                     default=0.05)
@@ -70,6 +73,7 @@ args = parser.parse_args()
 out_prefix = args.out_prefix
 description_tag = args.description_tag
 diachromatic_interaction_file = args.diachromatic_interaction_file
+min_inter_dist = int(args.min_inter_dist)
 fdr_threshold = float(args.fdr_threshold)
 nominal_alpha_max = float(args.nominal_alpha_max)
 nominal_alpha_step = float(args.nominal_alpha_step)
@@ -88,6 +92,7 @@ parameter_info += "\t[INFO] --out-prefix: " + out_prefix + '\n'
 parameter_info += "\t[INFO] --description-tag: " + description_tag + '\n'
 parameter_info += "\t[INFO] --diachromatic-interaction-file:" + '\n'
 parameter_info += "\t\t[INFO] " + diachromatic_interaction_file + '\n'
+parameter_info += "\t[INFO] --min-inter-dist: " + "{:,}".format(min_inter_dist) + '\n'
 parameter_info += "\t[INFO] --p-value-threshold: " + str(p_value_threshold) + '\n'
 if args.p_value_threshold is None:
     parameter_info += "\t\t[INFO] Will determine a P-value threshold so that the FDR is kept below: " + str(
@@ -95,7 +100,7 @@ if args.p_value_threshold is None:
     parameter_info += "\t\t[INFO] --fdr-threshold: " + "{:.5f}".format(fdr_threshold) + '\n'
     parameter_info += "\t\t[INFO] --nominal-alpha-max: " + "{:.5f}".format(nominal_alpha_max) + '\n'
     parameter_info += "\t\t[INFO] --nominal-alpha-step: " + "{:.5f}".format(nominal_alpha_step) + '\n'
-    parameter_info += "\t\t[INFO] --iter-num: " + str(iter_num) + '\n'
+    parameter_info += "\t\t[INFO] --iter-num: " + "{:,}".format(iter_num) + '\n'
     parameter_info += "\t\t[INFO] --random-seed: " + str(random_seed) + '\n'
     parameter_info += "\t\t[INFO] --thread-num: " + str(thread_num) + '\n'
     parameter_info += "\t\t[INFO] Use '--fdr-threshold' to set your own FDR threshold." + '\n'
@@ -117,7 +122,7 @@ print(parameter_info)
 interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_digests_file)
 # To save memory, we only read interactions that can be significant at the maximum nominal alpha.
 min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(nominal_alpha_max)
-interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, verbose=True)
+interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, min_dist=min_inter_dist, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 print()
 
@@ -127,7 +132,9 @@ if p_value_threshold is None:
     # Create list of nominal alphas
     nominal_alphas = arange(nominal_alpha_step, nominal_alpha_max + nominal_alpha_step, nominal_alpha_step)
     if 0.01 not in nominal_alphas:
-        nominal_alphas.append(0.01)
+        nominal_alphas= append(nominal_alphas, 0.01)
+    if 0.05 not in nominal_alphas:
+        nominal_alphas = append(nominal_alphas, 0.05)
 
     # Perform randomization procedure
     randomize_fdr = RandomizeInteractionSet(random_seed=random_seed)
@@ -141,7 +148,10 @@ if p_value_threshold is None:
 
     # Determine P-value threshold
     result_index = randomize_fdr.get_largest_nominal_alpha_index_at_chosen_fdr_thresh(fdr_threshold)
-    p_value_threshold = fdr_info_dict['RESULTS']['NOMINAL_ALPHA'][result_index]
+    if result_index is not None:
+        p_value_threshold = fdr_info_dict['RESULTS']['NOMINAL_ALPHA'][result_index]
+    else:
+        p_value_threshold = fdr_info_dict['RESULTS']['NOMINAL_ALPHA'][0]
 
     # Get randomization report for the determined P-value threshold
     fdr_info_info_report = randomize_fdr.get_randomization_info_report(p_value_threshold)
@@ -159,7 +169,9 @@ if p_value_threshold is None:
     randomize_fdr.get_randomization_info_plot_at_chosen_fdr_threshold(
         chosen_fdr_threshold = fdr_threshold,
         pdf_file_name = out_prefix + "_randomization_plot.pdf",
-        description = description_tag)
+        description = description_tag,
+        nominal_alpha_min = 0,
+        nominal_alpha_max = nominal_alpha_max)
 
     # Create randomization histogram for the determined P-value threshold
     randomize_fdr.get_randomization_info_plot(
@@ -172,6 +184,12 @@ if p_value_threshold is None:
         nominal_alpha_selected = 0.01,
         pdf_file_name  = out_prefix + "_randomization_histogram_at_001.pdf",
         description = description_tag + " - At a nominal alpha of 0.01")
+
+    # Create randomization histogram for a nominal alpha of 0.01
+    randomize_fdr.get_randomization_info_plot(
+        nominal_alpha_selected = 0.05,
+        pdf_file_name  = out_prefix + "_randomization_histogram_at_005.pdf",
+        description = description_tag + " - At a nominal alpha of 0.05")
 
 # Calculate P-values of interactions and assign interactions to 'DI' or 'UI'
 interaction_set.evaluate_and_categorize_interactions(p_value_threshold, verbose=True)
@@ -233,6 +251,7 @@ if args.p_value_threshold is None:
     generated_file_info += "\t[INFO] " + f_name_fdr_info_info_table + '\n'
     generated_file_info += "\t[INFO] " + out_prefix + "_randomization_histogram_at_threshold.pdf" + '\n'
     generated_file_info += "\t[INFO] " + out_prefix + "_randomization_histogram_at_001.pdf" + '\n'
+    generated_file_info += "\t[INFO] " + out_prefix + "_randomization_histogram_at_005.pdf" + '\n'
 generated_file_info += "\t[INFO] " + f_name_interactions + '\n'
 out_fh_summary.write(generated_file_info)
 out_fh_summary.close()
