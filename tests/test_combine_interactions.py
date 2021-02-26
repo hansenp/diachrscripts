@@ -13,13 +13,26 @@ class TestCombineInteractions(TestCase):
     @classmethod
     def setUpClass(cls):
 
-        # Use test data to create a DiachromaticInteractionParser object
+        # Use test toy example data to create a DiachromaticInteractionParser object
         cls.interaction_set = DiachromaticInteractionSet()
         cls.interaction_set.parse_file("data/test_01/diachromatic_interaction_file_r1.tsv.gz") # one interaction
         cls.interaction_set.parse_file("data/test_01/diachromatic_interaction_file_r2.tsv.gz") # two interactions
         cls.interaction_set.parse_file("data/test_01/diachromatic_interaction_file_r3.tsv.gz") # three interactions
         cls.interaction_set.parse_file("data/test_01/diachromatic_interaction_file_r4.tsv.gz") # four interactions
 
+        # Use real data sample files (top 64,000 of Megakaryocyte data) to create a DiachromaticInteractionParser object
+        cls.interaction_set_real_top_64000 = DiachromaticInteractionSet()
+        cls.interaction_set_real_top_64000.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r1.tsv.gz") # 64,000 interaction
+        cls.interaction_set_real_top_64000.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r2.tsv.gz") # 64,000 interactions
+        cls.interaction_set_real_top_64000.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r3.tsv.gz") # 64,000 interactions
+        cls.interaction_set_real_top_64000.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r4.tsv.gz") # 64,000 interactions
+
+        # Read real data files in reverse order
+        cls.interaction_set_real_top_64000_rev = DiachromaticInteractionSet()
+        cls.interaction_set_real_top_64000_rev.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r4.tsv.gz") # 64,000 interaction
+        cls.interaction_set_real_top_64000_rev.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r3.tsv.gz") # 64,000 interactions
+        cls.interaction_set_real_top_64000_rev.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r2.tsv.gz") # 64,000 interactions
+        cls.interaction_set_real_top_64000_rev.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r1.tsv.gz") # 64,000 interactions
 
     def test_num_of_combined_inter(self):
         """
@@ -29,8 +42,7 @@ class TestCombineInteractions(TestCase):
         """
 
         i_num = len(self.interaction_set.interaction_list)
-        self.assertEqual(4, i_num) # equal up to 5 significant digits
-
+        self.assertEqual(4, i_num)
 
     def test_num_of_combined_inter_with_required_num_of_rep(self):
         """
@@ -98,3 +110,55 @@ class TestCombineInteractions(TestCase):
             if i.chrA == "chr11":
                 self.assertEqual(5, i.n_simple)
                 self.assertEqual(4, i.n_twisted)
+
+    def test_for_changes_in_results(self):
+        """
+        Here it is tested whether the results for a certain input have remain unchanged.
+        """
+
+        # Test by how many interactions the interaction set grew with each read file
+        self.assertEqual(64000, self.interaction_set_real_top_64000._read_file_info_dict['I_SET_SIZE'][0])
+        self.assertEqual(113804, self.interaction_set_real_top_64000._read_file_info_dict['I_SET_SIZE'][1])
+        self.assertEqual(157600, self.interaction_set_real_top_64000._read_file_info_dict['I_SET_SIZE'][2])
+        self.assertEqual(207364, self.interaction_set_real_top_64000._read_file_info_dict['I_SET_SIZE'][3])
+
+        # Test number of interactions that occur in at least one replicate
+        self.interaction_set_real_top_64000.write_diachromatic_interaction_file(required_replicates=1, target_file='foo')
+        os.remove('foo')
+        self.assertEqual(0, self.interaction_set_real_top_64000._write_file_info_dict['N_INCOMPLETE_DATA'][0])
+        self.assertEqual(207364, self.interaction_set_real_top_64000._write_file_info_dict['N_COMPLETE_DATA'][0])
+
+        # Test number of interactions that occur in at least two replicates
+        self.interaction_set_real_top_64000.write_diachromatic_interaction_file(required_replicates=2, target_file='foo')
+        os.remove('foo')
+        self.assertEqual(174777, self.interaction_set_real_top_64000._write_file_info_dict['N_INCOMPLETE_DATA'][0])
+        self.assertEqual(32587, self.interaction_set_real_top_64000._write_file_info_dict['N_COMPLETE_DATA'][0])
+
+        # Test number of interactions that occur in at least three replicates
+        self.interaction_set_real_top_64000.write_diachromatic_interaction_file(required_replicates=3, target_file='foo')
+        os.remove('foo')
+        self.assertEqual(195738, self.interaction_set_real_top_64000._write_file_info_dict['N_INCOMPLETE_DATA'][0])
+        self.assertEqual(11626, self.interaction_set_real_top_64000._write_file_info_dict['N_COMPLETE_DATA'][0])
+
+        # Test number of interactions that occur in all four replicates
+        self.interaction_set_real_top_64000.write_diachromatic_interaction_file(required_replicates=4, target_file='foo')
+        os.remove('foo')
+        self.assertEqual(202941, self.interaction_set_real_top_64000._write_file_info_dict['N_INCOMPLETE_DATA'][0])
+        self.assertEqual(4423, self.interaction_set_real_top_64000._write_file_info_dict['N_COMPLETE_DATA'][0])
+
+    def test_influence_of_reading_order_on_final_result(self):
+
+        # Regardless of the reading order, the interaction set must end up with the same number of interactions
+        self.assertEqual(self.interaction_set_real_top_64000._read_file_info_dict['I_SET_SIZE'][3],
+                         self.interaction_set_real_top_64000_rev._read_file_info_dict['I_SET_SIZE'][3])
+
+        # Test number of interactions that occur in at least one, two, three and four replicates
+        for required_replicates in [1, 2, 3, 4]:
+            self.interaction_set_real_top_64000.write_diachromatic_interaction_file(required_replicates=required_replicates, target_file='foo')
+            os.remove('foo')
+            self.interaction_set_real_top_64000_rev.write_diachromatic_interaction_file(required_replicates=required_replicates, target_file='foo')
+            os.remove('foo')
+            self.assertEqual(self.interaction_set_real_top_64000._write_file_info_dict['N_INCOMPLETE_DATA'][0],
+                             self.interaction_set_real_top_64000_rev._write_file_info_dict['N_INCOMPLETE_DATA'][0])
+            self.assertEqual(self.interaction_set_real_top_64000._write_file_info_dict['N_COMPLETE_DATA'][0],
+                             self.interaction_set_real_top_64000_rev._write_file_info_dict['N_COMPLETE_DATA'][0])

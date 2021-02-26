@@ -59,8 +59,10 @@ if len(gz_files) < int(required_replicates):
 # Read interaction files
 interaction_set = DiachromaticInteractionSet()
 for gz_file in gz_files:
-    interaction_set.parse_file(gz_file, verbose=True)
+    interaction_set.parse_file(i_file=gz_file, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
+read_file_info_table_row = interaction_set.get_read_file_info_table_row()
+print()
 
 # Write interactions that occur in the required number of replicates to file
 f_name_interactions = out_prefix + "_at_least_" + str(required_replicates) + "_combined_interactions.tsv.gz"
@@ -81,6 +83,7 @@ out_fh.write(parameter_info + '\n')
 
 # Report on reading files
 out_fh.write(read_file_info_report + '\n')
+out_fh.write(read_file_info_table_row + '\n')
 
 # Report on writing the file
 out_fh.write(write_file_info_report + '\n')
@@ -93,5 +96,3 @@ generated_file_info += "\t[INFO] " + f_name_interactions + '\n'
 out_fh.write(generated_file_info)
 
 out_fh.close()
-
-print(generated_file_info)

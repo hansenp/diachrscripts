@@ -2,7 +2,7 @@ import gzip
 import os
 import copy
 import warnings
-from numpy import arange, log
+from numpy import arange, log, log10
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
@@ -38,7 +38,7 @@ class DiachromaticInteractionSet:
         self._smallest_pval_thresh = 1.0
 
         # Dictionary with information about read files
-        self._read_file_info_dict = {'I_FILE': [], 'I_NUM': [], 'I_SET_SIZE': []}
+        self._read_file_info_dict = {'I_FILE': [], 'I_NUM': [], 'MIN_RP_NUM': [], 'MIN_DIST': [], 'I_NUM_SKIPPED_RP': [], 'I_NUM_SKIPPED_DIST': [], 'I_NUM_ADDED': [], 'I_SET_SIZE': []}
 
         # Dictionary with information about the last writing process
         self._write_file_info_dict = {}
@@ -61,12 +61,15 @@ class DiachromaticInteractionSet:
             print("\t[INFO] Read " + "{:,}".format(len(self._enriched_digests_set)) + " digests ...")
             print("[INFO] ... done.")
 
-    def parse_file(self, i_file: str = None, verbose: bool = False):
+    def parse_file(self, i_file: str = None, min_rp_num: int = 0, min_dist: int = 0, verbose: bool = False):
         """
         Parses a file with interactions. For interactions that have already been parsed from another file,
         only the simple and twisted read pair counts are added.
 
-        :param i_file: File with interactions
+        :param i_file: Diachromatic interaction file
+        :param min_rp_num: Interactions with a smaller number of read pairs are skipped
+        :param min_dist: Interactions with shorter distances are skipped
+        :param verbose:  If true, messages about progress will be written to the screen
         """
 
         # Check if interaction file exists
@@ -87,13 +90,21 @@ class DiachromaticInteractionSet:
         if i_file.endswith(".gz"):
             with gzip.open(i_file, 'rt') as fp:
                 n_lines = 0
+                n_skipped_rp = 0
+                n_skipped_dist = 0
                 for line in fp:
                     n_lines += 1
                     if verbose:
                         if n_lines % 1000000 == 0:
                             print("\t[INFO] Parsed " + "{:,}".format(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
-                    if d_inter.key in self._inter_dict:
+                    if d_inter.rp_total < min_rp_num:
+                        n_skipped_rp += 1
+                        continue
+                    if d_inter.i_dist < min_dist:
+                        n_skipped_dist += 1
+                        continue
+                    elif d_inter.key in self._inter_dict:
                         self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple,
                                                                               twisted=d_inter.n_twisted)
                     else:
@@ -101,13 +112,21 @@ class DiachromaticInteractionSet:
         else:
             with open(i_file) as fp:
                 n_lines = 0
+                n_skipped_rp = 0
+                n_skipped_dist = 0
                 for line in fp:
                     n_lines += 1
                     if verbose:
                         if n_lines % 1000000 == 0:
                             print("\t[INFO] Parsed " + "{:,}".format(n_lines) + " interaction lines ...")
                     d_inter = self._parse_line(line)
-                    if d_inter.key in self._inter_dict:
+                    if d_inter.rp_total < min_rp_num:
+                        n_skipped_rp += 1
+                        continue
+                    if d_inter.i_dist < min_dist:
+                        n_skipped_dist += 1
+                        continue
+                    elif d_inter.key in self._inter_dict:
                         self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple,
                                                                               twisted=d_inter.n_twisted)
                     else:
@@ -116,9 +135,16 @@ class DiachromaticInteractionSet:
         # Keep track of the name of the input file and the number of interactions
         self._read_file_info_dict['I_FILE'].append(i_file)
         self._read_file_info_dict['I_NUM'].append(n_lines)
-        self._read_file_info_dict['I_SET_SIZE'].append(len(self._inter_dict))
+        self._read_file_info_dict['MIN_RP_NUM'].append(min_rp_num)
+        self._read_file_info_dict['MIN_DIST'].append(min_dist)
+        self._read_file_info_dict['I_NUM_SKIPPED_RP'].append(n_skipped_rp)
+        self._read_file_info_dict['I_NUM_SKIPPED_DIST'].append(n_skipped_dist)
+        self._read_file_info_dict['I_NUM_ADDED'].append(n_lines - n_skipped_rp - n_skipped_dist)
+        i_set_size = len(self._inter_dict)
+        self._read_file_info_dict['I_SET_SIZE'].append(i_set_size)
 
         if verbose:
+            print("\t[INFO] Set size: " + "{:,}".format(i_set_size))
             print("[INFO] ... done.")
 
     def _parse_line(self, line: str = None) -> DiachromaticInteraction:
@@ -165,7 +191,7 @@ class DiachromaticInteractionSet:
                 statusB = 'N'
 
         # The interaction read has not yet been evaluated and categorized
-        if len(F) == 9:
+        if len(F) < 11 :
             di_inter = DiachromaticInteraction(
                 chrA=chrA,
                 fromA=fromA,
@@ -181,7 +207,7 @@ class DiachromaticInteractionSet:
 
         # The interaction read has already been evaluated and categorized
         if len(F) == 11:
-            nnl_p_val = float(F[9])
+            log10_p_val = float(F[9])
             i_cat = F[10]
             di_11_inter = DiachromaticInteraction11(
                 chrA=chrA,
@@ -194,7 +220,7 @@ class DiachromaticInteractionSet:
                 statusB=statusB,
                 simple=simple,
                 twisted=twisted,
-                nln_pval=nnl_p_val)
+                log10_pval=log10_p_val)
 
             # Set interaction category
             di_11_inter.set_category(i_cat)
@@ -221,7 +247,7 @@ class DiachromaticInteractionSet:
         min_rp, min_rp_pval = self._p_values.find_smallest_significant_n(pval_thresh, verbose=False)
 
         # Transform P-value threshold
-        nln_pval_thresh = -log(pval_thresh)
+        log10_pval_thresh = -log10(pval_thresh)
 
         # Iterate interaction objects
         d11_inter_dict = {}
@@ -241,10 +267,10 @@ class DiachromaticInteractionSet:
                 continue
 
             # Get P-value
-            nln_p_val = self._p_values.get_binomial_nnl_p_value(d_inter._simple, d_inter._twisted)
+            log10_p_val = self._p_values.get_binomial_log10_p_value(d_inter._simple, d_inter._twisted)
 
             # Determine interaction category
-            if nln_pval_thresh <= nln_p_val:
+            if log10_pval_thresh <= log10_p_val:
                 i_category = "DI"
                 n_di += 1
             else:
@@ -263,7 +289,7 @@ class DiachromaticInteractionSet:
                 statusB=d_inter.enrichment_status_tag_pair[1],
                 simple=d_inter.n_simple,
                 twisted=d_inter.n_twisted,
-                nln_pval=nln_p_val)
+                log10_pval=log10_p_val)
 
             # Set interaction category
             di_11_inter.set_category(i_category)
@@ -284,7 +310,7 @@ class DiachromaticInteractionSet:
         }
 
         if verbose:
-            print("[INFO] ...done.")
+            print("[INFO] ... done.")
 
         self._eval_cat_info_dict = report_dict
         return report_dict
@@ -355,7 +381,7 @@ class DiachromaticInteractionSet:
             report_dict[enr_cat]['UI'] = [ui_inter_dict[enr_cat]]
 
         if verbose:
-            print("[INFO] ...done.")
+            print("[INFO] ... done.")
 
         self._select_ref_info_dict = report_dict
         return report_dict
@@ -494,6 +520,14 @@ class DiachromaticInteractionSet:
         for i in range(0, file_num):
             report += "\t\t[INFO] " + "{:,}".format(self._read_file_info_dict['I_NUM'][i]) + " interactions from: \n" + \
                       "\t\t\t[INFO] " + self._read_file_info_dict['I_FILE'][i] + '\n' \
+                      "\t\t\t[INFO] Minimum number of read pairs: " + str(self._read_file_info_dict['MIN_RP_NUM'][i]) + '\n' \
+                      '\t\t\t[INFO] Skipped because less than ' + str(self._read_file_info_dict['MIN_RP_NUM'][i]) + \
+                      ' read pairs: ' + \
+                      "{:,}".format(self._read_file_info_dict['I_NUM_SKIPPED_RP'][i]) + '\n' + \
+                      '\t\t\t[INFO] Skipped because shorter than ' + "{:,}".format(self._read_file_info_dict['MIN_DIST'][i]) + \
+                      ' bp: ' + \
+                      "{:,}".format(self._read_file_info_dict['I_NUM_SKIPPED_DIST'][i]) + '\n' + \
+                      '\t\t\t[INFO] Added to set: ' + "{:,}".format(self._read_file_info_dict['I_NUM_ADDED'][i]) + '\n' \
                       '\t\t\t[INFO] Set size: ' + "{:,}".format(self._read_file_info_dict['I_SET_SIZE'][i]) + '\n'
         report += "\t[INFO] The interaction set has " + \
                   "{:,}".format(self._read_file_info_dict['I_SET_SIZE'][-1]) + " interactions." + '\n'
@@ -501,11 +535,36 @@ class DiachromaticInteractionSet:
 
         return report
 
-    def get_write_file_info_dict(self):
+    def get_read_file_info_table_row(self):
         """
-        :return: Dictionary that contains information about the last writing process.
+        :return: String consisting of a header line and a lines with values relating to parsed interactions
         """
-        return self._write_file_info_dict
+
+        # Header row
+        table_row = ":TR_READ:" + "\t" + \
+                    "I_FILE" + "\t" + \
+                    "I_NUM" + "\t" + \
+                    "MIN_RP_NUM" + "\t" + \
+                    "I_NUM_SKIPPED_RP" + "\t" + \
+                    "MIN_DIST" + "\t" + \
+                    "I_NUM_SKIPPED_DIST" + "\t" + \
+                    "I_NUM_ADDED" + "\t" + \
+                    "I_SET_SIZE" + '\n'
+
+        # Rows with values
+        file_num = len(self._read_file_info_dict['I_FILE'])
+        for i in range(0, file_num):
+            table_row += ":TR_READ:" + "\t"
+            table_row += self._read_file_info_dict['I_FILE'][i] + '\t'
+            table_row += str(self._read_file_info_dict['I_NUM'][i]) + '\t'
+            table_row += str(self._read_file_info_dict['MIN_RP_NUM'][i]) + '\t'
+            table_row += str(self._read_file_info_dict['I_NUM_SKIPPED_RP'][i]) + '\t'
+            table_row += str(self._read_file_info_dict['MIN_DIST'][i]) + '\t'
+            table_row += str(self._read_file_info_dict['I_NUM_SKIPPED_DIST'][i]) + '\t'
+            table_row += str(self._read_file_info_dict['I_NUM_ADDED'][i]) + '\t'
+            table_row += str(self._read_file_info_dict['I_SET_SIZE'][i]) + '\n'
+
+        return table_row
 
     def get_write_file_info_report(self):
         """
@@ -530,22 +589,18 @@ class DiachromaticInteractionSet:
         :return: String consisting of a header line and a line with values relating to written interactions
         """
 
-        table_row = "TARGET_FILE" + "\t" + \
+        table_row = ":TR_WRITE:" + "\t"\
+                    "TARGET_FILE" + "\t" + \
                     "REQUIRED_REPLICATES" + "\t" + \
                     "N_INCOMPLETE_DATA" + "\t" + \
                     "N_COMPLETE_DATA" + '\n'
-        table_row += str(self._write_file_info_dict['TARGET_FILE'][0]) + "\t" + \
+        table_row += ":TR_WRITE:" + "\t" + \
+                     str(self._write_file_info_dict['TARGET_FILE'][0]) + "\t" + \
                      str(self._write_file_info_dict['REQUIRED_REPLICATES'][0]) + "\t" + \
                      str(self._write_file_info_dict['N_INCOMPLETE_DATA'][0]) + "\t" + \
                      str(self._write_file_info_dict['N_COMPLETE_DATA'][0]) + '\n'
 
         return table_row
-
-    def get_eval_cat_info_dict(self):
-        """
-        :return: Dictionary that contains information about the last evaluation and categorization process.
-        """
-        return self._eval_cat_info_dict
 
     def get_eval_cat_info_report(self):
         """
@@ -557,8 +612,8 @@ class DiachromaticInteractionSet:
             self._eval_cat_info_dict['PVAL_THRESH'][0]) + '\n'
         report += "\t[INFO] Minimum number of read pairs required for significance: " + str(
             self._eval_cat_info_dict['MIN_RP'][0]) + '\n'
-        report += "\t[INFO] Corresponding largest P-value: " + "{:.5f}".format(
-            self._eval_cat_info_dict['MIN_RP_PVAL'][0]) + '\n'
+        report += "\t[INFO] Smallest P-value with " + str(self._eval_cat_info_dict['MIN_RP'][0]) + " read pairs: " +\
+                  "{:.5f}".format( self._eval_cat_info_dict['MIN_RP_PVAL'][0]) + '\n'
         report += "\t[INFO] Processed interactions: " + "{:,}".format(self._eval_cat_info_dict['N_PROCESSED'][0]) + '\n'
         report += "\t[INFO] Discarded interactions: " + "{:,}".format(self._eval_cat_info_dict['N_DISCARDED'][0]) + '\n'
         report += "\t[INFO] Not significant interactions (UI): " + "{:,}".format(self._eval_cat_info_dict['N_UNDIRECTED'][0]) + '\n'
@@ -574,7 +629,7 @@ class DiachromaticInteractionSet:
         """
 
         table_row = ":TR_EVAL_CAT:" + '\t' + \
-                    "OUT_PREFIX" + '\t' + \
+                    "DESCRIPTION" + '\t' + \
                     "PVAL_THRESH" + '\t' + \
                     "MIN_RP" + '\t' + \
                     "MIN_RP_PVAL" + '\t' + \
@@ -639,7 +694,7 @@ class DiachromaticInteractionSet:
 
         return report
 
-    def get_select_ref_info_table_row(self, out_prefix: str = None):
+    def get_select_ref_info_table_row(self, description: str = None):
         """
         :return: String consisting of a header line and a line with values relating to the last selection of reference
         interactions
@@ -647,23 +702,27 @@ class DiachromaticInteractionSet:
 
         # Header line
         table_row = ":TR_SELECT:" + '\t'
-        table_row += "OUT_PREFIX" + '\t'
+        table_row += "DESCRIPTION" + '\t'
         for i_cat in ['DI', 'UIR', 'M_UIR', 'UI']:
             for enr_cat in ['NN', 'NE', 'EN', 'EE']:
-                if not (i_cat == 'UI' and enr_cat == 'EE'):
-                    table_row += i_cat + '_' + enr_cat + '\t'
-                else:
-                    table_row += i_cat + '_' + enr_cat + '\n'
+                table_row += i_cat + '_' + enr_cat + '\t'
+            if i_cat != 'UI':
+                table_row += i_cat + '_TOTAL' + '\t'
+            else:
+                table_row += i_cat + '_TOTAL' + '\n'
 
         # Line with values
         table_row += ":TR_SELECT:" + '\t'
-        table_row += str(out_prefix) + '\t'
+        table_row += str(description) + '\t'
         for i_cat in ['DI','UIR','M_UIR','UI']:
+            total = 0
             for enr_cat in ['NN','NE','EN','EE']:
-                if not (i_cat == 'UI' and enr_cat == 'EE'):
-                    table_row += str(self._select_ref_info_dict[enr_cat][i_cat][0]) + '\t'
-                else:
-                    table_row += str(self._select_ref_info_dict[enr_cat][i_cat][0]) + '\n'
+                total += self._select_ref_info_dict[enr_cat][i_cat][0]
+                table_row += str(self._select_ref_info_dict[enr_cat][i_cat][0]) + '\t'
+            if i_cat != 'UI':
+                table_row += str(total) + '\t'
+            else:
+                table_row += str(total) + '\n'
 
         return table_row
 
