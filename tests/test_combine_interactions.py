@@ -15,24 +15,25 @@ class TestCombineInteractions(TestCase):
 
         # Use test toy example data to create a DiachromaticInteractionParser object
         cls.interaction_set = DiachromaticInteractionSet()
-        cls.interaction_set.parse_file("data/test_01/diachromatic_interaction_file_r1.tsv.gz") # one interaction
-        cls.interaction_set.parse_file("data/test_01/diachromatic_interaction_file_r2.tsv.gz") # two interactions
-        cls.interaction_set.parse_file("data/test_01/diachromatic_interaction_file_r3.tsv.gz") # three interactions
-        cls.interaction_set.parse_file("data/test_01/diachromatic_interaction_file_r4.tsv.gz") # four interactions
+        current_dir =  os.path.dirname(__file__)
+        cls.interaction_set.parse_file(os.path.join(current_dir,"data/test_01/diachromatic_interaction_file_r1.tsv.gz")) # one interaction
+        cls.interaction_set.parse_file(os.path.join(current_dir,"data/test_01/diachromatic_interaction_file_r2.tsv.gz")) # two interactions
+        cls.interaction_set.parse_file(os.path.join(current_dir,"data/test_01/diachromatic_interaction_file_r3.tsv.gz")) # three interactions
+        cls.interaction_set.parse_file(os.path.join(current_dir,"data/test_01/diachromatic_interaction_file_r4.tsv.gz")) # four interactions
 
         # Use real data sample files (top 64,000 of Megakaryocyte data) to create a DiachromaticInteractionParser object
         cls.interaction_set_real_top_64000 = DiachromaticInteractionSet()
-        cls.interaction_set_real_top_64000.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r1.tsv.gz") # 64,000 interaction
-        cls.interaction_set_real_top_64000.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r2.tsv.gz") # 64,000 interactions
-        cls.interaction_set_real_top_64000.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r3.tsv.gz") # 64,000 interactions
-        cls.interaction_set_real_top_64000.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r4.tsv.gz") # 64,000 interactions
+        cls.interaction_set_real_top_64000.parse_file(os.path.join(current_dir,"data/test_01/real_data/diachromatic_interaction_file_top_64000_r1.tsv.gz")) # 64,000 interaction
+        cls.interaction_set_real_top_64000.parse_file(os.path.join(current_dir,"data/test_01/real_data/diachromatic_interaction_file_top_64000_r2.tsv.gz")) # 64,000 interactions
+        cls.interaction_set_real_top_64000.parse_file(os.path.join(current_dir,"data/test_01/real_data/diachromatic_interaction_file_top_64000_r3.tsv.gz")) # 64,000 interactions
+        cls.interaction_set_real_top_64000.parse_file(os.path.join(current_dir,"data/test_01/real_data/diachromatic_interaction_file_top_64000_r4.tsv.gz")) # 64,000 interactions
 
         # Read real data files in reverse order
         cls.interaction_set_real_top_64000_rev = DiachromaticInteractionSet()
-        cls.interaction_set_real_top_64000_rev.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r4.tsv.gz") # 64,000 interaction
-        cls.interaction_set_real_top_64000_rev.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r3.tsv.gz") # 64,000 interactions
-        cls.interaction_set_real_top_64000_rev.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r2.tsv.gz") # 64,000 interactions
-        cls.interaction_set_real_top_64000_rev.parse_file("data/test_01/real_data/diachromatic_interaction_file_top_64000_r1.tsv.gz") # 64,000 interactions
+        cls.interaction_set_real_top_64000_rev.parse_file(os.path.join(current_dir,"data/test_01/real_data/diachromatic_interaction_file_top_64000_r4.tsv.gz")) # 64,000 interaction
+        cls.interaction_set_real_top_64000_rev.parse_file(os.path.join(current_dir,"data/test_01/real_data/diachromatic_interaction_file_top_64000_r3.tsv.gz")) # 64,000 interactions
+        cls.interaction_set_real_top_64000_rev.parse_file(os.path.join(current_dir,"data/test_01/real_data/diachromatic_interaction_file_top_64000_r2.tsv.gz")) # 64,000 interactions
+        cls.interaction_set_real_top_64000_rev.parse_file(os.path.join(current_dir,"data/test_01/real_data/diachromatic_interaction_file_top_64000_r1.tsv.gz")) # 64,000 interactions
 
     def test_num_of_combined_inter(self):
         """
