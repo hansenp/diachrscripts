@@ -70,12 +70,20 @@ class RandomizeInteractionSet:
 
         # Get list of observed P-values
         log10_pval_list = []
+        rp_list = []
         for d_inter in interaction_set.interaction_list:
             log10_pval_list.append(self.p_values.get_binomial_log10_p_value(d_inter.n_simple, d_inter.n_twisted))
+            rp_list.append(d_inter.rp_total)
 
         # Determine number of significant interactions for each nominal alpha
         sig_num_o_list = self._determine_significant_pvals_at_nominal_alphas_log10(
             log10_nominal_alphas=log10_nominal_alphas, log10_p_values=log10_pval_list)
+
+        # Determine number of potentially significant interactions for each nominal alpha
+        pot_sig_num_list = self._determine_potentially_significant_inter_num_at_nominal_alphas_log10(
+            log10_nominal_alphas=log10_nominal_alphas, rp_nums=rp_list)
+
+        # Determine number of potentially significant interactions that are not significant for each nominal alpha
 
         if verbose:
             print("\t[INFO] Randomizing interactions ...")
@@ -190,6 +198,7 @@ class RandomizeInteractionSet:
                 {
                     'NOMINAL_ALPHA': nominal_alphas,
                     'SIG_NUM_R_GT_OBS': sig_num_r_gt_obs_list,
+                    'POT_SIG_NUM': pot_sig_num_list,
                     'SIG_NUM_O': sig_num_o_list,
                     'SIG_NUM_R_MEAN': sig_num_r_mean_list,
                     'SIG_NUM_R_SD': sig_num_r_sd_list,
@@ -310,7 +319,7 @@ class RandomizeInteractionSet:
         :param log10_nominal_alphas: List of nominal alphas (negative decadic logarithm)
         :param log10_p_values: List of P-values (negative decadic logarithm)
         :return: List which has the same length as 'nominal_alphas' and contains, for each nominal alpha 'a',
-        that number of P-values that are smaller or equal than 'a'.
+        the number of P-values that are smaller or equal than 'a'.
         """
 
         # Sort input lists in ascending order
@@ -334,6 +343,48 @@ class RandomizeInteractionSet:
             while log10_p_value_idx < len(log10_p_values) and log10_nominal_alpha <= log10_p_values[log10_p_value_idx]:
                 sig_num += 1
                 log10_p_value_idx += 1
+
+            # As  soon as the P-value is larger than the current nominal alpha,
+            # add the current number of interactions to the list that will be returned
+            sig_num_list.append(sig_num)
+
+        return sig_num_list
+
+    def _determine_potentially_significant_inter_num_at_nominal_alphas_log10(self, log10_nominal_alphas: [float], rp_nums: [int]):
+        """
+        Determine numbers of potentially significant interactions at different nominal alphas (thresholds).
+
+        :param log10_nominal_alphas: List of nominal alphas (negative decadic logarithm)
+        :param rp_nums: List of read pair numbers
+        :return: List which has the same length as 'nominal_alphas' and contains, for each nominal alpha 'a',
+        the number of potentially significant interactions.
+        """
+
+        # Sort input lists in ascending order
+        log10_nominal_alphas = sorted(log10_nominal_alphas, reverse=True)
+        rp_nums = sorted(rp_nums, reverse=True)
+
+        # List of potentially  significant interactions that will be returned
+        sig_num_list = []
+
+        # Index variable for the list of read pair numbers
+        rp_num_idx = 0
+
+        # Counting variable for the cumulative number of potentially significant interactions
+        sig_num = 0
+
+        # Go through the list of nominal alphas sorted in ascending order
+        for log10_nominal_alpha in log10_nominal_alphas:
+
+            # Determine minimum read pair number for current nominal alpha
+            nominal_alpha = 10 ** -log10_nominal_alpha
+            min_rp_num, min_rp_num_pval = self.p_values.find_smallest_significant_n(nominal_alpha)
+
+            # As long as the numbers of read pairs are smaller than required for significance for the current nominal
+            # alpha, increment index and counter variable
+            while rp_num_idx < len(rp_nums) and min_rp_num <= rp_nums[rp_num_idx]:
+                sig_num += 1
+                rp_num_idx += 1
 
             # As  soon as the P-value is larger than the current nominal alpha,
             # add the current number of interactions to the list that will be returned
@@ -420,6 +471,8 @@ class RandomizeInteractionSet:
             report += '\t\t\t' + ", ".join(str(i) for i in self._randomization_info_dict['SIG_NUM_R_LISTS'][nominal_alphas[nominal_alpha_idx]][:9]) + ", ..." + '\n'
         report += "\t\t[INFO] Iterations with more significant interactions than observed: " \
                   + "{:,}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_R_GT_OBS'][nominal_alpha_idx]) + '\n'
+        report += "\t\t[INFO] Original number of potentially significant interactions: " \
+                  + "{:,}".format(self._randomization_info_dict['RESULTS']['POT_SIG_NUM'][nominal_alpha_idx]) + '\n'
         report += "\t\t[INFO] Original number of significant interactions: " \
                   + "{:,}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_O'][nominal_alpha_idx]) + '\n'
         report += "\t\t[INFO] Mean number of significant randomized interactions: " \
@@ -474,6 +527,7 @@ class RandomizeInteractionSet:
         table_row += "NOMINAL_ALPHA" + '\t'
 
         # Results
+        table_row += "POT_SIG_NUM" + '\t'
         table_row += "SIG_NUM_R_GT_OBS" + '\t'
         table_row += "SIG_NUM_O" + '\t'
         table_row += "SIG_NUM_R_MEAN" + '\t'
@@ -495,8 +549,8 @@ class RandomizeInteractionSet:
             random_seed = str(self._randomization_info_dict['INPUT_PARAMETERS']['RANDOM_SEED'][0])
             nominal_alpha = "{:.5f}".format(
                 self._randomization_info_dict['RESULTS']['NOMINAL_ALPHA'][nominal_alpha_idx])
-
-            sig_num_r_gto = str(self._randomization_info_dict['RESULTS']['SIG_NUM_R_GT_OBS'][nominal_alpha_idx])
+            pot_sig_num = str(self._randomization_info_dict['RESULTS']['SIG_NUM_R_GT_OBS'][nominal_alpha_idx])
+            sig_num_r_gto = str(self._randomization_info_dict['RESULTS']['POT_SIG_NUM'][nominal_alpha_idx])
             sig_num_o = str(self._randomization_info_dict['RESULTS']['SIG_NUM_O'][nominal_alpha_idx])
             sig_num_r_mean = "{:.2f}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_R_MEAN'][nominal_alpha_idx])
             sig_num_r_sd = "{:.2f}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_R_SD'][nominal_alpha_idx])
@@ -520,6 +574,7 @@ class RandomizeInteractionSet:
             table_row += nominal_alpha + '\t'
 
             # Results
+            table_row += pot_sig_num + '\t'
             table_row += sig_num_r_gto + '\t'
             table_row += sig_num_o + '\t'
             table_row += sig_num_r_mean + '\t'

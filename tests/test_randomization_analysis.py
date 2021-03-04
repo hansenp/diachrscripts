@@ -19,7 +19,7 @@ class TestRandomizationAnalysis(TestCase):
         # Mute warnings
         warnings.simplefilter('ignore')
 
-        # Prepare test data to test correct use of P-value thresholds
+        # Prepare test data to test for correct use of P-value thresholds
         cls.interaction_set_1 = DiachromaticInteractionSet()
         cls.interaction_set_1.parse_file("data/test_03/diachromatic_interaction_file_fdr_1.tsv.gz")
         cls.randomize_1 = RandomizeInteractionSet(random_seed=42)
@@ -33,6 +33,11 @@ class TestRandomizationAnalysis(TestCase):
         cls.interaction_set_64000 = DiachromaticInteractionSet()
         cls.interaction_set_64000.parse_file("data/test_03/diachromatic_interaction_file_fdr_top_64000.tsv.gz")
         cls.randomize_64000 = RandomizeInteractionSet(random_seed=0)
+
+        # Prepare interaction set to test for correct determination of potentially significant interaction numbers
+        cls.interaction_set_pot_sig = DiachromaticInteractionSet()
+        cls.interaction_set_pot_sig.parse_file("data/test_03/diachromatic_interaction_file_test_pot_sig.tsv.gz")
+        cls.randomize_pot_sig = RandomizeInteractionSet(random_seed=0)
 
     def test_parallel_processing(self):
         """
@@ -376,3 +381,24 @@ class TestRandomizationAnalysis(TestCase):
         determined_z_score = randomization_info_dict['RESULTS']['Z_SCORE'][result_index]
         self.assertEqual("NA", determined_z_score, msg='When this test was created, a different Z-score was '
                                                        'determined!')
+
+    def test_for_correct_determination_potentially_significant_interactions_numbers(self):
+        """
+        Here it is tested whether the number of potentially significant interactions at different nominal alphas is
+        determined correctly. We prepared a test file that contains a total of nine interactions. There are three
+        interactions each with five, six and seven read pairs.
+        """
+
+        nominal_alpha_max = 0.07 # The smallest P-value with 5 read pairs is 0.0625 is included
+        nominal_alpha_step = 0.00001
+        nominal_alphas = arange(nominal_alpha_step, nominal_alpha_max + nominal_alpha_step, nominal_alpha_step)
+
+        # Perform randomization with the prepared interaction set
+        randomize_pot_sig_info_dict = self.randomize_pot_sig.perform_randomization_analysis(
+            interaction_set = self.interaction_set_pot_sig,
+            nominal_alphas = nominal_alphas,
+            iter_num=1)
+
+        # Check interaction numbers at the transitions to fewer read pairs
+        #randomize_pot_sig_info_dict['RESULTS']['']
+
