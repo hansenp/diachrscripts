@@ -385,11 +385,11 @@ class TestRandomizationAnalysis(TestCase):
     def test_for_correct_determination_potentially_significant_interactions_numbers(self):
         """
         Here it is tested whether the number of potentially significant interactions at different nominal alphas is
-        determined correctly. We prepared a test file that contains a total of nine interactions. There are three
-        interactions each with five, six and seven read pairs.
+        determined correctly. We prepared a test file that contains a total of nine interactions, three each with 7, 6
+        and 5 read pairs. For each read pair number, there is one interaction with zero simple read pairs.
         """
 
-        nominal_alpha_max = 0.07 # The smallest P-value with 5 read pairs is 0.0625 is included
+        nominal_alpha_max = 0.07 # The smallest P-value with 5 read pairs (0.0625) is included
         nominal_alpha_step = 0.00001
         nominal_alphas = arange(nominal_alpha_step, nominal_alpha_max + nominal_alpha_step, nominal_alpha_step)
 
@@ -399,6 +399,43 @@ class TestRandomizationAnalysis(TestCase):
             nominal_alphas = nominal_alphas,
             iter_num=1)
 
-        # Check interaction numbers at the transitions to fewer read pairs
-        #randomize_pot_sig_info_dict['RESULTS']['']
+        # Check interaction numbers at the transitions to largerr nominal alphas and fewer required read pairs
+        nominal_alphas = randomize_pot_sig_info_dict['RESULTS']['NOMINAL_ALPHA']
+
+        # Up to a nominal alpha of 0.03125, at least 7 read pairs are required for significance
+        nominal_alpha_idx = nominal_alphas.index(0.03125)
+        # We have three interactions with 7 read pairs
+        pot_sig_num = randomize_pot_sig_info_dict['RESULTS']['POT_SIG_NUM'][nominal_alpha_idx]
+        self.assertEqual(3, pot_sig_num)
+        # One of these interactions has zero simple read pairs and is significant at a nominal alpha of 0.03125
+        sig_num_o = randomize_pot_sig_info_dict['RESULTS']['SIG_NUM_O'][nominal_alpha_idx]
+        self.assertEqual(1, sig_num_o)
+        # For the next larger nominal alpha, only 6 read pairs are required
+        nominal_alpha_idx = nominal_alphas.index(0.03126)
+        # and we have six potentially significant interactions
+        pot_sig_num = randomize_pot_sig_info_dict['RESULTS']['POT_SIG_NUM'][nominal_alpha_idx]
+        self.assertEqual(6, pot_sig_num)
+        # and two significant interactions
+        sig_num_o = randomize_pot_sig_info_dict['RESULTS']['SIG_NUM_O'][nominal_alpha_idx]
+        self.assertEqual(2, sig_num_o)
+
+        # Up to a nominal alpha of 0.06250, at least 6 read pairs are required for significance
+        nominal_alpha_idx = nominal_alphas.index(0.06250)
+        # We have six interactions with at least 6 read pairs
+        pot_sig_num = randomize_pot_sig_info_dict['RESULTS']['POT_SIG_NUM'][nominal_alpha_idx]
+        self.assertEqual(6, pot_sig_num)
+        # Two of these interactions have zero simple read pairs and are significant at a nominal alpha of 0.06250
+        sig_num_o = randomize_pot_sig_info_dict['RESULTS']['SIG_NUM_O'][nominal_alpha_idx]
+        self.assertEqual(2, sig_num_o)
+        # For the next larger nominal alpha, only 5 read pairs are required
+        nominal_alpha_idx = nominal_alphas.index(0.06251)
+        # and we have nine potentially significant interactions
+        pot_sig_num = randomize_pot_sig_info_dict['RESULTS']['POT_SIG_NUM'][nominal_alpha_idx]
+        self.assertEqual(9, pot_sig_num)
+        # and three significant interactions
+        sig_num_o = randomize_pot_sig_info_dict['RESULTS']['SIG_NUM_O'][nominal_alpha_idx]
+        self.assertEqual(3, sig_num_o)
+
+
+
 

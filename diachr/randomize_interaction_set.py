@@ -444,6 +444,7 @@ class RandomizeInteractionSet:
                 report = "[ERROR] No results available for a nominal alpha of " + "{:.5f}".format(nominal_alpha) + '!' + '\n'
             report += "\t[ERROR] Results available for: " + ", ".join("{:.5f}".format(nominal_alpha) for nominal_alpha in nominal_alphas) +  '\n'
             return report
+
         nominal_alpha_idx = nominal_alphas.index(nominal_alpha)
 
         report = "[INFO] Report on randomization:" + '\n'
