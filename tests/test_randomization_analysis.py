@@ -435,7 +435,3 @@ class TestRandomizationAnalysis(TestCase):
         # and three significant interactions
         sig_num_o = randomize_pot_sig_info_dict['RESULTS']['SIG_NUM_O'][nominal_alpha_idx]
         self.assertEqual(3, sig_num_o)
-
-
-
-

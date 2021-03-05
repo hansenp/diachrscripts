@@ -158,7 +158,7 @@ if p_value_threshold is None:
 
     # Get table row for randomization for the determined P-value threshold
     fdr_info_info_table_row = randomize_fdr.get_randomization_info_table_row(
-        nominal_alphas_selected = [p_value_threshold, 0.01],
+        nominal_alphas_selected = [p_value_threshold, 0.01, 0.05],
         description=description_tag.replace(' ','_'))
 
     # Get entire table with randomization results
