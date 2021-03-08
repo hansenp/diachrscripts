@@ -470,7 +470,7 @@ class RandomizeInteractionSet:
             report += '\t\t\t' + ", ".join(str(i) for i in self._randomization_info_dict['SIG_NUM_R_LISTS'][nominal_alphas[nominal_alpha_idx]]) +  '\n'
         else:
             report += '\t\t\t' + ", ".join(str(i) for i in self._randomization_info_dict['SIG_NUM_R_LISTS'][nominal_alphas[nominal_alpha_idx]][:9]) + ", ..." + '\n'
-        report += "\t\t[INFO] Potentially significant interactions at this nominal alpha: " \
+        report += "\t\t[INFO] Powered interactions at this nominal alpha: " \
                   + "{:,}".format(self._randomization_info_dict['RESULTS']['POT_SIG_NUM'][nominal_alpha_idx]) + '\n'
         report += "\t\t[INFO] Observed number of significant interactions: " \
                   + "{:,}".format(self._randomization_info_dict['RESULTS']['SIG_NUM_O'][nominal_alpha_idx]) + '\n'
@@ -694,7 +694,7 @@ class RandomizeInteractionSet:
         ax[0].text(-0.18, 0.60, 'Selected nominal alpha: ' + "{:.5f}".format(nominal_alpha_selected),
                    fontsize=header_font_size, fontweight='bold')
 
-        ax[0].text(-0.18, 0.50, "Potentially significant interactions at this nominal alpha: " + "{:,}".format(pot_sig_num),
+        ax[0].text(-0.18, 0.50, "Powered interactions at this nominal alpha: " + "{:,}".format(pot_sig_num),
                    fontsize=header_font_size, fontweight='bold')
         ax[0].text(-0.18, 0.45, 'Observed number of significant interactions: ' + "{:,}".format(sig_num_o),
                    fontsize=header_font_size, fontweight='bold')
@@ -924,7 +924,7 @@ class RandomizeInteractionSet:
         ax[0].text(-0.18, 0.60, 'Chosen FDR threshold: ' + "{:.5f}".format(chosen_fdr_thresh),
                    fontsize=header_font_size, fontweight='bold')
 
-        ax[0].text(-0.18, 0.50, 'Determined P-value threshold: ' + "{:.5f}".format(pval_thresh_result),
+        ax[0].text(-0.18, 0.50, 'P-value threshold: ' + "{:.5f}".format(pval_thresh_result),
                    fontsize=header_font_size, fontweight='bold')
         ax[0].text(-0.14, 0.45, '-log10(' + "{:.5f}".format(pval_thresh_result) + ") = " + "{:.2f}".format(-log10(pval_thresh_result)),
                    fontsize=header_font_size)
@@ -932,7 +932,7 @@ class RandomizeInteractionSet:
         ax[0].text(-0.18, 0.35,
                    'Smallest possible P-value with ' + str(min_rp_num_result) + ' read pairs: ' + "{:.5f}".format(
                        min_rp_num_pval_result), fontsize=header_font_size)
-        ax[0].text(-0.18, 0.30, 'Number of potentially significant interactions: ' + "{:,}".format(pot_sig_num_result),
+        ax[0].text(-0.18, 0.30, 'Powered interactions: ' + "{:,}".format(pot_sig_num_result),
                    fontsize=header_font_size)
         ax[0].text(-0.18, 0.25, 'Observed number of significant interactions: ' + "{:,}".format(sig_num_o_result),
                    fontsize=header_font_size, fontweight='bold')
@@ -950,7 +950,7 @@ class RandomizeInteractionSet:
 
         # Plot P-value thresholds
         ax[1].plot(pval_thresh_column[:idx_max], -log10(pval_thresh_column[:idx_max]))
-        ax[1].set_title("Determined P-value threshold: " + "{:.5f}".format(pval_thresh_result), loc='left')
+        ax[1].set_title("P-value threshold: " + "{:.5f}".format(pval_thresh_result), loc='left')
         ax[1].set(xlabel="Nominal alpha")
         ax[1].set(ylabel="-log10(Nominal alpha)")
         ax[1].axhline(-log10(pval_thresh_result), linestyle='--', color=hv_col, linewidth=hv_lwd)
@@ -978,9 +978,9 @@ class RandomizeInteractionSet:
 
         # Plot number of potentially significant interactions
         ax[4].plot(pval_thresh_column[:idx_max], pot_sig_num_column[:idx_max], label='POT_SIG_NUM')
-        ax[4].set_title('Number of potentially significant interactions: ' + "{:,}".format(pot_sig_num_result), loc='left')
+        ax[4].set_title('Number of powered interactions: ' + "{:,}".format(pot_sig_num_result), loc='left')
         ax[4].set(xlabel='Nominal alpha')
-        ax[4].set(ylabel='Potentially significant interactions')
+        ax[4].set(ylabel='Powered interactions')
         ax[4].legend(loc="upper left", fontsize=8)
         ax[4].axhline(pot_sig_num_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[4].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)

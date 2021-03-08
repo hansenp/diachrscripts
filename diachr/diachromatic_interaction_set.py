@@ -524,6 +524,7 @@ class DiachromaticInteractionSet:
                       '\t\t\t[INFO] Skipped because less than ' + str(self._read_file_info_dict['MIN_RP_NUM'][i]) + \
                       ' read pairs: ' + \
                       "{:,}".format(self._read_file_info_dict['I_NUM_SKIPPED_RP'][i]) + '\n' + \
+                      "\t\t\t[INFO] Minimum interaction distance: " + "{:,}".format(self._read_file_info_dict['MIN_DIST'][i]) + '\n' \
                       '\t\t\t[INFO] Skipped because shorter than ' + "{:,}".format(self._read_file_info_dict['MIN_DIST'][i]) + \
                       ' bp: ' + \
                       "{:,}".format(self._read_file_info_dict['I_NUM_SKIPPED_DIST'][i]) + '\n' + \

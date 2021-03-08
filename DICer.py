@@ -124,6 +124,7 @@ interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_dige
 min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(nominal_alpha_max)
 interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, min_dist=min_inter_dist, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
+read_file_info_table_row = interaction_set.get_read_file_info_table_row()
 print()
 
 # If no P-value threshold was passed, determine a P-value threshold so that the FDR is kept below a threshold
@@ -135,6 +136,8 @@ if p_value_threshold is None:
         nominal_alphas= append(nominal_alphas, 0.01)
     if 0.05 not in nominal_alphas:
         nominal_alphas = append(nominal_alphas, 0.05)
+    if 0.10 not in nominal_alphas:
+        nominal_alphas = append(nominal_alphas, 0.10)
 
     # Perform randomization procedure
     randomize_fdr = RandomizeInteractionSet(random_seed=random_seed)
@@ -158,7 +161,7 @@ if p_value_threshold is None:
 
     # Get table row for randomization for the determined P-value threshold
     fdr_info_info_table_row = randomize_fdr.get_randomization_info_table_row(
-        nominal_alphas_selected = [p_value_threshold, 0.01, 0.05],
+        nominal_alphas_selected = [p_value_threshold, 0.01, 0.05, 0.10],
         description=description_tag.replace(' ','_'))
 
     # Get entire table with randomization results
@@ -185,11 +188,17 @@ if p_value_threshold is None:
         pdf_file_name  = out_prefix + "_randomization_histogram_at_001.pdf",
         description = description_tag + " - At a nominal alpha of 0.01")
 
-    # Create randomization histogram for a nominal alpha of 0.01
+    # Create randomization histogram for a nominal alpha of 0.05
     randomize_fdr.get_randomization_info_plot(
         nominal_alpha_selected = 0.05,
         pdf_file_name  = out_prefix + "_randomization_histogram_at_005.pdf",
         description = description_tag + " - At a nominal alpha of 0.05")
+
+    # Create randomization histogram for a nominal alpha of 0.10
+    randomize_fdr.get_randomization_info_plot(
+        nominal_alpha_selected = 0.10,
+        pdf_file_name  = out_prefix + "_randomization_histogram_at_010.pdf",
+        description = description_tag + " - At a nominal alpha of 0.10")
 
 # Calculate P-values of interactions and assign interactions to 'DI' or 'UI'
 interaction_set.evaluate_and_categorize_interactions(p_value_threshold, verbose=True)
@@ -207,6 +216,7 @@ print()
 f_name_interactions = out_prefix + "_evaluated_and_categorized_interactions.tsv.gz"
 interaction_set.write_diachromatic_interaction_file(target_file=f_name_interactions, verbose=True)
 write_file_info_report = interaction_set.get_write_file_info_report()
+write_file_info_table_row = interaction_set.get_write_file_info_table_row()
 print()
 
 # Create a file with reports and a table with randomization results
@@ -220,6 +230,7 @@ out_fh_summary.write(parameter_info + '\n')
 
 # Report on reading files
 out_fh_summary.write(read_file_info_report + '\n')
+out_fh_summary.write(read_file_info_table_row + '\n')
 
 # Report on the determination of the P-value threshold using the FDR procedure
 if args.p_value_threshold is None:
@@ -242,6 +253,7 @@ out_fh_summary.write(select_ref_info_table_row + '\n')
 
 # Report on writing the file
 out_fh_summary.write(write_file_info_report + '\n')
+out_fh_summary.write(write_file_info_table_row + '\n')
 
 # Report on generated files
 generated_file_info = "[INFO] Generated files:" + '\n'
@@ -252,6 +264,7 @@ if args.p_value_threshold is None:
     generated_file_info += "\t[INFO] " + out_prefix + "_randomization_histogram_at_threshold.pdf" + '\n'
     generated_file_info += "\t[INFO] " + out_prefix + "_randomization_histogram_at_001.pdf" + '\n'
     generated_file_info += "\t[INFO] " + out_prefix + "_randomization_histogram_at_005.pdf" + '\n'
+    generated_file_info += "\t[INFO] " + out_prefix + "_randomization_histogram_at_010.pdf" + '\n'
 generated_file_info += "\t[INFO] " + f_name_interactions + '\n'
 out_fh_summary.write(generated_file_info)
 out_fh_summary.close()
