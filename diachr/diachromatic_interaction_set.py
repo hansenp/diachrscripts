@@ -712,6 +712,10 @@ class DiachromaticInteractionSet:
     def interaction_list(self):
         return self._inter_dict.values()
 
+    @property
+    def interaction_dict(self):
+        return self._inter_dict
+
     def get_num_of_inter_with_as_many_or_more_read_pairs(self, min_rp_num: int = None):
         """
         Determine the number of interactions that have a given number of more read pairs.

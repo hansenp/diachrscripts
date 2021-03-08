@@ -21,13 +21,13 @@ class DiachromaticInteraction(TestCase):
             if file.endswith(".tsv.gz"):
                 parser.parse_file(i_file=ifile_path)
         # For testing, reach into the parser object and get a dictionary of interactions
-        cls.interaction_dict = parser.get_read_file_info_dict()
+        cls.interaction_dict = parser.interaction_dict
 
     def test_get_four_interactions(self):
         """
         There are a total of four interactions in the data
         """
-        n_interactions = len(self.interaction_dict['I_NUM'])
+        n_interactions = len(self.interaction_dict)
         self.assertEqual(4, n_interactions)
 
 
@@ -41,18 +41,17 @@ class DiachromaticInteraction(TestCase):
             if interaction.has_data_for_required_replicate_num(threshold):
                 n_above_threshold += 1
         self.assertEqual(3, n_above_threshold)
-#
-#     def test_specific_interaction(self):
-#         """
-#         Test one of the interactions, that should be
-#         chr17   72411026        72411616        I       chr17   72712662        72724357        I       9:6
-#         """
-#         #Note the key should be the string '17724110261772712662'
-#         k = '17724110261772712662'
-#         self.assertTrue(k in self.interaction_dict)
-#         interaction = self.interaction_dict.get(k)
-#         self.assertEqual("chr17", interaction.chrA)
-#         self.assertEqual("chr17", interaction.chrB)
-#         self.assertEqual(9, interaction.n_simple)
-#         self.assertEqual(6, interaction.n_twisted)
-#         self.assertEqual('II', interaction.enrichment_status_tag_pair)
+
+    def test_specific_interaction(self):
+        """
+        Test one of the interactions, that should be
+                 chr17   72411026        72411616        I       chr17   72712662        72724357        I       9:6
+        """
+        k = '17:72411026:17:72712662'
+        self.assertTrue(k in self.interaction_dict)
+        interaction = self.interaction_dict.get(k)
+        self.assertEqual("chr17", interaction.chrA)
+        self.assertEqual("chr17", interaction.chrB)
+        self.assertEqual(9, interaction.n_simple)
+        self.assertEqual(6, interaction.n_twisted)
+        self.assertEqual('NN', interaction.enrichment_status_tag_pair)
