@@ -28,7 +28,9 @@ class TestRateAndCategorizeInteractions(TestCase):
         """
 
         cls.interaction_set = DiachromaticInteractionSet()
-        cls.interaction_set.parse_file("data/test_04/diachromatic_interaction_file.tsv")
+        test_dir = os.path.dirname(__file__)
+        interaction_file = os.path.join(test_dir, "data/test_04/diachromatic_interaction_file.tsv")
+        cls.interaction_set.parse_file(interaction_file)
         cls.rate_and_cat_report_dict = cls.interaction_set.evaluate_and_categorize_interactions(0.01)
         cls.select_ref_report_dict = cls.interaction_set.select_reference_interactions()
 
