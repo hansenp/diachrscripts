@@ -1,5 +1,3 @@
-from numpy import exp
-
 class DiachromaticInteraction:
     """
     Class to represent an interaction between two different parts of the genome with status and count.
