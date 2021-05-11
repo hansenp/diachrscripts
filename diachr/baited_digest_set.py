@@ -2,13 +2,14 @@ from .baited_digest import BaitedDigest
 from .diachromatic_interaction import DiachromaticInteraction11
 from .diachromatic_interaction_set import DiachromaticInteractionSet
 from collections import defaultdict
+import matplotlib.pyplot as plt
 
 class BaitedDigestSet:
 
     def __init__(self):
 
         # Dictionary that contains all BaitedDigest objects
-        self._baited_digest_dict = defaultdict(BaitedDigest)
+        self._baited_digest_dict = defaultdict()
 
         # Dictionary with infos about ingestion of interactions
         self._ingest_interaction_set_info_dict = {
@@ -43,7 +44,7 @@ class BaitedDigestSet:
     def ingest_interaction_set(self, d11_inter_set: DiachromaticInteractionSet, verbose: bool = False):
 
         if verbose:
-            print("[INFO] Reading interactions and group them according to baited digests ...")
+            print("[INFO] Reading interactions and group them according to chromosomes and baited digests ...")
 
         for d11_inter in d11_inter_set.interaction_list:
             self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ'] += 1
@@ -65,13 +66,17 @@ class BaitedDigestSet:
             if d11_inter.enrichment_status_tag_pair == 'NE':
                 enriched_digest_coords = d11_inter.chrB + '\t' + str(d11_inter.fromB) + '\t' + str(d11_inter.toB)
 
+            # Create a new dictionary if this is the first interaction seen on this chromosome
+            if d11_inter.chrA not in self._baited_digest_dict:
+                self._baited_digest_dict[d11_inter.chrA] = defaultdict()
+
             # Create new BaitedDigest object if it doesn't already exists
-            if enriched_digest_coords not in self._baited_digest_dict.keys():
-                self._baited_digest_dict[enriched_digest_coords] = BaitedDigest()
+            if enriched_digest_coords not in self._baited_digest_dict[d11_inter.chrA].keys():
+                self._baited_digest_dict[d11_inter.chrA][enriched_digest_coords] = BaitedDigest()
                 self._ingest_interaction_set_info_dict['BAITED_DIGESTS'] += 1
 
             # Add interaction BaitedDigest object
-            self._baited_digest_dict[enriched_digest_coords].add_interaction(d11_inter)
+            self._baited_digest_dict[d11_inter.chrA][enriched_digest_coords].add_interaction(d11_inter)
 
         if verbose:
             print("\t[INFO] Total number of interactions read: " + "{:,}".format(self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ']))
@@ -164,25 +169,39 @@ class BaitedDigestSet:
 
         return table_row
 
+    def get_baited_digest_keys_sorted_by_sta_pos(self):
+        """
+        :return: A dictionary with lists of baited digests keys sorted by starting coordinates, one for each chromosome.
+        """
+
+        # Create a dictionary with starting coordinates as key and digest coordinates as values
+        sta_keys_dict = defaultdict()
+        for chr in self._baited_digest_dict.keys():
+            sta_keys_dict[chr] = defaultdict()
+            for enriched_digest_coords in self._baited_digest_dict[chr].keys():
+                chr_bd, sta_bd, end_bd = enriched_digest_coords.split('\t')
+                sta_keys_dict[chr][sta_bd] = enriched_digest_coords
+
+        # Create sorted lists of baited digests keys for each chromosome
+        sorted_digest_key_lists = defaultdict()
+        for chr in self._baited_digest_dict.keys():
+            sorted_digest_key_list = []
+            for sta_key in sorted(sta_keys_dict[chr].keys()):
+                sorted_digest_key_list.append(sta_keys_dict[chr][sta_key])
+            sorted_digest_key_lists[chr] = sorted_digest_key_list
+
+        return sorted_digest_key_lists
+
     def proportion_of_directed_interactions_on_individual_chromosomes(self):
 
-        baited_digest_sets_chr = {}
-
-        # Divide BaitedDigestSet according to chromosomes
-        for key in self._baited_digest_dict.keys():
-            chr, sta, end = key.split('\t')
-            if chr not in baited_digest_sets_chr.keys():
-                baited_digest_sets_chr[chr] = [self._baited_digest_dict[key]]
-            else:
-                baited_digest_sets_chr[chr].append(self._baited_digest_dict[key])
-
-        for chr in baited_digest_sets_chr.keys():
+        for chr in self._baited_digest_dict.keys():
+            print(len(self._baited_digest_dict[chr]))
             n_total_interactions = 0
             n_di_interactions = 0
             n_uir_interactions = 0
             n_di_ne_interactions = 0
             n_uir_ne_interactions = 0
-            for baited_digest in baited_digest_sets_chr[chr]:
+            for key, baited_digest in self._baited_digest_dict[chr].items():
                 n_total_interactions += baited_digest.n_total_interactions()
                 n_di_interactions += baited_digest.n_di_interactions()
                 n_uir_interactions += baited_digest.n_uir_interactions()
@@ -196,7 +215,171 @@ class BaitedDigestSet:
                   str(n_total_interactions) + '\t' +
                   str(n_di_interactions) + '\t' +
                   str(proportion_di) + '\t' +
-                  str(di_ne_proportion) + '\t' +
                   str(proportion_uir) + '\t' +
+                  str(di_ne_proportion) + '\t' +
                   str(uir_ne_proportion)
                   )
+
+    def get_pairwise_interaction_distances_at_baits(self, chromosomes: [str] = None):
+
+        # Prepare data structure for results
+        i_cats = ['DI', 'UIR', 'UI', 'ALL']
+        e_cats = ['NE', 'EN']
+        pid = dict()
+        for i_cat in i_cats:
+            pid[i_cat] = dict()
+            for e_cat in e_cats:
+                pid[i_cat][e_cat] = []
+        pid['CHROMOSOMES'] = []
+
+        # Combine lists of pairwise distances from all baits
+        for chr in self._baited_digest_dict.keys():
+            if chromosomes is not None:
+                if chr not in chromosomes:
+                    continue
+
+            pid['CHROMOSOMES'].append(chr)
+            for key, baited_digest in self._baited_digest_dict[chr].items():
+                for i_cat in i_cats:
+                    for e_cat in e_cats:
+                        pid[i_cat][e_cat].extend(baited_digest.get_all_pairwise_differences_of_interaction_distances(i_cat, e_cat))
+
+        return pid
+
+    def get_pairwise_interaction_distances_at_baits_histograms(self,
+                                                               pid_dict: dict = None,
+                                                               description: str = "DESCRIPTION",
+                                                               pdf_file_name: str = "pid_histograms.pdf"):
+
+        i_cats = ['DI', 'UIR', 'UI', 'ALL']
+
+        fig, ax = plt.subplots(nrows=8, ncols=2, figsize=(11, 19),gridspec_kw={'height_ratios': [0.5, 1, 1, 1, 1, 1, 1, 1]})
+
+        ax[0][0].plot()
+        ax[0][0].spines['left'].set_color('white')
+        ax[0][0].spines['right'].set_color('white')
+        ax[0][0].spines['top'].set_color('white')
+        ax[0][0].spines['bottom'].set_color('white')
+        ax[0][0].tick_params(axis='x', colors='white')
+        ax[0][0].tick_params(axis='y', colors='white')
+        ax[0][1].plot()
+        ax[0][1].spines['left'].set_color('white')
+        ax[0][1].spines['right'].set_color('white')
+        ax[0][1].spines['top'].set_color('white')
+        ax[0][1].spines['bottom'].set_color('white')
+        ax[0][1].tick_params(axis='x', colors='white')
+        ax[0][1].tick_params(axis='y', colors='white')
+
+        fig.text(0.015, 0.9825, 'Pairwise differences of interaction distances at baits', fontsize=18, fontweight='bold')
+        fig.text(0.030, 0.9660, 'Description: ' + description, fontsize=12)
+        fig.text(0.030, 0.9525, 'For chromosomes:', fontsize=12)
+        fig.text(0.045, 0.9425, str(pid_dict['CHROMOSOMES']), fontsize=8)
+
+        # Create histograms
+        x_ticks = [0, 500000, 1000000, 1500000, 2000000]
+        bin_width = 20000
+        i_cat_colors = {'DI': (255 / 255, 163 / 255, 0 / 255, 1), 'UIR': (171 / 255, 215 / 255, 230 / 255, 1),
+                        'UI': (210 / 255, 210 / 255, 210 / 255, 1), 'ALL': 'black'}
+        i_cat_names = {'DI': 'Directed', 'UIR': 'Undirected reference', 'UI': 'Undirected', 'ALL': 'All'}
+
+        # Create histograms for DI, UIR, UI and ALL
+        for i in [0, 1, 2, 3]:
+
+            # Prepare bins
+            x_max = max(pid_dict[i_cats[i]]['NE'] + pid_dict[i_cats[i]]['EN'])
+            bins = range(0, x_max + bin_width, bin_width)
+
+            # Create histogram for NE
+            counts_1, bins, patches = ax[i+1][0].hist(
+                pid_dict[i_cats[i]]['NE'],
+                bins=bins, density=False,
+                facecolor=i_cat_colors[i_cats[i]],
+                edgecolor="black", alpha=0.75)
+            ax[i+1][0].set_title(i_cat_names[i_cats[i]] + ' to the left (n=' + "{:,}".format(len(pid_dict[i_cats[i]]['NE'])) + ')', loc='left')
+            ax[i+1][0].set_xlabel('Pairwise differences of interaction distances')
+            ax[i+1][0].set_ylabel('Frequency')
+            ax[i+1][0].set_xticks(x_ticks)
+            ax[i+1][0].set_xlim(0, 2000000)
+
+            # Create histogram for NE
+            counts_2, bins, patches = ax[i+1][1].hist(
+                pid_dict[i_cats[i]]['EN'],
+                bins=bins, density=False,
+                facecolor=i_cat_colors[i_cats[i]],
+                edgecolor="black", alpha=0.75)
+            ax[i+1][1].set_title(i_cat_names[i_cats[i]] + ' to the right (n=' + "{:,}".format((len(pid_dict[i_cats[i]]['EN']))) + ')', loc='left')
+            ax[i+1][1].set_xlabel('Pairwise differences of interaction distances')
+            ax[i+1][1].set_ylabel('Frequency')
+            ax[i+1][1].set_xticks(x_ticks)
+            ax[i+1][1].set_xlim(0, 2000000)
+
+            # Make y-axes comparable
+            ymax = max(max(counts_1), max(counts_2))
+            ax[i+1][0].set_ylim(0, ymax)
+            ax[i+1][1].set_ylim(0, ymax)
+
+        # Draw vertical lines for UIR - NE
+        ax[1+1][0].axvline(1 * 270500, color='blue', linewidth=0.5, zorder=0)
+        ax[1+1][0].axvline(2 * 270500, color='blue', linewidth=0.5, zorder=0)
+        ax[1+1][0].axvline(3 * 270500, color='blue', linewidth=0.5, zorder=0)
+        ax[1+1][0].axvline(4 * 270500, color='blue', linewidth=0.5, zorder=0)
+        ax[1+1][0].axvline(5 * 270500, color='blue', linewidth=0.5, zorder=0)
+        ax[1+1][0].axvline(6 * 270500, color='blue', linewidth=0.5, zorder=0)
+        ax[1+1][0].axvline(7 * 270500, color='blue', linewidth=0.5, zorder=0)
+
+        first_count_bin = 5
+        for i in [5, 6, 7]:
+
+            # Prepare bins
+            x_max = max(pid_dict['UIR']['NE'] + pid_dict['UIR']['EN'])
+            bins = range(0, x_max + bin_width, bin_width)
+
+            # Create histogram for NE
+            counts_1, bins, patches = ax[i][0].hist(
+                pid_dict['UIR']['NE'],
+                bins=bins, density=False,
+                facecolor=i_cat_colors['UIR'],
+                edgecolor="black", alpha=0.75)
+            ax[i][0].set_title(i_cat_names['UIR'] + ' to the left (n=' + "{:,}".format(len(pid_dict['UIR']['NE'])) + ')',
+                                   loc='left')
+            ax[i][0].set_xlabel('Pairwise differences of interaction distances')
+            ax[i][0].set_ylabel('Frequency')
+            ax[i][0].set_xticks(x_ticks)
+            ax[i][0].set_xlim(0, 2000000)
+
+            # Create histogram for NE
+            counts_2, bins, patches = ax[i][1].hist(
+                pid_dict['UIR']['EN'],
+                bins=bins, density=False,
+                facecolor=i_cat_colors['UIR'],
+                edgecolor="black", alpha=0.75)
+            ax[i][1].set_title(i_cat_names['UIR'] + ' to the right (n=' + "{:,}".format(len(pid_dict['UIR']['EN'])) + ')',
+                                   loc='left')
+            ax[i][1].set_xlabel('Pairwise differences of interaction distances')
+            ax[i][1].set_ylabel('Frequency')
+            ax[i][1].set_xticks(x_ticks)
+            ax[i][1].set_xlim(0, 2000000)
+
+            # Make y-axes comparable
+            ymax = max(counts_1[first_count_bin:])
+            ax[i][0].set_ylim(0, ymax)
+            ax[i][1].set_ylim(0, ymax)
+            first_count_bin += 14
+
+            # Draw vertical lines for UIR - NE
+            ax[i][0].axvline(1 * 270500, color='blue', linewidth=0.5, zorder=0)
+            ax[i][0].axvline(2 * 270500, color='blue', linewidth=0.5, zorder=0)
+            ax[i][0].axvline(3 * 270500, color='blue', linewidth=0.5, zorder=0)
+            ax[i][0].axvline(4 * 270500, color='blue', linewidth=0.5, zorder=0)
+            ax[i][0].axvline(5 * 270500, color='blue', linewidth=0.5, zorder=0)
+            ax[i][0].axvline(6 * 270500, color='blue', linewidth=0.5, zorder=0)
+            ax[i][0].axvline(7 * 270500, color='blue', linewidth=0.5, zorder=0)
+
+        # Save figure
+        fig.tight_layout()
+        fig.savefig(pdf_file_name)
+        return fig
+
+
+
+
