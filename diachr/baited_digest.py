@@ -47,6 +47,9 @@ class BaitedDigest:
 
         return pairwise_i_dist_diffs
 
+    def get_interaction_number(self, i_cat, e_cat):
+        return len(self.interactions[i_cat][e_cat])
+
     def n_total_interactions(self):
         return len(self.interactions['ALL']['NE']) + len(self.interactions['ALL']['EN'])
 
