@@ -625,16 +625,51 @@ class BaitedDigestSet:
         ax[2][0].set_xlabel('EN')
         ax[2][0].set_ylabel('NE')
 
-        ax[2][1].scatter(
-            i_num_pairs_dict['ALL']['EN'], i_num_pairs_dict['ALL']['NE'],
-            color=i_cat_colors['ALL'],
-            alpha=0.5
-        )
-        ax[2][1].set_xlim(-xy_lim/20, xy_lim)
-        ax[2][1].set_ylim(-xy_lim/20, xy_lim)
-        ax[2][1].set_title('ALL', loc='left')
-        ax[2][1].set_xlabel('EN')
-        ax[2][1].set_ylabel('NE')
+        x = i_num_pairs_dict['ALL']['EN']
+        y = i_num_pairs_dict['ALL']['NE']
+
+        # definitions for the axes
+        left, width = 0.1, 0.65
+        bottom, height = 0.1, 0.65
+        spacing = 0.005
+
+        rect_scatter = [left, bottom, width, height]
+        rect_histx = [left, bottom + height + spacing, width, 0.2]
+        rect_histy = [left + width + spacing, bottom, 0.2, height]
+
+        ax_scatter = plt.axes(rect_scatter)
+        ax_scatter.tick_params(direction='in', top=True, right=True)
+        ax_histx = plt.axes(rect_histx)
+        ax_histx.tick_params(direction='in', labelbottom=False)
+        ax_histy = plt.axes(rect_histy)
+        ax_histy.tick_params(direction='in', labelleft=False)
+
+        # the scatter plot:
+        ax_scatter.scatter(x, y)
+
+        # now determine nice limits by hand:
+        binwidth = 0.25
+        lim = np.ceil(np.abs([x, y]).max() / binwidth) * binwidth
+        ax_scatter.set_xlim((-lim, lim))
+        ax_scatter.set_ylim((-lim, lim))
+
+        bins = np.arange(-lim, lim + binwidth, binwidth)
+        ax_histx.hist(x, bins=bins)
+        ax_histy.hist(y, bins=bins, orientation='horizontal')
+
+        ax_histx.set_xlim(ax_scatter.get_xlim())
+        ax_histy.set_ylim(ax_scatter.get_ylim())
+
+        # ax[2][1].scatter(
+        #     i_num_pairs_dict['ALL']['EN'], i_num_pairs_dict['ALL']['NE'],
+        #     color=i_cat_colors['ALL'],
+        #     alpha=0.5
+        # )
+        # ax[2][1].set_xlim(-xy_lim/20, xy_lim)
+        # ax[2][1].set_ylim(-xy_lim/20, xy_lim)
+        # ax[2][1].set_title('ALL', loc='left')
+        # ax[2][1].set_xlabel('EN')
+        # ax[2][1].set_ylabel('NE')
 
         # Save and return figure
         fig.tight_layout()
