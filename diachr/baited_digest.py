@@ -47,6 +47,21 @@ class BaitedDigest:
 
         return pairwise_i_dist_diffs
 
+    def has_curbs(self, i_cat, dir, min_curb_num: int = 10, curb_size: int=270500, error_margin: int=10000):
+
+        # Get interactions
+        d_inter_list = self.interactions[i_cat][dir]
+        d_inter_list_len = len(d_inter_list)
+
+        # Calculate all pairwise differences of interaction distances
+        pairwise_i_dist_diffs = []
+        for i in range(0, d_inter_list_len):
+            dist_a = d_inter_list[i].i_dist
+            for j in range(i + 1, d_inter_list_len):
+                dist_b = d_inter_list[j].i_dist
+                diff = abs(dist_a - dist_b)
+
+
     def get_interaction_number(self, i_cat, e_cat):
         return len(self.interactions[i_cat][e_cat])
 
