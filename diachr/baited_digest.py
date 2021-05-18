@@ -1,3 +1,4 @@
+from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
 
 class BaitedDigest:
@@ -49,7 +50,6 @@ class BaitedDigest:
                 pairwise_i_dist_diffs.append(diff)
 
         return pairwise_i_dist_diffs
-
 
     def get_interaction_number(self, i_cat, e_cat):
         return len(self.interactions[i_cat][e_cat])

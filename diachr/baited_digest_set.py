@@ -466,7 +466,7 @@ class BaitedDigestSet:
             ax[i+1][0].set_xticks(x_ticks)
             ax[i+1][0].set_xlim(0, x_lim)
 
-            # Create histogram for NE
+            # Create histogram for EN
             counts_2, bins, patches = ax[i+1][1].hist(
                 i_num_dict[i_cats[i]]['EN'],
                 bins=bins, density=False,
@@ -528,6 +528,8 @@ class BaitedDigestSet:
         fig.savefig(pdf_file_name)
         return fig
 
+    #############
+
     def get_interaction_number_pairs_at_baits(self, chromosomes: [str] = None):
 
         # Prepare data structure for results
@@ -539,6 +541,7 @@ class BaitedDigestSet:
             for e_cat in e_cats:
                 i_num_pairs[i_cat][e_cat] = []
         i_num_pairs['CHROMOSOMES'] = []
+        i_num_pairs['BAIT_NUM_TOTAL'] = 0
 
         # Combine lists of pairwise distances from all baits
         for chr in self._baited_digest_dict.keys():
@@ -548,6 +551,7 @@ class BaitedDigestSet:
 
             i_num_pairs['CHROMOSOMES'].append(chr)
             for key, baited_digest in self._baited_digest_dict[chr].items():
+                i_num_pairs['BAIT_NUM_TOTAL'] += 1
                 for i_cat in i_cats:
                     i_num_pairs[i_cat]['NE'].append(baited_digest.get_interaction_number(i_cat, 'NE'))
                     i_num_pairs[i_cat]['EN'].append(baited_digest.get_interaction_number(i_cat, 'EN'))
@@ -565,6 +569,7 @@ class BaitedDigestSet:
             for e_cat in e_cats:
                 rp_num_pairs[i_cat][e_cat] = []
         rp_num_pairs['CHROMOSOMES'] = []
+        rp_num_pairs['BAIT_NUM_TOTAL'] = 0
 
         # Combine lists of pairwise distances from all baits
         for chr in self._baited_digest_dict.keys():
@@ -574,25 +579,32 @@ class BaitedDigestSet:
 
             rp_num_pairs['CHROMOSOMES'].append(chr)
             for key, baited_digest in self._baited_digest_dict[chr].items():
+                rp_num_pairs['BAIT_NUM_TOTAL'] += 1
                 for i_cat in i_cats:
                     rp_num_pairs[i_cat]['NE'].append(baited_digest.get_read_pair_number(i_cat, 'NE'))
                     rp_num_pairs[i_cat]['EN'].append(baited_digest.get_read_pair_number(i_cat, 'EN'))
 
         return rp_num_pairs
 
-
-
-
-#############
-
     def make_ticks(self, max_val: int=100):
+        """
+        This function generates nice ticks for plot axes depending on a maximal value.
+
+        :param max_val: Maximum value of the range for which ticks will be generated.
+        :return: A tuple '(ticks, tick_labels)'. 'ticks' contains numbers and 'tick_labels' aassociated strings
+        in which thousands (if any) are replaced by the letter 'k'.
+        """
+
+        # Adjust spacing of ticks
         if max_val < 100:
             tick_dist = 20
-        elif max_val < 500:
+        elif max_val < 250:
             tick_dist = 50
+        elif max_val < 500:
+            tick_dist = 100
         elif max_val < 1000:
             tick_dist = 200
-        elif max_val < 1500:
+        elif max_val < 2500:
             tick_dist = 500
         elif max_val < 5000:
             tick_dist = 1000
@@ -600,29 +612,50 @@ class BaitedDigestSet:
             tick_dist = 2000
         elif max_val < 25000:
             tick_dist = 5000
-        else:
+        elif max_val < 50000:
             tick_dist = 10000
+        else:
+            tick_dist = 20000
+
+        # Create ticks and associated labels
         ticks = range(0, max_val + tick_dist, tick_dist)
         if max_val < 1000:
-            tick_lables = ticks
+            tick_labels = ticks
         else:
-            tick_lables = []
+            tick_labels = []
             for tick in ticks:
-                tick_lables.append(str(tick/1000) + 'k')
+                tick_labels.append(str(tick/1000) + 'k')
 
-        return ticks, tick_lables
+        return ticks, tick_labels
 
-    def custom_pair_plot(self,
-                         i_cat='I_CAT',
-                         en=None,
-                         ne=None,
-                         color='black',
-                         bin_size=1,
-                         xy_max=None,
-                         ax_hx=None,
-                         ax_hy=None,
-                         ax_s=None,
-                         **plt_kwargs):
+    def create_single_pair_scatter_plot_with_histograms(self,
+                                                        i_cat_label: str = 'I_CAT_LABEL',
+                                                        i_cat_color: str = 'black',
+                                                        en_list: list() = None,
+                                                        ne_list: list() = None,
+                                                        bin_size: int = 1,
+                                                        xy_max: int = None,
+                                                        ax_hx = None,
+                                                        ax_hy = None,
+                                                        ax_s = None,
+                                                        **plt_kwargs):
+        """
+        This function generates a scatter plot, which is supplemented by histograms on the x and y axes.
+
+        :param i_cat_label: Label for interaction category
+        :param i_cat_color: Color for interaction category
+        :param en_list: List of numbers that pair with the numbers in the other list of the same size
+        :param ne_list: Other list of numbers (en_list[i] and ne_list[i] form a pair)
+        :param bin_size: Bin size for histograms on axes
+        :param xy_max: Maximum value on x and y axes
+        :param ax_hx: 'matplotlib' object for histogram along the x axis
+        :param ax_hy: 'matplotlib' object for histogram along the y axis
+        :param ax_s: 'matplotlib' object for scatter plot
+        :param plt_kwargs: Required for this function to work
+        :return: The three 'matplotlib' objects filled with content
+        """
+
+        # Required for this function to work
         if ax_hx is None:
             ax_hx = plt.gca()
         if ax_hy is None:
@@ -630,14 +663,18 @@ class BaitedDigestSet:
         if ax_s is None:
             ax_s = plt.gca()
 
-        # Prepare data: Remove pairs that have zero left andd right
+        # Prepare data: Remove pairs that have zero left and right
         x = []
         y = []
         bait_num = 0
-        for i in range(0, len(en)):
-            if (en[i] != 0) and (ne[i] != 0):
-                x.append(en[i])
-                y.append(ne[i])
+        i_num_en_total = 0
+        i_num_ne_total = 0
+        for i in range(0, len(en_list)):
+            if not (en_list[i] == 0 and ne_list[i] == 0):
+                x.append(en_list[i])
+                y.append(ne_list[i])
+                i_num_en_total += en_list[i]
+                i_num_ne_total += ne_list[i]
                 bait_num += 1
 
         # Get ticks
@@ -645,10 +682,10 @@ class BaitedDigestSet:
             xy_max = max(max(x), max(y))
         ticks, tick_labels = self.make_ticks(xy_max)
 
-        # Scatterplot
-        # -----------
+        # Scatter plot
+        # ------------
 
-        ax_s.scatter(x, y, color=color, alpha=0.5)
+        ax_s.scatter(x, y, color=i_cat_color, alpha=0.5)
         ax_s.set_xticks(ticks)
         ax_s.set_xticklabels(tick_labels)
         ax_s.set_yticks(ticks)
@@ -661,8 +698,8 @@ class BaitedDigestSet:
 
         lim = max(x + y)
         bins = np.arange(0, lim + bin_size, bin_size)
-        counts_x, bins, patches = ax_hx.hist(x, bins=bins, color=color)
-        counts_y, bins, patches = ax_hy.hist(y, bins=bins, orientation='horizontal', color=color)
+        counts_x, bins, patches = ax_hx.hist(x, bins=bins, color=i_cat_color)
+        counts_y, bins, patches = ax_hy.hist(y, bins=bins, orientation='horizontal', color=i_cat_color)
         xy_hist_max = max(max(counts_x), max(counts_y))
 
         # set x-axes
@@ -677,14 +714,228 @@ class BaitedDigestSet:
         ax_hx.set_ylim(0, xy_hist_max)
         ax_hy.set_xlim(0, xy_hist_max)
 
-        ax_hx.set_title(i_cat + ' (n=' + "{:,}".format(bait_num) + ')', loc='left')
+        ax_hx.text(xy_max/5,
+                   xy_hist_max - (xy_hist_max/5),
+                   'EN: '  + "{:,}".format(i_num_en_total))
+
+        ax_hy.text(xy_hist_max - (xy_hist_max/3.95),
+                   xy_max/5,
+                   'NE: '  + "{:,}".format(i_num_ne_total),
+                   rotation=-90)
+
+
+        ax_hx.set_title(i_cat_label +
+                        ' (n_b=' + "{:,}".format(bait_num) +
+                        ', n_ne=' + "{:,}".format(i_num_ne_total) +
+                        ', n_en=' + "{:,}".format(i_num_en_total) + ')')
         ax_s.set_xlabel('EN')
         ax_s.set_ylabel('NE')
 
         return ax_hx, ax_hy, ax_s
 
-############################
+    def get_pair_scatter_plots_with_histograms(self,
+                                               pairs_dict=None,
+                                               sup_title: str = 'SUP_TITLE',
+                                               description: str = 'DESCRIPTION',
+                                               pdf_file_name: str ='pair_scatter_plots_with_histograms.pdf'):
+        """
+        This function generates a figure with a text header and four scatter plots supplemented by histograms on the x
+        and y axes.
 
+        :param pairs_dict:
+        :param sup_title:
+        :param description:
+        :param pdf_file_name:
+        :return:
+        """
+
+        # Define layout of the entire figure (grid of rectangles)
+        # -------------------------------------------------------
+
+        header_height = 0.15
+        fig = plt.figure(figsize=(10, (1.0 + header_height) * 10))
+
+        a = 0.29
+        b = 0.09
+        sp1 = 0.07
+        sp2 = 0.015
+
+        x1 = sp1
+        x2 = x1 + a + sp2
+        x3 = x2 + b + sp1
+        x4 = x3 + a + sp2
+
+        y1 = x1 * (1.0 - header_height)
+        y2 = x2 * (1.0 - header_height)
+        y3 = x3 * (1.0 - header_height)
+        y4 = x4 * (1.0 - header_height)
+
+        r0 = [x1, y4 + (1.0 - header_height) * b + (1.0 - header_height) * sp1, x4 - x1 + b, header_height]
+
+        r1 = [x1, y1, a, a * (1.0 - header_height)]
+        r2 = [x2, y1, b, a * (1.0 - header_height)]
+        r3 = [x3, y1, a, a * (1.0 - header_height)]
+        r4 = [x4, y1, b, a * (1.0 - header_height)]
+
+        r5 = [x1, y2, a, b * (1.0 - header_height)]
+        r6 = [x3, y2, a, b * (1.0 - header_height)]
+
+        r7 = [x1, y3, a, a * (1.0 - header_height)]
+        r8 = [x2, y3, b, a * (1.0 - header_height)]
+        r9 = [x3, y3, a, a * (1.0 - header_height)]
+        r10 = [x4, y3, b, a * (1.0 - header_height)]
+
+        r11 = [x1, y4, a, b * (1.0 - header_height)]
+        r12 = [x3, y4, a, b * (1.0 - header_height)]
+
+        # Fill rectangular areas with content
+        # -----------------------------------
+
+        # Adjust the bin size dynamically to DI and UIR
+        DI_UIR_MAX = max(max(pairs_dict['DI']['NE']),
+                         max(pairs_dict['DI']['EN']),
+                         max(pairs_dict['UIR']['NE']),
+                         max(pairs_dict['UIR']['EN']))
+        BIN_SIZE = int(np.ceil(DI_UIR_MAX / 100))
+
+        # Get total number of baits and list of chromosomes for header
+        BAITS_TOTAL = pairs_dict['BAIT_NUM_TOTAL']
+        CHROMOSOMES = pairs_dict['CHROMOSOMES']
+
+        # Create header with text
+        ax0_header = plt.axes(r0)
+        ax0_header.spines['left'].set_color('white')
+        ax0_header.spines['right'].set_color('white')
+        ax0_header.spines['top'].set_color('white')
+        ax0_header.spines['bottom'].set_color('white')
+        ax0_header.tick_params(axis='x', colors='white')
+        ax0_header.tick_params(axis='y', colors='white')
+        fig.text(0.015, 0.97, sup_title, fontsize=18, fontweight='bold')
+        fig.text(0.030, 0.94, 'Description: ' + description, fontsize=12)
+        fig.text(0.030, 0.92, 'Total number of baits: ' + str(BAITS_TOTAL), fontsize=12)
+        fig.text(0.030, 0.90, 'Bin size: ' + str(BIN_SIZE), fontsize=12)
+        fig.text(0.030, 0.88, 'For chromosomes:', fontsize=12)
+        if len(CHROMOSOMES) < 22:
+            fig.text(0.045, 0.86, '[' + ", ".join(i for i in CHROMOSOMES) + ']', fontsize=8)
+        else:
+            fig.text(0.045, 0.86, '[' + ", ".join(i for i in CHROMOSOMES[:22]) + ',', fontsize=8)
+            fig.text(0.045, 0.84, ", ".join(i for i in CHROMOSOMES[22:]) + ']', fontsize=8)
+
+        # Directed interactions (DI)
+        ax1_hx = plt.axes(r11)
+        ax1_hx.tick_params(direction='in', labelbottom=False)
+        ax1_hy = plt.axes(r8)
+        ax1_hy.tick_params(direction='in', labelleft=False)
+        ax1_s = plt.axes(r7)
+        ax1_s.tick_params(direction='in', top=True, right=True)
+        self.create_single_pair_scatter_plot_with_histograms(
+            i_cat_label='DI',
+            en_list=pairs_dict['DI']['EN'],
+            ne_list=pairs_dict['DI']['NE'],
+            i_cat_color='orange',
+            bin_size=BIN_SIZE,
+            ax_hx=ax1_hx,
+            ax_hy=ax1_hy,
+            ax_s=ax1_s)
+
+        # Undirected reference interactions (UIR)
+        ax2_hx = plt.axes(r12)
+        ax2_hx.tick_params(direction='in', labelbottom=False)
+        ax2_hy = plt.axes(r10)
+        ax2_hy.tick_params(direction='in', labelleft=False)
+        ax2_s = plt.axes(r9)
+        ax2_s.tick_params(direction='in', top=True, right=True)
+        self.create_single_pair_scatter_plot_with_histograms(
+            i_cat_label='UIR',
+            en_list=pairs_dict['UIR']['EN'],
+            ne_list=pairs_dict['UIR']['NE'],
+            i_cat_color='lightblue',
+            bin_size=BIN_SIZE,
+            ax_hx=ax2_hx,
+            ax_hy=ax2_hy,
+            ax_s=ax2_s)
+
+        # Make axes for DI and UIR comparable
+        xy_max = int(max(ax1_s.get_xlim()[1], ax2_s.get_xlim()[1]))
+        ticks, tick_labels = self.make_ticks(xy_max)
+        # Scatterplots
+        ax1_s.set_xticks(ticks)
+        ax1_s.set_xticklabels(tick_labels)
+        ax1_s.set_yticks(ticks)
+        ax1_s.set_yticklabels(tick_labels)
+        ax1_s.set_xlim(-xy_max / 20, xy_max + xy_max / 20)
+        ax1_s.set_ylim(-xy_max / 20, xy_max + xy_max / 20)
+        ax2_s.set_xticks(ticks)
+        ax2_s.set_xticklabels(tick_labels)
+        ax2_s.set_yticks(ticks)
+        ax2_s.set_yticklabels(tick_labels)
+        ax2_s.set_xlim(-xy_max / 20, xy_max + xy_max / 20)
+        ax2_s.set_ylim(-xy_max / 20, xy_max + xy_max / 20)
+        # Histograms
+        ax1_hx.set_xticks(ticks)
+        ax1_hy.set_yticks(ticks)
+        ax1_hx.set_xlim(ax1_s.get_xlim())
+        ax1_hy.set_ylim(ax1_s.get_ylim())
+
+        ax1_hx.text(xy_max/5,
+                   ax1_hx.get_xlim()[1] - (ax1_hx.get_xlim()[1]/5),
+                   'EN: '  + "{:,}".format(sum(pairs_dict['DI']['EN'])))
+
+        ax1_hy.text(ax1_hy.get_xlim()[1] - (ax1_hy.get_xlim()[1]/3.95),
+                   xy_max/5,
+                   'NE: '  + "{:,}".format(sum(pairs_dict['DI']['NE'])),
+                   rotation=-90)
+
+        ax2_hx.set_xticks(ticks)
+        ax2_hy.set_yticks(ticks)
+        ax2_hx.set_xlim(ax1_s.get_xlim())
+        ax2_hy.set_ylim(ax1_s.get_ylim())
+
+        ax2_hy.text(ax2_hy.get_xlim()[1] - (ax2_hy.get_xlim()[1]/3.95),
+                   xy_max/5,
+                   'NE: '  + "{:,}".format(sum(pairs_dict['UIR']['NE'])),
+                   rotation=-90)
+
+
+        # Undirected interactions (UI)
+        ax3_hx = plt.axes(r5)
+        ax3_hx.tick_params(direction='in', labelbottom=False)
+        ax3_hy = plt.axes(r2)
+        ax3_hy.tick_params(direction='in', labelleft=False)
+        ax3_s = plt.axes(r1)
+        ax3_s.tick_params(direction='in', top=True, right=True)
+        self.create_single_pair_scatter_plot_with_histograms(
+            i_cat_label='UI',
+            en_list=pairs_dict['UI']['EN'],
+            ne_list=pairs_dict['UI']['NE'],
+            i_cat_color='gray',
+            bin_size=BIN_SIZE,
+            ax_hx=ax3_hx,
+            ax_hy=ax3_hy,
+            ax_s=ax3_s)
+
+        # All interaactions (ALL)
+        ax4_hx = plt.axes(r6)
+        ax4_hx.tick_params(direction='in', labelbottom=False)
+        ax4_hy = plt.axes(r4)
+        ax4_hy.tick_params(direction='in', labelleft=False)
+        ax4_s = plt.axes(r3)
+        ax4_s.tick_params(direction='in', top=True, right=True)
+        self.create_single_pair_scatter_plot_with_histograms(
+            i_cat_label='ALL',
+            en_list=pairs_dict['ALL']['EN'],
+            ne_list=pairs_dict['ALL']['NE'],
+            i_cat_color='black',
+            bin_size=BIN_SIZE,
+            ax_hx=ax4_hx,
+            ax_hy=ax4_hy,
+            ax_s=ax4_s)
+
+        # Save and return figure
+        fig.savefig(pdf_file_name)
+        return fig
+
+############################
 
     def get_baited_digest_keys_sorted_by_sta_pos(self):
         """
