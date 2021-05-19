@@ -1,6 +1,7 @@
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
 
+
 class BaitedDigest:
     """
     Objects of this class are used to group interactions interactions that end in the same bait. Interactions are broken
@@ -29,6 +30,21 @@ class BaitedDigest:
             'ALL': {
                 'NE': [],
                 'EN': []}
+        }
+
+        self.curb_nums = {
+            'DI': {
+                'NE': 0,
+                'EN': 0},
+            'UIR': {
+                'NE': 0,
+                'EN': 0},
+            'UI': {
+                'NE': 0,
+                'EN': 0},
+            'ALL': {
+                'NE': 0,
+                'EN': 0}
         }
 
     def add_interaction(self, d11_inter: DiachromaticInteraction11):
@@ -83,24 +99,32 @@ class BaitedDigest:
     def n_uir_ne_interactions(self):
         return len(self.interactions['UIR']['NE'])
 
-    # def get_curb_num(self, i_cat, e_cat, curb_size: int=270500, curb_size_error_margin: int=10000):
-    #
-    #     # Get interactions
-    #     d_inter_list = self.interactions[i_cat][e_cat]
-    #     d_inter_list_len = len(d_inter_list)
-    #
-    #     # Init counter
-    #     curb_num = 0
-    #
-    #     # Calculate all pairwise differences of interaction distances
-    #     for i in range(0, d_inter_list_len):
-    #         dist_a = d_inter_list[i].i_dist
-    #         for j in range(i + 1, d_inter_list_len):
-    #             dist_b = d_inter_list[j].i_dist
-    #             diff = abs(dist_a - dist_b)
-    #             # Count differences that are a multiple of the curb size
-    #             remainder = diff % curb_size
-    #             if remainder < curb_size_error_margin or curb_size - remainder < curb_size_error_margin:
-    #                 curb_num += 1
-    #
-    #     return curb_num
+    def set_curb_number(self, i_cat, e_cat, curb_size: int = 270500, curb_size_error_margin: int = 10000):
+
+        if i_cat not in self.curb_nums:
+            self.curb_nums[i_cat] = dict()
+
+        if e_cat not in self.curb_nums[i_cat]:
+            self.curb_nums[i_cat][e_cat] = dict()
+
+        # Get interactions
+        d_inter_list = self.interactions[i_cat][e_cat]
+        d_inter_list_len = len(d_inter_list)
+
+        # Init counter
+        curb_num = 0
+
+        # Calculate all pairwise differences of interaction distances
+        for i in range(0, d_inter_list_len):
+            dist_a = d_inter_list[i].i_dist
+            for j in range(i + 1, d_inter_list_len):
+                dist_b = d_inter_list[j].i_dist
+                diff = abs(dist_a - dist_b)
+                # Count differences that are a multiple of the curb size
+                remainder = diff % curb_size
+                if curb_size - curb_size_error_margin < diff and\
+                        (remainder < curb_size_error_margin or curb_size - remainder < curb_size_error_margin):
+                    curb_num += 1
+                    #print(str(remainder) + '\t' + str(diff) + '\t' + str(curb_num))
+        self.curb_nums[i_cat][e_cat] = curb_num
+        return curb_num
