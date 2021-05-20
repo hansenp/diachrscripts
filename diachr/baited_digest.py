@@ -1,5 +1,6 @@
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
+import numpy as np
 
 
 class BaitedDigest:
@@ -82,7 +83,22 @@ class BaitedDigest:
 
         return rp_total_sum
 
-        return len(self.interactions[i_cat][e_cat])
+    def get_median_interaction_distance(self, i_cat, e_cat):
+
+        # Get list of interactions
+        d_inter_list = self.interactions[i_cat][e_cat]
+
+        # Collect interaction distances
+        distances = []
+        for d_inter in d_inter_list:
+            distances.append(d_inter.i_dist)
+
+        if 0 < len(distances):
+            mean_interaction_distance = int(np.median(distances))
+        else:
+            mean_interaction_distance = 0
+
+        return mean_interaction_distance
 
     def n_total_interactions(self):
         return len(self.interactions['ALL']['NE']) + len(self.interactions['ALL']['EN'])
@@ -99,7 +115,7 @@ class BaitedDigest:
     def n_uir_ne_interactions(self):
         return len(self.interactions['UIR']['NE'])
 
-    def set_curb_number(self, i_cat, e_cat, curb_size: int = 270500, curb_size_error_margin: int = 10000):
+    def get_curb_number(self, i_cat, e_cat, curb_size: int = 270500, curb_size_error_margin: int = 10000):
 
         if i_cat not in self.curb_nums:
             self.curb_nums[i_cat] = dict()
