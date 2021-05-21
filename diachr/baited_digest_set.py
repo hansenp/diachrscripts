@@ -385,6 +385,15 @@ class BaitedDigestSet:
 
     # PAIRS OF NUMBERS FOR EACH BAIT
 
+    def get_median_interaction_distance(self, i_cat: str, e_cat):
+        """
+        For a given interaction and enrichment category, this function returns the median over all baits.
+        :param i_cat: Interaction category
+        :param e_cat: Enrichment category
+        :return:
+        """
+        return 0
+
     def get_empty_pair_dict(self):
         """
         This function initializes a data structure that can be filled with pairs of interaction numbers, read pair
@@ -430,7 +439,7 @@ class BaitedDigestSet:
         :return: A dictionary containing the number pairs (see 'get_empty_pair_dict()').
         """
 
-        if (number_pair_type is None) or number_pair_type not in ['I_NUM', 'RP_NUM', 'MED_I_DIST', 'C_NUM']:
+        if (number_pair_type is None) or number_pair_type not in ['I_NUM', 'RP_NUM','MED_I_DIST', 'C_NUM']:
             print("[ERROR] Invalid number pair type! Use one of the following:")
             print("\t[ERROR] 'I_NUM' - Interaction numbers")
             print("\t[ERROR] 'RP_NUM' - Read pair numbers")
@@ -463,6 +472,7 @@ class BaitedDigestSet:
             if verbose:
                 print("\t[INFO] Processing chromosome " + chrom + " ...")
 
+            # Determine number pairs for individual baits
             pair_dict['CHROMOSOMES'].append(chrom)
             for key, baited_digest in self._baited_digest_dict[chrom].items():
                 pair_dict['BAIT_NUM_TOTAL'] += 1
@@ -486,6 +496,44 @@ class BaitedDigestSet:
         return pair_dict
 
     def make_ticks(self, max_val: int = 100):
+
+        if max_val < 10:
+            return list(range(0, 50 + 1, 1  )), list(range(0, 50 + 1, 1))
+
+        if max_val < 25:
+            return list(range(0, 50 + 1, 5)), list(range(0, 50 + 1, 5))
+
+        if max_val < 50:
+            return list(range(0, 50 + 1, 10)), list(range(0, 50 + 1, 10))
+
+        # Create list of maximal ticks
+        tick_lims = []
+        x = [10, 25, 50]
+        while x[2] <= max_val:
+            x = [(y * 10) for y in x]
+            tick_lims = tick_lims + x
+
+        # Find maximal tick for input value
+        tick_max_idx = 0
+        while tick_lims[tick_max_idx] <= max_val:
+            tick_max_idx += 1
+
+        ticks = list(range(0, int(tick_lims[tick_max_idx]) + 1, int(tick_lims[tick_max_idx] / 5)))
+
+        if max_val < 1000:
+            tick_labels = ticks
+        elif max_val < 1000000:
+            tick_labels = []
+            for tick in ticks:
+                tick_labels.append(str(tick / 1000) + 'k')
+        else:
+            tick_labels = []
+            for tick in ticks:
+                tick_labels.append(str(tick / 1000000) + 'M')
+
+        return ticks, tick_labels
+
+    def make_ticksXXX(self, max_val: int = 100):
         """
         This function generates nice ticks for plot axes depending on a maximal value.
 
@@ -555,6 +603,7 @@ class BaitedDigestSet:
                                                         bin_size: int = 1,
                                                         xy_max: int = None,
                                                         add_text_labels=True,
+                                                        draw_mean_and_sd=True,
                                                         ax_hx=None,
                                                         ax_hy=None,
                                                         ax_s=None,
@@ -571,6 +620,7 @@ class BaitedDigestSet:
         :param bin_size: Bin size for histograms on axes
         :param xy_max: Maximum value on x and y axes
         :param add_text_labels: If true, then add text labels with bait and interaction counts
+        :param draw_mean_and_sd: If true, dashed line and shaded area for mean and standard deviations will be added
         :param ax_hx: 'matplotlib' object for histogram along the x axis
         :param ax_hy: 'matplotlib' object for histogram along the y axis
         :param ax_s: 'matplotlib' object for scatter plot
@@ -615,6 +665,17 @@ class BaitedDigestSet:
         ax_s.set_yticklabels(tick_labels)
         ax_s.set_xlim(-xy_max / 20, xy_max + xy_max / 20)
         ax_s.set_ylim(-xy_max / 20, xy_max + xy_max / 20)
+
+        # Add line and area for mean and standard deviation
+        if draw_mean_and_sd:
+            mean_en = np.mean(en_list)
+            std_en = np.std(en_list)
+            ax_s.axvspan(mean_en, mean_en + std_en, color='green', alpha=0.25, zorder=0)
+            ax_s.axvline(mean_en, linestyle='--', linewidth=0.5, color='blue')
+            mean_ne = np.mean(ne_list)
+            std_ne = np.std(ne_list)
+            ax_s.axhspan(mean_ne, mean_ne + std_ne, color='green', alpha=0.25, zorder=0)
+            ax_s.axhline(mean_ne, linestyle='--', linewidth=0.5, color='blue')
 
         # Histograms
         # ----------
@@ -665,6 +726,7 @@ class BaitedDigestSet:
     def get_pair_scatter_plots_with_histograms(self,
                                                pairs_dict = None,
                                                set_xy_max = None,
+                                               draw_mean_and_sd = False,
                                                sup_title: str = 'SUP_TITLE',
                                                description: str = 'DESCRIPTION',
                                                pdf_file_name: str = 'pair_scatter_plots_with_histograms.pdf'):
@@ -770,6 +832,7 @@ class BaitedDigestSet:
             bin_size=BIN_SIZE,
             add_text_labels=False,
             xy_max=set_xy_max,
+            draw_mean_and_sd=draw_mean_and_sd,
             ax_hx=ax1_hx,
             ax_hy=ax1_hy,
             ax_s=ax1_s)
@@ -791,6 +854,7 @@ class BaitedDigestSet:
             bin_size=BIN_SIZE,
             add_text_labels=False,
             xy_max=set_xy_max,
+            draw_mean_and_sd=draw_mean_and_sd,
             ax_hx=ax2_hx,
             ax_hy=ax2_hy,
             ax_s=ax2_s)
@@ -893,6 +957,7 @@ class BaitedDigestSet:
             i_cat_color='gray',
             bin_size=BIN_SIZE,
             xy_max=set_xy_max,
+            draw_mean_and_sd=draw_mean_and_sd,
             ax_hx=ax3_hx,
             ax_hy=ax3_hy,
             ax_s=ax3_s)
@@ -913,6 +978,7 @@ class BaitedDigestSet:
             i_cat_color='black',
             bin_size=BIN_SIZE,
             xy_max=set_xy_max,
+            draw_mean_and_sd=draw_mean_and_sd,
             ax_hx=ax4_hx,
             ax_hy=ax4_hy,
             ax_s=ax4_s)
