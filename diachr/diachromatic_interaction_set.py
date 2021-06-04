@@ -2,7 +2,7 @@ import gzip
 import os
 import copy
 import warnings
-from numpy import arange, log, log10
+from numpy import arange, log, log10, quantile, median, random
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
@@ -315,6 +315,84 @@ class DiachromaticInteractionSet:
         self._eval_cat_info_dict = report_dict
         return report_dict
 
+    def select_reference_interactions_2(self, verbose: bool = False):
+        """
+        Select reference interactions that match directed interactions in terms of enrichment category and total number
+        of read pairs per interaction and return a dictionary with information on this selection process.
+
+        :return: Dictionary with information on this selection process
+        """
+
+        if verbose:
+            print("[INFO] Select reference interactions ...")
+
+        # Nested dictionary that stores the numbers of interactions (value) for different read pair numbers (key)
+        rp_inter_dict = {'NN': [],
+                         'NE': [],
+                         'EN': [],
+                         'EE': []}
+
+        if verbose:
+            print("\t[INFO] First pass: Count directed interactions for different read pair counts ...")
+
+        for d11_inter in self._inter_dict.values():
+
+            if d11_inter.get_category() == 'DI':
+
+                # Get enrichment status tag pair and read pair number
+                enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
+                rp_total = d11_inter.rp_total
+                rp_inter_dict[enrichment_pair_tag].append(rp_total)
+
+        # XXX
+        q13_dict = {
+            'NN': {
+                'Q1': quantile(rp_inter_dict['NN'], 0.25),
+                'Q3': quantile(rp_inter_dict['NN'], 0.75)
+            },
+            'NE': {
+                'Q1': quantile(rp_inter_dict['NE'], 0.25),
+                'Q3': quantile(rp_inter_dict['NE'], 0.75)
+            },
+            'EN': {
+                'Q1': quantile(rp_inter_dict['EN'], 0.25),
+                'Q3': quantile(rp_inter_dict['EN'], 0.75)
+            },
+            'EE': {
+                'Q1': quantile(rp_inter_dict['EE'], 0.25),
+                'Q3': quantile(rp_inter_dict['EE'], 0.75)
+            }
+        }
+        for enr_cat in ['NN','NE','EN','EE']:
+            print(enr_cat)
+            print(q13_dict[enr_cat]['Q1'])
+            print(median(rp_inter_dict[enr_cat]))
+            print(q13_dict[enr_cat]['Q3'])
+
+        if verbose:
+            print("\t[INFO] Second pass: Select undirected reference interactions for different read pair counts ...")
+        for d11_inter in self._inter_dict.values():
+
+            if d11_inter.get_category() != 'DI':
+
+                enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
+                rp_total = d11_inter.rp_total
+
+                if q13_dict[enrichment_pair_tag]['Q1'] <= rp_total <= q13_dict[enrichment_pair_tag]['Q3']:
+                    d11_inter.set_category('UIR')
+
+        # Prepare dictionary for report
+        report_dict = {'NN': {'DI':[0],'UIR':[0],'M_UIR':[0],'UI':[0]},
+                       'NE': {'DI':[0],'UIR':[0],'M_UIR':[0],'UI':[0]},
+                       'EN': {'DI':[0],'UIR':[0],'M_UIR':[0],'UI':[0]},
+                       'EE': {'DI':[0],'UIR':[0],'M_UIR':[0],'UI':[0]}}
+
+        if verbose:
+            print("[INFO] ... done.")
+
+        self._select_ref_info_dict = report_dict
+        return report_dict
+
     def select_reference_interactions(self, verbose: bool = False):
         """
         Select reference interactions that match directed interactions in terms of enrichment category and total number
@@ -355,7 +433,9 @@ class DiachromaticInteractionSet:
 
         if verbose:
             print("\t[INFO] Second pass: Select undirected reference interactions for different read pair counts ...")
-        for d11_inter in self._inter_dict.values():
+        values = list(self._inter_dict.values())
+        random.shuffle(values)
+        for d11_inter in values:
 
             if d11_inter.get_category() != 'DI':
 

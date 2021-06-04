@@ -83,6 +83,41 @@ class BaitedDigest:
 
         return rp_total_sum
 
+    def get_i_dist_list(self, i_cat, e_cat):
+
+        # Get list of interactions
+        d_inter_list = self.interactions[i_cat][e_cat]
+        i_dist_list = []
+        for d_inter in d_inter_list:
+            i_dist_list.append(d_inter.i_dist)
+        return i_dist_list
+
+    def get_rp_num_list(self, i_cat, e_cat):
+
+        # Get list of interactions
+        d_inter_list = self.interactions[i_cat][e_cat]
+        i_dist_list = []
+        for d_inter in d_inter_list:
+            i_dist_list.append(d_inter.rp_total)
+        return i_dist_list
+
+
+    def get_median_read_pair_number(self, i_cat, e_cat):
+
+        # Get list of interactions
+        d_inter_list = self.interactions[i_cat][e_cat]
+
+        # Collect read pair numbers of interactions
+        rp_list = []
+        for d_inter in d_inter_list:
+            rp_list.append(d_inter.rp_total)
+
+        # Get median read pair number
+        if 0 < len(rp_list):
+            return np.median(rp_list)
+        else:
+            return 0.0
+
     def get_median_interaction_distance(self, i_cat, e_cat):
 
         # Get list of interactions
@@ -115,32 +150,78 @@ class BaitedDigest:
     def n_uir_ne_interactions(self):
         return len(self.interactions['UIR']['NE'])
 
-    def get_curb_number(self, i_cat, e_cat, curb_size: int = 270500, curb_size_error_margin: int = 10000):
+    def select_undirected_reference_interactions(self, lower_q: float = 0.25, upper_q: float = 0.75):
+        """
+        This function selects undirected reference interactions at this bait that, as compared to the directed at this
+        bait, have a similar distribution of read pairs.
 
-        if i_cat not in self.curb_nums:
-            self.curb_nums[i_cat] = dict()
+        :param lower_q: Lower quantile
+        :param upper_q: Upper quantile
+        """
 
-        if e_cat not in self.curb_nums[i_cat]:
-            self.curb_nums[i_cat][e_cat] = dict()
+        # Create list of read pair numbers from directed interactions
+        di_rp_list = []
+        for d11_inter in self.interactions['DI']['NE'] + self.interactions['DI']['EN']:
+            di_rp_list.append(d11_inter.rp_total)
 
-        # Get interactions
-        d_inter_list = self.interactions[i_cat][e_cat]
-        d_inter_list_len = len(d_inter_list)
+        # Determine lower and upper quantile for read pair numbers from directed interactions
+        if 0 < len(di_rp_list):
+            q1 = np.quantile(di_rp_list, lower_q)
+            q3 = np.quantile(di_rp_list, upper_q)
+        else:
+            # If there are no directed interactions, we do not select reference interactions
+            q1 = 0.0
+            q3 = 0.0
 
-        # Init counter
-        curb_num = 0
+        # Concatenate all lists with undirected interactions at this bait (without assumptions about NE-EN distribution)
+        ui_list = self.interactions['UI']['NE'] + self.interactions['UI']['EN'] + \
+                  self.interactions['UIR']['NE'] + self.interactions['UIR']['EN']
 
-        # Calculate all pairwise differences of interaction distances
-        for i in range(0, d_inter_list_len):
-            dist_a = d_inter_list[i].i_dist
-            for j in range(i + 1, d_inter_list_len):
-                dist_b = d_inter_list[j].i_dist
-                diff = abs(dist_a - dist_b)
-                # Count differences that are a multiple of the curb size
-                remainder = diff % curb_size
-                if curb_size - curb_size_error_margin < diff and\
-                        (remainder < curb_size_error_margin or curb_size - remainder < curb_size_error_margin):
-                    curb_num += 1
-                    #print(str(remainder) + '\t' + str(diff) + '\t' + str(curb_num))
-        self.curb_nums[i_cat][e_cat] = curb_num
-        return curb_num
+        # Select reference interactions with read pair numbers between lower and upper quantile
+        uir_rp_dict = {
+            'NE': [],
+            'EN': []
+        }
+        uir_dict = {
+            'NE': [],
+            'EN': []
+        }
+        for d11_inter in ui_list:
+            if q1 <= d11_inter.rp_total <= q3:
+                uir_dict[d11_inter.enrichment_status_tag_pair].append(d11_inter)
+                uir_rp_dict[d11_inter.enrichment_status_tag_pair].append(d11_inter.rp_total)
+
+        # For now, assign the reference interactions to the variables for all interactions so that we can compare the
+        # old and new reference
+        self.interactions['ALL']['NE'] = uir_dict['NE']
+        self.interactions['ALL']['EN'] = uir_dict['EN']
+
+        print("-------")
+        print("Number of DI: " + str(len(di_rp_list)))
+        print("DI read pair numbers: " + str(sorted(di_rp_list)))
+        print("Upper quantile: " + str(q1))
+        print("Lower quantile: " + str(q3))
+        if 0 < len(di_rp_list):
+            print("Median read pair number DI: " + str(np.median(di_rp_list)))
+        else:
+            print('NA')
+        if 0 < len(uir_rp_dict['NE']):
+            print("Median read pair number UIR-NE: " + str(np.median(uir_rp_dict['NE'])))
+        else:
+            print('NA')
+        if 0 < len(uir_rp_dict['EN']):
+            print("Median read pair number UIR-EN: " + str(np.median(uir_rp_dict['EN'])))
+        else:
+            print('NA')
+
+    def get_interactions_sorted_by_dist(self, i_cat, e_cat):
+
+        distances = []
+        for d11_inter in self.interactions[i_cat][e_cat]:
+            distances.append(d11_inter.i_dist)
+        sorted_distance_idx = np.argsort(distances)
+        sorted_interaction_list = []
+        for idx in sorted_distance_idx:
+            sorted_interaction_list.append(self.interactions[i_cat][e_cat][idx])
+        return sorted_interaction_list
+
