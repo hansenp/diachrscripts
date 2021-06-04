@@ -2,7 +2,8 @@ import gzip
 import os
 import copy
 import warnings
-from numpy import arange, log, log10
+import random
+from numpy import arange, log10
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
@@ -427,6 +428,28 @@ class DiachromaticInteractionSet:
 
         self._write_file_info_dict = report_dict
         return report_dict
+
+    def _shuffle_inter_dict(self, random_seed: int = None, verbose: bool = False):
+        """
+        Input files can be affected by sorting artifacts. This function shuffles the key value pairs and thus eliminates
+        such artifacts.
+
+        :param random_seed: Number used to init random generator
+        :param verbose: If true, messages about progress will be written to the screen
+        """
+
+        if verbose:
+            print("[INFO] Shuffling dictionary with interactions ...")
+
+        if random_seed is not None:
+            random.seed(random_seed)
+
+        items = list(self._inter_dict.items())
+        random.shuffle(items)
+        self._inter_dict = defaultdict(DiachromaticInteraction, items)
+
+        if verbose:
+            print("[INFO] ... done.")
 
     def write_diachromatic_interaction_fdr_test_file(self, target_file: str = None, p_value_max: float = 0.05,
                                                      p_value_step: float = 0.00025, i_per_interval_requested: int = 10,

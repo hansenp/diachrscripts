@@ -185,6 +185,8 @@ class BaitedDigestSet:
 
         return table_row
 
+    # ANALYZE INTERACTION DISTANCES INDEPENDENTLY OF BAITS
+
     def get_median_interaction_distance(self, i_cat: str = None, e_cat: str = None):
         """
         This function calculates the median interaction distance over all baits.
@@ -202,7 +204,7 @@ class BaitedDigestSet:
 
     def get_mean_interaction_distance(self, i_cat: str = None, e_cat: str = None):
         """
-        This function calculates the median interaction distance over all baits.
+        This function calculates the mean interaction distance over all baits.
         :param i_cat:
         :param e_cat:
         :return:
@@ -214,8 +216,6 @@ class BaitedDigestSet:
             for key, baited_digest in self._baited_digest_dict[chrom].items():
                 i_dist_list.extend(baited_digest.get_i_dist_list(i_cat, e_cat))
         return np.mean(i_dist_list)
-
-    # ANALYZE INTERACTION DISTANCES INDEPENDENTLY OF BAITS
 
     def get_empty_pair_dict(self):
         """
@@ -305,13 +305,15 @@ class BaitedDigestSet:
 
     def get_all_rp_nums_or_i_dists_histograms(self,
                                               num_dict: dict = None,
+                                              y_max=None,
                                               description: str = "DESCRIPTION",
-                                              pdf_file_name: str = "pid_histograms.pdf"):
+                                              pdf_file_name: str = "num_histograms.pdf"):
         """
         This function creates the histograms for the interaction distances in the various interaction and enrichment
         categories.
 
-        :param num_dict: Dictionary that was created with the function 'get_interaction_distances()'
+        :param num_dict: Dictionary that was created with the function 'get_all_rp_nums_or_i_dists()'
+        :param y_max: Uniform maximum value for the y-axes of all histograms
         :param description: Brief description that is shown in the plot above the histograms
         :param pdf_file_name: Name of the PDF file that will be created.
         :return: A matplotlib 'Figure' object that can be displayed in Jupyter notebooks
@@ -365,8 +367,8 @@ class BaitedDigestSet:
         # Create histograms for DI, UIR, UI and ALL
         for i in [0, 1, 2, 3]:
             # Prepare bins
-            x_max = max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN'])
-            bins = range(0, x_max + bin_width, bin_width)
+            x_max = max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN']) # PREPARE BINS OUTSIDE!
+            xxxxbins = range(0, x_max + bin_width, bin_width)
 
             # Create histogram for NE
             counts_1, bins, patches = ax[i + 1][0].hist(
@@ -396,6 +398,138 @@ class BaitedDigestSet:
             ax[i + 1][1].set_title(
                 i_cat_names[i_cats[i]] + ' - EN',
                 loc='left')
+            ax[i + 1][1].set_xlabel(num_dict['NUM_TYPE'])
+            ax[i + 1][1].set_ylabel('Frequency')
+            ax[i + 1][1].set_xticks(x_ticks)
+            ax[i + 1][1].set_xticklabels(x_tick_labels)
+            ax[i + 1][1].set_xlim(0, x_lim)
+
+            # Make y-axes comparable
+            if y_max is None:
+                y_lim = max(max(counts_1), max(counts_2))
+            else:
+                y_lim = y_max
+            y_ticks, y_tick_labels = self.make_ticks(y_lim)
+            ax[i + 1][0].set_yticks(y_ticks)
+            ax[i + 1][0].set_yticklabels(y_tick_labels)
+            ax[i + 1][0].set_ylim(0, y_lim)
+            ax[i + 1][1].set_yticks(y_ticks)
+            ax[i + 1][1].set_yticklabels(y_tick_labels)
+            ax[i + 1][1].set_ylim(0, y_lim)
+
+            # Draw vertical lines and shaded areas for median and mad
+            median_ne = np.median(num_dict[i_cats[i]]['NE'])
+            mad_ne = stats.median_absolute_deviation(num_dict[i_cats[i]]['NE'])
+            ax[i + 1][0].axvline(median_ne, linestyle='--', linewidth=0.75, color='blue', zorder=2)
+            ax[i + 1][0].axvspan(median_ne, median_ne + mad_ne, color='green', alpha=0.25, zorder=0)
+            median_en = np.median(num_dict[i_cats[i]]['EN'])
+            mad_en = stats.median_absolute_deviation(num_dict[i_cats[i]]['EN'])
+            ax[i + 1][1].axvline(median_en, linestyle='--', linewidth=0.75, color='blue', zorder=2)
+            ax[i + 1][1].axvspan(median_en, median_en + mad_en, color='green', alpha=0.25, zorder=0)
+
+            # Add text labels with total read pair or interaction numbers, median and median absolute deviation
+            ax[i + 1][0].text(x_lim - (x_lim / 3.5),
+                              y_lim - (y_lim / 3.25),
+                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['NE'])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
+                                  median_ne) + '\n' + 'Mad: ' + "{:,.0f}".format(mad_ne),
+                              fontsize=9,
+                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+            ax[i + 1][1].text(x_lim - (x_lim / 3.5),
+                              y_lim - (y_lim / 3.25),
+                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['EN'])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
+                                  median_en) + '\n' + 'Mad: ' + "{:,.0f}".format(mad_en),
+                              fontsize=9,
+                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+
+        # Save and return figure
+        fig.tight_layout()
+        fig.savefig(pdf_file_name)
+        return fig
+
+    # Density difference plot
+    def get_all_rp_nums_or_i_dists_denisty_diff_plot(self,
+                                                     num_dict: dict = None,
+                                                     description: str = "DESCRIPTION",
+                                                     pdf_file_name: str = "density_diff_plot.pdf"):
+        # Interaction categories
+        i_cats = ['DI', 'UIR']
+
+        # Prepare grid for individual plots
+        fig, ax = plt.subplots(nrows=4, ncols=3, figsize=(14.25, 8.55),
+                               gridspec_kw={'height_ratios': [0.5, 1, 1, 1]})
+
+        # Add header section with description and chromosomes that were taken into account
+        ax[0][0].plot()
+        ax[0][0].spines['left'].set_color('white')
+        ax[0][0].spines['right'].set_color('white')
+        ax[0][0].spines['top'].set_color('white')
+        ax[0][0].spines['bottom'].set_color('white')
+        ax[0][0].tick_params(axis='x', colors='white')
+        ax[0][0].tick_params(axis='y', colors='white')
+        ax[0][1].plot()
+        ax[0][1].spines['left'].set_color('white')
+        ax[0][1].spines['right'].set_color('white')
+        ax[0][1].spines['top'].set_color('white')
+        ax[0][1].spines['bottom'].set_color('white')
+        ax[0][1].tick_params(axis='x', colors='white')
+        ax[0][1].tick_params(axis='y', colors='white')
+        fig.text(0.015, 0.97, num_dict['NUM_TYPE'] + 's', fontsize=18,
+                 fontweight='bold')
+        fig.text(0.030, 0.94, 'Description: ' + description, fontsize=12)
+        fig.text(0.030, 0.92, 'For chromosomes:', fontsize=12)
+        if len(num_dict['CHROMOSOMES']) < 22:
+            fig.text(0.045, 0.90, '[' + ", ".join(i for i in num_dict['CHROMOSOMES']) + ']', fontsize=8)
+        else:
+            fig.text(0.045, 0.90, '[' + ", ".join(i for i in num_dict['CHROMOSOMES'][:22]) + ',', fontsize=8)
+            fig.text(0.045, 0.88, ", ".join(i for i in num_dict['CHROMOSOMES'][22:]) + ']', fontsize=8)
+
+        # Set variables that all histograms have in common
+        x_lim = 0
+        for i in [0, 1]:
+            q = max(np.quantile(num_dict[i_cats[i]]['NE'], 0.95), np.quantile(num_dict[i_cats[i]]['EN'], 0.95))
+            if x_lim < q:
+                x_lim = q
+        x_ticks, x_tick_labels = self.make_ticks(x_lim)
+        bin_width = int(x_lim / 30)
+        i_cat_colors = {'DI': (255 / 255, 163 / 255, 0 / 255, 1), 'UIR': (171 / 255, 215 / 255, 230 / 255, 1),
+                        'UI': (210 / 255, 210 / 255, 210 / 255, 1), 'ALL': 'pink'}
+        i_cat_names = {'DI': 'Directed', 'UIR': 'Undirected reference 1', 'UI': 'Undirected',
+                       'ALL': 'Undirected reference 2'}
+
+        # Prepare bins
+        x_max = 0
+        for i in [0, 1]:
+            if x_max < max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN']):
+                x_max = max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN'])
+        bins = range(0, x_max + bin_width, bin_width)
+
+        # Create histograms for DI, UIR
+        counts = []
+        for i in [0, 1]:
+            # Create histogram for NE
+            counts_1, bins, patches = ax[i + 1][0].hist(
+                num_dict[i_cats[i]]['NE'],
+                bins=bins, density=False,
+                facecolor=i_cat_colors[i_cats[i]],
+                edgecolor="dimgray",
+                linewidth=0.5,
+                alpha=1)
+            ax[i + 1][0].set_title(i_cat_names[i_cats[i]] + ' - NE', loc='left')
+            ax[i + 1][0].set_xlabel(num_dict['NUM_TYPE'])
+            ax[i + 1][0].set_ylabel('Frequency')
+            ax[i + 1][0].set_xticks(x_ticks)
+            ax[i + 1][0].set_xticklabels(x_tick_labels)
+            ax[i + 1][0].set_xlim(0, x_lim)
+
+            # Create histogram for NE
+            counts_2, bins, patches = ax[i + 1][1].hist(
+                num_dict[i_cats[i]]['EN'],
+                bins=bins, density=False,
+                facecolor=i_cat_colors[i_cats[i]],
+                edgecolor="dimgray",
+                linewidth=0.5,
+                alpha=1)
+            ax[i + 1][1].set_title(i_cat_names[i_cats[i]] + ' - EN', loc='left')
             ax[i + 1][1].set_xlabel(num_dict['NUM_TYPE'])
             ax[i + 1][1].set_ylabel('Frequency')
             ax[i + 1][1].set_xticks(x_ticks)
@@ -436,12 +570,72 @@ class BaitedDigestSet:
                               fontsize=9,
                               bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
+            counts.append({'BINS': bins, 'NE': counts_1, 'EN': counts_2})
+
+        # Transform bins to center bin positions
+        bin_size = counts[0]['BINS'][1]
+        bcp = counts[0]['BINS'][1] / 2
+        bcp_list = [bcp]
+        for i in range(len(counts[0]['BINS']) - 2):
+            bcp += bin_size
+            bcp_list.append(bcp)
+
+        # Get density for DI-NE and UIR-NE
+        density_di_ne = []
+        sum_di_ne = sum(counts[0]['NE'])
+        for count in counts[0]['NE']:
+            density_di_ne.append(count / sum_di_ne)
+
+        density_uir_ne = []
+        sum_uir_ne = sum(counts[1]['NE'])
+        for count in counts[1]['NE']:
+            density_uir_ne.append(count / sum_uir_ne)
+
+        density_diff_di_uir_ne = []
+        for i in range(0, len(density_di_ne)):
+            density_diff_di_uir_ne.append(density_di_ne[i] - density_uir_ne[i])
+
+        print(sum(density_di_ne))
+        print(sum(density_uir_ne))
+
+        ax[3][0].plot(bcp_list, density_diff_di_uir_ne)
+        ax[3][0].set_title('Density difference - NE', loc='left')
+        ax[3][0].set_xticks(x_ticks)
+        ax[3][0].set_xticklabels(x_tick_labels)
+        ax[3][0].set_xlim(0, x_lim)
+        ax[3][0].axhline(0, linewidth=0.75, color='black', zorder=2)
+
+        # Get density for DI-NE and UIR-NE
+        density_di_en = []
+        sum_di_en = sum(counts[0]['EN'])
+        for count in counts[0]['EN']:
+            density_di_en.append(count / sum_di_en)
+
+        density_uir_en = []
+        sum_uir_en = sum(counts[1]['EN'])
+        for count in counts[1]['EN']:
+            density_uir_en.append(count / sum_uir_en)
+
+        density_diff_di_uir_en = []
+        for i in range(0, len(density_di_en)):
+            density_diff_di_uir_en.append(density_di_en[i] - density_uir_en[i])
+
+        print(sum(density_di_en))
+        print(sum(density_uir_en))
+
+        ax[3][1].plot(bcp_list, density_diff_di_uir_en)
+        ax[3][1].set_title('Density difference - EN', loc='left')
+        ax[3][1].set_xticks(x_ticks)
+        ax[3][1].set_xticklabels(x_tick_labels)
+        ax[3][1].set_xlim(0, x_lim)
+        ax[3][1].axhline(0, linewidth=0.75, color='black', zorder=2)
+
         # Save and return figure
         fig.tight_layout()
         fig.savefig(pdf_file_name)
         return fig
 
-    # PAIRS OF NUMBERS FOR EACH BAIT
+    # PAIRS OF NUMBERS AT BAITS
 
     def get_number_pairs_at_baits(self,
                                   number_pair_type: str = None,
