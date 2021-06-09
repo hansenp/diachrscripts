@@ -185,6 +185,14 @@ class BaitedDigestSet:
 
         return table_row
 
+    def add_di_simple_twisted_categories_for_all_baits(self):
+        """
+        Add simple and twisted categories for all baits.
+        """
+        for chrom in self._baited_digest_dict.keys():
+            for baited_digest in self._baited_digest_dict[chrom].values():
+                baited_digest.add_di_simple_twisted_categories()
+
     # ANALYZE INTERACTION DISTANCES INDEPENDENTLY OF BAITS
 
     def get_median_interaction_distance(self, i_cat: str = None, e_cat: str = None):
@@ -279,15 +287,19 @@ class BaitedDigestSet:
 
         # Prepare data structure for results
         num_dict = self.get_empty_pair_dict(
-            i_cats = ['DI', 'UIR', 'UI', 'ALL'],
+            i_cats = ['DI', 'DI_S', 'DI_T', 'UIR', 'UI', 'ALL'],
             i_cat_names = ['Directed',
+                           'Directed simple',
+                           'Directed twisted',
                            'Undirected reference 1',
                            'Undirected',
                            'Undirected reference 2'],
             i_cat_colors = ['orange',
+                            'pink',
+                            'cadetblue',
                             'lightblue',
                             'lightgray',
-                            'pink'])
+                            'cornflowerblue'])
         if number_type == 'RP_NUM':
             num_dict['NUM_TYPE'] = 'Read pair number'
         if number_type == 'I_DIST':
@@ -306,8 +318,9 @@ class BaitedDigestSet:
                 print("\t[INFO] Processing chromosome " + chrom + " ...")
 
             num_dict['CHROMOSOMES'].append(chrom)
-            for key, baited_digest in self._baited_digest_dict[chrom].items():
-                for i_cat in ['DI', 'UIR', 'UI', 'ALL']:
+            self.add_di_simple_twisted_categories_for_all_baits()
+            for baited_digest in self._baited_digest_dict[chrom].values():
+                for i_cat in ['DI', 'DI_S', 'DI_T', 'UIR', 'UI', 'ALL']:
                     for e_cat in ['NE', 'EN']:
                         if number_type == 'RP_NUM':
                             num_dict[i_cat][e_cat].extend(baited_digest.get_rp_num_list(i_cat, e_cat))
@@ -322,14 +335,16 @@ class BaitedDigestSet:
     def get_all_rp_nums_or_i_dists_histograms(self,
                                               num_dict: dict = None,
                                               y_max_set = None,
+                                              q_lim: float = 0.95,
                                               description: str = "DESCRIPTION",
                                               pdf_file_name: str = "num_histograms.pdf"):
         """
-        This function creates the histograms for the interaction distances in the various interaction and enrichment
-        categories.
+        This function creates the histograms for read pair numbers or interaction distances in the various
+        interaction and enrichment categories.
 
-        :param num_dict: Dictionary that was created with the function 'get_all_rp_nums_or_i_dists()'
         :param y_max_set: Uniform maximum value for the y-axes of all histograms
+        :param num_dict: Dictionary that was created with the function 'get_all_rp_nums_or_i_dists()'
+        :param q_lim: Chose upper limit for x-axes based on quantile (affects presentation only)
         :param description: Brief description that is shown in the plot above the histograms
         :param pdf_file_name: Name of the PDF file that will be created.
         :return: A matplotlib 'Figure' object that can be displayed in Jupyter notebooks
@@ -370,7 +385,7 @@ class BaitedDigestSet:
         # Set variables that all histograms have in common
         x_lim = 0
         for i in [0, 1, 2, 3]:
-            q = max(np.quantile(num_dict[i_cats[i]]['NE'], 0.95), np.quantile(num_dict[i_cats[i]]['EN'], 0.95))
+            q = max(np.quantile(num_dict[i_cats[i]]['NE'], q_lim), np.quantile(num_dict[i_cats[i]]['EN'], q_lim))
             if x_lim < q:
                 x_lim = q
         x_ticks, x_tick_labels = self.make_ticks(x_lim)
@@ -462,16 +477,29 @@ class BaitedDigestSet:
                               bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
         # Save and return figure
-        fig.tight_layout()
+        fig.tight_layout(pad=1.5)
         fig.savefig(pdf_file_name)
         return fig
 
-    # Density difference plot
     def get_all_rp_nums_or_i_dists_denisty_diff_plot(self,
                                                      num_dict: dict = None,
                                                      i_cats: list = None,
+                                                     q_lim: float = 0.95,
                                                      description: str = "DESCRIPTION",
                                                      pdf_file_name: str = "density_diff_plot.pdf"):
+        """
+        This function creates the density difference plot for a given pair of interaction categories.
+
+        :param num_dict: A data structure that contains read pair numbers and distances for all interaction categories
+        :param i_cats: List of interaction categories to be compared, e.g. ['DI', 'UIR']
+        :param q_lim: Upper limit at quantile level, e.g. at 0.95, 5% of the data with the larger quantile are not shown
+        :param description: Brief description that is shown in the plot above the histograms
+        :param pdf_file_name:
+        :return:
+        """
+
+        # Add verbose output
+        # Catch wrong input, e.g. wron size of 'i_cats' list
 
         # Prepare grid for individual plots
         fig, ax = plt.subplots(nrows=4, ncols=3, figsize=(14.25, 8.55),
@@ -496,20 +524,20 @@ class BaitedDigestSet:
         ax[0][1].spines['bottom'].set_color('white')
         ax[0][1].tick_params(axis='x', colors='white')
         ax[0][1].tick_params(axis='y', colors='white')
-        fig.text(0.015, 0.97, num_dict['NUM_TYPE'] + 's', fontsize=18,
+        fig.text(0.015*(9.5/14.25), 0.960, num_dict['NUM_TYPE'] + 's', fontsize=18,
                  fontweight='bold')
-        fig.text(0.030, 0.94, 'Description: ' + description, fontsize=12)
-        fig.text(0.030, 0.92, 'For chromosomes:', fontsize=12)
+        fig.text(0.030*(9.5/14.25), 0.921, 'Description: ' + description, fontsize=12)
+        fig.text(0.030*(9.5/14.25), 0.895, 'For chromosomes:', fontsize=12)
         if len(num_dict['CHROMOSOMES']) < 22:
-            fig.text(0.045, 0.90, '[' + ", ".join(i for i in num_dict['CHROMOSOMES']) + ']', fontsize=8)
+            fig.text(0.045*(9.5/14.25), 0.869, '[' + ", ".join(i for i in num_dict['CHROMOSOMES']) + ']', fontsize=8)
         else:
-            fig.text(0.045, 0.90, '[' + ", ".join(i for i in num_dict['CHROMOSOMES'][:22]) + ',', fontsize=8)
-            fig.text(0.045, 0.88, ", ".join(i for i in num_dict['CHROMOSOMES'][22:]) + ']', fontsize=8)
+            fig.text(0.045*(9.5/14.25), 0.869, '[' + ", ".join(i for i in num_dict['CHROMOSOMES'][:22]) + ',', fontsize=8)
+            fig.text(0.045*(9.5/14.25), 0.843, ", ".join(i for i in num_dict['CHROMOSOMES'][22:]) + ']', fontsize=8)
 
         # Set variables that all histograms have in common
         x_lim = 0
         for i in [0, 1]:
-            q = max(np.quantile(num_dict[i_cats[i]]['NE'], 0.95), np.quantile(num_dict[i_cats[i]]['EN'], 0.95))
+            q = max(np.quantile(num_dict[i_cats[i]]['NE'], q_lim), np.quantile(num_dict[i_cats[i]]['EN'], q_lim))
             if x_lim < q:
                 x_lim = q
         x_ticks, x_tick_labels = self.make_ticks(x_lim)
@@ -522,9 +550,11 @@ class BaitedDigestSet:
                 x_max = max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN'])
         bins = range(0, x_max + bin_width, bin_width)
 
-        # Create histograms for DI, UIR
-        # -----------------------------
+        # Create histograms for the two categories
+        # ----------------------------------------
 
+        abs_ne = []
+        abs_en = []
         densities_ne = []
         densities_en = []
         for i in [0, 1]:
@@ -559,19 +589,7 @@ class BaitedDigestSet:
             ax[i + 1][1].set_xticklabels(x_tick_labels)
             ax[i + 1][1].set_xlim(0, x_lim)
 
-            # Make y-axes comparable
-            y_max = max(max(counts_ne), max(counts_en))
-            y_padding = y_max / 20
-            y_max += y_padding
-            y_ticks, y_tick_labels = self.make_ticks(y_max)
-            ax[i + 1][0].set_yticks(y_ticks)
-            ax[i + 1][0].set_yticklabels(y_tick_labels)
-            ax[i + 1][0].set_ylim(0, y_max)
-            ax[i + 1][1].set_yticks(y_ticks)
-            ax[i + 1][1].set_yticklabels(y_tick_labels)
-            ax[i + 1][1].set_ylim(0, y_max)
-
-            # Draw vertical lines and shaded areas for median and mad
+            # Draw vertical lines and shaded areas for median and MAD
             median_ne = np.median(num_dict[i_cats[i]]['NE'])
             mad_ne = stats.median_absolute_deviation(num_dict[i_cats[i]]['NE'])
             ax[i + 1][0].axvline(median_ne, linestyle='--', linewidth=0.75, color='blue', zorder=2)
@@ -581,21 +599,9 @@ class BaitedDigestSet:
             ax[i + 1][1].axvline(median_en, linestyle='--', linewidth=0.75, color='blue', zorder=2)
             ax[i + 1][1].axvspan(median_en, median_en + mad_en, color='green', alpha=0.25, zorder=0)
 
-            # Add text labels with total read pair or interaction numbers, median and median absolute deviation
-            ax[i + 1][0].text(x_lim - (x_lim / 3.5),
-                              y_max - (y_max / 3.25),
-                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['NE'])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
-                                  median_ne) + '\n' + 'Mad: ' + "{:,.0f}".format(mad_ne),
-                              fontsize=9,
-                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
-            ax[i + 1][1].text(x_lim - (x_lim / 3.5),
-                              y_max - (y_max / 3.25),
-                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['EN'])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
-                                  median_en) + '\n' + 'Mad: ' + "{:,.0f}".format(mad_en),
-                              fontsize=9,
-                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
-
-            # Get densities
+            # Keep track of bin counts and denisties densities
+            abs_ne.append(counts_ne)
+            abs_en.append(counts_en)
             densities_ne.append([count / sum(counts_ne) for count in counts_ne])
             densities_en.append([count / sum(counts_en) for count in counts_en])
 
@@ -606,6 +612,59 @@ class BaitedDigestSet:
         for i in range(len(densities_ne[0]) - 1):
             bcp += bin_width
             bcp_list.append(bcp)
+
+        # Add second axes with densities and normalize all histograms to maximum density
+        # -----------------------------------------------------------------------------
+
+        # Determine maximal density in all four plots
+        yd_max = max(max(densities_ne[0]), max(densities_en[0]), max(densities_ne[1]), max(densities_en[1]))
+        y_padding = yd_max / 20
+        yd_max += y_padding
+
+        # Add density axes, normalize and add text labels
+        for i in [0, 1]:
+
+            # Left histogram (NNE)
+            yc_max = yd_max * sum(abs_ne[i])
+            yc_ticks, yc_tick_labels = self.make_ticks(yc_max)
+            ax[i + 1][0].set_yticks(yc_ticks)
+            ax[i + 1][0].set_yticklabels(yc_tick_labels)
+            ax[i + 1][0].set_ylim(0, yc_max)
+            ax_dens = ax[i + 1][0].twinx()
+            ax_dens.plot(bcp_list, densities_ne[i], color='red', linewidth=0.5)
+            ax_dens.set_ylabel('Density')
+            ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
+            ax_dens.set_ylim(0, yd_max)
+            # Add text labels with total read pair or interaction numbers, median and median absolute deviation
+            ax[i + 1][0].text(x_lim - (x_lim / 3),
+                              yc_max - (yc_max / 3.2),
+                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['NE'])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
+                                  np.median(num_dict[i_cats[i]]['NE'])) + '\n' + 'Mad: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]]['NE'])),
+                              fontsize=9,
+                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+
+            # Right histogram (EN)
+            yc_max = yd_max * sum(abs_en[i])
+            yc_ticks, yc_tick_labels = self.make_ticks(yc_max)
+            ax[i + 1][1].set_yticks(yc_ticks)
+            ax[i + 1][1].set_yticklabels(yc_tick_labels)
+            ax[i + 1][1].set_ylim(0, yc_max)
+            ax_dens = ax[i + 1][1].twinx()
+            ax_dens.plot(bcp_list, densities_en[i], color='red', linewidth=0.5)
+            ax_dens.set_ylabel('Density')
+            ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
+            ax_dens.set_ylim(0, yd_max)
+            # Add text labels with total read pair or interaction numbers, median and median absolute deviation
+            ax[i + 1][1].text(x_lim - (x_lim / 3),
+                              yc_max - (yc_max / 3.2),
+                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['EN'])) + '\n' +
+                              'Mdn: ' + "{:,.0f}".format(np.median(num_dict[i_cats[i]]['EN'])) + '\n' +
+                              'Mad: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]]['EN'])),
+                              fontsize=9,
+                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+
+        # Add subplots for density differences
+        # ------------------------------------
 
         # Get four lists with densities differences from all four density lists
         density_diff_cat_0_cat_1_ne = [] # Below histograms on the left
@@ -619,56 +678,12 @@ class BaitedDigestSet:
             density_diff_cat_1_ne_en.append(densities_ne[1][i] - densities_en[1][i])
 
         # Determine sum of density differences
-        print(sum(density_diff_cat_0_cat_1_ne))
-        print(sum(density_diff_cat_0_cat_1_en))
-        print(sum(density_diff_cat_0_ne_en))
-        print(sum(density_diff_cat_1_ne_en))
+        dd_cat_0_cat_1_ne_sum = sum(map(abs, density_diff_cat_0_cat_1_ne))
+        dd_cat_0_cat_1_en_sum = sum(map(abs, density_diff_cat_0_cat_1_en))
+        dd_cat_0_ne_en_sum = sum(map(abs, density_diff_cat_0_ne_en))
+        dd_cat_1_ne_en_sum = sum(map(abs, density_diff_cat_1_ne_en))
 
-        dd_cat_0_cat_1_ne_sum_neg = 0
-        dd_cat_0_cat_1_ne_sum_pos = 0
-        for dd in density_diff_cat_0_cat_1_ne:
-            if dd < 0:
-                dd_cat_0_cat_1_ne_sum_neg += abs(dd)
-            else:
-                dd_cat_0_cat_1_ne_sum_pos += dd
-        print(dd_cat_0_cat_1_ne_sum_neg)
-        print(dd_cat_0_cat_1_ne_sum_pos)
-        print(dd_cat_0_cat_1_ne_sum_neg + dd_cat_0_cat_1_ne_sum_pos)
-
-        dd_cat_0_cat_1_en_sum_neg = 0
-        dd_cat_0_cat_1_en_sum_pos = 0
-        for dd in density_diff_cat_0_cat_1_en:
-            if dd < 0:
-                dd_cat_0_cat_1_en_sum_neg += abs(dd)
-            else:
-                dd_cat_0_cat_1_en_sum_pos += dd
-        print(dd_cat_0_cat_1_en_sum_neg)
-        print(dd_cat_0_cat_1_en_sum_pos)
-        print(dd_cat_0_cat_1_en_sum_neg + dd_cat_0_cat_1_en_sum_pos)
-
-        dd_cat_0_ne_en_sum_neg = 0
-        dd_cat_0_ne_en_sum_pos = 0
-        for dd in density_diff_cat_0_ne_en:
-            if dd < 0:
-                dd_cat_0_ne_en_sum_neg += abs(dd)
-            else:
-                dd_cat_0_ne_en_sum_pos += dd
-        print(dd_cat_0_ne_en_sum_neg)
-        print(dd_cat_0_ne_en_sum_pos)
-        print(dd_cat_0_ne_en_sum_neg + dd_cat_0_ne_en_sum_pos)
-
-        dd_cat_1_ne_en_sum_neg = 0
-        dd_cat_1_ne_en_sum_pos = 0
-        for dd in density_diff_cat_1_ne_en:
-            if dd < 0:
-                dd_cat_1_ne_en_sum_neg += abs(dd)
-            else:
-                dd_cat_1_ne_en_sum_pos += dd
-        print(dd_cat_1_ne_en_sum_neg)
-        print(dd_cat_1_ne_en_sum_pos)
-        print(dd_cat_1_ne_en_sum_neg + dd_cat_1_ne_en_sum_pos)
-
-        # Add subplots for density differences
+        # Bar plot below histograms on the left
         ax[3][0].bar(bcp_list,
                      density_diff_cat_0_cat_1_ne,
                      width=bin_width,
@@ -676,13 +691,19 @@ class BaitedDigestSet:
                      edgecolor="dimgray",
                      linewidth=0.5
                      )
-        ax[3][0].set_title('Density difference - NE', loc='left')
+        ax[3][0].set_title('NE', loc='left')
         ax[3][0].set_xticks(x_ticks)
         ax[3][0].set_xticklabels(x_tick_labels)
         ax[3][0].set_xlim(0, x_lim)
         ax[3][0].set_xlabel(num_dict['NUM_TYPE'])
-        ax[3][0].axhline(0, linestyle='--', linewidth=0.75, color='blue', zorder=2)
+        ax[3][0].axhline(0, linestyle='-.', linewidth=0.75, color='blue', zorder=2)
+        ax[3][0].ticklabel_format(axis='y', style='sci', scilimits=(-2,0), useMathText=False)
+        ax[3][0].yaxis.tick_right()
+        ax[3][0].yaxis.set_ticks_position('both')
+        ax[3][0].set_ylabel('Density difference')
+        ax[3][0].yaxis.set_label_position('right')
 
+        # Bar plot below histograms on the right
         ax[3][1].bar(bcp_list,
                      density_diff_cat_0_cat_1_en,
                      width=bin_width,
@@ -690,13 +711,19 @@ class BaitedDigestSet:
                      edgecolor="dimgray",
                      linewidth=0.5
                      )
-        ax[3][1].set_title('Density difference - EN', loc='left')
+        ax[3][1].set_title('EN', loc='left')
         ax[3][1].set_xticks(x_ticks)
         ax[3][1].set_xticklabels(x_tick_labels)
         ax[3][1].set_xlim(0, x_lim)
         ax[3][1].set_xlabel(num_dict['NUM_TYPE'])
-        ax[3][1].axhline(0, linestyle='--', linewidth=0.75, color='blue', zorder=2)
+        ax[3][1].axhline(0, linestyle='-.', linewidth=0.75, color='blue', zorder=2)
+        ax[3][1].ticklabel_format(axis='y', style='sci', scilimits=(-2,0))
+        ax[3][1].yaxis.tick_right()
+        ax[3][1].yaxis.set_ticks_position('both')
+        ax[3][1].set_ylabel('Density difference')
+        ax[3][1].yaxis.set_label_position('right')
 
+        # Make y-axes comparable for the two bar plots below the histograms and add sums of density differences
         y_min = min(min(density_diff_cat_0_cat_1_ne), min(density_diff_cat_0_cat_1_en))
         y_max = max(max(density_diff_cat_0_cat_1_ne), max(density_diff_cat_0_cat_1_en))
         y_padding = ((y_max - y_min)/20)
@@ -704,17 +731,18 @@ class BaitedDigestSet:
         y_max += y_padding
         ax[3][0].set_ylim(y_min, y_max)
         ax[3][1].set_ylim(y_min, y_max)
-        ax[3][0].text(x_lim - (x_lim / 3.5),
-                          y_max - (y_max / 6),
-                          'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_cat_1_ne_sum_neg + dd_cat_0_cat_1_ne_sum_pos),
-                          fontsize=9,
-                          bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
-        ax[3][1].text(x_lim - (x_lim / 3.5),
-                          y_max - (y_max / 6),
-                          'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_cat_1_en_sum_neg + dd_cat_0_cat_1_en_sum_pos),
-                          fontsize=9,
-                          bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+        ax[3][0].text(x_lim - (x_lim / 3.2),
+                      y_max - ((y_max - y_min) / 8),
+                      'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_cat_1_ne_sum),
+                      fontsize=9,
+                      bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+        ax[3][1].text(x_lim - (x_lim / 3.2),
+                      y_max - ((y_max - y_min) / 8),
+                      'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_cat_1_en_sum),
+                      fontsize=9,
+                      bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
+        # Bar plot to the left of the upper histograms
         ax[1][2].bar(bcp_list,
                      density_diff_cat_0_ne_en,
                      width=bin_width,
@@ -722,13 +750,19 @@ class BaitedDigestSet:
                      edgecolor="dimgray",
                      linewidth=0.5
                      )
-        ax[1][2].set_title('Density difference - ' +    num_dict[i_cats[0]]['NAME'], loc='left')
+        ax[1][2].set_title( num_dict[i_cats[0]]['NAME'], loc='left')
         ax[1][2].set_xticks(x_ticks)
         ax[1][2].set_xticklabels(x_tick_labels)
         ax[1][2].set_xlim(0, x_lim)
         ax[1][2].set_xlabel(num_dict['NUM_TYPE'])
-        ax[1][2].axhline(0, linestyle='--', linewidth=0.75, color='blue', zorder=2)
+        ax[1][2].axhline(0, linestyle='-.', linewidth=0.75, color='blue', zorder=2)
+        ax[1][2].ticklabel_format(axis='y', style='sci', scilimits=(-2, 0), useMathText=False)
+        ax[1][2].yaxis.tick_right()
+        ax[1][2].yaxis.set_ticks_position('both')
+        ax[1][2].set_ylabel('Density difference')
+        ax[1][2].yaxis.set_label_position('right')
 
+        # Bar plot to the left of the lower histograms
         ax[2][2].bar(bcp_list,
                      density_diff_cat_1_ne_en,
                      width=bin_width,
@@ -736,13 +770,19 @@ class BaitedDigestSet:
                      edgecolor="dimgray",
                      linewidth=0.5
                      )
-        ax[2][2].set_title('Density difference - ' + num_dict[i_cats[1]]['NAME'], loc='left')
+        ax[2][2].set_title(num_dict[i_cats[1]]['NAME'], loc='left')
         ax[2][2].set_xticks(x_ticks)
         ax[2][2].set_xticklabels(x_tick_labels)
         ax[2][2].set_xlim(0, x_lim)
         ax[2][2].set_xlabel(num_dict['NUM_TYPE'])
-        ax[2][2].axhline(0, linestyle='--', linewidth=0.75, color='blue', zorder=2)
+        ax[2][2].axhline(0, linestyle='-.', linewidth=0.75, color='blue', zorder=2)
+        ax[2][2].ticklabel_format(axis='y', style='sci', scilimits=(-2, 0), useMathText=False)
+        ax[2][2].yaxis.tick_right()
+        ax[2][2].yaxis.set_ticks_position('both')
+        ax[2][2].set_ylabel('Density difference')
+        ax[2][2].yaxis.set_label_position('right')
 
+        # Make y-axes comparable for the two bar plots to the left of the histograms and add sums of density differences
         y_min = min(min(density_diff_cat_0_ne_en), min(density_diff_cat_1_ne_en))
         y_max = max(max(density_diff_cat_0_ne_en), max(density_diff_cat_1_ne_en))
         y_padding = ((y_max - y_min) / 20)
@@ -750,19 +790,19 @@ class BaitedDigestSet:
         y_max += y_padding
         ax[1][2].set_ylim(y_min, y_max)
         ax[2][2].set_ylim(y_min, y_max)
-        ax[1][2].text(x_lim - (x_lim / 3.5),
-                          y_max - (y_max / 6),
-                          'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_ne_en_sum_neg + dd_cat_0_ne_en_sum_pos),
-                          fontsize=9,
-                          bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
-        ax[2][2].text(x_lim - (x_lim / 3.5),
-                          y_max - (y_max / 6),
-                          'sum(|dd|): ' + "{:.2f}".format(dd_cat_1_ne_en_sum_neg + dd_cat_1_ne_en_sum_pos),
-                          fontsize=9,
-                          bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+        ax[1][2].text(x_lim - (x_lim / 3.2),
+                      y_max - ((y_max - y_min) / 8),
+                      'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_ne_en_sum),
+                      fontsize=9,
+                      bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+        ax[2][2].text(x_lim - (x_lim / 3.2),
+                      y_max - ((y_max - y_min) / 8),
+                      'sum(|dd|): ' + "{:.2f}".format(dd_cat_1_ne_en_sum),
+                      fontsize=9,
+                      bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
         # Save and return figure
-        fig.tight_layout()
+        fig.tight_layout(pad=1.5)
         fig.savefig(pdf_file_name)
         return fig
 

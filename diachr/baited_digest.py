@@ -52,21 +52,23 @@ class BaitedDigest:
         self.interactions[d11_inter.get_category()][d11_inter.enrichment_status_tag_pair].append(d11_inter)
         self.interactions['ALL'][d11_inter.enrichment_status_tag_pair].append(d11_inter)
 
-    def get_all_pairwise_differences_of_interaction_distances(self, i_cat, e_cat):
+    def add_di_simple_twisted_categories(self):
+        """
+        This function divides the directed interactions into the categories simple and twisted and creates two new
+        corresponding dictionaries.
+        """
 
-        d_inter_list = self.interactions[i_cat][e_cat]
-        d_inter_list_len = len(d_inter_list)
+        self.interactions['DI_S'] = {'NE': [], 'EN': []}
+        self.interactions['DI_T'] = {'NE': [], 'EN': []}
 
-        # Get list of all pairwise interaction distances
-        pairwise_i_dist_diffs = []
-        for i in range(0, d_inter_list_len):
-            dist_a = d_inter_list[i].i_dist
-            for j in range(i + 1, d_inter_list_len):
-                dist_b = d_inter_list[j].i_dist
-                diff = abs(dist_a - dist_b)
-                pairwise_i_dist_diffs.append(diff)
+        # Get lists of interactions
+        d_inter_list = self.interactions['DI']['NE'] + self.interactions['DI']['EN']
 
-        return pairwise_i_dist_diffs
+        for d_inter in d_inter_list:
+            if d_inter.n_twisted < d_inter.n_simple:
+                self.interactions['DI_S'][d_inter.enrichment_status_tag_pair].append(d_inter)
+            else:
+                self.interactions['DI_T'][d_inter.enrichment_status_tag_pair].append(d_inter)
 
     def get_interaction_number(self, i_cat, e_cat):
         return len(self.interactions[i_cat][e_cat])
@@ -83,6 +85,15 @@ class BaitedDigest:
 
         return rp_total_sum
 
+    def get_rp_num_list(self, i_cat, e_cat):
+
+        # Get list of interactions
+        d_inter_list = self.interactions[i_cat][e_cat]
+        rp_num_list = []
+        for d_inter in d_inter_list:
+            rp_num_list.append(d_inter.rp_total)
+        return rp_num_list
+
     def get_i_dist_list(self, i_cat, e_cat):
 
         # Get list of interactions
@@ -91,16 +102,6 @@ class BaitedDigest:
         for d_inter in d_inter_list:
             i_dist_list.append(d_inter.i_dist)
         return i_dist_list
-
-    def get_rp_num_list(self, i_cat, e_cat):
-
-        # Get list of interactions
-        d_inter_list = self.interactions[i_cat][e_cat]
-        i_dist_list = []
-        for d_inter in d_inter_list:
-            i_dist_list.append(d_inter.rp_total)
-        return i_dist_list
-
 
     def get_median_read_pair_number(self, i_cat, e_cat):
 
@@ -224,4 +225,3 @@ class BaitedDigest:
         for idx in sorted_distance_idx:
             sorted_interaction_list.append(self.interactions[i_cat][e_cat][idx])
         return sorted_interaction_list
-
