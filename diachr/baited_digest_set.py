@@ -334,6 +334,7 @@ class BaitedDigestSet:
 
     def get_all_rp_nums_or_i_dists_histograms(self,
                                               num_dict: dict = None,
+                                              i_cats: list = None,
                                               q_lim: float = 0.95,
                                               description: str = "DESCRIPTION",
                                               pdf_file_name: str = "num_histograms.pdf"):
@@ -348,17 +349,23 @@ class BaitedDigestSet:
         :return: A matplotlib 'Figure' object that can be displayed in Jupyter notebooks
         """
 
-        # Interaction categories
-        i_cats = ['DI', 'UI', 'UIR', 'ALL']
+        # # Catch wrong input
+        allowed_i_cats = ['DI', 'DI_S', 'DI_T', 'UI', 'UIR', 'ALL']
+        for i_cat in i_cats:
+            if i_cat not in allowed_i_cats:
+                print("[ERROR] Illegal interaction category tag! Allowed: 'DI', 'D_S', 'D_T', 'UI', 'UIR' and 'ALL'")
+                return
 
         # Prepare grid for individual plots
-        fig_height = 11.79
-        fig, ax = plt.subplots(nrows=5, ncols=2, figsize=(9.5, fig_height),
-                               gridspec_kw={'height_ratios': [0.75, 1, 1, 1, 1]})
+        n = len(i_cats)
+        x = 11.79/4.75
+        fig_height = 0.75 * x + n * x
+        fig, ax = plt.subplots(nrows=n+1, ncols=2, figsize=(9.5, fig_height),
+                               gridspec_kw={'height_ratios': [0.75] + [1]*n})
 
         # Determine bin size
         x_lim = 0
-        for i in [0, 1, 2, 3]:
+        for i in range(0, n):
             q = max(np.quantile(num_dict[i_cats[i]]['NE'], q_lim), np.quantile(num_dict[i_cats[i]]['EN'], q_lim))
             if x_lim < q:
                 x_lim = q
@@ -380,23 +387,23 @@ class BaitedDigestSet:
         ax[0][1].spines['bottom'].set_color('white')
         ax[0][1].tick_params(axis='x', colors='white')
         ax[0][1].tick_params(axis='y', colors='white')
-        fig.text(0.015, 0.97, num_dict['NUM_TYPE'] + 's', fontsize=18,
+        fig.text(0.015, 1-((1-0.97)*(11.79/fig_height)), num_dict['NUM_TYPE'] + 's', fontsize=18,
                  fontweight='bold')
-        fig.text(0.030, 0.94, 'Description: ' + description, fontsize=12)
-        fig.text(0.030, 0.92, 'Bin size: ' + "{:,}".format(bin_width), fontsize=12)
-        fig.text(0.030, 0.90, 'For chromosomes:', fontsize=12)
+        fig.text(0.030, 1-((1-0.94)*(11.79/fig_height)), 'Description: ' + description, fontsize=12)
+        fig.text(0.030, 1-((1-0.92)*(11.79/fig_height)), 'Bin size: ' + "{:,}".format(bin_width), fontsize=12)
+        fig.text(0.030, 1-((1-0.90)*(11.79/fig_height)), 'For chromosomes:', fontsize=12)
         if len(num_dict['CHROMOSOMES']) < 22:
-            fig.text(0.045, 0.88, '[' + ", ".join(i for i in num_dict['CHROMOSOMES']) + ']', fontsize=8)
+            fig.text(0.045, 1-((1-0.88)*(11.79/fig_height)), '[' + ", ".join(i for i in num_dict['CHROMOSOMES']) + ']', fontsize=8)
         else:
-            fig.text(0.045, 0.88, '[' + ", ".join(i for i in num_dict['CHROMOSOMES'][:22]) + ',', fontsize=8)
-            fig.text(0.045, 0.86, ", ".join(i for i in num_dict['CHROMOSOMES'][22:]) + ']', fontsize=8)
+            fig.text(0.045, 1-((1-0.88)*(11.79/fig_height)), '[' + ", ".join(i for i in num_dict['CHROMOSOMES'][:22]) + ',', fontsize=8)
+            fig.text(0.045, 1-((1-0.86)*(11.79/fig_height)), ", ".join(i for i in num_dict['CHROMOSOMES'][22:]) + ']', fontsize=8)
 
         # Create two histograms for each interaction category
         # ---------------------------------------------------
 
         # Prepare bins
         x_max = 0
-        for i in [0, 1, 2, 3]:
+        for i in range(0, n):
             if x_max < max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN']):
                 x_max = max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN'])
         bins = range(0, x_max + bin_width, bin_width)
@@ -406,7 +413,7 @@ class BaitedDigestSet:
         abs_en = []
         densities_ne = []
         densities_en = []
-        for i in [0, 1, 2, 3]:
+        for i in range(0, n):
 
             # Create histogram for NE
             counts_ne, bins, patches = ax[i + 1][0].hist(
@@ -471,14 +478,14 @@ class BaitedDigestSet:
 
         # Determine maximal density in all four plots
         yd_max = 0
-        for i in [0, 1, 2, 3]:
+        for i in range(0, n):
             if yd_max < max(densities_ne[i] + densities_en[i]):
                 yd_max = max(densities_ne[i] + densities_en[i])
         y_padding = yd_max / 20
         yd_max += y_padding
 
         # Add density axes, normalize and add text labels to histograms
-        for i in [0, 1, 2, 3]:
+        for i in range(0, n):
 
             # Left histogram (NNE)
             yc_max = yd_max * sum(abs_ne[i])
@@ -488,7 +495,7 @@ class BaitedDigestSet:
             ax[i + 1][0].set_ylim(0, yc_max)
             ax_dens = ax[i + 1][0].twinx()
             ax_dens.plot(bcp_list, densities_ne[i], color='red', linewidth=0.5)
-            ax_dens.set_ylabel('Density')
+            ax_dens.set_ylabel('Density', labelpad=7)
             ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
             ax_dens.set_ylim(0, yd_max)
             # Add text labels with total read pair or interaction numbers, median and median absolute deviation
@@ -507,7 +514,7 @@ class BaitedDigestSet:
             ax[i + 1][1].set_ylim(0, yc_max)
             ax_dens = ax[i + 1][1].twinx()
             ax_dens.plot(bcp_list, densities_en[i], color='red', linewidth=0.5)
-            ax_dens.set_ylabel('Density')
+            ax_dens.set_ylabel('Density', labelpad=7)
             ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
             ax_dens.set_ylim(0, yd_max)
             # Add text labels with total read pair or interaction numbers, median and median absolute deviation
@@ -542,8 +549,11 @@ class BaitedDigestSet:
         """
 
         # Add verbose output
-        # Catch wrong input, e.g. wron size of 'i_cats' list
-        # Add bin size to header
+
+        # Catch wrong input
+        if len(i_cats) !=2:
+            print("[ERROR] The density difference plot is only defined for two interaction categories!")
+            return
 
         # Prepare grid for individual plots
         fig_height = 9.16
@@ -674,7 +684,7 @@ class BaitedDigestSet:
             ax[i + 1][0].set_ylim(0, yc_max)
             ax_dens = ax[i + 1][0].twinx()
             ax_dens.plot(bcp_list, densities_ne[i], color='red', linewidth=0.5)
-            ax_dens.set_ylabel('Density')
+            ax_dens.set_ylabel('Density', labelpad=7)
             ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
             ax_dens.set_ylim(0, yd_max)
             # Add text labels with total read pair or interaction numbers, median and median absolute deviation
@@ -693,7 +703,7 @@ class BaitedDigestSet:
             ax[i + 1][1].set_ylim(0, yc_max)
             ax_dens = ax[i + 1][1].twinx()
             ax_dens.plot(bcp_list, densities_en[i], color='red', linewidth=0.5)
-            ax_dens.set_ylabel('Density')
+            ax_dens.set_ylabel('Density', labelpad=7)
             ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
             ax_dens.set_ylim(0, yd_max)
             # Add text labels with total read pair or interaction numbers, median and median absolute deviation
@@ -742,7 +752,7 @@ class BaitedDigestSet:
         ax[3][0].ticklabel_format(axis='y', style='sci', scilimits=(-2,0))
         ax[3][0].yaxis.tick_right()
         ax[3][0].yaxis.set_ticks_position('both')
-        ax[3][0].set_ylabel('Density difference')
+        ax[3][0].set_ylabel('Density difference', labelpad=7)
         ax[3][0].yaxis.set_label_position('right')
 
         # Bar plot below histograms on the right
@@ -762,7 +772,7 @@ class BaitedDigestSet:
         ax[3][1].ticklabel_format(axis='y', style='sci', scilimits=(-2,0))
         ax[3][1].yaxis.tick_right()
         ax[3][1].yaxis.set_ticks_position('both')
-        ax[3][1].set_ylabel('Density difference')
+        ax[3][1].set_ylabel('Density difference', labelpad=7)
         ax[3][1].yaxis.set_label_position('right')
 
         # Make y-axes comparable for the two bar plots below the histograms and add sums of density differences
@@ -801,7 +811,7 @@ class BaitedDigestSet:
         ax[1][2].ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
         ax[1][2].yaxis.tick_right()
         ax[1][2].yaxis.set_ticks_position('both')
-        ax[1][2].set_ylabel('Density difference')
+        ax[1][2].set_ylabel('Density difference', labelpad=7)
         ax[1][2].yaxis.set_label_position('right')
 
         # Bar plot to the left of the lower histograms
@@ -821,7 +831,7 @@ class BaitedDigestSet:
         ax[2][2].ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
         ax[2][2].yaxis.tick_right()
         ax[2][2].yaxis.set_ticks_position('both')
-        ax[2][2].set_ylabel('Density difference')
+        ax[2][2].set_ylabel('Density difference', labelpad=7)
         ax[2][2].yaxis.set_label_position('right')
 
         # Make y-axes comparable for the two bar plots to the left of the histograms and add sums of density differences
