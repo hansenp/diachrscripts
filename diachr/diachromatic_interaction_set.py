@@ -368,6 +368,7 @@ class DiachromaticInteractionSet:
                     d11_inter.set_category('UIR')
                 else:
                     ui_inter_dict[enrichment_pair_tag] += 1
+                    d11_inter.set_category('UI')
 
         # Prepare dictionary for report
         report_dict = {'NN': {'DI':[],'UIR':[],'M_UIR':[],'UI':[]},
@@ -443,6 +444,9 @@ class DiachromaticInteractionSet:
 
         if random_seed is not None:
             random.seed(random_seed)
+
+        if verbose:
+            print("\t[INFO] Random seed: " + str(random_seed))
 
         items = list(self._inter_dict.items())
         random.shuffle(items)

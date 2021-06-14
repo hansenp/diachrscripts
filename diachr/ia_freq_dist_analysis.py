@@ -1,0 +1,845 @@
+from .diachromatic_interaction_set import DiachromaticInteractionSet
+from collections import defaultdict
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy import stats
+
+
+class IaFreqDistAnalysis:
+
+    def __init__(self):
+
+        # Define interaction categories
+        self.i_cats = ['DI',
+                  'DI_S',
+                  'DI_T',
+                  'UIR',
+                  'UI',
+                  'ALL']
+        self.i_cat_colors = ['orange',
+                        'pink',
+                        'cadetblue',
+                        'lightblue',
+                        'lightgray',
+                        'cornflowerblue']
+        self.i_cat_names = ['Directed',
+                       'Directed simple',
+                       'Directed twisted',
+                       'Undirected reference',
+                       'Undirected',
+                       'All']
+        self.e_cats = ['NN',
+                  'NE',
+                  'EN',
+                  'EE']
+
+        # Dictionary that contains ingested interaction grouped by chromosomes
+        self._grouped_interactions = defaultdict()
+
+        # Dictionary with information about ingestion of interactions
+        self._ingest_interaction_set_info_dict = {
+            'TOTAL_INTERACTIONS_READ': 0,
+            'DI': {
+                'NN': 0,
+                'NE': 0,
+                'EN': 0,
+                'EE': 0
+            },
+            'DI_S': {
+                'NN': 0,
+                'NE': 0,
+                'EN': 0,
+                'EE': 0
+            },
+            'DI_T': {
+                'NN': 0,
+                'NE': 0,
+                'EN': 0,
+                'EE': 0
+            },
+            'UIR': {
+                'NN': 0,
+                'NE': 0,
+                'EN': 0,
+                'EE': 0
+            },
+            'UI': {
+                'NN': 0,
+                'NE': 0,
+                'EN': 0,
+                'EE': 0
+            },
+            'ALL': {
+                'NN': 0,
+                'NE': 0,
+                'EN': 0,
+                'EE': 0
+            }
+        }
+
+        # Prepare dictionary with read pair numbers
+        self.rp_num_dict = dict()
+
+        # Prepare dictionary with interaction distances
+        self.i_dist_dict = dict()
+
+    def ingest_interaction_set(self, d11_inter_set: DiachromaticInteractionSet, verbose: bool = False):
+        """
+        Ingests interactions from a DiachromaticInteractionSet and groups them by chromosomes as well as interaction
+        and enrichment category.
+
+        :param d11_inter_set: DiachromaticInteractionSet with DiachromaticInteraction11 interactions
+        :param verbose: If true, progress information will be displayed
+        :return: Dictionary containing information about ingested  interactions
+        """
+
+        if verbose:
+            print(
+                "[INFO] Reading interactions and group them according to chromosomes, interaction and enrichment "
+                "category ...")
+
+        for d11_inter in d11_inter_set.interaction_list:
+            self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ'] += 1
+            if verbose:
+                if self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ'] % 1000000 == 0:
+                    print("\t[INFO] Read " + "{:,}".format(
+                        self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ']) + " interactions ...")
+
+            # Count interaction type
+            self._ingest_interaction_set_info_dict[d11_inter.get_category()][d11_inter.enrichment_status_tag_pair] += 1
+            self._ingest_interaction_set_info_dict['ALL'][d11_inter.enrichment_status_tag_pair] += 1
+
+            # Create a new dictionary if this is the first interaction seen on this chromosome
+            if d11_inter.chrA not in self._grouped_interactions:
+                self._grouped_interactions[d11_inter.chrA] = defaultdict()
+                for i_cat in self.i_cats:
+                    self._grouped_interactions[d11_inter.chrA][i_cat] = dict()
+                    for e_cat in self.e_cats:
+                        self._grouped_interactions[d11_inter.chrA][i_cat][e_cat] = []
+
+
+            # Add interaction to grouped interactions
+            self._grouped_interactions[d11_inter.chrA][d11_inter.get_category()][
+                d11_inter.enrichment_status_tag_pair].append(d11_inter)
+
+            self._grouped_interactions[d11_inter.chrA]['ALL'][d11_inter.enrichment_status_tag_pair].append(d11_inter)
+
+            if d11_inter.get_category() == 'DI':
+                if d11_inter.n_twisted < d11_inter.n_simple:
+                    self._grouped_interactions[d11_inter.chrA]['DI_S'][d11_inter.enrichment_status_tag_pair].append(
+                        d11_inter)
+                    self._ingest_interaction_set_info_dict['DI_S'][d11_inter.enrichment_status_tag_pair] += 1
+                else:
+                    self._grouped_interactions[d11_inter.chrA]['DI_T'][d11_inter.enrichment_status_tag_pair].append(
+                        d11_inter)
+                    self._ingest_interaction_set_info_dict['DI_T'][d11_inter.enrichment_status_tag_pair] += 1
+
+        if verbose:
+            print("\t[INFO] Total number of interactions read: " + "{:,}".format(
+                self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ']))
+            print("[INFO] ... done.")
+
+        return self._ingest_interaction_set_info_dict
+
+    def get_ingest_interaction_set_info_report(self):
+        """
+        :return: Formatted string with information about ingestion of interactions for output on the screen or in report
+         files.
+        """
+
+        report = "[INFO] Report on ingestion of interactions:" + '\n'
+        report += "\t[INFO] Total number of interactions read: " + "{:,}".format(
+            self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ']) + '\n'
+        report += "\t[INFO] Broken down by interaction category and enrichment status: " + '\n'
+        report += "\t\t[INFO] DI: " + '\n'
+        report += "\t\t\t[INFO] NN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI']['NN']) + '\n'
+        report += "\t\t\t[INFO] EE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI']['EE']) + '\n'
+        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI']['NE']) + '\n'
+        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI']['EN']) + '\n'
+        report += "\t\t[INFO] DI_S: " + '\n'
+        report += "\t\t\t[INFO] NN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_S']['NN']) + '\n'
+        report += "\t\t\t[INFO] EE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_S']['EE']) + '\n'
+        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_S']['NE']) + '\n'
+        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_S']['EN']) + '\n'
+        report += "\t\t[INFO] DI_T: " + '\n'
+        report += "\t\t\t[INFO] NN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_T']['NN']) + '\n'
+        report += "\t\t\t[INFO] EE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_T']['EE']) + '\n'
+        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_T']['NE']) + '\n'
+        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_T']['EN']) + '\n'
+        report += "\t\t[INFO] UIR: " + '\n'
+        report += "\t\t\t[INFO] NN: " + "{:,}".format(self._ingest_interaction_set_info_dict['UIR']['NN']) + '\n'
+        report += "\t\t\t[INFO] EE: " + "{:,}".format(self._ingest_interaction_set_info_dict['UIR']['EE']) + '\n'
+        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['UIR']['NE']) + '\n'
+        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['UIR']['EN']) + '\n'
+        report += "\t\t[INFO] UI: " + '\n'
+        report += "\t\t\t[INFO] NN: " + "{:,}".format(self._ingest_interaction_set_info_dict['UI']['NN']) + '\n'
+        report += "\t\t\t[INFO] EE: " + "{:,}".format(self._ingest_interaction_set_info_dict['UI']['EE']) + '\n'
+        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['UI']['NE']) + '\n'
+        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['UI']['EN']) + '\n'
+        report += "\t\t[INFO] ALL: " + '\n'
+        report += "\t\t\t[INFO] NN: " + "{:,}".format(self._ingest_interaction_set_info_dict['ALL']['NN']) + '\n'
+        report += "\t\t\t[INFO] EE: " + "{:,}".format(self._ingest_interaction_set_info_dict['ALL']['EE']) + '\n'
+        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['ALL']['NE']) + '\n'
+        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['ALL']['EN']) + '\n'
+        report += "[INFO] End of report." + '\n'
+
+        return report
+
+    def get_ingest_interaction_set_table_row(self):
+        """
+        :return: Table row with information about ingestion of interactions
+        """
+
+    pass
+
+    def _get_empty_num_dict(self,
+                            i_cats: list = None,
+                            i_cat_colors: list = None,
+                            i_cat_names: list = None,
+                            e_cats=None):
+        """
+        This function initializes a data structure that can be filled with interaction numbers or read pair numbers.
+
+        The data structure consists of a dictionary with further sub-dictionaries. At the top level there are six
+        dictionaries, one for each interaction category. In the level below, there are four lists for each category,
+        one for each enrichment category (NN, NE, EN, EE).
+
+        In addition to the lists with the pairs, there is a list with chromosomes that were taken into account.
+
+        :return: A dictionary containing lists of numbers for the various interaction and enrichment categories and
+        a list of chromosomes that were taken into account.
+        """
+
+        num_dict = dict()
+
+        for i in range(len(i_cats)):
+            num_dict[i_cats[i]] = dict()
+            for e_cat in e_cats:
+                num_dict[i_cats[i]][e_cat] = []
+            if i_cat_names is not None:
+                num_dict[i_cats[i]]['NAME'] = i_cat_names[i]
+            if i_cat_colors is not None:
+                num_dict[i_cats[i]]['COLOR'] = i_cat_colors[i]
+        num_dict['CHROMOSOMES'] = []
+
+        return num_dict
+
+    def get_all_rp_nums_and_i_dists(self,
+                                    chromosomes: [str] = None,
+                                    verbose: bool = False):
+        """
+        This function collects read pair numbers and interaction distances in the various interaction and enrichment
+        categories.
+
+        :param chromosomes: The analysis can be restricted to subsets chromosomes, e.g. ['chr19', 'chr20', 'chr21']
+        :param verbose: If true, messages about progress will be written to the screen
+        :return: A dictionary containing the results and a list of chromosomes that were taken into account.
+        """
+
+        if verbose:
+            print("[INFO] Getting all read pair numbers and interaction distances ...")
+
+        # Reset num_dicts
+        self.rp_num_dict = self._get_empty_num_dict(
+            i_cats=self.i_cats,
+            i_cat_colors=self.i_cat_colors,
+            i_cat_names=self.i_cat_names,
+            e_cats=self.e_cats)
+        self.rp_num_dict['NUM_TYPE'] = 'Read pair number'
+
+        # Reset num_dicts
+        self.i_dist_dict = self._get_empty_num_dict(
+            i_cats=self.i_cats,
+            i_cat_colors=self.i_cat_colors,
+            i_cat_names=self.i_cat_names,
+            e_cats=self.e_cats)
+        self.i_dist_dict['NUM_TYPE'] = 'Interaction distance'
+
+        # Combine lists of distances or read pair numbers from all baits
+        for chrom in self._grouped_interactions.keys():
+            if chromosomes is not None:
+                if chrom not in chromosomes:
+                    continue
+
+            if verbose:
+                print("\t[INFO] Processing chromosome " + chrom + " ...")
+
+            self.rp_num_dict['CHROMOSOMES'].append(chrom)
+            self.i_dist_dict['CHROMOSOMES'].append(chrom)
+            for i_cat in ['DI', 'DI_S', 'DI_T', 'UIR', 'UI', 'ALL']:
+                for e_cat in ['NN', 'NE', 'EN', 'EE']:
+                    for d11_inter in self._grouped_interactions[chrom][i_cat][e_cat]:
+                        self.rp_num_dict[i_cat][e_cat].append(d11_inter.rp_total)
+                        self.i_dist_dict[i_cat][e_cat].append(d11_inter.i_dist)
+
+        if verbose:
+            print("[INFO] ... done.")
+
+        return self.rp_num_dict, self.i_dist_dict
+
+    def get_all_rp_nums_or_i_dists_histograms(self,
+                                              num_dict: dict = None,
+                                              i_cats: list = None,
+                                              q_lim: float = 0.95,
+                                              description: str = "DESCRIPTION",
+                                              pdf_file_name: str = "num_histograms.pdf"):
+        """
+        This function creates the histograms for read pair numbers or interaction distances in the various
+        interaction and enrichment categories.
+
+        :param i_cats: Interaction category
+        :param num_dict: Dictionary that was created with the function 'get_all_rp_nums_or_i_dists()'
+        :param q_lim: Chose upper limit for x-axes based on quantile (affects presentation only)
+        :param description: Brief description that is shown in the plot above the histograms
+        :param pdf_file_name: Name of the PDF file that will be created.
+        :return: A matplotlib 'Figure' object that can be displayed in Jupyter notebooks
+        """
+
+        # Catch wrong input
+        allowed_i_cats = ['DI', 'DI_S', 'DI_T', 'UI', 'UIR', 'ALL']
+        for i_cat in i_cats:
+            if i_cat not in allowed_i_cats:
+                print("[ERROR] Illegal interaction category tag! Allowed: 'DI', 'D_S', 'D_T', 'UI', 'UIR' and 'ALL'")
+                return
+
+        # Prepare grid for individual plots
+        n = len(i_cats)
+        x = 11.79/4.75
+        fig_height = 0.75 * x + n * x
+        fig, ax = plt.subplots(nrows=n+1, ncols=2, figsize=(9.5, fig_height),
+                               gridspec_kw={'height_ratios': [0.75] + [1]*n})
+
+        # Determine bin size
+        x_lim = 0
+        for i in range(0, n):
+            q = max(np.quantile(num_dict[i_cats[i]]['NE'], q_lim), np.quantile(num_dict[i_cats[i]]['EN'], q_lim))
+            if x_lim < q:
+                x_lim = q
+        x_ticks, x_tick_labels = self.make_ticks(x_lim)
+        bin_width = int(x_lim / 30)
+
+        # Add header section with description and chromosomes that were taken into account
+        ax[0][0].plot()
+        ax[0][0].spines['left'].set_color('white')
+        ax[0][0].spines['right'].set_color('white')
+        ax[0][0].spines['top'].set_color('white')
+        ax[0][0].spines['bottom'].set_color('white')
+        ax[0][0].tick_params(axis='x', colors='white')
+        ax[0][0].tick_params(axis='y', colors='white')
+        ax[0][1].plot()
+        ax[0][1].spines['left'].set_color('white')
+        ax[0][1].spines['right'].set_color('white')
+        ax[0][1].spines['top'].set_color('white')
+        ax[0][1].spines['bottom'].set_color('white')
+        ax[0][1].tick_params(axis='x', colors='white')
+        ax[0][1].tick_params(axis='y', colors='white')
+        fig.text(0.015, 1-((1-0.97)*(11.79/fig_height)), num_dict['NUM_TYPE'] + 's', fontsize=18,
+                 fontweight='bold')
+        fig.text(0.030, 1-((1-0.94)*(11.79/fig_height)), 'Description: ' + description, fontsize=12)
+        fig.text(0.030, 1-((1-0.92)*(11.79/fig_height)), 'Bin size: ' + "{:,}".format(bin_width), fontsize=12)
+        fig.text(0.030, 1-((1-0.90)*(11.79/fig_height)), 'For chromosomes:', fontsize=12)
+        if len(num_dict['CHROMOSOMES']) < 22:
+            fig.text(0.045, 1-((1-0.88)*(11.79/fig_height)), '[' + ", ".join(i for i in num_dict['CHROMOSOMES']) + ']', fontsize=8)
+        else:
+            fig.text(0.045, 1-((1-0.88)*(11.79/fig_height)), '[' + ", ".join(i for i in num_dict['CHROMOSOMES'][:22]) + ',', fontsize=8)
+            fig.text(0.045, 1-((1-0.86)*(11.79/fig_height)), ", ".join(i for i in num_dict['CHROMOSOMES'][22:]) + ']', fontsize=8)
+
+        # Create two histograms for each interaction category
+        # ---------------------------------------------------
+
+        # Prepare bins
+        x_max = 0
+        for i in range(0, n):
+            if x_max < max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN']):
+                x_max = max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN'])
+        bins = range(0, x_max + bin_width, bin_width)
+
+        # Create two histograms for each category
+        abs_ne = []
+        abs_en = []
+        densities_ne = []
+        densities_en = []
+        for i in range(0, n):
+
+            # Create histogram for NE
+            counts_ne, bins, patches = ax[i + 1][0].hist(
+                num_dict[i_cats[i]]['NE'],
+                bins=bins, density=False,
+                facecolor=num_dict[i_cats[i]]['COLOR'],
+                edgecolor="dimgray",
+                linewidth=0.5,
+                alpha=1)
+            ax[i + 1][0].set_title(
+                num_dict[i_cats[i]]['NAME'] + ' - NE',
+                loc='left')
+            ax[i + 1][0].set_xlabel(num_dict['NUM_TYPE'])
+            ax[i + 1][0].set_ylabel('Frequency')
+            ax[i + 1][0].set_xticks(x_ticks)
+            ax[i + 1][0].set_xticklabels(x_tick_labels)
+            ax[i + 1][0].set_xlim(0, x_lim)
+
+            # Create histogram for EN
+            counts_en, bins, patches = ax[i + 1][1].hist(
+                num_dict[i_cats[i]]['EN'],
+                bins=bins, density=False,
+                facecolor=num_dict[i_cats[i]]['COLOR'],
+                edgecolor="dimgray",
+                linewidth=0.5,
+                alpha=1)
+            ax[i + 1][1].set_title(
+                num_dict[i_cats[i]]['NAME'] + ' - EN',
+                loc='left')
+            ax[i + 1][1].set_xlabel(num_dict['NUM_TYPE'])
+            ax[i + 1][1].set_ylabel('Frequency')
+            ax[i + 1][1].set_xticks(x_ticks)
+            ax[i + 1][1].set_xticklabels(x_tick_labels)
+            ax[i + 1][1].set_xlim(0, x_lim)
+
+            # Draw vertical lines and shaded areas for median and mad
+            median_ne = np.median(num_dict[i_cats[i]]['NE'])
+            mad_ne = stats.median_absolute_deviation(num_dict[i_cats[i]]['NE'])
+            ax[i + 1][0].axvline(median_ne, linestyle='--', linewidth=0.75, color='blue', zorder=2)
+            ax[i + 1][0].axvspan(median_ne, median_ne + mad_ne, color='green', alpha=0.25, zorder=0)
+            median_en = np.median(num_dict[i_cats[i]]['EN'])
+            mad_en = stats.median_absolute_deviation(num_dict[i_cats[i]]['EN'])
+            ax[i + 1][1].axvline(median_en, linestyle='--', linewidth=0.75, color='blue', zorder=2)
+            ax[i + 1][1].axvspan(median_en, median_en + mad_en, color='green', alpha=0.25, zorder=0)
+
+            # Keep track of bin counts and densities
+            abs_ne.append(counts_ne)
+            abs_en.append(counts_en)
+            densities_ne.append([count / sum(counts_ne) for count in counts_ne])
+            densities_en.append([count / sum(counts_en) for count in counts_en])
+
+        # Add second axes with densities and normalize all histograms to maximum density
+        # ------------------------------------------------------------------------------
+
+        # Transform bins to center bin positions. The original list for the bins contains the boundaries between bins,
+        # but for the bar plot we need the center positions of bins.
+        bcp = bin_width / 2
+        bcp_list = [bcp]
+        for i in range(len(densities_ne[0]) - 1):
+            bcp += bin_width
+            bcp_list.append(bcp)
+
+        # Determine maximal density in all four plots
+        yd_max = 0
+        for i in range(0, n):
+            if yd_max < max(densities_ne[i] + densities_en[i]):
+                yd_max = max(densities_ne[i] + densities_en[i])
+        y_padding = yd_max / 20
+        yd_max += y_padding
+
+        # Add density axes, normalize and add text labels to histograms
+        for i in range(0, n):
+
+            # Left histogram (NNE)
+            yc_max = yd_max * sum(abs_ne[i])
+            yc_ticks, yc_tick_labels = self.make_ticks(yc_max)
+            ax[i + 1][0].set_yticks(yc_ticks)
+            ax[i + 1][0].set_yticklabels(yc_tick_labels)
+            ax[i + 1][0].set_ylim(0, yc_max)
+            ax_dens = ax[i + 1][0].twinx()
+            ax_dens.plot(bcp_list, densities_ne[i], color='red', linewidth=0.5)
+            ax_dens.set_ylabel('Density', labelpad=7)
+            ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
+            ax_dens.set_ylim(0, yd_max)
+            # Add text labels with total read pair or interaction numbers, median and median absolute deviation
+            ax[i + 1][0].text(x_lim - (x_lim / 3),
+                              yc_max - (yc_max / 3.2),
+                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['NE'])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
+                                  np.median(num_dict[i_cats[i]]['NE'])) + '\n' + 'Mad: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]]['NE'])),
+                              fontsize=9,
+                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+
+            # Right histogram (EN)
+            yc_max = yd_max * sum(abs_en[i])
+            yc_ticks, yc_tick_labels = self.make_ticks(yc_max)
+            ax[i + 1][1].set_yticks(yc_ticks)
+            ax[i + 1][1].set_yticklabels(yc_tick_labels)
+            ax[i + 1][1].set_ylim(0, yc_max)
+            ax_dens = ax[i + 1][1].twinx()
+            ax_dens.plot(bcp_list, densities_en[i], color='red', linewidth=0.5)
+            ax_dens.set_ylabel('Density', labelpad=7)
+            ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
+            ax_dens.set_ylim(0, yd_max)
+            # Add text labels with total read pair or interaction numbers, median and median absolute deviation
+            ax[i + 1][1].text(x_lim - (x_lim / 3),
+                              yc_max - (yc_max / 3.2),
+                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['EN'])) + '\n' +
+                              'Mdn: ' + "{:,.0f}".format(np.median(num_dict[i_cats[i]]['EN'])) + '\n' +
+                              'Mad: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]]['EN'])),
+                              fontsize=9,
+                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+
+        # Save and return figure
+        fig.tight_layout(pad=1.25)
+        fig.savefig(pdf_file_name)
+        return fig
+
+    def get_all_rp_nums_or_i_dists_denisty_diff_plot(self,
+                                                     num_dict: dict = None,
+                                                     i_cats: list = None,
+                                                     q_lim: float = 0.95,
+                                                     description: str = "DESCRIPTION",
+                                                     pdf_file_name: str = "density_diff_plot.pdf"):
+        """
+        This function creates the density difference plot for a given pair of interaction categories.
+
+        :param num_dict: A data structure that contains read pair numbers and distances for all interaction categories
+        :param i_cats: List of interaction categories to be compared, e.g. ['DI', 'UIR']
+        :param q_lim: Upper limit at quantile level, e.g. at 0.95, 5% of the data with the larger quantile are not shown
+        :param description: Brief description that is shown in the plot above the histograms
+        :param pdf_file_name: Name of the PDF file that will be created
+        :return: A 'Figure' object of 'matplotlib' that can be displayed in a Jupyter notebook
+        """
+
+        # Add verbose output
+
+        # Catch wrong input
+        if len(i_cats) !=2:
+            print("[ERROR] The density difference plot is only defined for two interaction categories!")
+            return
+
+        # Prepare grid for individual plots
+        fig_height = 9.16
+        fig, ax = plt.subplots(nrows=4, ncols=3, figsize=(14.25, fig_height),
+                               gridspec_kw={'height_ratios': [0.75, 1, 1, 1]})
+
+        # Hide unnecessary subplots
+        ax[0][2].axis('off')
+        ax[3][2].axis('off')
+
+        # Determine bin size
+        x_lim = 0
+        for i in [0, 1]:
+            q = max(np.quantile(num_dict[i_cats[i]]['NE'], q_lim), np.quantile(num_dict[i_cats[i]]['EN'], q_lim))
+            if x_lim < q:
+                x_lim = q
+        x_ticks, x_tick_labels = self.make_ticks(x_lim)
+        bin_width = int(x_lim / 30)
+
+        # Add header section with description and chromosomes that were taken into account
+        ax[0][0].plot()
+        ax[0][0].spines['left'].set_color('white')
+        ax[0][0].spines['right'].set_color('white')
+        ax[0][0].spines['top'].set_color('white')
+        ax[0][0].spines['bottom'].set_color('white')
+        ax[0][0].tick_params(axis='x', colors='white')
+        ax[0][0].tick_params(axis='y', colors='white')
+        ax[0][1].plot()
+        ax[0][1].spines['left'].set_color('white')
+        ax[0][1].spines['right'].set_color('white')
+        ax[0][1].spines['top'].set_color('white')
+        ax[0][1].spines['bottom'].set_color('white')
+        ax[0][1].tick_params(axis='x', colors='white')
+        ax[0][1].tick_params(axis='y', colors='white')
+        fig.text(0.015*(9.5/14.25), 1-((1-0.97)*(11.79/fig_height)), num_dict['NUM_TYPE'] + 's', fontsize=18,
+                 fontweight='bold')
+        fig.text(0.030*(9.5/14.25), 1-((1-0.94)*(11.79/fig_height)), 'Description: ' + description, fontsize=12)
+        fig.text(0.030 * (9.5 / 14.25), 1-((1-0.92)*(11.79/fig_height)), 'Bin size: ' + "{:,}".format(bin_width), fontsize=12)
+        fig.text(0.030*(9.5/14.25), 1-((1-0.90)*(11.79/fig_height)), 'For chromosomes:', fontsize=12)
+        fig.text(0.045*(9.5/14.25), 1-((1-0.88)*(11.79/fig_height)), '[' + ", ".join(i for i in num_dict['CHROMOSOMES']) + ']', fontsize=8)
+
+        # Prepare bins
+        x_max = 0
+        for i in [0, 1]:
+            if x_max < max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN']):
+                x_max = max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN'])
+        bins = range(0, x_max + bin_width, bin_width)
+
+        # Create histograms for the two categories
+        # ----------------------------------------
+
+        abs_ne = []
+        abs_en = []
+        densities_ne = []
+        densities_en = []
+        for i in [0, 1]:
+
+            # Create histogram for NE
+            counts_ne, bins, patches = ax[i + 1][0].hist(
+                num_dict[i_cats[i]]['NE'],
+                bins=bins, density=False,
+                facecolor=num_dict[i_cats[i]]['COLOR'],
+                edgecolor="dimgray",
+                linewidth=0.5,
+                alpha=1)
+            ax[i + 1][0].set_title(num_dict[i_cats[i]]['NAME'] + ' - NE', loc='left')
+            ax[i + 1][0].set_xlabel(num_dict['NUM_TYPE'])
+            ax[i + 1][0].set_ylabel('Frequency')
+            ax[i + 1][0].set_xticks(x_ticks)
+            ax[i + 1][0].set_xticklabels(x_tick_labels)
+            ax[i + 1][0].set_xlim(0, x_lim)
+
+            # Create histogram for NE
+            counts_en, bins, patches = ax[i + 1][1].hist(
+                num_dict[i_cats[i]]['EN'],
+                bins=bins, density=False,
+                facecolor=num_dict[i_cats[i]]['COLOR'],
+                edgecolor="dimgray",
+                linewidth=0.5,
+                alpha=1)
+            ax[i + 1][1].set_title(num_dict[i_cats[i]]['NAME'] + ' - EN', loc='left')
+            ax[i + 1][1].set_xlabel(num_dict['NUM_TYPE'])
+            ax[i + 1][1].set_ylabel('Frequency')
+            ax[i + 1][1].set_xticks(x_ticks)
+            ax[i + 1][1].set_xticklabels(x_tick_labels)
+            ax[i + 1][1].set_xlim(0, x_lim)
+
+            # Draw vertical lines and shaded areas for median and MAD
+            median_ne = np.median(num_dict[i_cats[i]]['NE'])
+            mad_ne = stats.median_absolute_deviation(num_dict[i_cats[i]]['NE'])
+            ax[i + 1][0].axvline(median_ne, linestyle='--', linewidth=0.75, color='blue', zorder=2)
+            ax[i + 1][0].axvspan(median_ne, median_ne + mad_ne, color='green', alpha=0.25, zorder=0)
+            median_en = np.median(num_dict[i_cats[i]]['EN'])
+            mad_en = stats.median_absolute_deviation(num_dict[i_cats[i]]['EN'])
+            ax[i + 1][1].axvline(median_en, linestyle='--', linewidth=0.75, color='blue', zorder=2)
+            ax[i + 1][1].axvspan(median_en, median_en + mad_en, color='green', alpha=0.25, zorder=0)
+
+            # Keep track of bin counts and densities
+            abs_ne.append(counts_ne)
+            abs_en.append(counts_en)
+            densities_ne.append([count / sum(counts_ne) for count in counts_ne])
+            densities_en.append([count / sum(counts_en) for count in counts_en])
+
+        # Add second axes with densities and normalize all histograms to maximum density
+        # ------------------------------------------------------------------------------
+
+        # Transform bins to center bin positions. The original list for the bins contains the boundaries between bins,
+        # but for the bar plot we need the center positions of bins.
+        bcp = bin_width / 2
+        bcp_list = [bcp]
+        for i in range(len(densities_ne[0]) - 1):
+            bcp += bin_width
+            bcp_list.append(bcp)
+
+        # Determine maximal density in all four plots
+        yd_max = max(max(densities_ne[0]), max(densities_en[0]), max(densities_ne[1]), max(densities_en[1]))
+        y_padding = yd_max / 20
+        yd_max += y_padding
+
+        # Add density axes, normalize and add text labels to histograms
+        for i in [0, 1]:
+
+            # Left histogram (NE)
+            yc_max = yd_max * sum(abs_ne[i])
+            yc_ticks, yc_tick_labels = self.make_ticks(yc_max)
+            ax[i + 1][0].set_yticks(yc_ticks)
+            ax[i + 1][0].set_yticklabels(yc_tick_labels)
+            ax[i + 1][0].set_ylim(0, yc_max)
+            ax_dens = ax[i + 1][0].twinx()
+            ax_dens.plot(bcp_list, densities_ne[i], color='red', linewidth=0.5)
+            ax_dens.set_ylabel('Density', labelpad=7)
+            ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
+            ax_dens.set_ylim(0, yd_max)
+            # Add text labels with total read pair or interaction numbers, median and median absolute deviation
+            ax[i + 1][0].text(x_lim - (x_lim / 3),
+                              yc_max - (yc_max / 3.2),
+                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['NE'])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
+                                  np.median(num_dict[i_cats[i]]['NE'])) + '\n' + 'Mad: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]]['NE'])),
+                              fontsize=9,
+                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+
+            # Right histogram (EN)
+            yc_max = yd_max * sum(abs_en[i])
+            yc_ticks, yc_tick_labels = self.make_ticks(yc_max)
+            ax[i + 1][1].set_yticks(yc_ticks)
+            ax[i + 1][1].set_yticklabels(yc_tick_labels)
+            ax[i + 1][1].set_ylim(0, yc_max)
+            ax_dens = ax[i + 1][1].twinx()
+            ax_dens.plot(bcp_list, densities_en[i], color='red', linewidth=0.5)
+            ax_dens.set_ylabel('Density', labelpad=7)
+            ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
+            ax_dens.set_ylim(0, yd_max)
+            # Add text labels with total read pair or interaction numbers, median and median absolute deviation
+            ax[i + 1][1].text(x_lim - (x_lim / 3),
+                              yc_max - (yc_max / 3.2),
+                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['EN'])) + '\n' +
+                              'Mdn: ' + "{:,.0f}".format(np.median(num_dict[i_cats[i]]['EN'])) + '\n' +
+                              'Mad: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]]['EN'])),
+                              fontsize=9,
+                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+
+        # Add subplots for density differences
+        # ------------------------------------
+
+        # Get four lists with densities differences from all four density lists
+        density_diff_cat_0_cat_1_ne = [] # Below histograms on the left
+        density_diff_cat_0_cat_1_en = [] # Below histograms on the right
+        density_diff_cat_0_ne_en = []    # To the left of the upper histograms
+        density_diff_cat_1_ne_en = []    # To the left of the lower histograms
+        for i in range(0, len(densities_ne[0])):
+            density_diff_cat_0_cat_1_ne.append(densities_ne[0][i] - densities_ne[1][i])
+            density_diff_cat_0_cat_1_en.append(densities_en[0][i] - densities_en[1][i])
+            density_diff_cat_0_ne_en.append(densities_ne[0][i] - densities_en[0][i])
+            density_diff_cat_1_ne_en.append(densities_ne[1][i] - densities_en[1][i])
+
+        # Determine sum of density differences
+        dd_cat_0_cat_1_ne_sum = sum(map(abs, density_diff_cat_0_cat_1_ne))
+        dd_cat_0_cat_1_en_sum = sum(map(abs, density_diff_cat_0_cat_1_en))
+        dd_cat_0_ne_en_sum = sum(map(abs, density_diff_cat_0_ne_en))
+        dd_cat_1_ne_en_sum = sum(map(abs, density_diff_cat_1_ne_en))
+
+        # Bar plot below histograms on the left
+        ax[3][0].bar(bcp_list,
+                     density_diff_cat_0_cat_1_ne,
+                     width=bin_width,
+                     color=[num_dict[i_cats[0]]['COLOR'] if 0 < dd else num_dict[i_cats[1]]['COLOR'] for dd in density_diff_cat_0_cat_1_ne],
+                     edgecolor="dimgray",
+                     linewidth=0.5
+                     )
+        ax[3][0].set_title('NE', loc='left')
+        ax[3][0].set_xticks(x_ticks)
+        ax[3][0].set_xticklabels(x_tick_labels)
+        ax[3][0].set_xlim(0, x_lim)
+        ax[3][0].set_xlabel(num_dict['NUM_TYPE'])
+        ax[3][0].axhline(0, linestyle='-.', linewidth=0.75, color='blue', zorder=2)
+        ax[3][0].ticklabel_format(axis='y', style='sci', scilimits=(-2,0))
+        ax[3][0].yaxis.tick_right()
+        ax[3][0].yaxis.set_ticks_position('both')
+        ax[3][0].set_ylabel('Density difference', labelpad=7)
+        ax[3][0].yaxis.set_label_position('right')
+
+        # Bar plot below histograms on the right
+        ax[3][1].bar(bcp_list,
+                     density_diff_cat_0_cat_1_en,
+                     width=bin_width,
+                     color=[num_dict[i_cats[0]]['COLOR'] if 0 < dd else num_dict[i_cats[1]]['COLOR'] for dd in density_diff_cat_0_cat_1_en],
+                     edgecolor="dimgray",
+                     linewidth=0.5
+                     )
+        ax[3][1].set_title('EN', loc='left')
+        ax[3][1].set_xticks(x_ticks)
+        ax[3][1].set_xticklabels(x_tick_labels)
+        ax[3][1].set_xlim(0, x_lim)
+        ax[3][1].set_xlabel(num_dict['NUM_TYPE'])
+        ax[3][1].axhline(0, linestyle='-.', linewidth=0.75, color='blue', zorder=2)
+        ax[3][1].ticklabel_format(axis='y', style='sci', scilimits=(-2,0))
+        ax[3][1].yaxis.tick_right()
+        ax[3][1].yaxis.set_ticks_position('both')
+        ax[3][1].set_ylabel('Density difference', labelpad=7)
+        ax[3][1].yaxis.set_label_position('right')
+
+        # Make y-axes comparable for the two bar plots below the histograms and add sums of density differences
+        y_min = min(min(density_diff_cat_0_cat_1_ne), min(density_diff_cat_0_cat_1_en))
+        y_max = max(max(density_diff_cat_0_cat_1_ne), max(density_diff_cat_0_cat_1_en))
+        y_padding = ((y_max - y_min)/20)
+        y_min -= y_padding
+        y_max += y_padding
+        ax[3][0].set_ylim(y_min, y_max)
+        ax[3][1].set_ylim(y_min, y_max)
+        ax[3][0].text(x_lim - (x_lim / 3),
+                      y_max - ((y_max - y_min) / 8),
+                      'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_cat_1_ne_sum),
+                      fontsize=9,
+                      bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+        ax[3][1].text(x_lim - (x_lim / 3),
+                      y_max - ((y_max - y_min) / 8),
+                      'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_cat_1_en_sum),
+                      fontsize=9,
+                      bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+
+        # Bar plot to the left of the upper histograms
+        ax[1][2].bar(bcp_list,
+                     density_diff_cat_0_ne_en,
+                     width=bin_width,
+                     color=[num_dict[i_cats[0]]['COLOR'] if 0 < dd else num_dict[i_cats[0]]['COLOR'] for dd in density_diff_cat_0_ne_en],
+                     edgecolor="dimgray",
+                     linewidth=0.5
+                     )
+        ax[1][2].set_title( num_dict[i_cats[0]]['NAME'], loc='left')
+        ax[1][2].set_xticks(x_ticks)
+        ax[1][2].set_xticklabels(x_tick_labels)
+        ax[1][2].set_xlim(0, x_lim)
+        ax[1][2].set_xlabel(num_dict['NUM_TYPE'])
+        ax[1][2].axhline(0, linestyle='-.', linewidth=0.75, color='blue', zorder=2)
+        ax[1][2].ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
+        ax[1][2].yaxis.tick_right()
+        ax[1][2].yaxis.set_ticks_position('both')
+        ax[1][2].set_ylabel('Density difference', labelpad=7)
+        ax[1][2].yaxis.set_label_position('right')
+
+        # Bar plot to the left of the lower histograms
+        ax[2][2].bar(bcp_list,
+                     density_diff_cat_1_ne_en,
+                     width=bin_width,
+                     color=[num_dict[i_cats[1]]['COLOR'] if 0 < dd else num_dict[i_cats[1]]['COLOR'] for dd in density_diff_cat_1_ne_en],
+                     edgecolor="dimgray",
+                     linewidth=0.5
+                     )
+        ax[2][2].set_title(num_dict[i_cats[1]]['NAME'], loc='left')
+        ax[2][2].set_xticks(x_ticks)
+        ax[2][2].set_xticklabels(x_tick_labels)
+        ax[2][2].set_xlim(0, x_lim)
+        ax[2][2].set_xlabel(num_dict['NUM_TYPE'])
+        ax[2][2].axhline(0, linestyle='-.', linewidth=0.75, color='blue', zorder=2)
+        ax[2][2].ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
+        ax[2][2].yaxis.tick_right()
+        ax[2][2].yaxis.set_ticks_position('both')
+        ax[2][2].set_ylabel('Density difference', labelpad=7)
+        ax[2][2].yaxis.set_label_position('right')
+
+        # Make y-axes comparable for the two bar plots to the left of the histograms and add sums of density differences
+        y_min = min(min(density_diff_cat_0_ne_en), min(density_diff_cat_1_ne_en))
+        y_max = max(max(density_diff_cat_0_ne_en), max(density_diff_cat_1_ne_en))
+        y_padding = ((y_max - y_min) / 20)
+        y_min -= y_padding
+        y_max += y_padding
+        ax[1][2].set_ylim(y_min, y_max)
+        ax[2][2].set_ylim(y_min, y_max)
+        ax[1][2].text(x_lim - (x_lim / 3),
+                      y_max - ((y_max - y_min) / 8),
+                      'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_ne_en_sum),
+                      fontsize=9,
+                      bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+        ax[2][2].text(x_lim - (x_lim / 3),
+                      y_max - ((y_max - y_min) / 8),
+                      'sum(|dd|): ' + "{:.2f}".format(dd_cat_1_ne_en_sum),
+                      fontsize=9,
+                      bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+
+        # Save and return figure
+        fig.tight_layout(pad=1.25)
+        fig.savefig(pdf_file_name)
+        return fig
+
+    def make_ticks(self, max_val: int = 100):
+
+        if max_val < 10:
+            return list(range(0, 50 + 1, 1)), list(range(0, 50 + 1, 1))
+
+        if max_val < 25:
+            return list(range(0, 50 + 1, 5)), list(range(0, 50 + 1, 5))
+
+        if max_val < 50:
+            return list(range(0, 50 + 1, 10)), list(range(0, 50 + 1, 10))
+
+        # Create list of maximal ticks
+        tick_lims = []
+        x = [10, 25, 50]
+        while x[2] <= max_val:
+            x = [(y * 10) for y in x]
+            tick_lims = tick_lims + x
+
+        # Find maximal tick for input value
+        tick_max_idx = 0
+        while tick_lims[tick_max_idx] <= max_val:
+            tick_max_idx += 1
+
+        ticks = list(range(0, int(tick_lims[tick_max_idx]) + 1, int(tick_lims[tick_max_idx] / 5)))
+
+        if max_val < 1000:
+            tick_labels = ticks
+        elif max_val < 1000000:
+            tick_labels = []
+            for tick in ticks:
+                tick_labels.append(str(tick / 1000) + 'k')
+        else:
+            tick_labels = []
+            for tick in ticks:
+                tick_labels.append(str(tick / 1000000) + 'M')
+
+        return ticks, tick_labels
+
+
