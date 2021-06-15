@@ -9,29 +9,33 @@ class IaFreqDistAnalysis:
 
     def __init__(self):
 
-        # Define interaction categories
-        self.i_cats = ['DI',
-                  'DI_S',
-                  'DI_T',
-                  'UIR',
-                  'UI',
-                  'ALL']
-        self.i_cat_colors = ['orange',
-                        'pink',
-                        'cadetblue',
-                        'lightblue',
-                        'lightgray',
-                        'cornflowerblue']
-        self.i_cat_names = ['Directed',
-                       'Directed simple',
-                       'Directed twisted',
-                       'Undirected reference',
-                       'Undirected',
-                       'All']
-        self.e_cats = ['NN',
-                  'NE',
-                  'EN',
-                  'EE']
+        # Define interaction and enrichment categories
+        self.i_cats = [
+            'DI',
+            'DI_S',
+            'DI_T',
+            'UIR',
+            'UI',
+            'ALL']
+        self.i_cat_colors = [
+            'orange',
+            'pink',
+            'cadetblue',
+            'lightblue',
+            'lightgray',
+            'cornflowerblue']
+        self.i_cat_names = [
+            'Directed',
+            'Directed simple',
+            'Directed twisted',
+            'Undirected reference',
+            'Undirected',
+            'All']
+        self.e_cats = [
+            'NN',
+            'NE',
+            'EN',
+            'EE']
 
         # Dictionary that contains ingested interaction grouped by chromosomes
         self._grouped_interactions = defaultdict()
@@ -77,10 +81,10 @@ class IaFreqDistAnalysis:
             }
         }
 
-        # Prepare dictionary with read pair numbers
+        # Prepare dictionary with read pair numbers used to create plots
         self.rp_num_dict = dict()
 
-        # Prepare dictionary with interaction distances
+        # Prepare dictionary with interaction distances used to create plots
         self.i_dist_dict = dict()
 
     def ingest_interaction_set(self, d11_inter_set: DiachromaticInteractionSet, verbose: bool = False):
@@ -105,34 +109,35 @@ class IaFreqDistAnalysis:
                     print("\t[INFO] Read " + "{:,}".format(
                         self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ']) + " interactions ...")
 
+            # Get chromosome as well as interaction and enrichment category
+            chrom = d11_inter.chrA
+            i_cat_type = d11_inter.get_category()
+            e_cat_type = d11_inter.enrichment_status_tag_pair
+
             # Count interaction type
-            self._ingest_interaction_set_info_dict[d11_inter.get_category()][d11_inter.enrichment_status_tag_pair] += 1
-            self._ingest_interaction_set_info_dict['ALL'][d11_inter.enrichment_status_tag_pair] += 1
+            self._ingest_interaction_set_info_dict[i_cat_type][e_cat_type] += 1
+            self._ingest_interaction_set_info_dict['ALL'][e_cat_type] += 1
 
-            # Create a new dictionary if this is the first interaction seen on this chromosome
+            # Create a new dictionary for this chromosome, if this is the first interaction seen on this chromosome
             if d11_inter.chrA not in self._grouped_interactions:
-                self._grouped_interactions[d11_inter.chrA] = defaultdict()
+                self._grouped_interactions[chrom] = defaultdict()
                 for i_cat in self.i_cats:
-                    self._grouped_interactions[d11_inter.chrA][i_cat] = dict()
+                    self._grouped_interactions[chrom][i_cat] = dict()
                     for e_cat in self.e_cats:
-                        self._grouped_interactions[d11_inter.chrA][i_cat][e_cat] = []
-
+                        self._grouped_interactions[chrom][i_cat][e_cat] = []
 
             # Add interaction to grouped interactions
-            self._grouped_interactions[d11_inter.chrA][d11_inter.get_category()][
-                d11_inter.enrichment_status_tag_pair].append(d11_inter)
+            self._grouped_interactions[chrom][i_cat_type][e_cat_type].append(d11_inter)
+            self._grouped_interactions[chrom]['ALL'][e_cat_type].append(d11_inter)
 
-            self._grouped_interactions[d11_inter.chrA]['ALL'][d11_inter.enrichment_status_tag_pair].append(d11_inter)
-
+            # Add directed simple and directed twisted categories
             if d11_inter.get_category() == 'DI':
                 if d11_inter.n_twisted < d11_inter.n_simple:
-                    self._grouped_interactions[d11_inter.chrA]['DI_S'][d11_inter.enrichment_status_tag_pair].append(
-                        d11_inter)
-                    self._ingest_interaction_set_info_dict['DI_S'][d11_inter.enrichment_status_tag_pair] += 1
+                    self._grouped_interactions[chrom]['DI_S'][e_cat_type].append(d11_inter)
+                    self._ingest_interaction_set_info_dict['DI_S'][e_cat_type] += 1
                 else:
-                    self._grouped_interactions[d11_inter.chrA]['DI_T'][d11_inter.enrichment_status_tag_pair].append(
-                        d11_inter)
-                    self._ingest_interaction_set_info_dict['DI_T'][d11_inter.enrichment_status_tag_pair] += 1
+                    self._grouped_interactions[chrom]['DI_T'][e_cat_type].append( d11_inter)
+                    self._ingest_interaction_set_info_dict['DI_T'][e_cat_type] += 1
 
         if verbose:
             print("\t[INFO] Total number of interactions read: " + "{:,}".format(
@@ -151,36 +156,10 @@ class IaFreqDistAnalysis:
         report += "\t[INFO] Total number of interactions read: " + "{:,}".format(
             self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ']) + '\n'
         report += "\t[INFO] Broken down by interaction category and enrichment status: " + '\n'
-        report += "\t\t[INFO] DI: " + '\n'
-        report += "\t\t\t[INFO] NN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI']['NN']) + '\n'
-        report += "\t\t\t[INFO] EE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI']['EE']) + '\n'
-        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI']['NE']) + '\n'
-        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI']['EN']) + '\n'
-        report += "\t\t[INFO] DI_S: " + '\n'
-        report += "\t\t\t[INFO] NN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_S']['NN']) + '\n'
-        report += "\t\t\t[INFO] EE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_S']['EE']) + '\n'
-        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_S']['NE']) + '\n'
-        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_S']['EN']) + '\n'
-        report += "\t\t[INFO] DI_T: " + '\n'
-        report += "\t\t\t[INFO] NN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_T']['NN']) + '\n'
-        report += "\t\t\t[INFO] EE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_T']['EE']) + '\n'
-        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_T']['NE']) + '\n'
-        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI_T']['EN']) + '\n'
-        report += "\t\t[INFO] UIR: " + '\n'
-        report += "\t\t\t[INFO] NN: " + "{:,}".format(self._ingest_interaction_set_info_dict['UIR']['NN']) + '\n'
-        report += "\t\t\t[INFO] EE: " + "{:,}".format(self._ingest_interaction_set_info_dict['UIR']['EE']) + '\n'
-        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['UIR']['NE']) + '\n'
-        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['UIR']['EN']) + '\n'
-        report += "\t\t[INFO] UI: " + '\n'
-        report += "\t\t\t[INFO] NN: " + "{:,}".format(self._ingest_interaction_set_info_dict['UI']['NN']) + '\n'
-        report += "\t\t\t[INFO] EE: " + "{:,}".format(self._ingest_interaction_set_info_dict['UI']['EE']) + '\n'
-        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['UI']['NE']) + '\n'
-        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['UI']['EN']) + '\n'
-        report += "\t\t[INFO] ALL: " + '\n'
-        report += "\t\t\t[INFO] NN: " + "{:,}".format(self._ingest_interaction_set_info_dict['ALL']['NN']) + '\n'
-        report += "\t\t\t[INFO] EE: " + "{:,}".format(self._ingest_interaction_set_info_dict['ALL']['EE']) + '\n'
-        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['ALL']['NE']) + '\n'
-        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['ALL']['EN']) + '\n'
+        for i_cat in ['DI', 'DI_S', 'DI_T', 'UIR', 'UI', 'ALL', ]:
+            report += "\t\t[INFO] " + i_cat + ": " + '\n'
+            for e_cat in ['NN', 'EE', 'NE', 'EN']:
+                report += "\t\t\t[INFO] " + e_cat + ": " + "{:,}".format(self._ingest_interaction_set_info_dict[i_cat][e_cat]) + '\n'
         report += "[INFO] End of report." + '\n'
 
         return report
@@ -280,6 +259,7 @@ class IaFreqDistAnalysis:
     def get_all_rp_nums_or_i_dists_histograms(self,
                                               num_dict: dict = None,
                                               i_cats: list = None,
+                                              e_cats: list = None,
                                               q_lim: float = 0.95,
                                               description: str = "DESCRIPTION",
                                               pdf_file_name: str = "num_histograms.pdf"):
@@ -287,7 +267,8 @@ class IaFreqDistAnalysis:
         This function creates the histograms for read pair numbers or interaction distances in the various
         interaction and enrichment categories.
 
-        :param i_cats: Interaction category
+        :param i_cats: List of interaction categories
+        :param e_cats: List of enrichment categories
         :param num_dict: Dictionary that was created with the function 'get_all_rp_nums_or_i_dists()'
         :param q_lim: Chose upper limit for x-axes based on quantile (affects presentation only)
         :param description: Brief description that is shown in the plot above the histograms
@@ -302,19 +283,33 @@ class IaFreqDistAnalysis:
                 print("[ERROR] Illegal interaction category tag! Allowed: 'DI', 'D_S', 'D_T', 'UI', 'UIR' and 'ALL'")
                 return
 
+        allowed_e_cats =  ['NN', 'NE', 'EN', 'EE']
+        for e_cat in e_cats:
+            if e_cat not in allowed_e_cats:
+                print("[ERROR] Illegal interaction enrichment tag! Allowed: 'NN', 'NE', 'EN', 'EE'")
+                return
+
         # Prepare grid for individual plots
         n = len(i_cats)
-        x = 11.79/4.75
-        fig_height = 0.75 * x + n * x
-        fig, ax = plt.subplots(nrows=n+1, ncols=2, figsize=(9.5, fig_height),
+        y = 11.79/4.75
+        fig_height = 0.75 * y + n * y
+        m = len(e_cats)
+        x = 4.75
+        fig_width = m * x
+        fig, ax = plt.subplots(nrows=n+1, ncols=m, figsize=(fig_width, fig_height),
                                gridspec_kw={'height_ratios': [0.75] + [1]*n})
+
+        # Hide unnecessary subplots
+        for j in range(0, m):
+            ax[0][j].axis('off')
 
         # Determine bin size
         x_lim = 0
         for i in range(0, n):
-            q = max(np.quantile(num_dict[i_cats[i]]['NE'], q_lim), np.quantile(num_dict[i_cats[i]]['EN'], q_lim))
-            if x_lim < q:
-                x_lim = q
+            for j in range(0, m):
+                q = np.quantile(num_dict[i_cats[i]][e_cats[j]], q_lim)
+                if x_lim < q:
+                    x_lim = q
         x_ticks, x_tick_labels = self.make_ticks(x_lim)
         bin_width = int(x_lim / 30)
 
@@ -333,6 +328,7 @@ class IaFreqDistAnalysis:
         ax[0][1].spines['bottom'].set_color('white')
         ax[0][1].tick_params(axis='x', colors='white')
         ax[0][1].tick_params(axis='y', colors='white')
+
         fig.text(0.015, 1-((1-0.97)*(11.79/fig_height)), num_dict['NUM_TYPE'] + 's', fontsize=18,
                  fontweight='bold')
         fig.text(0.030, 1-((1-0.94)*(11.79/fig_height)), 'Description: ' + description, fontsize=12)
@@ -344,72 +340,49 @@ class IaFreqDistAnalysis:
             fig.text(0.045, 1-((1-0.88)*(11.79/fig_height)), '[' + ", ".join(i for i in num_dict['CHROMOSOMES'][:22]) + ',', fontsize=8)
             fig.text(0.045, 1-((1-0.86)*(11.79/fig_height)), ", ".join(i for i in num_dict['CHROMOSOMES'][22:]) + ']', fontsize=8)
 
-        # Create two histograms for each interaction category
-        # ---------------------------------------------------
+        # Create histograms for each interaction category
+        # -----------------------------------------------
 
         # Prepare bins
         x_max = 0
         for i in range(0, n):
-            if x_max < max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN']):
-                x_max = max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN'])
+            for j in range(0, m):
+                if x_max < max(num_dict[i_cats[i]][e_cats[j]]):
+                    x_max = max(num_dict[i_cats[i]][e_cats[j]])
         bins = range(0, x_max + bin_width, bin_width)
 
-        # Create two histograms for each category
-        abs_ne = []
-        abs_en = []
-        densities_ne = []
-        densities_en = []
+        abs_2d_array = [[] for i in range(0, n)]
+        densities_2d_array = [[] for i in range(0, n)]
         for i in range(0, n):
 
-            # Create histogram for NE
-            counts_ne, bins, patches = ax[i + 1][0].hist(
-                num_dict[i_cats[i]]['NE'],
-                bins=bins, density=False,
-                facecolor=num_dict[i_cats[i]]['COLOR'],
-                edgecolor="dimgray",
-                linewidth=0.5,
-                alpha=1)
-            ax[i + 1][0].set_title(
-                num_dict[i_cats[i]]['NAME'] + ' - NE',
-                loc='left')
-            ax[i + 1][0].set_xlabel(num_dict['NUM_TYPE'])
-            ax[i + 1][0].set_ylabel('Frequency')
-            ax[i + 1][0].set_xticks(x_ticks)
-            ax[i + 1][0].set_xticklabels(x_tick_labels)
-            ax[i + 1][0].set_xlim(0, x_lim)
+            for j in range(0, m):
 
-            # Create histogram for EN
-            counts_en, bins, patches = ax[i + 1][1].hist(
-                num_dict[i_cats[i]]['EN'],
-                bins=bins, density=False,
-                facecolor=num_dict[i_cats[i]]['COLOR'],
-                edgecolor="dimgray",
-                linewidth=0.5,
-                alpha=1)
-            ax[i + 1][1].set_title(
-                num_dict[i_cats[i]]['NAME'] + ' - EN',
-                loc='left')
-            ax[i + 1][1].set_xlabel(num_dict['NUM_TYPE'])
-            ax[i + 1][1].set_ylabel('Frequency')
-            ax[i + 1][1].set_xticks(x_ticks)
-            ax[i + 1][1].set_xticklabels(x_tick_labels)
-            ax[i + 1][1].set_xlim(0, x_lim)
+                # Create histogram
+                counts, bins, patches = ax[i + 1][j].hist(
+                    num_dict[i_cats[i]][e_cats[j]],
+                    bins=bins, density=False,
+                    facecolor=num_dict[i_cats[i]]['COLOR'],
+                    edgecolor="dimgray",
+                    linewidth=0.5,
+                    alpha=1)
+                ax[i + 1][j].set_title(
+                    num_dict[i_cats[i]]['NAME'] + ' - ' + e_cats[j],
+                    loc='left')
+                ax[i + 1][j].set_xlabel(num_dict['NUM_TYPE'])
+                ax[i + 1][j].set_ylabel('Frequency')
+                ax[i + 1][j].set_xticks(x_ticks)
+                ax[i + 1][j].set_xticklabels(x_tick_labels)
+                ax[i + 1][j].set_xlim(0, x_lim)
 
-            # Draw vertical lines and shaded areas for median and mad
-            median_ne = np.median(num_dict[i_cats[i]]['NE'])
-            mad_ne = stats.median_absolute_deviation(num_dict[i_cats[i]]['NE'])
-            ax[i + 1][0].axvline(median_ne, linestyle='--', linewidth=0.75, color='blue', zorder=2)
-            ax[i + 1][0].axvspan(median_ne, median_ne + mad_ne, color='green', alpha=0.25, zorder=0)
-            median_en = np.median(num_dict[i_cats[i]]['EN'])
-            mad_en = stats.median_absolute_deviation(num_dict[i_cats[i]]['EN'])
-            ax[i + 1][1].axvline(median_en, linestyle='--', linewidth=0.75, color='blue', zorder=2)
-            ax[i + 1][1].axvspan(median_en, median_en + mad_en, color='green', alpha=0.25, zorder=0)
+                # Draw vertical lines and shaded areas for median and mad
+                median = np.median(num_dict[i_cats[i]][e_cats[j]])
+                mad = stats.median_absolute_deviation(num_dict[i_cats[i]][e_cats[j]])
+                ax[i + 1][j].axvline(median, linestyle='--', linewidth=0.75, color='blue', zorder=2)
+                ax[i + 1][j].axvspan(median, median + mad, color='green', alpha=0.25, zorder=0)
 
-            # Keep track of bin counts and densities
-            abs_ne.append(counts_ne)
-            abs_en.append(counts_en)
-            densities_ne.append([count / sum(counts_ne) for count in counts_ne])
-            densities_en.append([count / sum(counts_en) for count in counts_en])
+                # Keep track of bin counts and densities
+                abs_2d_array[i].append(counts)
+                densities_2d_array[i].append([count / sum(counts) for count in counts])
 
         # Add second axes with densities and normalize all histograms to maximum density
         # ------------------------------------------------------------------------------
@@ -418,59 +391,40 @@ class IaFreqDistAnalysis:
         # but for the bar plot we need the center positions of bins.
         bcp = bin_width / 2
         bcp_list = [bcp]
-        for i in range(len(densities_ne[0]) - 1):
+        for i in range(len(densities_2d_array[0][0]) - 1):
             bcp += bin_width
             bcp_list.append(bcp)
 
-        # Determine maximal density in all four plots
+        # Determine maximal density in all histograms
         yd_max = 0
         for i in range(0, n):
-            if yd_max < max(densities_ne[i] + densities_en[i]):
-                yd_max = max(densities_ne[i] + densities_en[i])
+            for j in range(0, m):
+                if yd_max < max(densities_2d_array[i][j]):
+                    yd_max = max(densities_2d_array[i][j])
         y_padding = yd_max / 20
         yd_max += y_padding
 
         # Add density axes, normalize and add text labels to histograms
         for i in range(0, n):
+            for j in range(0, m):
 
-            # Left histogram (NNE)
-            yc_max = yd_max * sum(abs_ne[i])
-            yc_ticks, yc_tick_labels = self.make_ticks(yc_max)
-            ax[i + 1][0].set_yticks(yc_ticks)
-            ax[i + 1][0].set_yticklabels(yc_tick_labels)
-            ax[i + 1][0].set_ylim(0, yc_max)
-            ax_dens = ax[i + 1][0].twinx()
-            ax_dens.plot(bcp_list, densities_ne[i], color='red', linewidth=0.5)
-            ax_dens.set_ylabel('Density', labelpad=7)
-            ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
-            ax_dens.set_ylim(0, yd_max)
-            # Add text labels with total read pair or interaction numbers, median and median absolute deviation
-            ax[i + 1][0].text(x_lim - (x_lim / 3),
-                              yc_max - (yc_max / 3.2),
-                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['NE'])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
-                                  np.median(num_dict[i_cats[i]]['NE'])) + '\n' + 'Mad: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]]['NE'])),
-                              fontsize=9,
-                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
-
-            # Right histogram (EN)
-            yc_max = yd_max * sum(abs_en[i])
-            yc_ticks, yc_tick_labels = self.make_ticks(yc_max)
-            ax[i + 1][1].set_yticks(yc_ticks)
-            ax[i + 1][1].set_yticklabels(yc_tick_labels)
-            ax[i + 1][1].set_ylim(0, yc_max)
-            ax_dens = ax[i + 1][1].twinx()
-            ax_dens.plot(bcp_list, densities_en[i], color='red', linewidth=0.5)
-            ax_dens.set_ylabel('Density', labelpad=7)
-            ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
-            ax_dens.set_ylim(0, yd_max)
-            # Add text labels with total read pair or interaction numbers, median and median absolute deviation
-            ax[i + 1][1].text(x_lim - (x_lim / 3),
-                              yc_max - (yc_max / 3.2),
-                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['EN'])) + '\n' +
-                              'Mdn: ' + "{:,.0f}".format(np.median(num_dict[i_cats[i]]['EN'])) + '\n' +
-                              'Mad: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]]['EN'])),
-                              fontsize=9,
-                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+                yc_max = yd_max * sum(abs_2d_array[i][j])
+                yc_ticks, yc_tick_labels = self.make_ticks(yc_max)
+                ax[i + 1][j].set_yticks(yc_ticks)
+                ax[i + 1][j].set_yticklabels(yc_tick_labels)
+                ax[i + 1][j].set_ylim(0, yc_max)
+                ax_dens = ax[i + 1][j].twinx()
+                ax_dens.plot(bcp_list, densities_2d_array[i][j], color='red', linewidth=0.5)
+                ax_dens.set_ylabel('Density', labelpad=7)
+                ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
+                ax_dens.set_ylim(0, yd_max)
+                # Add text labels with total read pair or interaction numbers, median and median absolute deviation
+                ax[i + 1][j].text(x_lim - (x_lim / 3),
+                                  yc_max - (yc_max / 3.2),
+                                  'n: ' + "{:,}".format(len(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
+                                      np.median(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'Mad: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]][e_cats[j]])),
+                                  fontsize=9,
+                                  bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
         # Save and return figure
         fig.tight_layout(pad=1.25)
@@ -480,29 +434,34 @@ class IaFreqDistAnalysis:
     def get_all_rp_nums_or_i_dists_denisty_diff_plot(self,
                                                      num_dict: dict = None,
                                                      i_cats: list = None,
+                                                     e_cats: list = None,
                                                      q_lim: float = 0.95,
                                                      description: str = "DESCRIPTION",
                                                      pdf_file_name: str = "density_diff_plot.pdf"):
         """
-        This function creates the density difference plot for a given pair of interaction categories.
+        This function creates the density difference plot for given pairs of interaction and enrichment categories.
 
         :param num_dict: A data structure that contains read pair numbers and distances for all interaction categories
-        :param i_cats: List of interaction categories to be compared, e.g. ['DI', 'UIR']
+        :param i_cats: List of two interaction categories to be compared, e.g. ['DI', 'UIR']
+        :param e_cats: List of two enrichment categories to be compared, e.g. ['EE', 'EN']
         :param q_lim: Upper limit at quantile level, e.g. at 0.95, 5% of the data with the larger quantile are not shown
         :param description: Brief description that is shown in the plot above the histograms
         :param pdf_file_name: Name of the PDF file that will be created
         :return: A 'Figure' object of 'matplotlib' that can be displayed in a Jupyter notebook
         """
 
-        # Add verbose output
-
         # Catch wrong input
         if len(i_cats) !=2:
             print("[ERROR] The density difference plot is only defined for two interaction categories!")
             return
+        if len(e_cats) !=2:
+            print("[ERROR] The density difference plot is only defined for two enrichment categories!")
+            return
 
         # Prepare grid for individual plots
         fig_height = 9.16
+        n = len(i_cats)
+        m = len(e_cats)
         fig, ax = plt.subplots(nrows=4, ncols=3, figsize=(14.25, fig_height),
                                gridspec_kw={'height_ratios': [0.75, 1, 1, 1]})
 
@@ -512,10 +471,11 @@ class IaFreqDistAnalysis:
 
         # Determine bin size
         x_lim = 0
-        for i in [0, 1]:
-            q = max(np.quantile(num_dict[i_cats[i]]['NE'], q_lim), np.quantile(num_dict[i_cats[i]]['EN'], q_lim))
-            if x_lim < q:
-                x_lim = q
+        for i in range(0, n):
+            for j in range(0, m):
+                q = np.quantile(num_dict[i_cats[i]][e_cats[j]], q_lim)
+                if x_lim < q:
+                    x_lim = q
         x_ticks, x_tick_labels = self.make_ticks(x_lim)
         bin_width = int(x_lim / 30)
 
@@ -543,65 +503,47 @@ class IaFreqDistAnalysis:
 
         # Prepare bins
         x_max = 0
-        for i in [0, 1]:
-            if x_max < max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN']):
-                x_max = max(num_dict[i_cats[i]]['NE'] + num_dict[i_cats[i]]['EN'])
+        for i in range(0, n):
+            for j in range(0, m):
+                if x_max < max(num_dict[i_cats[i]][e_cats[j]]):
+                    x_max = max(num_dict[i_cats[i]][e_cats[j]])
         bins = range(0, x_max + bin_width, bin_width)
 
         # Create histograms for the two categories
         # ----------------------------------------
 
-        abs_ne = []
-        abs_en = []
-        densities_ne = []
-        densities_en = []
-        for i in [0, 1]:
+        abs_2d_array = [[] for i in range(0, n)]
+        densities_2d_array = [[] for i in range(0, n)]
+        for i in range(0, n):
 
-            # Create histogram for NE
-            counts_ne, bins, patches = ax[i + 1][0].hist(
-                num_dict[i_cats[i]]['NE'],
-                bins=bins, density=False,
-                facecolor=num_dict[i_cats[i]]['COLOR'],
-                edgecolor="dimgray",
-                linewidth=0.5,
-                alpha=1)
-            ax[i + 1][0].set_title(num_dict[i_cats[i]]['NAME'] + ' - NE', loc='left')
-            ax[i + 1][0].set_xlabel(num_dict['NUM_TYPE'])
-            ax[i + 1][0].set_ylabel('Frequency')
-            ax[i + 1][0].set_xticks(x_ticks)
-            ax[i + 1][0].set_xticklabels(x_tick_labels)
-            ax[i + 1][0].set_xlim(0, x_lim)
+            for j in range(0, m):
 
-            # Create histogram for NE
-            counts_en, bins, patches = ax[i + 1][1].hist(
-                num_dict[i_cats[i]]['EN'],
-                bins=bins, density=False,
-                facecolor=num_dict[i_cats[i]]['COLOR'],
-                edgecolor="dimgray",
-                linewidth=0.5,
-                alpha=1)
-            ax[i + 1][1].set_title(num_dict[i_cats[i]]['NAME'] + ' - EN', loc='left')
-            ax[i + 1][1].set_xlabel(num_dict['NUM_TYPE'])
-            ax[i + 1][1].set_ylabel('Frequency')
-            ax[i + 1][1].set_xticks(x_ticks)
-            ax[i + 1][1].set_xticklabels(x_tick_labels)
-            ax[i + 1][1].set_xlim(0, x_lim)
+                # Create histogram
+                counts, bins, patches = ax[i + 1][j].hist(
+                    num_dict[i_cats[i]][e_cats[j]],
+                    bins=bins, density=False,
+                    facecolor=num_dict[i_cats[i]]['COLOR'],
+                    edgecolor="dimgray",
+                    linewidth=0.5,
+                    alpha=1)
+                ax[i + 1][j].set_title(
+                    num_dict[i_cats[i]]['NAME'] + ' - ' + e_cats[j],
+                    loc='left')
+                ax[i + 1][j].set_xlabel(num_dict['NUM_TYPE'])
+                ax[i + 1][j].set_ylabel('Frequency')
+                ax[i + 1][j].set_xticks(x_ticks)
+                ax[i + 1][j].set_xticklabels(x_tick_labels)
+                ax[i + 1][j].set_xlim(0, x_lim)
 
-            # Draw vertical lines and shaded areas for median and MAD
-            median_ne = np.median(num_dict[i_cats[i]]['NE'])
-            mad_ne = stats.median_absolute_deviation(num_dict[i_cats[i]]['NE'])
-            ax[i + 1][0].axvline(median_ne, linestyle='--', linewidth=0.75, color='blue', zorder=2)
-            ax[i + 1][0].axvspan(median_ne, median_ne + mad_ne, color='green', alpha=0.25, zorder=0)
-            median_en = np.median(num_dict[i_cats[i]]['EN'])
-            mad_en = stats.median_absolute_deviation(num_dict[i_cats[i]]['EN'])
-            ax[i + 1][1].axvline(median_en, linestyle='--', linewidth=0.75, color='blue', zorder=2)
-            ax[i + 1][1].axvspan(median_en, median_en + mad_en, color='green', alpha=0.25, zorder=0)
+                # Draw vertical lines and shaded areas for median and mad
+                median = np.median(num_dict[i_cats[i]][e_cats[j]])
+                mad = stats.median_absolute_deviation(num_dict[i_cats[i]][e_cats[j]])
+                ax[i + 1][j].axvline(median, linestyle='--', linewidth=0.75, color='blue', zorder=2)
+                ax[i + 1][j].axvspan(median, median + mad, color='green', alpha=0.25, zorder=0)
 
-            # Keep track of bin counts and densities
-            abs_ne.append(counts_ne)
-            abs_en.append(counts_en)
-            densities_ne.append([count / sum(counts_ne) for count in counts_ne])
-            densities_en.append([count / sum(counts_en) for count in counts_en])
+                # Keep track of bin counts and densities
+                abs_2d_array[i].append(counts)
+                densities_2d_array[i].append([count / sum(counts) for count in counts])
 
         # Add second axes with densities and normalize all histograms to maximum density
         # ------------------------------------------------------------------------------
@@ -610,56 +552,42 @@ class IaFreqDistAnalysis:
         # but for the bar plot we need the center positions of bins.
         bcp = bin_width / 2
         bcp_list = [bcp]
-        for i in range(len(densities_ne[0]) - 1):
+        for i in range(len(densities_2d_array[0][0]) - 1):
             bcp += bin_width
             bcp_list.append(bcp)
 
         # Determine maximal density in all four plots
-        yd_max = max(max(densities_ne[0]), max(densities_en[0]), max(densities_ne[1]), max(densities_en[1]))
+        yd_max = 0
+        for i in range(0, n):
+            for j in range(0, m):
+                if yd_max < max(densities_2d_array[i][j]):
+                    yd_max = max(densities_2d_array[i][j])
         y_padding = yd_max / 20
         yd_max += y_padding
 
         # Add density axes, normalize and add text labels to histograms
-        for i in [0, 1]:
-
-            # Left histogram (NE)
-            yc_max = yd_max * sum(abs_ne[i])
-            yc_ticks, yc_tick_labels = self.make_ticks(yc_max)
-            ax[i + 1][0].set_yticks(yc_ticks)
-            ax[i + 1][0].set_yticklabels(yc_tick_labels)
-            ax[i + 1][0].set_ylim(0, yc_max)
-            ax_dens = ax[i + 1][0].twinx()
-            ax_dens.plot(bcp_list, densities_ne[i], color='red', linewidth=0.5)
-            ax_dens.set_ylabel('Density', labelpad=7)
-            ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
-            ax_dens.set_ylim(0, yd_max)
-            # Add text labels with total read pair or interaction numbers, median and median absolute deviation
-            ax[i + 1][0].text(x_lim - (x_lim / 3),
-                              yc_max - (yc_max / 3.2),
-                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['NE'])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
-                                  np.median(num_dict[i_cats[i]]['NE'])) + '\n' + 'Mad: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]]['NE'])),
-                              fontsize=9,
-                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
-
-            # Right histogram (EN)
-            yc_max = yd_max * sum(abs_en[i])
-            yc_ticks, yc_tick_labels = self.make_ticks(yc_max)
-            ax[i + 1][1].set_yticks(yc_ticks)
-            ax[i + 1][1].set_yticklabels(yc_tick_labels)
-            ax[i + 1][1].set_ylim(0, yc_max)
-            ax_dens = ax[i + 1][1].twinx()
-            ax_dens.plot(bcp_list, densities_en[i], color='red', linewidth=0.5)
-            ax_dens.set_ylabel('Density', labelpad=7)
-            ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
-            ax_dens.set_ylim(0, yd_max)
-            # Add text labels with total read pair or interaction numbers, median and median absolute deviation
-            ax[i + 1][1].text(x_lim - (x_lim / 3),
-                              yc_max - (yc_max / 3.2),
-                              'n: ' + "{:,}".format(len(num_dict[i_cats[i]]['EN'])) + '\n' +
-                              'Mdn: ' + "{:,.0f}".format(np.median(num_dict[i_cats[i]]['EN'])) + '\n' +
-                              'Mad: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]]['EN'])),
-                              fontsize=9,
-                              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
+        for i in range(0, n):
+            for j in range(0, m):
+                yc_max = yd_max * sum(abs_2d_array[i][j])
+                yc_ticks, yc_tick_labels = self.make_ticks(yc_max)
+                ax[i + 1][j].set_yticks(yc_ticks)
+                ax[i + 1][j].set_yticklabels(yc_tick_labels)
+                ax[i + 1][j].set_ylim(0, yc_max)
+                ax_dens = ax[i + 1][j].twinx()
+                ax_dens.plot(bcp_list, densities_2d_array[i][j], color='red', linewidth=0.5)
+                ax_dens.set_ylabel('Density', labelpad=7)
+                ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
+                ax_dens.set_ylim(0, yd_max)
+                # Add text labels with total read pair or interaction numbers, median and median absolute deviation
+                ax[i + 1][j].text(x_lim - (x_lim / 3),
+                                  yc_max - (yc_max / 3.2),
+                                  'n: ' + "{:,}".format(
+                                      len(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
+                                      np.median(
+                                          num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'Mad: ' + "{:,.0f}".format(
+                                      stats.median_absolute_deviation(num_dict[i_cats[i]][e_cats[j]])),
+                                  fontsize=9,
+                                  bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
         # Add subplots for density differences
         # ------------------------------------
@@ -669,11 +597,11 @@ class IaFreqDistAnalysis:
         density_diff_cat_0_cat_1_en = [] # Below histograms on the right
         density_diff_cat_0_ne_en = []    # To the left of the upper histograms
         density_diff_cat_1_ne_en = []    # To the left of the lower histograms
-        for i in range(0, len(densities_ne[0])):
-            density_diff_cat_0_cat_1_ne.append(densities_ne[0][i] - densities_ne[1][i])
-            density_diff_cat_0_cat_1_en.append(densities_en[0][i] - densities_en[1][i])
-            density_diff_cat_0_ne_en.append(densities_ne[0][i] - densities_en[0][i])
-            density_diff_cat_1_ne_en.append(densities_ne[1][i] - densities_en[1][i])
+        for i in range(0, len(densities_2d_array[0][0])):
+            density_diff_cat_0_cat_1_ne.append(densities_2d_array[0][0][i] - densities_2d_array[1][0][i])
+            density_diff_cat_0_cat_1_en.append(densities_2d_array[0][1][i] - densities_2d_array[1][1][i])
+            density_diff_cat_0_ne_en.append(densities_2d_array[0][0][i] - densities_2d_array[0][1][i])
+            density_diff_cat_1_ne_en.append(densities_2d_array[1][0][i] - densities_2d_array[1][1][i])
 
         # Determine sum of density differences
         dd_cat_0_cat_1_ne_sum = sum(map(abs, density_diff_cat_0_cat_1_ne))
@@ -689,7 +617,7 @@ class IaFreqDistAnalysis:
                      edgecolor="dimgray",
                      linewidth=0.5
                      )
-        ax[3][0].set_title('NE', loc='left')
+        ax[3][0].set_title(e_cats[0], loc='left')
         ax[3][0].set_xticks(x_ticks)
         ax[3][0].set_xticklabels(x_tick_labels)
         ax[3][0].set_xlim(0, x_lim)
@@ -709,7 +637,7 @@ class IaFreqDistAnalysis:
                      edgecolor="dimgray",
                      linewidth=0.5
                      )
-        ax[3][1].set_title('EN', loc='left')
+        ax[3][1].set_title(e_cats[1], loc='left')
         ax[3][1].set_xticks(x_ticks)
         ax[3][1].set_xticklabels(x_tick_labels)
         ax[3][1].set_xlim(0, x_lim)
@@ -841,5 +769,3 @@ class IaFreqDistAnalysis:
                 tick_labels.append(str(tick / 1000000) + 'M')
 
         return ticks, tick_labels
-
-
