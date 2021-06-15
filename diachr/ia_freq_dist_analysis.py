@@ -374,7 +374,7 @@ class IaFreqDistAnalysis:
                 ax[i + 1][j].set_xticklabels(x_tick_labels)
                 ax[i + 1][j].set_xlim(0, x_lim)
 
-                # Draw vertical lines and shaded areas for median and mad
+                # Draw vertical lines and shaded areas for median and MAD
                 median = np.median(num_dict[i_cats[i]][e_cats[j]])
                 mad = stats.median_absolute_deviation(num_dict[i_cats[i]][e_cats[j]])
                 ax[i + 1][j].axvline(median, linestyle='--', linewidth=0.75, color='blue', zorder=2)
@@ -422,7 +422,7 @@ class IaFreqDistAnalysis:
                 ax[i + 1][j].text(x_lim - (x_lim / 3),
                                   yc_max - (yc_max / 3.2),
                                   'n: ' + "{:,}".format(len(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
-                                      np.median(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'Mad: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]][e_cats[j]])),
+                                      np.median(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'MAD: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]][e_cats[j]])),
                                   fontsize=9,
                                   bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
@@ -535,7 +535,7 @@ class IaFreqDistAnalysis:
                 ax[i + 1][j].set_xticklabels(x_tick_labels)
                 ax[i + 1][j].set_xlim(0, x_lim)
 
-                # Draw vertical lines and shaded areas for median and mad
+                # Draw vertical lines and shaded areas for median and MAD
                 median = np.median(num_dict[i_cats[i]][e_cats[j]])
                 mad = stats.median_absolute_deviation(num_dict[i_cats[i]][e_cats[j]])
                 ax[i + 1][j].axvline(median, linestyle='--', linewidth=0.75, color='blue', zorder=2)
@@ -584,7 +584,7 @@ class IaFreqDistAnalysis:
                                   'n: ' + "{:,}".format(
                                       len(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
                                       np.median(
-                                          num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'Mad: ' + "{:,.0f}".format(
+                                          num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'MAD: ' + "{:,.0f}".format(
                                       stats.median_absolute_deviation(num_dict[i_cats[i]][e_cats[j]])),
                                   fontsize=9,
                                   bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
