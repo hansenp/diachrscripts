@@ -3,11 +3,16 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
+import gzip
 
 
 class IaFreqDistAnalysis:
 
     def __init__(self):
+
+        cyto_band_file_path = None
+        if cyto_band_file_path is not None:
+            self.cyto_p_boundary_dict, self.cyto_q_boundary_dict = self._read_cyto_band_file(file_path = cyto_band_file_path)
 
         # Define interaction and enrichment categories
         self.i_cats = [
@@ -86,6 +91,21 @@ class IaFreqDistAnalysis:
 
         # Prepare dictionary with interaction distances used to create plots
         self.i_dist_dict = dict()
+
+    def _read_cyto_band_file(self, file_path: str = None):
+
+        cyto_p_boundary_dict = dict()
+        cyto_q_boundary_dict = dict()
+
+        with gzip.open(file_path, 'rt') as fp:
+            for line in fp:
+                chrom, sta, end, x, y = line.rstrip('\n').split('\t')
+                if y == 'acen' and 'p' in x:
+                    cyto_p_boundary_dict[chrom] = int(sta)
+                if y == 'acen' and 'q' in x:
+                    cyto_q_boundary_dict[chrom] = int(end)
+
+        return cyto_p_boundary_dict, cyto_q_boundary_dict
 
     def ingest_interaction_set(self, d11_inter_set: DiachromaticInteractionSet, verbose: bool = False):
         """
