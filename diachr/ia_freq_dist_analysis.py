@@ -254,7 +254,7 @@ class IaFreqDistAnalysis:
             e_cats=self.e_cats)
         self.i_dist_dict['NUM_TYPE'] = 'Interaction distance'
 
-        # Combine lists of distances or read pair numbers from all baits
+        # Combine lists of read pair numbers and distances from all chromosomes
         for chrom in self._grouped_interactions.keys():
             if chromosomes is not None:
                 if chrom not in chromosomes:
@@ -751,6 +751,142 @@ class IaFreqDistAnalysis:
         fig.tight_layout(pad=1.25)
         fig.savefig(pdf_file_name)
         return fig
+
+    def write_num_table(self, out_prefix: str = 'OUT_PREFIX', description: str =  'DESCRIPTION', chromosomes: [str] = None, verbose: bool = False):
+        """
+
+        :param out_prefix: Two tab separated files with this prefix will be created, one for read pair numbers and
+        one for interaction distances
+        :param description: A short description tag, e.g. 'MK'
+        :param chromosomes: The analysis can be restricted to subsets chromosomes, e.g. ['chr19', 'chr20', 'chr21']
+        :param verbose: If true, messages about progress will be written to the screen
+        :return: Nothing
+        """
+
+        if verbose:
+            print("[INFO] Writing results about read pair numbers and interaction distances to tab separated files ...")
+
+        #  Create header row
+        header_row = ''
+        for i_cat in self.i_cats:
+            for e_cat in self.e_cats:
+                header_row += '\t' + i_cat + '_' + e_cat + '_N'
+                header_row += '\t' + i_cat + '_' + e_cat + '_MED'
+                header_row += '\t' + i_cat + '_' + e_cat + '_MAD'
+        header_row += '\t' + 'CHROMS'
+
+        # Create two files, one for read pair numbers and one for interaction distances
+        out_rp_num_stats = open(out_prefix + "_rp_num_stats.txt", 'wt')
+        out_rp_num_stats.write('DESCRIPTION' + '\t' + 'DESCRIPTION_SHORT' + header_row  + '\n')
+        out_i_dist_stats = open(out_prefix + "_i_dist_stats.txt", 'wt')
+        out_i_dist_stats.write('DESCRIPTION' + '\t' + 'DESCRIPTION_SHORT' + header_row  + '\n')
+
+        # Create one read pair number num_dict for all chromosomes
+        rp_num_dict = self._get_empty_num_dict(
+            i_cats=self.i_cats,
+            i_cat_colors=self.i_cat_colors,
+            i_cat_names=self.i_cat_names,
+            e_cats=self.e_cats)
+
+        # Create one read pair number num_dict for all chromosomes
+        i_dist_dict = self._get_empty_num_dict(
+            i_cats=self.i_cats,
+            i_cat_colors=self.i_cat_colors,
+            i_cat_names=self.i_cat_names,
+            e_cats=self.e_cats)
+
+        for chrom in self._grouped_interactions.keys():
+            if chromosomes is not None:
+                if chrom not in chromosomes:
+                    continue
+
+            if verbose:
+                print("\t[INFO] Processing chromosome " + chrom + " ...")
+
+            # Create one read pair number num_dict for all chromosomes
+            rp_num_dict_chr = self._get_empty_num_dict(
+                i_cats=self.i_cats,
+                i_cat_colors=self.i_cat_colors,
+                i_cat_names=self.i_cats,
+                e_cats=self.e_cats)
+            rp_num_dict_chr['NUM_TYPE'] = 'Read pair number'
+            rp_num_dict_chr['CHROMOSOMES'].append(chrom)
+
+            # Create one read pair number num_dict for all chromosomes
+            i_dist_dict_chr = self._get_empty_num_dict(
+                i_cats=self.i_cats,
+                i_cat_colors=self.i_cat_colors,
+                i_cat_names=self.i_cats,
+                e_cats=self.e_cats)
+            i_dist_dict_chr['NUM_TYPE'] = 'Interaction distance'
+            i_dist_dict_chr['CHROMOSOMES'].append(chrom)
+
+            rp_num_dict['CHROMOSOMES'].append(chrom)
+            i_dist_dict['CHROMOSOMES'].append(chrom)
+            for i_cat in self.i_cats:
+                for e_cat in self.e_cats:
+                    for d11_inter in self._grouped_interactions[chrom][i_cat][e_cat]:
+                        rp_num_dict_chr[i_cat][e_cat].append(d11_inter.rp_total)
+                        i_dist_dict_chr[i_cat][e_cat].append(d11_inter.i_dist)
+                        rp_num_dict[i_cat][e_cat].append(d11_inter.rp_total)
+                        i_dist_dict[i_cat][e_cat].append(d11_inter.i_dist)
+
+            # Get table row for num_dicts of this chromosome
+            rp_num_chr_table_row = self.get_num_dict_table_row(description = description + '|RP_NUM', description_short = description, num_dict = rp_num_dict_chr)
+            out_rp_num_stats.write(rp_num_chr_table_row + '\n')
+            i_dist_num_chr_table_row = self.get_num_dict_table_row(description = description + '|I_DIST', description_short = description, num_dict = i_dist_dict_chr)
+            out_i_dist_stats.write(i_dist_num_chr_table_row + '\n')
+
+        # Get table row for num_dict of all chromosomes
+        rp_num_table_row = self.get_num_dict_table_row(description = description + '|RP_NUM', description_short = description, num_dict = rp_num_dict)
+        out_rp_num_stats.write(rp_num_table_row + '\n')
+        i_dist_num_table_row = self.get_num_dict_table_row(description = description + '|I_DIST', description_short = description, num_dict = i_dist_dict)
+        out_i_dist_stats.write(i_dist_num_table_row + '\n')
+
+        # Close the two files with tables
+        out_rp_num_stats.close()
+        out_i_dist_stats.close()
+
+        if verbose:
+            print("\t[INFO] Generated files:")
+            print("\t[INFO] For read pair numbers:")
+            print("\t   " + out_prefix + "_rp_num_stats.txt")
+            print("\t[INFO] For interaction distances:")
+            print("\t   " + out_prefix + "_i_dist_stats.txt")
+            print("[INFO] ... done.")
+
+    def get_num_dict_table_row(self,
+                               description: str =  'DESCRIPTION',
+                               description_short: str =  'CT',
+                               num_dict = dict):
+
+        # Create description tag for first column
+        if len(num_dict['CHROMOSOMES']) == 1:
+            table_row = description + '|' + num_dict['CHROMOSOMES'][0].upper() + '\t'
+        else:
+            table_row = description + '|CHR_ALL'  + '\t'
+
+        table_row += description_short  + '\t'
+
+        # Add values for all interaction and enrichment categories
+        for i_cat in self.i_cats:
+            for e_cat in self.e_cats:
+                n = str(len(num_dict[i_cat][e_cat]))
+                if 0 < int(n):
+                    median = "{:.0f}".format(np.median(num_dict[i_cat][e_cat]))
+                    mad = "{:.0f}".format(stats.median_absolute_deviation(num_dict[i_cat][e_cat]))
+                else:
+                    median = 'NA'
+                    mad = 'NA'
+                table_row += n + '\t' +  median + '\t' +  mad + '\t'
+
+        # Add last column for chromosomes that were taken into aaccount
+        table_row += str(num_dict['CHROMOSOMES']).replace(' ', '')
+
+        return table_row
+
+    def read_num_table(self):
+        pass
 
     def make_ticks(self, max_val: int = 100):
 
