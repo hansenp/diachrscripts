@@ -770,9 +770,9 @@ class IaFreqDistAnalysis:
         header_row = ''
         for i_cat in self.i_cats:
             for e_cat in self.e_cats:
-                header_row += '\t' + i_cat + '_' + e_cat + '_N'
-                header_row += '\t' + i_cat + '_' + e_cat + '_MED'
-                header_row += '\t' + i_cat + '_' + e_cat + '_MAD'
+                header_row += '\t' + i_cat + '|' + e_cat + '|N'
+                header_row += '\t' + i_cat + '|' + e_cat + '|MED'
+                header_row += '\t' + i_cat + '|' + e_cat + '|MAD'
         header_row += '\t' + 'CHROMS'
 
         # Create two files, one for read pair numbers and one for interaction distances
