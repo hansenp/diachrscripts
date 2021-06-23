@@ -752,7 +752,11 @@ class IaFreqDistAnalysis:
         fig.savefig(pdf_file_name)
         return fig
 
-    def write_num_table(self, out_prefix: str = 'OUT_PREFIX', description: str =  'DESCRIPTION', chromosomes: [str] = None, verbose: bool = False):
+    def write_num_table(self,
+                        out_prefix: str = 'OUT_PREFIX',
+                        description: str =  'DESCRIPTION',
+                        chromosomes: [str] = None,
+                        verbose: bool = False):
         """
 
         :param out_prefix: Two tab separated files with this prefix will be created, one for read pair numbers and

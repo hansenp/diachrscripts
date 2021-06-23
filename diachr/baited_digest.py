@@ -1,6 +1,8 @@
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
 import numpy as np
+from numpy import inf, log, logaddexp
+from scipy.stats import binom
 
 
 class BaitedDigest:
@@ -225,3 +227,26 @@ class BaitedDigest:
         for idx in sorted_distance_idx:
             sorted_interaction_list.append(self.interactions[i_cat][e_cat][idx])
         return sorted_interaction_list
+
+    def get_neen_p_value(self, i_cat):
+
+        ne_num = len(self.interactions[i_cat]['NE'])
+        en_num = len(self.interactions[i_cat]['EN'])
+
+        if ne_num + en_num == 0:
+            return ne_num, en_num, 0
+
+        try:
+            if ne_num == en_num:
+                return ne_num, en_num, 0  # All other cases are more extreme, so the P-value must be 1.
+            if ne_num < en_num:
+                ln_p_value = binom.logcdf(ne_num, ne_num + en_num, 0.5)
+            else:
+                ln_p_value = binom.logcdf(en_num, ne_num + en_num, 0.5)
+
+            return ne_num, en_num, -logaddexp(ln_p_value, ln_p_value) / log(10) # logcdf returns the natural logarithm
+
+        except RuntimeWarning:  # Underflow: P-value is too small
+            return ne_num, en_num, inf
+            # or return log of smallest possible float
+            # return log(sys.float_info.min * sys.float_info.epsilon)/log(10)

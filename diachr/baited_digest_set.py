@@ -938,3 +938,10 @@ class BaitedDigestSet:
                   str(di_ne_proportion) + '\t' +
                   str(uir_ne_proportion)
                   )
+
+    def get_neen_pvals(self, i_cat):
+        for chrom in self._baited_digest_dict.keys():
+            for key, baited_digest in self._baited_digest_dict[chrom].items():
+                ne_num, en_num, p_val = baited_digest.get_neen_p_value(i_cat)
+                if(4 < p_val):
+                    print(key + '\t' + str(ne_num) + '\t' + str(en_num) + '\t' + str(p_val))
