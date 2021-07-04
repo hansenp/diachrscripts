@@ -18,20 +18,24 @@ class TestRandomizationAnalysis(TestCase):
 
         # Mute warnings
         warnings.simplefilter('ignore')
+        test_dir = os.path.dirname(__file__)
 
         # Prepare test data to test for correct use of P-value thresholds
         cls.interaction_set_1 = DiachromaticInteractionSet()
-        cls.interaction_set_1.parse_file("data/test_03/diachromatic_interaction_file_fdr_1.tsv.gz")
+        fdr_1_file = os.path.join(test_dir, "data/test_03/diachromatic_interaction_file_fdr_1.tsv.gz")
+        cls.interaction_set_1.parse_file(fdr_1_file)
         cls.randomize_1 = RandomizeInteractionSet(random_seed=42)
 
         # Prepare interaction set using the test file with 1,000 interactions
         cls.interaction_set_1000 = DiachromaticInteractionSet()
-        cls.interaction_set_1000.parse_file("data/test_03/diachromatic_interaction_file_fdr_top_1000.tsv.gz")
+        fdr_top_1000_file = os.path.join(test_dir, "data/test_03/diachromatic_interaction_file_fdr_top_1000.tsv.gz")
+        cls.interaction_set_1000.parse_file(fdr_top_1000_file)
         cls.randomize_1000 = RandomizeInteractionSet(random_seed=0)
 
         # Prepare interaction set using the test file with 64,000 interactions
         cls.interaction_set_64000 = DiachromaticInteractionSet()
-        cls.interaction_set_64000.parse_file("data/test_03/diachromatic_interaction_file_fdr_top_64000.tsv.gz")
+        fdr_top_64000_file = os.path.join(test_dir, "data/test_03/diachromatic_interaction_file_fdr_top_64000.tsv.gz")
+        cls.interaction_set_64000.parse_file(fdr_top_64000_file)
         cls.randomize_64000 = RandomizeInteractionSet(random_seed=0)
 
         # Prepare interaction set to test for correct determination of potentially significant interaction numbers

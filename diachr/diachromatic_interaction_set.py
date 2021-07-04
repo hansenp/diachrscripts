@@ -2,7 +2,8 @@ import gzip
 import os
 import copy
 import warnings
-from numpy import arange, log, log10
+import random
+from numpy import arange, log10
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
@@ -367,6 +368,7 @@ class DiachromaticInteractionSet:
                     d11_inter.set_category('UIR')
                 else:
                     ui_inter_dict[enrichment_pair_tag] += 1
+                    d11_inter.set_category('UI')
 
         # Prepare dictionary for report
         report_dict = {'NN': {'DI':[],'UIR':[],'M_UIR':[],'UI':[]},
@@ -374,6 +376,82 @@ class DiachromaticInteractionSet:
                        'EN': {'DI':[],'UIR':[],'M_UIR':[],'UI':[]},
                        'EE': {'DI':[],'UIR':[],'M_UIR':[],'UI':[]}}
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
+            report_dict[enr_cat]['DI'] = [sum(rp_inter_dict_before[enr_cat].values())]
+            report_dict[enr_cat]['UIR'] = [
+                sum(rp_inter_dict_before[enr_cat].values()) - sum(rp_inter_dict[enr_cat].values())]
+            report_dict[enr_cat]['M_UIR'] = [sum(rp_inter_dict[enr_cat].values())]
+            report_dict[enr_cat]['UI'] = [ui_inter_dict[enr_cat]]
+
+        if verbose:
+            print("[INFO] ... done.")
+
+        self._select_ref_info_dict = report_dict
+        return report_dict
+
+    def select_reference_interactions_2(self, verbose: bool = False):
+        """
+        Select reference interactions that match directed interactions in terms of enrichment category and total number
+        of read pairs per interaction and return a dictionary with information on this selection process.
+
+        The difference to the original version is that it is not distinguished between NE and EN.
+
+        :return: Dictionary with information on this selection process
+        """
+
+        if verbose:
+            print("[INFO] Select reference interactions ...")
+            print("\t[INFO] Treating NE and EN as one category ...")
+
+        # Nested dictionary that stores the numbers of interactions (value) for different read pair numbers (key)
+        rp_inter_dict = {'NN': {},
+                         'NEEN': {},
+                         'EE': {}}
+
+        if verbose:
+            print("\t[INFO] First pass: Count directed interactions for different read pair counts ...")
+        for d11_inter in self._inter_dict.values():
+
+            if d11_inter.get_category() == 'DI':
+
+                # Get enrichment status tag pair and read pair number
+                enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
+                if enrichment_pair_tag == 'NE' or enrichment_pair_tag == 'EN':
+                    enrichment_pair_tag = 'NEEN'
+                rp_total = d11_inter.rp_total
+
+                if rp_total not in rp_inter_dict[enrichment_pair_tag]:
+                    rp_inter_dict[enrichment_pair_tag][rp_total] = 1
+                else:
+                    rp_inter_dict[enrichment_pair_tag][rp_total] += 1
+
+        rp_inter_dict_before = copy.deepcopy(rp_inter_dict)
+        ui_inter_dict = {'NN': 0,
+                         'NEEN': 0,
+                         'EE': 0}
+
+        if verbose:
+            print("\t[INFO] Second pass: Select undirected reference interactions for different read pair counts ...")
+        for d11_inter in self._inter_dict.values():
+
+            if d11_inter.get_category() != 'DI':
+
+                enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
+                if enrichment_pair_tag == 'NE' or enrichment_pair_tag == 'EN':
+                    enrichment_pair_tag = 'NEEN'
+                rp_total = d11_inter.rp_total
+
+                if rp_total in rp_inter_dict[enrichment_pair_tag] and 0 < rp_inter_dict[enrichment_pair_tag][rp_total]:
+                    rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
+                    d11_inter.set_category('UIR')
+                else:
+                    ui_inter_dict[enrichment_pair_tag] += 1
+                    d11_inter.set_category('UI')
+
+        # Prepare dictionary for report
+        report_dict = {'NN': {'DI':[],'UIR':[],'M_UIR':[],'UI':[]},
+                       'NEEN': {'DI':[],'UIR':[],'M_UIR':[],'UI':[]},
+                           'EE': {'DI':[],'UIR':[],'M_UIR':[],'UI':[]}}
+        for enr_cat in ['NN', 'NEEN', 'EE']:
             report_dict[enr_cat]['DI'] = [sum(rp_inter_dict_before[enr_cat].values())]
             report_dict[enr_cat]['UIR'] = [
                 sum(rp_inter_dict_before[enr_cat].values()) - sum(rp_inter_dict[enr_cat].values())]
@@ -427,6 +505,31 @@ class DiachromaticInteractionSet:
 
         self._write_file_info_dict = report_dict
         return report_dict
+
+    def _shuffle_inter_dict(self, random_seed: int = None, verbose: bool = False):
+        """
+        Input files can be affected by sorting artifacts. This function shuffles the key value pairs and thus eliminates
+        such artifacts.
+
+        :param random_seed: Number used to init random generator
+        :param verbose: If true, messages about progress will be written to the screen
+        """
+
+        if verbose:
+            print("[INFO] Shuffling dictionary with interactions ...")
+
+        if random_seed is not None:
+            random.seed(random_seed)
+
+        if verbose:
+            print("\t[INFO] Random seed: " + str(random_seed))
+
+        items = list(self._inter_dict.items())
+        random.shuffle(items)
+        self._inter_dict = defaultdict(DiachromaticInteraction, items)
+
+        if verbose:
+            print("[INFO] ... done.")
 
     def write_diachromatic_interaction_fdr_test_file(self, target_file: str = None, p_value_max: float = 0.05,
                                                      p_value_step: float = 0.00025, i_per_interval_requested: int = 10,
@@ -730,6 +833,10 @@ class DiachromaticInteractionSet:
     @property
     def interaction_list(self):
         return self._inter_dict.values()
+
+    @property
+    def interaction_dict(self):
+        return self._inter_dict
 
     def get_num_of_inter_with_as_many_or_more_read_pairs(self, min_rp_num: int = None):
         """

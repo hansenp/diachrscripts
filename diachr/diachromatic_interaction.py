@@ -1,5 +1,6 @@
 from numpy import exp
 
+
 class DiachromaticInteraction:
     """
     Class to represent an interaction between two different parts of the genome with status and count.
@@ -7,7 +8,8 @@ class DiachromaticInteraction:
     See https://github.com/TheJacksonLaboratory/diachromatic
     """
 
-    def __init__(self, chrA: str, fromA: int, toA: int, statusA:str, chrB: str, fromB: int, toB: int, statusB: str, simple: int, twisted: int):
+    def __init__(self, chrA: str, fromA: int, toA: int, statusA: str, chrB: str, fromB: int, toB: int, statusB: str,
+                 simple: int, twisted: int):
         """
         @param F an array with 9 elements that represent an interaction
         """
@@ -42,7 +44,6 @@ class DiachromaticInteraction:
         self._twisted = twisted
 
         self._rep_num = 1
-        
 
     def append_interaction_data(self, simple, twisted):
         """
@@ -143,12 +144,12 @@ class DiachromaticInteraction:
             str(self._fromB) + "\t" + \
             str(self._toB) + "\t" + \
             statusB + "\t" + \
-            str(self._simple)+ ":" + \
+            str(self._simple) + ":" + \
             str(self._twisted)
 
         if type(self).__name__ == "DiachromaticInteraction11":
             log10_pval = round(self._log10_pval, 2)
-            log10_pval += 0. # Get rid of negative sign on numbers close to zero
+            log10_pval += 0.  # Get rid of negative sign on numbers close to zero
             di_line = di_line + "\t" + "{:.2f}".format(log10_pval) + "\t" + self.get_category()
 
         return di_line
@@ -170,7 +171,8 @@ class DiachromaticInteraction11(DiachromaticInteraction):
     This is an extension of the class DiachromaticInteraction that can store also a P-value and a category.
     """
 
-    def __init__(self, chrA: str, fromA: int, toA: int, statusA:str, chrB: str, fromB: int, toB: int, statusB: str, simple: int, twisted: int, log10_pval: float):
+    def __init__(self, chrA: str, fromA: int, toA: int, statusA: str, chrB: str, fromB: int, toB: int, statusB: str,
+                 simple: int, twisted: int, log10_pval: float):
         super().__init__(chrA, fromA, toA, statusA, chrB, fromB, toB, statusB, simple, twisted)
 
         # Negative of the decadic logarithm of P-values
@@ -192,7 +194,8 @@ class DiachromaticInteraction11(DiachromaticInteraction):
         elif category == "UIR":
             self._category = 2
         else:
-            raise TypeError("Invalid tag for interaction category: " + category + ". Must be either 'UI', 'DI' or 'UIR'")
+            raise TypeError(
+                "Invalid tag for interaction category: " + category + ". Must be either 'UI', 'DI' or 'UIR'")
 
     def get_category(self):
         """
