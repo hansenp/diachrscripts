@@ -1,15 +1,13 @@
 from unittest import TestCase
 import os
 import sys
+from diachr import DiachromaticInteractionSet
+
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-#
-#
-from diachr import DiachromaticInteractionSet
-#
-#
+
 class DiachromaticInteraction(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -29,7 +27,6 @@ class DiachromaticInteraction(TestCase):
         """
         n_interactions = len(self.interaction_dict)
         self.assertEqual(4, n_interactions)
-
 
     def test_get_three_above_threshold_interactions(self):
         """
