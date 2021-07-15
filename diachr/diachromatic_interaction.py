@@ -9,7 +9,7 @@ class DiachromaticInteraction:
     """
 
     def __init__(self, chrA: str, fromA: int, toA: int, statusA: str, chrB: str, fromB: int, toB: int, statusB: str,
-                 simple: int, twisted: int):
+                 simple_1: int, simple_2: int, twisted_1: int, twisted_2: int):
         """
         @param F an array with 9 elements that represent an interaction
         """
@@ -40,20 +40,24 @@ class DiachromaticInteraction:
         self._fromB = fromB
         self._toB = toB
 
-        self._simple = simple
-        self._twisted = twisted
+        self._simple_1 = simple_1
+        self._simple_2 = simple_2
+        self._twisted_1 = twisted_1
+        self._twisted_2 = twisted_2
 
         self._rep_num = 1
 
-    def append_interaction_data(self, simple, twisted):
+    def append_interaction_data(self, simple_1, simple_2, twisted_1, twisted_2):
         """
         This method is called if we already have one or more observations
         for this interaction. We have thus compared the key already.
         We can just add the interaction counts.
         """
         self._rep_num += 1
-        self._simple += simple
-        self._twisted += twisted
+        self._simple_1 += simple_1
+        self._simple_2 += simple_2
+        self._twisted_1 += twisted_1
+        self._twisted_2 += twisted_2
 
     def has_data_for_required_replicate_num(self, k):
         return k <= self._rep_num
@@ -84,15 +88,15 @@ class DiachromaticInteraction:
 
     @property
     def n_simple(self):
-        return self._simple
+        return self._simple_1 + self._simple_2
 
     @property
     def n_twisted(self):
-        return self._twisted
+        return self._twisted_1 + self._twisted_2
 
     @property
     def rp_total(self):
-        return self._simple + self._twisted
+        return self._simple_1 + self._simple_2 + self._twisted_1 + self._twisted_2
 
     @property
     def i_dist(self):
@@ -144,8 +148,10 @@ class DiachromaticInteraction:
             str(self._fromB) + "\t" + \
             str(self._toB) + "\t" + \
             statusB + "\t" + \
-            str(self._simple) + ":" + \
-            str(self._twisted)
+            str(self._simple_1) + ":" + \
+            str(self._simple_2) + ":" + \
+            str(self._twisted_1) + ":" + \
+            str(self._twisted_2)
 
         if type(self).__name__ == "DiachromaticInteraction11":
             log10_pval = round(self._log10_pval, 2)
@@ -172,8 +178,8 @@ class DiachromaticInteraction11(DiachromaticInteraction):
     """
 
     def __init__(self, chrA: str, fromA: int, toA: int, statusA: str, chrB: str, fromB: int, toB: int, statusB: str,
-                 simple: int, twisted: int, log10_pval: float):
-        super().__init__(chrA, fromA, toA, statusA, chrB, fromB, toB, statusB, simple, twisted)
+                 simple_1: int, simple_2: int, twisted_1: int, twisted_2: int, log10_pval: float):
+        super().__init__(chrA, fromA, toA, statusA, chrB, fromB, toB, statusB, simple_1, simple_2, twisted_1, twisted_2)
 
         # Negative of the decadic logarithm of P-values
         self._log10_pval = log10_pval

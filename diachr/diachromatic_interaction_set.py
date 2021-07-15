@@ -106,8 +106,10 @@ class DiachromaticInteractionSet:
                         n_skipped_dist += 1
                         continue
                     elif d_inter.key in self._inter_dict:
-                        self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple,
-                                                                              twisted=d_inter.n_twisted)
+                        self._inter_dict[d_inter.key].append_interaction_data(simple_1=d_inter._simple_1,
+                                                                              simple_2=d_inter._simple_2,
+                                                                              twisted_1=d_inter._twisted_1,
+                                                                              twisted_2=d_inter._twisted_2)
                     else:
                         self._inter_dict[d_inter.key] = d_inter
         else:
@@ -128,8 +130,10 @@ class DiachromaticInteractionSet:
                         n_skipped_dist += 1
                         continue
                     elif d_inter.key in self._inter_dict:
-                        self._inter_dict[d_inter.key].append_interaction_data(simple=d_inter.n_simple,
-                                                                              twisted=d_inter.n_twisted)
+                        self._inter_dict[d_inter.key].append_interaction_data(simple_1=d_inter._simple_1,
+                                                                              simple_2=d_inter._simple_2,
+                                                                              twisted_1=d_inter._twisted_1,
+                                                                              twisted_2=d_inter._twisted_2)
                     else:
                         self._inter_dict[d_inter.key] = d_inter
 
@@ -202,8 +206,10 @@ class DiachromaticInteractionSet:
                 fromB=fromB,
                 toB=toB,
                 statusB=statusB,
-                simple=simple,
-                twisted=twisted)
+                simple_1=simple,
+                simple_2=0,
+                twisted_1=twisted,
+                twisted_2=0)
             return di_inter
 
         # The interaction read has already been evaluated and categorized
@@ -219,8 +225,10 @@ class DiachromaticInteractionSet:
                 fromB=fromB,
                 toB=toB,
                 statusB=statusB,
-                simple=simple,
-                twisted=twisted,
+                simple_1=simple,
+                simple_2=0,
+                twisted_1=twisted,
+                twisted_2=0,
                 log10_pval=log10_p_val)
 
             # Set interaction category
@@ -268,7 +276,7 @@ class DiachromaticInteractionSet:
                 continue
 
             # Get P-value
-            log10_p_val = self._p_values.get_binomial_log10_p_value(d_inter._simple, d_inter._twisted)
+            log10_p_val = self._p_values.get_binomial_log10_p_value(d_inter.n_simple, d_inter.n_twisted)
 
             # Determine interaction category
             if log10_pval_thresh <= log10_p_val:
@@ -288,8 +296,10 @@ class DiachromaticInteractionSet:
                 fromB=d_inter._fromB,
                 toB=d_inter._toB,
                 statusB=d_inter.enrichment_status_tag_pair[1],
-                simple=d_inter.n_simple,
-                twisted=d_inter.n_twisted,
+                simple_1=d_inter.n_simple,
+                simple_2=0,
+                twisted_1=d_inter.n_twisted,
+                twisted_2=0,
                 log10_pval=log10_p_val)
 
             # Set interaction category

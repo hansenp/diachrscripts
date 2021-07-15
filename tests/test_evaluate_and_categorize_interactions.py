@@ -98,7 +98,7 @@ class TestRateAndCategorizeInteractions(TestCase):
         """
         Finally, the interactions are written to Diachromatic interaction file, which has two additional columns on the
         left for P-value and interaction category ('DI', 'UIR', 'UI').
-        Inn this test, the file is read in again and the interaction numbers in the various categories are compared
+        In this test, the file is read in again and the interaction numbers in the various categories are compared
         with the known numbers.
         """
 
@@ -119,7 +119,7 @@ class TestRateAndCategorizeInteractions(TestCase):
                 F = line.rstrip().split('\t')
                 interaction_category = F[10]
                 enrichment_pair_tag = F[3] + F[7]
-                rp_total = int(F[8].split(':')[0]) + int(F[8].split(':')[1])
+                rp_total = int(F[8].split(':')[0]) + int(F[8].split(':')[1]) + int(F[8].split(':')[2]) + int(F[8].split(':')[3])
 
                 if rp_total not in rp_inter_dict[enrichment_pair_tag]:
                     rp_inter_dict[enrichment_pair_tag][interaction_category][rp_total] = 1
