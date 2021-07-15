@@ -176,10 +176,22 @@ class DiachromaticInteractionSet:
         statusB = F[7]
         st_string = F[8]  # something like 2:1, representing S:T, simple and twisted counts
         st_fields = st_string.split(":")
-        if len(st_fields) != 2:
+        if len(st_fields) == 2:
+            simple_1 = int(st_fields[0])
+            simple_2 = 0
+            twisted_1 = int(st_fields[1])
+            twisted_2 = 0
+        elif len(st_fields) == 4:
+            # For now, implement the heaviest two rule here
+            rp_counts = sorted([int(i) for i in st_fields], reverse=True)
+            simple_1 = rp_counts[0]
+            simple_2 = rp_counts[1]
+            twisted_1 = rp_counts[2]
+            twisted_2 = rp_counts[3]
+        else:
             raise ValueError("Malformed simple:twisted field in diachromatic line: " + line)
-        simple = int(st_fields[0])
-        twisted = int(st_fields[1])
+        simple = simple_1 + simple_2
+        twisted = twisted_1 + twisted_2
 
         # Get enrichment status of digests from file for enriched digests if available
         if self._enriched_digests_set != None:
