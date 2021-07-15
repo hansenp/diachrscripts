@@ -9,6 +9,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
+
 class TestRateAndCategorizeInteractions(TestCase):
 
     @classmethod
@@ -62,7 +63,6 @@ class TestRateAndCategorizeInteractions(TestCase):
 
         # Number of undirected interactions
         self.assertEqual(28, self.rate_and_cat_report_dict['N_UNDIRECTED'][0])
-
 
     def test_reference_selection_report_dict(self):
         """
