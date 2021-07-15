@@ -52,6 +52,9 @@ parser.add_argument('--random-seed',
                     help='Random seed that is used for the first iteration. The random seed is incremented by ``1`` '
                          'for each further iteration.',
                     default=None)
+parser.add_argument('--random-seed-shuff-inter',
+                    help='Random seed that is used to randomize the order of interactions after parsing.',
+                    default=1)
 parser.add_argument('-t','--thread-num',
                     help='Number of processes in which the iterations are performed in batches of the same size.',
                     default=0)
@@ -82,6 +85,7 @@ if args.random_seed is None:
     random_seed = args.random_seed
 else:
     random_seed = int(args.random_seed)
+random_seed_shuff_inter = int(args.random_seed_shuff_inter)
 thread_num = int(args.thread_num)
 p_value_threshold = args.p_value_threshold
 enriched_digests_file = args.enriched_digests_file
@@ -94,6 +98,7 @@ parameter_info += "\t[INFO] --diachromatic-interaction-file:" + '\n'
 parameter_info += "\t\t[INFO] " + diachromatic_interaction_file + '\n'
 parameter_info += "\t[INFO] --min-inter-dist: " + "{:,}".format(min_inter_dist) + '\n'
 parameter_info += "\t[INFO] --p-value-threshold: " + str(p_value_threshold) + '\n'
+parameter_info += "\t[INFO] --random-seed-shuff-inter: " + str(random_seed_shuff_inter) + '\n'
 if args.p_value_threshold is None:
     parameter_info += "\t\t[INFO] Will determine a P-value threshold so that the FDR is kept below: " + str(
         fdr_threshold) + '\n'
@@ -123,6 +128,8 @@ interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_dige
 # To save memory, we only read interactions that can be significant at a nominal alpha of 0.10.
 min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(0.10)
 interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, min_dist=min_inter_dist, verbose=True)
+print()
+interaction_set.shuffle_inter_dict(random_seed=random_seed_shuff_inter, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 read_file_info_table_row = interaction_set.get_read_file_info_table_row()
 print()

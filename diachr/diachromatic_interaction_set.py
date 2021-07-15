@@ -506,7 +506,7 @@ class DiachromaticInteractionSet:
         self._write_file_info_dict = report_dict
         return report_dict
 
-    def _shuffle_inter_dict(self, random_seed: int = None, verbose: bool = False):
+    def shuffle_inter_dict(self, random_seed: int = None, verbose: bool = False):
         """
         Input files can be affected by sorting artifacts. This function shuffles the key value pairs and thus eliminates
         such artifacts.
