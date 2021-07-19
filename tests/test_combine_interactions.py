@@ -79,7 +79,6 @@ class TestCombineInteractions(TestCase):
                 n_inter_with_required_replicate_num += 1
         self.assertEqual(1, n_inter_with_required_replicate_num)
 
-
     def test_summation_of_simple_and_twisted_rp_counts(self):
         """
         For combined interactions, we add up the read pair counts from different replicates separately
@@ -89,25 +88,25 @@ class TestCombineInteractions(TestCase):
         for i in self.interaction_set.interaction_list:
 
             # The interaction on chromosome 'chr1' occurs in all four replicates
-            # Simple:Twisted counts: 2:1 + 2:1 + 2:1 + 2:1 -> 8:4
+            # Simple:Twisted counts: 2:0:1:0 + 2:0:1:0 + 2:0:1:0 + 2:0:1:0 -> 8:0:4:0
             if i.chrA == "chr1":
                 self.assertEqual(8, i.n_simple)
                 self.assertEqual(4, i.n_twisted)
 
             # The interaction on chromosome 'chr17' occurs in three replicates
-            # Simple:Twisted counts: 3:2 + 3:2 + 3:2 -> 9:6
+            # Simple:Twisted counts: 3:0:2:0 + 3:0:2:0 + 3:0:2:0 -> 9:0:6:0
             if i.chrA == "chr17":
                 self.assertEqual(9, i.n_simple)
                 self.assertEqual(6, i.n_twisted)
 
             # The interaction on chromosome 'chr7' occurs in two replicates
-            # Simple:Twisted counts: 4:3 + 4:3 -> 8:6
+            # Simple:Twisted counts: 4:0:3:0 + 4:0:3:0 -> 8:0:6:0
             if i.chrA == "chr7":
                 self.assertEqual(8, i.n_simple)
                 self.assertEqual(6, i.n_twisted)
 
             # The interaction on chromosome 'chr11' occurs in one replicate
-            # Simple:Twisted counts: 5:4 -> 5:4
+            # Simple:Twisted counts: 5:0:4:0 -> 5:0:4:0
             if i.chrA == "chr11":
                 self.assertEqual(5, i.n_simple)
                 self.assertEqual(4, i.n_twisted)

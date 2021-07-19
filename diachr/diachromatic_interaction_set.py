@@ -177,13 +177,16 @@ class DiachromaticInteractionSet:
         st_string = F[8]  # something like 2:1, representing S:T, simple and twisted counts
         st_fields = st_string.split(":")
         if len(st_fields) == 2:
+            print('Error!')
+            exit(1)
             simple_1 = int(st_fields[0])
             simple_2 = 0
             twisted_1 = int(st_fields[1])
             twisted_2 = 0
         elif len(st_fields) == 4:
             # For now, implement the heaviest two rule here
-            rp_counts = sorted([int(i) for i in st_fields], reverse=True)
+            #rp_counts = sorted([int(i) for i in st_fields], reverse=True)
+            rp_counts = [int(i) for i in st_fields]
             simple_1 = rp_counts[0]
             simple_2 = rp_counts[1]
             twisted_1 = rp_counts[2]
