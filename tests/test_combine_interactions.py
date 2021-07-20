@@ -88,26 +88,45 @@ class TestCombineInteractions(TestCase):
         for i in self.interaction_set.interaction_list:
 
             # The interaction on chromosome 'chr1' occurs in all four replicates
-            # Simple:Twisted counts: 2:0:1:0 + 2:0:1:0 + 2:0:1:0 + 2:0:1:0 -> 8:0:4:0
+            # 'simple_1:simple_2:twisted_1:twisted_2' counts: 1:1:1:0 + 2:0:1:0 + 0:2:1:0 + 1:1:1:0 -> 4:4:4:0
+            # 'n_simple:n_twisted' counts: 4:4:4:0 -> 8:4
             if i.chrA == "chr1":
+                self.assertEqual(4, i._simple_1)
+                self.assertEqual(4, i._simple_2)
+                self.assertEqual(4, i._twisted_1)
+                self.assertEqual(0, i._twisted_2)
                 self.assertEqual(8, i.n_simple)
                 self.assertEqual(4, i.n_twisted)
 
             # The interaction on chromosome 'chr17' occurs in three replicates
-            # Simple:Twisted counts: 3:0:2:0 + 3:0:2:0 + 3:0:2:0 -> 9:0:6:0
+            # 'simple_1:simple_2:twisted_1:twisted_2' counts: 3:0:1:1 + 3:0:0:2 + 3:0:2:0 -> 9:0:3:3
+            # 'n_simple:n_twisted' counts: 9:0:3:3 -> 9:6
             if i.chrA == "chr17":
+                self.assertEqual(9, i._simple_1)
+                self.assertEqual(0, i._simple_2)
+                self.assertEqual(3, i._twisted_1)
+                self.assertEqual(3, i._twisted_2)
                 self.assertEqual(9, i.n_simple)
                 self.assertEqual(6, i.n_twisted)
 
             # The interaction on chromosome 'chr7' occurs in two replicates
-            # Simple:Twisted counts: 4:0:3:0 + 4:0:3:0 -> 8:0:6:0
+            # 'simple_1:simple_2:twisted_1:twisted_2' counts: 3:1:1:2 + 2:2:2:1 -> 5:3:3:3
+            # 'n_simple:n_twisted' counts: 5:3:3:3 -> 8:6
             if i.chrA == "chr7":
+                self.assertEqual(5, i._simple_1)
+                self.assertEqual(3, i._simple_2)
+                self.assertEqual(3, i._twisted_1)
+                self.assertEqual(3, i._twisted_2)
                 self.assertEqual(8, i.n_simple)
                 self.assertEqual(6, i.n_twisted)
 
             # The interaction on chromosome 'chr11' occurs in one replicate
-            # Simple:Twisted counts: 5:0:4:0 -> 5:0:4:0
+            # 'n_simple:n_twisted' counts: 3:2:1:3 -> 5:4
             if i.chrA == "chr11":
+                self.assertEqual(3, i._simple_1)
+                self.assertEqual(2, i._simple_2)
+                self.assertEqual(1, i._twisted_1)
+                self.assertEqual(3, i._twisted_2)
                 self.assertEqual(5, i.n_simple)
                 self.assertEqual(4, i.n_twisted)
 
