@@ -10,6 +10,7 @@ from .diachromatic_interaction import DiachromaticInteraction11
 from diachr.binomial_model import BinomialModel
 warnings.filterwarnings('always')
 
+
 class DiachromaticInteractionSet:
     """
     This class can read interactions from one ore more Diachromatic interaction files and perform the following
@@ -174,30 +175,19 @@ class DiachromaticInteractionSet:
         fromB = int(F[5])
         toB = int(F[6])
         statusB = F[7]
-        st_string = F[8]  # something like 2:1, representing S:T, simple and twisted counts
+        st_string = F[8]  # something like 2:0:1:0, representing S1:S2:T1:T2, simple and twisted counts
         st_fields = st_string.split(":")
-        if len(st_fields) == 2:
-            print('Error!')
-            exit(1)
-            simple_1 = int(st_fields[0])
-            simple_2 = 0
-            twisted_1 = int(st_fields[1])
-            twisted_2 = 0
-        elif len(st_fields) == 4:
-            # For now, implement the heaviest two rule here
-            #rp_counts = sorted([int(i) for i in st_fields], reverse=True)
+        if len(st_fields) != 4:
+            raise ValueError("Malformed simple_1:simple_2:twisted_1:twisted_2 field in diachromatic line: " + line)
+        else:
             rp_counts = [int(i) for i in st_fields]
             simple_1 = rp_counts[0]
             simple_2 = rp_counts[1]
             twisted_1 = rp_counts[2]
             twisted_2 = rp_counts[3]
-        else:
-            raise ValueError("Malformed simple:twisted field in diachromatic line: " + line)
-        simple = simple_1 + simple_2
-        twisted = twisted_1 + twisted_2
 
         # Get enrichment status of digests from file for enriched digests if available
-        if self._enriched_digests_set != None:
+        if self._enriched_digests_set is not None:
             coord_key_da = chrA + "\t" + str(fromA) + "\t" + str(toA)
             coord_key_db = chrB + "\t" + str(fromB) + "\t" + str(toB)
             if coord_key_da in self._enriched_digests_set:
@@ -221,10 +211,10 @@ class DiachromaticInteractionSet:
                 fromB=fromB,
                 toB=toB,
                 statusB=statusB,
-                simple_1=simple,
-                simple_2=0,
-                twisted_1=twisted,
-                twisted_2=0)
+                simple_1=simple_1,
+                simple_2=simple_2,
+                twisted_1=twisted_1,
+                twisted_2=twisted_2)
             return di_inter
 
         # The interaction read has already been evaluated and categorized
@@ -240,15 +230,37 @@ class DiachromaticInteractionSet:
                 fromB=fromB,
                 toB=toB,
                 statusB=statusB,
-                simple_1=simple,
-                simple_2=0,
-                twisted_1=twisted,
-                twisted_2=0,
+                simple_1=simple_1,
+                simple_2=simple_2,
+                twisted_1=twisted_1,
+                twisted_2=twisted_2,
                 log10_pval=log10_p_val)
 
             # Set interaction category
             di_11_inter.set_category(i_cat)
             return di_11_inter
+
+    def transform_rp_counts_to_heaviest_two_rule(self, verbose: bool = False):
+
+        if verbose:
+            print("[INFO] Transforming the four read pair counts according to HT rule ...")
+
+        n_processed = 0
+        for d_inter in self.interaction_list:
+
+            rp_counts = sorted([int(i) for i in [d_inter._simple_1, d_inter._simple_2, d_inter._twisted_1, d_inter._twisted_2]], reverse=True)
+            d_inter._simple_1 = rp_counts[0]
+            d_inter._simple_2 = rp_counts[1]
+            d_inter._twisted_1 = rp_counts[2]
+            d_inter._twisted_2 = rp_counts[3]
+
+            n_processed += 1
+            if verbose:
+                if n_processed % 1000000 == 0:
+                    print("\t[INFO] Processed " + "{:,}".format(n_processed) + " interactions ...")
+
+        if verbose:
+            print("[INFO] ... done.")
 
     def evaluate_and_categorize_interactions(self, pval_thresh: float = None, verbose: bool = False):
         """

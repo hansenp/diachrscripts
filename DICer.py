@@ -36,11 +36,15 @@ parser.add_argument('-i', '--diachromatic-interaction-file',
 parser.add_argument('--min-inter-dist',
                     help='Minimum interaction distance. Shorter interactions are not taken into account.',
                     default=0)
+parser.add_argument('--read-pair-counts-rule',
+                    help='Define how the four read pair counts will be used. Can be \'st\' for simple/twisted or '
+                         '\'ht\' for heaviest two.',
+                    default='st')
 parser.add_argument('--fdr-threshold',
                     help='The P-value is chosen so that the estimated FDR remains below this threshold.',
                     default=0.05)
 parser.add_argument('--nominal-alpha-max',
-                    help='Maximum nominal alpha at which iteractions are classified as significant.',
+                    help='Maximum nominal alpha at which interactions are classified as significant.',
                     default=0.025)
 parser.add_argument('--nominal-alpha-step',
                     help='Step size for nominal alphas.',
@@ -77,6 +81,7 @@ out_prefix = args.out_prefix
 description_tag = args.description_tag
 diachromatic_interaction_file = args.diachromatic_interaction_file
 min_inter_dist = int(args.min_inter_dist)
+read_pair_counts_rule = args.read_pair_counts_rule
 fdr_threshold = float(args.fdr_threshold)
 nominal_alpha_max = float(args.nominal_alpha_max)
 nominal_alpha_step = float(args.nominal_alpha_step)
@@ -97,6 +102,7 @@ parameter_info += "\t[INFO] --description-tag: " + description_tag + '\n'
 parameter_info += "\t[INFO] --diachromatic-interaction-file:" + '\n'
 parameter_info += "\t\t[INFO] " + diachromatic_interaction_file + '\n'
 parameter_info += "\t[INFO] --min-inter-dist: " + "{:,}".format(min_inter_dist) + '\n'
+parameter_info += "\t[INFO] --read-pair-counts-rule: " + read_pair_counts_rule + '\n'
 parameter_info += "\t[INFO] --p-value-threshold: " + str(p_value_threshold) + '\n'
 parameter_info += "\t[INFO] --random-seed-shuff-inter: " + str(random_seed_shuff_inter) + '\n'
 if args.p_value_threshold is None:
@@ -129,6 +135,9 @@ interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_dige
 min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(0.10)
 interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, min_dist=min_inter_dist, verbose=True)
 print()
+if read_pair_counts_rule == 'ht':
+    interaction_set.transform_rp_counts_to_heaviest_two_rule(verbose=True)
+    print()
 interaction_set.shuffle_inter_dict(random_seed=random_seed_shuff_inter, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 read_file_info_table_row = interaction_set.get_read_file_info_table_row()
