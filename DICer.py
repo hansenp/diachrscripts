@@ -136,7 +136,7 @@ min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significan
 interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, min_dist=min_inter_dist, verbose=True)
 print()
 if read_pair_counts_rule == 'ht':
-    interaction_set.transform_rp_counts_to_heaviest_two_rule(verbose=True)
+    interaction_set.transform_4rp_counts_to_heaviest_two_rule(verbose=True)
     print()
 interaction_set.shuffle_inter_dict(random_seed=random_seed_shuff_inter, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()

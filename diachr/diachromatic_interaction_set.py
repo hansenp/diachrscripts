@@ -240,7 +240,19 @@ class DiachromaticInteractionSet:
             di_11_inter.set_category(i_cat)
             return di_11_inter
 
-    def transform_rp_counts_to_heaviest_two_rule(self, verbose: bool = False):
+    def transform_4rp_counts_to_heaviest_two_rule(self, verbose: bool = False):
+        """
+        This function rearranges the four read pair counts of all interactions in this interaction set.
+
+        '_simple_1' receives the largest, '_simple_2' the second largest, '_twisted_1' the third largest and
+        '_twisted_2' the smallest count. If these rearranged counts are combined into simple ('_simple_1 + '_simple_2')
+        and twisted ('_twisted_1 + _twisted_2') and binomial P-values are calculated, this corresponds to the HT rule.
+
+        In this way, only a few changes need to be made to the rest of the code. Note that the rearrangement causes the
+        original order of counts to be lost and the terms simple and twisted no longer have any meaning.
+
+        :param verbose:  If true, messages about progress will be written to the screen
+        """
 
         if verbose:
             print("[INFO] Transforming the four read pair counts according to HT rule ...")
@@ -266,6 +278,10 @@ class DiachromaticInteractionSet:
         """
         Calculate the P-value and define interaction category ('DI' or 'UI') for all interactions in this object.
         'DiachromaticInteraction' objects will be replaced by 'DiachromaticInteraction11' objects.
+
+        :param pval_thresh: Interactions with a lower P-value will be classified as significant
+        :param verbose:  If true, messages about progress will be written to the screen
+        :return: Dictionary with information on processing.
         """
 
         # Check whether an equal or smaller P-value threshold was used before
