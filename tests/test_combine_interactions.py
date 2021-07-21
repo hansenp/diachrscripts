@@ -8,12 +8,13 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
+
 class TestCombineInteractions(TestCase):
 
     @classmethod
     def setUpClass(cls):
 
-        # Use test toy example data to create a DiachromaticInteractionParser object
+        # Use test toy example data to create a DiachromaticInteractionSet object
         cls.interaction_set = DiachromaticInteractionSet()
         current_dir =  os.path.dirname(__file__)
         cls.interaction_set.parse_file(os.path.join(current_dir,"data/test_01/diachromatic_interaction_file_r1.tsv.gz")) # one interaction
@@ -21,7 +22,7 @@ class TestCombineInteractions(TestCase):
         cls.interaction_set.parse_file(os.path.join(current_dir,"data/test_01/diachromatic_interaction_file_r3.tsv.gz")) # three interactions
         cls.interaction_set.parse_file(os.path.join(current_dir,"data/test_01/diachromatic_interaction_file_r4.tsv.gz")) # four interactions
 
-        # Use real data sample files (top 64,000 of Megakaryocyte data) to create a DiachromaticInteractionParser object
+        # Use real data sample files (top 64,000 of MK data) to create a DiachromaticInteractionSet object
         cls.interaction_set_real_top_64000 = DiachromaticInteractionSet()
         cls.interaction_set_real_top_64000.parse_file(os.path.join(current_dir,"data/test_01/real_data/diachromatic_interaction_file_top_64000_r1.tsv.gz")) # 64,000 interaction
         cls.interaction_set_real_top_64000.parse_file(os.path.join(current_dir,"data/test_01/real_data/diachromatic_interaction_file_top_64000_r2.tsv.gz")) # 64,000 interactions
