@@ -105,6 +105,26 @@ class BaitedDigest:
             i_dist_list.append(d_inter.i_dist)
         return i_dist_list
 
+    def get_dig_len_list(self, i_cat, d1d2: str = 'D1'):
+
+        # Get list of interactions
+        d_inter_list = self.interactions[i_cat]['NE'] + self.interactions[i_cat]['EN']
+        dig_len_list = []
+        for d_inter in d_inter_list:
+            d1_len = d_inter._toA - d_inter._fromA
+            d2_len = d_inter._toB - d_inter._fromB
+            if d1d2 == 'D1':
+                if d1_len < d2_len:
+                    dig_len_list.append(d1_len)
+                else:
+                    dig_len_list.append(d2_len)
+            else:
+                if d1_len < d2_len:
+                    dig_len_list.append(d2_len)
+                else:
+                    dig_len_list.append(d1_len)
+        return dig_len_list
+
     def get_median_read_pair_number(self, i_cat, e_cat):
 
         # Get list of interactions

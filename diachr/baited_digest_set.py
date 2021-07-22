@@ -250,12 +250,13 @@ class BaitedDigestSet:
         :return: A dictionary containing the number pairs (see 'get_empty_pair_dict()').
         """
 
-        if (number_pair_type is None) or number_pair_type not in ['I_NUM', 'RP_NUM', 'MED_RP_NUM', 'MED_I_DIST']:
+        if (number_pair_type is None) or number_pair_type not in ['I_NUM', 'RP_NUM', 'MED_RP_NUM', 'MED_I_DIST', 'DIG_LEN']:
             print("[ERROR] Invalid number pair type! Use one of the following:")
             print("\t[ERROR] 'I_NUM' - Interaction numbers")
             print("\t[ERROR] 'RP_NUM' - Read pair numbers")
             print("\t[ERROR] 'MED_RP_NUM' - Median read pair numbers")
             print("\t[ERROR] 'MED_I_DIST' - Median interaction distances")
+            print("\t[ERROR] 'DIG_LEN' - Digest length")
             return 1
 
         # Prepare data structure for results
@@ -270,6 +271,8 @@ class BaitedDigestSet:
             pair_dict['NUM_PAIR_TYPE'] = 'Median read pair number'
         if number_pair_type == 'MED_I_DIST':
             pair_dict['NUM_PAIR_TYPE'] = 'Median interaction distance'
+        if number_pair_type == 'DIG_LEN':
+            pair_dict['NUM_PAIR_TYPE'] = 'Digest length'
 
         if verbose:
             print("[INFO] Determining pairs of " + pair_dict[
@@ -301,6 +304,9 @@ class BaitedDigestSet:
                     if number_pair_type == 'MED_I_DIST':
                         pair_dict[i_cat]['NE'].append(baited_digest.get_median_interaction_distance(i_cat, 'NE'))
                         pair_dict[i_cat]['EN'].append(baited_digest.get_median_interaction_distance(i_cat, 'EN'))
+                    if number_pair_type == 'DIG_LEN':
+                        pair_dict[i_cat]['NE'].extend(baited_digest.get_dig_len_list(i_cat, 'D1'))
+                        pair_dict[i_cat]['EN'].extend(baited_digest.get_dig_len_list(i_cat, 'D2'))
 
         if verbose:
             print("[INFO] ... done.")

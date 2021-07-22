@@ -274,6 +274,54 @@ class DiachromaticInteractionSet:
         if verbose:
             print("[INFO] ... done.")
 
+    def remove_digest_length_outliers(self, dg_min_len: int = 500, dg_max_len: int = 10000, dg_min_len_q: int = 0.25, verbose: bool = False):
+        """
+        This function is preliminary. It removes interactions with extreme digests pairs from the interaction set.
+        Extreme digest pairs are those in which one of the digests is very short or very long and those in which the
+        ratio of the two digest lengths is very unbalanced.
+
+        :param dg_min_len: Minimum length that both digests must have.
+        :param dg_max_len: Maximum length that both digests can have.
+        :param dg_min_len_q: Tha quotient of the smaller divided by larger digest length must be greater.
+        :return: Number of interactions removed.
+        """
+
+        if verbose:
+            print("[INFO] Removing interactions with extreme digest lengths ...")
+
+        # Create new dictionary that will replace the old one
+        new_inter_dict = defaultdict(DiachromaticInteraction)
+
+        # Iterate interactions
+        n_processed = 0
+        for key, d_inter in self._inter_dict.items():
+
+            # Get digest lengths
+            d1_len = d_inter._toA - d_inter._fromA
+            d2_len = d_inter._toB - d_inter._fromB
+
+            # If conditions are met, add to new dictionary
+            if not (d1_len < dg_min_len or d2_len < dg_min_len or
+                    dg_max_len < d1_len or dg_max_len < d2_len or
+                    min(d1_len,d2_len)/max(d1_len,d2_len) < dg_min_len_q):
+                new_inter_dict[key] = d_inter
+
+            n_processed += 1
+            if verbose:
+                if n_processed % 1000000 == 0:
+                    print("\t[INFO] Processed " + "{:,}".format(n_processed) + " interactions ...")
+
+        # Replace old dictionary
+        num_of_removed_interactions = len(self._inter_dict) - len(new_inter_dict)
+        self._inter_dict = new_inter_dict
+
+        if verbose:
+            print("\t[INFO] Total number of interactions removed: " + "{:,}".format(num_of_removed_interactions))
+            print("\t[INFO] Remaining interactions: " + "{:,}".format(len(self._inter_dict)))
+            print("[INFO] ... done.")
+
+        return num_of_removed_interactions
+
     def evaluate_and_categorize_interactions(self, pval_thresh: float = None, verbose: bool = False):
         """
         Calculate the P-value and define interaction category ('DI' or 'UI') for all interactions in this object.
