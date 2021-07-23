@@ -328,7 +328,7 @@ class BinomialInteractionModel:
                 else:
                     n_dict_ui[n] = 1
             else:
-                print("[ERROR] Invalid interaction category tag: " + d_inter.get_category())
+                print("[ERROR] Invalid interaction category tag: " + di_11_inter.get_category())
 
         # List of n
         n_list = list(range(n_max + 1))

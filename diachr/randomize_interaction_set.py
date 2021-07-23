@@ -72,7 +72,10 @@ class RandomizeInteractionSet:
         log10_pval_list = []
         rp_list = []
         for d_inter in interaction_set.interaction_list:
-            log10_pval_list.append(self.p_values.get_binomial_log10_p_value(d_inter.n_simple, d_inter.n_twisted))
+            if interaction_set.rpc_rule == 'st':
+                log10_pval_list.append(self.p_values.get_binomial_log10_p_value(d_inter.n_simple, d_inter.n_twisted))
+            else:
+                log10_pval_list.append(self.p_values.get_binomial_log10_p_value(d_inter.n_heaviest_two, d_inter.n_lightest_two))
             rp_list.append(d_inter.rp_total)
 
         # Determine number of significant interactions for each nominal alpha

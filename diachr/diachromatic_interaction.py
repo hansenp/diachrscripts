@@ -95,6 +95,16 @@ class DiachromaticInteraction:
         return self._twisted_1 + self._twisted_2
 
     @property
+    def n_heaviest_two(self):
+        rp_counts = sorted([self._simple_1, self._simple_2, self._twisted_1, self._twisted_2], reverse=True)
+        return rp_counts[0] + rp_counts[1]
+
+    @property
+    def n_lightest_two(self):
+        rp_counts = sorted([self._simple_1, self._simple_2, self._twisted_1, self._twisted_2], reverse=True)
+        return rp_counts[2] + rp_counts[3]
+
+    @property
     def rp_total(self):
         return self._simple_1 + self._simple_2 + self._twisted_1 + self._twisted_2
 

@@ -28,10 +28,16 @@ class DiachromaticInteractionSet:
     section in the RTD of this repository.
     """
 
-    def __init__(self, enriched_digests_file: str = None):
+    def __init__(self, enriched_digests_file: str = None, rpc_rule: str = 'st'):
 
         # Dictionary that contains all interaction objects
         self._inter_dict = defaultdict(DiachromaticInteraction)
+
+        # Rule of how to use the four read pair counts of interactions in this set
+        if not (rpc_rule == 'st' or rpc_rule == 'ht'):
+            raise ValueError("Invalid tag for rule how to use read pair counts: " + rpc_rule + "! Use \'st\' or \'ht\'.")
+        else:
+            self.rpc_rule = rpc_rule
 
         # Object for calculating P-values
         self._p_values = BinomialModel()
@@ -417,7 +423,10 @@ class DiachromaticInteractionSet:
                 continue
 
             # Get P-value
-            log10_p_val = self._p_values.get_binomial_log10_p_value(d_inter.n_simple, d_inter.n_twisted)
+            if self.rpc_rule == 'st':
+                log10_p_val = self._p_values.get_binomial_log10_p_value(d_inter.n_simple, d_inter.n_twisted)
+            else:
+                log10_p_val = self._p_values.get_binomial_log10_p_value(d_inter.n_heaviest_two, d_inter.n_lightest_two)
 
             # Determine interaction category
             if log10_pval_thresh <= log10_p_val:
@@ -437,10 +446,10 @@ class DiachromaticInteractionSet:
                 fromB=d_inter._fromB,
                 toB=d_inter._toB,
                 statusB=d_inter.enrichment_status_tag_pair[1],
-                simple_1=d_inter.n_simple,
-                simple_2=0,
-                twisted_1=d_inter.n_twisted,
-                twisted_2=0,
+                simple_1=d_inter._simple_1,
+                simple_2=d_inter._simple_2,
+                twisted_1=d_inter._twisted_1,
+                twisted_2=d_inter._twisted_2,
                 log10_pval=log10_p_val)
 
             # Set interaction category

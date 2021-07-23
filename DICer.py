@@ -130,14 +130,11 @@ print(parameter_info)
 ##################
 
 # Load interactions into a Diachromatic interaction set
-interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_digests_file)
+interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_digests_file, rpc_rule=read_pair_counts_rule)
 # To save memory, we only read interactions that can be significant at a nominal alpha of 0.10.
 min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(0.10)
 interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, min_dist=min_inter_dist, verbose=True)
 print()
-if read_pair_counts_rule == 'ht':
-    interaction_set.transform_4rp_counts_to_heaviest_two_rule(verbose=True)
-    print()
 interaction_set.shuffle_inter_dict(random_seed=random_seed_shuff_inter, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 read_file_info_table_row = interaction_set.get_read_file_info_table_row()
