@@ -305,8 +305,8 @@ class BaitedDigestSet:
                         pair_dict[i_cat]['NE'].append(baited_digest.get_median_interaction_distance(i_cat, 'NE'))
                         pair_dict[i_cat]['EN'].append(baited_digest.get_median_interaction_distance(i_cat, 'EN'))
                     if number_pair_type == 'DIG_LEN':
-                        pair_dict[i_cat]['NE'].extend(baited_digest.get_dig_len_list(i_cat, 'D1'))
-                        pair_dict[i_cat]['EN'].extend(baited_digest.get_dig_len_list(i_cat, 'D2'))
+                        pair_dict[i_cat]['NE'].extend(baited_digest.get_dig_len_list(i_cat, return_shorter_len = True)) # Smaller digest length instead of NE
+                        pair_dict[i_cat]['EN'].extend(baited_digest.get_dig_len_list(i_cat, return_shorter_len = False)) # Greater digest length instead of EN
 
         if verbose:
             print("[INFO] ... done.")
@@ -911,8 +911,8 @@ class BaitedDigestSet:
         sorted_digest_key_lists = defaultdict()
         for chr in self._baited_digest_dict.keys():
             sorted_digest_key_list = []
-            for sta_key in sorted(sta_keys_dict[chr].keys()):
-                sorted_digest_key_list.append(sta_keys_dict[chr][sta_key])
+            for sta_key in sorted([int(x) for x in sta_keys_dict[chr].keys()]):
+                sorted_digest_key_list.append(sta_keys_dict[chr][str(sta_key)])
             sorted_digest_key_lists[chr] = sorted_digest_key_list
 
         return sorted_digest_key_lists
