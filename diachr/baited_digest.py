@@ -105,15 +105,31 @@ class BaitedDigest:
             i_dist_list.append(d_inter.i_dist)
         return i_dist_list
 
-    def get_dig_len_list(self, i_cat, d1d2: str = 'D1'):
+    def get_dig_len_list(self, i_cat, return_shorter_len: bool = True):
+        """
+        Returns a list of digest lengths of all interactions in a category, either always the shorter or longer length.
+
+        :param i_cat: Interaction category.
+        :param return_shorter_len: If true, return the length  of the shorter digest for each interaction, otherwise the
+        length of the longer digest.
+        :return: List of digest lengths of all interactions.
+        """
 
         # Get list of interactions
         d_inter_list = self.interactions[i_cat]['NE'] + self.interactions[i_cat]['EN']
+
+        # Init list that will be returned
         dig_len_list = []
+
+        # Iterate interactions
         for d_inter in d_inter_list:
+
+            # Get digests lengths
             d1_len = d_inter._toA - d_inter._fromA
             d2_len = d_inter._toB - d_inter._fromB
-            if d1d2 == 'D1':
+
+            # Add length of shorter or longer digest to list
+            if return_shorter_len:
                 if d1_len < d2_len:
                     dig_len_list.append(d1_len)
                 else:
@@ -123,6 +139,7 @@ class BaitedDigest:
                     dig_len_list.append(d2_len)
                 else:
                     dig_len_list.append(d1_len)
+
         return dig_len_list
 
     def get_median_read_pair_number(self, i_cat, e_cat):

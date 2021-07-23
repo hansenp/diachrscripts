@@ -71,7 +71,7 @@ class DiachromaticInteractionSet:
         :param i_file: Diachromatic interaction file
         :param min_rp_num: Interactions with a smaller number of read pairs are skipped
         :param min_dist: Interactions with shorter distances are skipped
-        :param verbose:  If true, messages about progress will be written to the screen
+        :param verbose: If true, messages about progress will be written to the screen
         """
 
         # Check if interaction file exists
@@ -251,7 +251,7 @@ class DiachromaticInteractionSet:
         In this way, only a few changes need to be made to the rest of the code. Note that the rearrangement causes the
         original order of counts to be lost and the terms simple and twisted no longer have any meaning.
 
-        :param verbose:  If true, messages about progress will be written to the screen
+        :param verbose:  If true, messages about progress will be written to the screen.
         """
 
         if verbose:
@@ -283,6 +283,7 @@ class DiachromaticInteractionSet:
         :param dg_min_len: Minimum length that both digests must have.
         :param dg_max_len: Maximum length that both digests can have.
         :param dg_min_len_q: Tha quotient of the smaller divided by larger digest length must be greater.
+        :param verbose: If true, messages about progress will be written to the screen.
         :return: Number of interactions removed.
         """
 
@@ -304,6 +305,55 @@ class DiachromaticInteractionSet:
             if not (d1_len < dg_min_len or d2_len < dg_min_len or
                     dg_max_len < d1_len or dg_max_len < d2_len or
                     min(d1_len,d2_len)/max(d1_len,d2_len) < dg_min_len_q):
+                new_inter_dict[key] = d_inter
+
+            n_processed += 1
+            if verbose:
+                if n_processed % 1000000 == 0:
+                    print("\t[INFO] Processed " + "{:,}".format(n_processed) + " interactions ...")
+
+        # Replace old dictionary
+        num_of_removed_interactions = len(self._inter_dict) - len(new_inter_dict)
+        self._inter_dict = new_inter_dict
+
+        if verbose:
+            print("\t[INFO] Total number of interactions removed: " + "{:,}".format(num_of_removed_interactions))
+            print("\t[INFO] Remaining interactions: " + "{:,}".format(len(self._inter_dict)))
+            print("[INFO] ... done.")
+
+        return num_of_removed_interactions
+
+    def remove_read_pair_count_outliers(self, prop_thresh: float = 0.75, verbose: bool = False):
+        """
+        All interactions in which one of the four read pair counts makes up more than 'prop_thresh' will be removed.
+
+        :param prop_thresh: Maximum allowed proportion of all read pair counts.
+        :param verbose: If true, messages about progress will be written to the screen.
+        :return: Number of interactions removed.
+        """
+
+        if verbose:
+            print("[INFO] Removing interactions with extreme digest lengths ...")
+
+        # Create new dictionary that will replace the old one
+        new_inter_dict = defaultdict(DiachromaticInteraction)
+
+        # Iterate interactions
+        n_processed = 0
+        for key, d_inter in self._inter_dict.items():
+
+            # Get read pair counts
+            rp_1 = d_inter._simple_1
+            rp_2 = d_inter._simple_2
+            rp_3 = d_inter._twisted_1
+            rp_4 = d_inter._twisted_2
+            rp_total = d_inter.rp_total
+
+            # If conditions are met, add to new dictionary
+            if not (prop_thresh < rp_1/rp_total or
+                    prop_thresh < rp_2/rp_total or
+                    prop_thresh < rp_3/rp_total or
+                    prop_thresh < rp_4/rp_total):
                 new_inter_dict[key] = d_inter
 
             n_processed += 1
