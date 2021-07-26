@@ -135,6 +135,8 @@ interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_dige
 min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(0.10)
 interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, min_dist=min_inter_dist, verbose=True)
 print()
+interaction_set.remove_digest_length_outliers(dg_min_len=500, dg_max_len = 10000, dg_min_len_q = 0.25, verbose = True)
+print()
 interaction_set.shuffle_inter_dict(random_seed=random_seed_shuff_inter, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 read_file_info_table_row = interaction_set.get_read_file_info_table_row()
