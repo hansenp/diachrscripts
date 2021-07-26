@@ -440,8 +440,8 @@ class BaitedDigestSet:
 
         lim = max(x + y)
         bins = np.arange(0, lim + bin_size, bin_size)
-        counts_x, bins, patches = ax_hx.hist(x, bins=bins, color=i_cat_color)
-        counts_y, bins, patches = ax_hy.hist(y, bins=bins, orientation='horizontal', color=i_cat_color)
+        counts_x, bins, patches = ax_hx.hist(x, bins=bins, color=i_cat_color, density=True)
+        counts_y, bins, patches = ax_hy.hist(y, bins=bins, orientation='horizontal', color=i_cat_color, density=True)
         xy_hist_max = max(max(counts_x), max(counts_y))
 
         # set x-axes
@@ -453,10 +453,10 @@ class BaitedDigestSet:
 
         # set y-axes
         ax_hy.ticklabel_format(useOffset=False, style='plain')
-        ax_hx.set_yticks([0, xy_hist_max])
-        ax_hy.set_xticks([0, xy_hist_max])
-        ax_hx.set_ylim(0, xy_hist_max)
-        ax_hy.set_xlim(0, xy_hist_max)
+        #ax_hx.set_yticks([0, xy_hist_max])
+        #ax_hy.set_xticks([0, xy_hist_max])
+        #ax_hx.set_ylim(0, xy_hist_max)
+        #ax_hy.set_xlim(0, xy_hist_max)
 
         # Add text labels
         if add_text_labels:
@@ -740,6 +740,41 @@ class BaitedDigestSet:
             ax_hx=ax4_hx,
             ax_hy=ax4_hy,
             ax_s=ax4_s)
+
+        # Unify axes of histograms
+        hy_max = max([ax1_hx.get_ylim()[1], ax2_hx.get_ylim()[1], ax3_hx.get_ylim()[1], ax4_hx.get_ylim()[1],
+                      ax1_hy.get_xlim()[1], ax2_hy.get_xlim()[1], ax3_hy.get_xlim()[1], ax4_hy.get_xlim()[1]])
+        print(ax1_hx.get_ylim()[1])
+        print(ax2_hx.get_ylim()[1])
+        print(ax3_hx.get_ylim()[1])
+        print(ax4_hx.get_ylim()[1])
+        print(ax1_hy.get_xlim()[1])
+        print(ax2_hy.get_xlim()[1])
+        print(ax3_hy.get_xlim()[1])
+        print(ax4_hy.get_xlim()[1])
+        print(hy_max)
+
+        ax1_hx.set_ylim(0, hy_max)
+        ax1_hy.set_xlim(0, hy_max)
+
+        ax2_hx.set_ylim(0, hy_max)
+        ax2_hy.set_xlim(0, hy_max)
+
+        ax3_hx.set_ylim(0, hy_max)
+        ax3_hy.set_xlim(0, hy_max)
+
+        ax4_hx.set_ylim(0, hy_max)
+        ax4_hy.set_xlim(0, hy_max)
+
+        #ax2_hx.set_ylim(0, hy_max)
+        #ax3_hx.set_ylim(0, hy_max)
+        #ax4_hx.set_ylim(0, hy_max)
+
+        #ax1_hy.set_xlim(0, hy_max)
+        #ax2_hy.set_xlim(0, hy_max)
+        #ax3_hy.set_xlim(0, hy_max)
+        #ax4_hy.set_xlim(0, hy_max)
+
 
         # Save and return figure
         fig.savefig(pdf_file_name)
