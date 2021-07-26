@@ -246,40 +246,6 @@ class DiachromaticInteractionSet:
             di_11_inter.set_category(i_cat)
             return di_11_inter
 
-    def transform_4rp_counts_to_heaviest_two_rule(self, verbose: bool = False):
-        """
-        This function rearranges the four read pair counts of all interactions in this interaction set.
-
-        '_simple_1' receives the largest, '_simple_2' the second largest, '_twisted_1' the third largest and
-        '_twisted_2' the smallest count. If these rearranged counts are combined into simple ('_simple_1 + '_simple_2')
-        and twisted ('_twisted_1 + _twisted_2') and binomial P-values are calculated, this corresponds to the HT rule.
-
-        In this way, only a few changes need to be made to the rest of the code. Note that the rearrangement causes the
-        original order of counts to be lost and the terms simple and twisted no longer have any meaning.
-
-        :param verbose:  If true, messages about progress will be written to the screen.
-        """
-
-        if verbose:
-            print("[INFO] Transforming the four read pair counts according to HT rule ...")
-
-        n_processed = 0
-        for d_inter in self.interaction_list:
-
-            rp_counts = sorted([int(i) for i in [d_inter._simple_1, d_inter._simple_2, d_inter._twisted_1, d_inter._twisted_2]], reverse=True)
-            d_inter._simple_1 = rp_counts[0]
-            d_inter._simple_2 = rp_counts[1]
-            d_inter._twisted_1 = rp_counts[2]
-            d_inter._twisted_2 = rp_counts[3]
-
-            n_processed += 1
-            if verbose:
-                if n_processed % 1000000 == 0:
-                    print("\t[INFO] Processed " + "{:,}".format(n_processed) + " interactions ...")
-
-        if verbose:
-            print("[INFO] ... done.")
-
     def remove_digest_length_outliers(self, dg_min_len: int = 500, dg_max_len: int = 10000, dg_min_len_q: int = 0.25, verbose: bool = False):
         """
         This function is preliminary. It removes interactions with extreme digests pairs from the interaction set.

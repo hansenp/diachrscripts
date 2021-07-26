@@ -22,11 +22,15 @@ class TestDiachromaticInteractionSet(TestCase):
         cls.interaction_set_1 = DiachromaticInteractionSet()
         cls.interaction_set_2 = DiachromaticInteractionSet()
         cls.interaction_set_3 = DiachromaticInteractionSet()
+        cls.interaction_set_st = DiachromaticInteractionSet(rpc_rule='st')
+        cls.interaction_set_ht = DiachromaticInteractionSet(rpc_rule='ht')
         test_dir = os.path.dirname(__file__)
         interaction_file = os.path.join(test_dir, "data/test_04/diachromatic_interaction_file.tsv")
         cls.interaction_set_1.parse_file(interaction_file)
         cls.interaction_set_2.parse_file(interaction_file)
         cls.interaction_set_3.parse_file(interaction_file)
+        cls.interaction_set_st.parse_file(interaction_file)
+        cls.interaction_set_ht.parse_file(interaction_file)
 
     def test_shuffle_inter_dict(self):
         """
@@ -72,47 +76,34 @@ class TestDiachromaticInteractionSet(TestCase):
                 self.assertEqual('chr7', d_inter.chrA)
             i += 1
 
-    def test_transform_4rp_counts_to_heaviest_two_rule(self):
+    def test_read_pair_count_rules_two_rule(self):
         """
-        Test whether the heaviest two transformation of the four read pair counts works as expected.
+        How the four counts are used to caalculate the P-value depends on the RPC rule, which is an attribute of
+        'DiachromaticInteractionSet'. Here it is tested whether the aassignment of counts is independent of the RPC
+        rule and whether the binomial P-values are calculated correctly.
         """
 
-        i = 0
-        for d_inter in self.interaction_set_3.interaction_list:
-            if i == 0:
-                # Read pair counts before transformation: 100:0:1:0
-                self.assertEqual(100, d_inter._simple_1)
-                self.assertEqual(0, d_inter._simple_2)
-                self.assertEqual(1, d_inter._twisted_1)
-                self.assertEqual(0, d_inter._twisted_2)
-                self.assertEqual(100, d_inter.n_simple)
-                self.assertEqual(1, d_inter.n_twisted)
-            if i == 18:
-                # Read pair counts before transformation: 50:0:51:0
-                self.assertEqual(50, d_inter._simple_1)
-                self.assertEqual(0, d_inter._simple_2)
-                self.assertEqual(51, d_inter._twisted_1)
-                self.assertEqual(0, d_inter._twisted_2)
-                self.assertEqual(50, d_inter.n_simple)
-                self.assertEqual(51, d_inter.n_twisted)
-            i += 1
-        self.interaction_set_3.transform_4rp_counts_to_heaviest_two_rule()
-        i = 0
-        for d_inter in self.interaction_set_3.interaction_list:
-            if i == 0:
-                # Read pair counts after transformation: 100:1:0:0
-                self.assertEqual(100, d_inter._simple_1)
-                self.assertEqual(1, d_inter._simple_2)
-                self.assertEqual(0, d_inter._twisted_1)
-                self.assertEqual(0, d_inter._twisted_2)
-                self.assertEqual(101, d_inter.n_simple)
-                self.assertEqual(0, d_inter.n_twisted)
-            if i == 18:
-                # Read pair counts after transformation: 51:50:0:0
-                self.assertEqual(51, d_inter._simple_1)
-                self.assertEqual(50, d_inter._simple_2)
-                self.assertEqual(0, d_inter._twisted_1)
-                self.assertEqual(0, d_inter._twisted_2)
-                self.assertEqual(101, d_inter.n_simple)
-                self.assertEqual(0, d_inter.n_twisted)
-            i += 1
+        # Calculate P-values for the two interaction sets
+        self.interaction_set_st.evaluate_and_categorize_interactions(0.01)
+        self.interaction_set_ht.evaluate_and_categorize_interactions(0.01)
+
+        # Get lists of interactions to test
+        d_inter_list_st = list(self.interaction_set_st.interaction_list)
+        d_inter_list_ht = list(self.interaction_set_ht.interaction_list)
+
+        # The four counts must be independent of the RPC rule
+        for i in range(0, len(d_inter_list_st)):
+            self.assertEqual(d_inter_list_st[i]._simple_1,d_inter_list_ht[i]._simple_1)
+            self.assertEqual(d_inter_list_st[i]._simple_2, d_inter_list_ht[i]._simple_2)
+            self.assertEqual(d_inter_list_st[i]._twisted_1, d_inter_list_ht[i]._twisted_1)
+            self.assertEqual(d_inter_list_st[i]._twisted_2, d_inter_list_ht[i]._twisted_2)
+
+        # But the P-values have to be calculated differently
+        self.assertAlmostEqual(28.09, d_inter_list_st[0]._log10_pval, places=2)
+        self.assertAlmostEqual(30.10, d_inter_list_ht[0]._log10_pval, places=2)
+
+        self.assertAlmostEqual(26.68, d_inter_list_st[1]._log10_pval, places=2)
+        self.assertAlmostEqual(30.40, d_inter_list_ht[1]._log10_pval, places=2)
+
+        self.assertAlmostEqual(25.44, d_inter_list_st[2]._log10_pval, places=2)
+        self.assertAlmostEqual(30.71, d_inter_list_ht[2]._log10_pval, places=2)
