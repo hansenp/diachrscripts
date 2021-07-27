@@ -246,7 +246,7 @@ class DiachromaticInteractionSet:
             di_11_inter.set_category(i_cat)
             return di_11_inter
 
-    def remove_digest_length_outliers(self, dg_min_len: int = 500, dg_max_len: int = 10000, dg_min_len_q: int = 0.25, verbose: bool = False):
+    def remove_digest_length_outliers(self, dg_min_len: int = 500, dg_max_len: int = 10000, dg_min_len_q: float = 0.25, verbose: bool = False):
         """
         This function is preliminary. It removes interactions with extreme digests pairs from the interaction set.
         Extreme digest pairs are those in which one of the digests is very short or very long and those in which the
@@ -261,6 +261,9 @@ class DiachromaticInteractionSet:
 
         if verbose:
             print("[INFO] Removing interactions with extreme digest lengths ...")
+            print("\t[INFO] Minimum digest length: " + "{:,}".format(dg_min_len))
+            print("\t[INFO] Maximum digest length: " + "{:,}".format(dg_max_len))
+            print("\t[INFO] Most extreme length ratio: " + "{:.2f}".format(dg_min_len_q))
 
         # Create new dictionary that will replace the old one
         new_inter_dict = defaultdict(DiachromaticInteraction)

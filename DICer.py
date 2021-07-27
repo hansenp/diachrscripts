@@ -33,6 +33,12 @@ parser.add_argument('-d', '--description-tag',
 parser.add_argument('-i', '--diachromatic-interaction-file',
                     help='Input file in Diachromatic interaction format.',
                     required=True)
+parser.add_argument('--remove-digest-length-outliers',
+                    help='Remove interactions that are extreme in terms of digest pair lengths. Parameters are passed '
+                         'as a comma-separated string. For instance, with \'500,10000,0.25\' interactions with '
+                         'digests shorter than 500 or longer than 10000 will be removed. Furthermore, interactions '
+                         'where the digest length ration is smaller than 0.25 will be removed.',
+                    default=None)
 parser.add_argument('--min-inter-dist',
                     help='Minimum interaction distance. Shorter interactions are not taken into account.',
                     default=0)
@@ -80,6 +86,7 @@ args = parser.parse_args()
 out_prefix = args.out_prefix
 description_tag = args.description_tag
 diachromatic_interaction_file = args.diachromatic_interaction_file
+remove_digest_length_outliers = args.remove_digest_length_outliers
 min_inter_dist = int(args.min_inter_dist)
 read_pair_counts_rule = args.read_pair_counts_rule
 fdr_threshold = float(args.fdr_threshold)
@@ -101,6 +108,8 @@ parameter_info += "\t[INFO] --out-prefix: " + out_prefix + '\n'
 parameter_info += "\t[INFO] --description-tag: " + description_tag + '\n'
 parameter_info += "\t[INFO] --diachromatic-interaction-file:" + '\n'
 parameter_info += "\t\t[INFO] " + diachromatic_interaction_file + '\n'
+if args.remove_digest_length_outliers is not None:
+    parameter_info += "\t[INFO] --remove-digest-length-outliers: " + remove_digest_length_outliers + '\n'
 parameter_info += "\t[INFO] --min-inter-dist: " + "{:,}".format(min_inter_dist) + '\n'
 parameter_info += "\t[INFO] --read-pair-counts-rule: " + read_pair_counts_rule + '\n'
 parameter_info += "\t[INFO] --p-value-threshold: " + str(p_value_threshold) + '\n'
@@ -135,8 +144,13 @@ interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_dige
 min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(0.10)
 interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, min_dist=min_inter_dist, verbose=True)
 print()
-interaction_set.remove_digest_length_outliers(dg_min_len=500, dg_max_len = 10000, dg_min_len_q = 0.25, verbose = True)
-print()
+if remove_digest_length_outliers is not None:
+    dg_min_len, dg_max_len, dg_min_len_q = remove_digest_length_outliers.split(',')
+    interaction_set.remove_digest_length_outliers(dg_min_len=int(dg_min_len),
+                                                  dg_max_len = int(dg_max_len),
+                                                  dg_min_len_q = float(dg_min_len_q),
+                                                  verbose = True)
+    print()
 interaction_set.shuffle_inter_dict(random_seed=random_seed_shuff_inter, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 read_file_info_table_row = interaction_set.get_read_file_info_table_row()
