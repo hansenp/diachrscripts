@@ -14,7 +14,10 @@ class BinomialModel:
     of 0.5, but any probabilities can be selected.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, two_sided: bool = True) -> None:
+
+        # Perform two-sided or one-sided tests
+        self._two_sided = two_sided
 
         # Background frequency of simple read pairs
         self._prob_simple = 0.5
@@ -59,7 +62,7 @@ class BinomialModel:
         For P-values that are too small to be represented, we return -inf.
 
         :param n_simple: Number of simple read pairs
-        :param n_twisted: Number of simple read pairs
+        :param n_twisted: Number of twisted read pairs
         :return: The negative of the decadic logarithm of the P-value
         """
         try:
@@ -70,7 +73,10 @@ class BinomialModel:
             else:
                 ln_p_value = binom.logcdf(n_twisted, n_simple + n_twisted, 0.5)
 
-            return -logaddexp(ln_p_value, ln_p_value) / log(10) # logcdf returns the natural logarithm
+            if self._two_sided:
+                return -logaddexp(ln_p_value, ln_p_value) / log(10) # logcdf returns the natural logarithm
+            else:
+                return -ln_p_value / log(10)
 
         except RuntimeWarning:  # Underflow: P-value is too small
             return inf

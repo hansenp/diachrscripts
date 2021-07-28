@@ -40,7 +40,10 @@ class DiachromaticInteractionSet:
             self.rpc_rule = rpc_rule
 
         # Object for calculating P-values
-        self._p_values = BinomialModel()
+        if rpc_rule == 'st':
+            self._p_values = BinomialModel(two_sided = True)
+        else:
+            self._p_values = BinomialModel(two_sided = False)
 
         # Smallest P-value threshold used so far
         self._smallest_pval_thresh = 1.0

@@ -102,13 +102,13 @@ class TestDiachromaticInteractionSet(TestCase):
 
         # But the P-values have to be calculated differently
         self.assertAlmostEqual(28.09, d_inter_list_st[0]._log10_pval, places=2)
-        self.assertAlmostEqual(30.10, d_inter_list_ht[0]._log10_pval, places=2)
+        self.assertAlmostEqual(30.40, d_inter_list_ht[0]._log10_pval, places=2)
 
         self.assertAlmostEqual(26.68, d_inter_list_st[1]._log10_pval, places=2)
-        self.assertAlmostEqual(30.40, d_inter_list_ht[1]._log10_pval, places=2)
+        self.assertAlmostEqual(30.71, d_inter_list_ht[1]._log10_pval, places=2)
 
         self.assertAlmostEqual(25.44, d_inter_list_st[2]._log10_pval, places=2)
-        self.assertAlmostEqual(30.71, d_inter_list_ht[2]._log10_pval, places=2)
+        self.assertAlmostEqual(31.01, d_inter_list_ht[2]._log10_pval, places=2)
 
     def test_remove_digest_length_outliers(self):
         """

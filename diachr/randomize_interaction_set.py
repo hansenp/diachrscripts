@@ -25,7 +25,7 @@ class RandomizeInteractionSet:
         self._rp_inter_dict = None
 
         # Object for the calculation and storage of already calculated P-values
-        self.p_values = BinomialModel()
+        self.p_values = None
 
         # Negative decadic logarithm of nominal alpha
         self._log10_nominal_alpha = None
@@ -61,6 +61,12 @@ class RandomizeInteractionSet:
                 raise ValueError("Nominal alpha must be in ]0,1]!")
         nominal_alphas = sorted(nominal_alphas)
         nominal_alphas = [float("{:.5f}".format(i)) for i in nominal_alphas]
+
+        # Use one-sided or two-sided test depending on RPC rule
+        if interaction_set.rpc_rule == 'st':
+            self.p_values = BinomialModel(two_sided=True)
+        else:
+            self.p_values = BinomialModel(two_sided=False)
 
         # Get negative decadic logarithm of nominal alpha
         log10_nominal_alphas = -log10(nominal_alphas)
