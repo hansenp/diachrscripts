@@ -51,6 +51,9 @@ class DiachromaticInteractionSet:
         # Dictionary with information about read files
         self._read_file_info_dict = {'I_FILE': [], 'I_NUM': [], 'MIN_RP_NUM': [], 'MIN_DIST': [], 'I_NUM_SKIPPED_RP': [], 'I_NUM_SKIPPED_DIST': [], 'I_NUM_ADDED': [], 'I_SET_SIZE': []}
 
+        # Dictionary with information about removing interactions with extreme digest pairs
+        self._remove_extreme_digest_pairs_info_dict = {}
+
         # Dictionary with information about the last writing process
         self._write_file_info_dict = {}
 
@@ -291,15 +294,70 @@ class DiachromaticInteractionSet:
                     print("\t[INFO] Processed " + "{:,}".format(n_processed) + " interactions ...")
 
         # Replace old dictionary
-        num_of_removed_interactions = len(self._inter_dict) - len(new_inter_dict)
+        num_of_interactions_originally = len(self._inter_dict)
+        num_of_interactions_remaining = len(new_inter_dict)
+        num_of_removed_interactions = num_of_interactions_originally - num_of_interactions_remaining
         self._inter_dict = new_inter_dict
 
         if verbose:
-            print("\t[INFO] Total number of interactions removed: " + "{:,}".format(num_of_removed_interactions))
-            print("\t[INFO] Remaining interactions: " + "{:,}".format(len(self._inter_dict)))
+            print("\t[INFO] Number of interactions removed: " + "{:,}".format(num_of_removed_interactions))
+            print("\t[INFO] Remaining interactions: " + "{:,}".format(num_of_interactions_remaining))
             print("[INFO] ... done.")
 
-        return num_of_removed_interactions
+        # Prepare dictionary for report
+        self._remove_extreme_digest_pairs_info_dict = {
+            'DG_MIN_LEN': [dg_min_len],
+            'DG_MAX_LEN': [dg_max_len],
+            'DG_MIN_LEN_Q': [dg_min_len_q],
+            'N_PROCESSED': [n_processed],
+            'N_REMOVED': [num_of_removed_interactions],
+            'N_REMAINING': [num_of_interactions_remaining]
+        }
+        return self._remove_extreme_digest_pairs_info_dict
+
+    def get_remove_extreme_digest_pairs_read_file_info_report(self):
+        """
+        :return: String that contains information about removing interactions with extreme digest pairs.
+        """
+
+        report = "[INFO] Report on removing interactions with extreme digest pairs:" + '\n'
+        report += "\t[INFO] Processed interactions: " + "{:,}".format(self._remove_extreme_digest_pairs_info_dict['N_PROCESSED'][0]) + '\n'
+        report += "\t[INFO] Minimum digest length: " + "{:,}".format(self._remove_extreme_digest_pairs_info_dict['DG_MIN_LEN'][0]) + '\n'
+        report += "\t[INFO] Maximum digest length: " + "{:,}".format(self._remove_extreme_digest_pairs_info_dict['DG_MAX_LEN'][0]) + '\n'
+        report += "\t[INFO] Most extreme length ratio: " + "{:.2f}".format(self._remove_extreme_digest_pairs_info_dict['DG_MIN_LEN_Q'][0]) + '\n'
+        report += "\t[INFO] Number of interactions removed: " + "{:,}".format(self._remove_extreme_digest_pairs_info_dict['N_REMOVED'][0]) + '\n'
+        report += "\t[INFO] Number of remaining interactions: " + "{:,}".format(self._remove_extreme_digest_pairs_info_dict['N_REMAINING'][0]) + '\n'
+        report += "[INFO] End of report." + '\n'
+
+        return report
+
+    def get_remove_extreme_digest_pairs_read_file_info_table_row(self, description: str = '<DESCRIPTION>'):
+        """
+        :return: String consisting of a header line and a line with values relating to removal interactions with
+        extreme digest pairs.
+        """
+
+        # Header row
+        table_row = ":TR_REMOVE_EXTREME_DIGEST_PAIRS:" + '\t'
+        table_row += "DESCRIPTION" + '\t'
+        table_row += "N_PROCESSED" + '\t'
+        table_row += "DG_MIN_LEN" + '\t'
+        table_row += "DG_MAX_LEN" + '\t'
+        table_row += "DG_MIN_LEN_Q" + '\t'
+        table_row += "N_REMOVED" + '\t'
+        table_row += "N_REMAINING" + '\n'
+
+        # Row with values
+        table_row += ":TR_REMOVE_EXTREME_DIGEST_PAIRS:" + '\t'
+        table_row += description + '\t'
+        table_row += "{:,}".format(self._remove_extreme_digest_pairs_info_dict['N_PROCESSED'][0]) + '\t'
+        table_row += "{:,}".format(self._remove_extreme_digest_pairs_info_dict['DG_MIN_LEN'][0]) + '\t'
+        table_row += "{:,}".format(self._remove_extreme_digest_pairs_info_dict['DG_MAX_LEN'][0]) + '\t'
+        table_row += "{:.2f}".format(self._remove_extreme_digest_pairs_info_dict['DG_MIN_LEN_Q'][0]) + '\t'
+        table_row += "{:,}".format(self._remove_extreme_digest_pairs_info_dict['N_REMOVED'][0]) + '\t'
+        table_row += "{:,}".format(self._remove_extreme_digest_pairs_info_dict['N_REMAINING'][0]) + '\n'
+
+        return table_row
 
     def remove_read_pair_count_outliers(self, prop_thresh: float = 0.75, verbose: bool = False):
         """
@@ -875,7 +933,7 @@ class DiachromaticInteractionSet:
                     "N_PROCESSED" + '\t' + \
                     "N_DISCARDED" + '\t' + \
                     "N_UNDIRECTED" + '\t' \
-                                     "N_DIRECTED" + '\n'
+                    "N_DIRECTED" + '\n'
 
         table_row += ":TR_EVAL_CAT:" + '\t' + \
                      str(out_prefix) + '\t' + \

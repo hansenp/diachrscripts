@@ -150,6 +150,8 @@ if remove_digest_length_outliers is not None:
                                                   dg_max_len = int(dg_max_len),
                                                   dg_min_len_q = float(dg_min_len_q),
                                                   verbose = True)
+    remove_extreme_digest_pairs_file_info_report = interaction_set.get_remove_extreme_digest_pairs_read_file_info_report()
+    remove_extreme_digest_pairs_file_info_table_row = interaction_set.get_remove_extreme_digest_pairs_read_file_info_table_row(description=out_prefix)
     print()
 interaction_set.shuffle_inter_dict(random_seed=random_seed_shuff_inter, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
@@ -260,6 +262,16 @@ out_fh_summary.write(parameter_info + '\n')
 # Report on reading files
 out_fh_summary.write(read_file_info_report + '\n')
 out_fh_summary.write(read_file_info_table_row + '\n')
+
+# Report on removing interactions with extreme digest pairs
+if args.remove_digest_length_outliers is not None:
+    out_fh_summary.write(remove_extreme_digest_pairs_file_info_report + '\n')
+    out_fh_summary.write(remove_extreme_digest_pairs_file_info_table_row + '\n')
+
+# Report on shuffling interactions
+out_fh_summary.write("[INFO] Report on shuffling interactions:" + '\n')
+out_fh_summary.write("\t[INFO] Random seed used: " + str(random_seed_shuff_inter)  + '\n')
+out_fh_summary.write("[INFO] End of report." + '\n\n')
 
 # Report on the determination of the P-value threshold using the FDR procedure
 if args.p_value_threshold is None:
