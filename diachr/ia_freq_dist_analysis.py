@@ -3,6 +3,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
+import scipy
 import gzip
 
 
@@ -396,7 +397,7 @@ class IaFreqDistAnalysis:
 
                 # Draw vertical lines and shaded areas for median and MAD
                 median = np.median(num_dict[i_cats[i]][e_cats[j]])
-                mad = stats.median_absolute_deviation(num_dict[i_cats[i]][e_cats[j]])
+                mad = stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])
                 ax[i + 1][j].axvline(median, linestyle='--', linewidth=0.75, color='blue', zorder=2)
                 ax[i + 1][j].axvspan(median, median + mad, color='green', alpha=0.25, zorder=0)
 
@@ -442,7 +443,7 @@ class IaFreqDistAnalysis:
                 ax[i + 1][j].text(x_lim - (x_lim / 3),
                                   yc_max - (yc_max / 3.2),
                                   'n: ' + "{:,}".format(len(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
-                                      np.median(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'MAD: ' + "{:,.0f}".format(stats.median_absolute_deviation(num_dict[i_cats[i]][e_cats[j]])),
+                                      np.median(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'MAD: ' + "{:,.0f}".format(stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])),
                                   fontsize=9,
                                   bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
@@ -557,7 +558,7 @@ class IaFreqDistAnalysis:
 
                 # Draw vertical lines and shaded areas for median and MAD
                 median = np.median(num_dict[i_cats[i]][e_cats[j]])
-                mad = stats.median_absolute_deviation(num_dict[i_cats[i]][e_cats[j]])
+                mad = stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])
                 ax[i + 1][j].axvline(median, linestyle='--', linewidth=0.75, color='blue', zorder=2)
                 ax[i + 1][j].axvspan(median, median + mad, color='green', alpha=0.25, zorder=0)
 
@@ -605,7 +606,7 @@ class IaFreqDistAnalysis:
                                       len(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
                                       np.median(
                                           num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'MAD: ' + "{:,.0f}".format(
-                                      stats.median_absolute_deviation(num_dict[i_cats[i]][e_cats[j]])),
+                                      stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])),
                                   fontsize=9,
                                   bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
@@ -622,6 +623,14 @@ class IaFreqDistAnalysis:
             density_diff_cat_0_cat_1_en.append(densities_2d_array[0][1][i] - densities_2d_array[1][1][i])
             density_diff_cat_0_ne_en.append(densities_2d_array[0][0][i] - densities_2d_array[0][1][i])
             density_diff_cat_1_ne_en.append(densities_2d_array[1][0][i] - densities_2d_array[1][1][i])
+
+        # Perform KS test
+        print(i_cats)
+        print(e_cats)
+        print(stats.ks_2samp(num_dict[i_cats[0]][e_cats[0]], num_dict[i_cats[1]][e_cats[0]]))
+        print(stats.ks_2samp(num_dict[i_cats[0]][e_cats[1]], num_dict[i_cats[1]][e_cats[1]]))
+        print(stats.ks_2samp(num_dict[i_cats[0]][e_cats[0]], num_dict[i_cats[0]][e_cats[1]]))
+        print(stats.ks_2samp(num_dict[i_cats[1]][e_cats[0]], num_dict[i_cats[1]][e_cats[1]]))
 
         # Determine sum of density differences
         dd_cat_0_cat_1_ne_sum = sum(map(abs, density_diff_cat_0_cat_1_ne))
@@ -878,7 +887,7 @@ class IaFreqDistAnalysis:
                 n = str(len(num_dict[i_cat][e_cat]))
                 if 0 < int(n):
                     median = "{:.0f}".format(np.median(num_dict[i_cat][e_cat]))
-                    mad = "{:.0f}".format(stats.median_absolute_deviation(num_dict[i_cat][e_cat]))
+                    mad = "{:.0f}".format(stats.median_abs_deviation(num_dict[i_cat][e_cat]))
                 else:
                     median = 'NA'
                     mad = 'NA'
