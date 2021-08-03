@@ -17,6 +17,7 @@ class IaFreqDistAnalysis:
 
         # Define interaction and enrichment categories
         self.i_cats = [
+            'DIX',
             'DI',
             'DI_S',
             'DI_T',
@@ -24,6 +25,7 @@ class IaFreqDistAnalysis:
             'UI',
             'ALL']
         self.i_cat_colors = [
+            'red',
             'orange',
             'pink',
             'cadetblue',
@@ -31,6 +33,7 @@ class IaFreqDistAnalysis:
             'lightgray',
             'cornflowerblue']
         self.i_cat_names = [
+            'Directed without reference',
             'Directed',
             'Directed simple',
             'Directed twisted',
@@ -49,6 +52,12 @@ class IaFreqDistAnalysis:
         # Dictionary with information about ingestion of interactions
         self._ingest_interaction_set_info_dict = {
             'TOTAL_INTERACTIONS_READ': 0,
+            'DIX': {
+                'NN': 0,
+                'NE': 0,
+                'EN': 0,
+                'EE': 0
+            },
             'DI': {
                 'NN': 0,
                 'NE': 0,
@@ -110,7 +119,7 @@ class IaFreqDistAnalysis:
 
     def ingest_interaction_set(self, d11_inter_set: DiachromaticInteractionSet, verbose: bool = False):
         """
-        Ingests interactions from a DiachromaticInteractionSet and groups them by chromosomes as well as interaction
+        Ingests interactions from a 'DiachromaticInteractionSet' and groups them by chromosomes as well as interaction
         and enrichment category.
 
         :param d11_inter_set: DiachromaticInteractionSet with DiachromaticInteraction11 interactions
@@ -177,7 +186,7 @@ class IaFreqDistAnalysis:
         report += "\t[INFO] Total number of interactions read: " + "{:,}".format(
             self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ']) + '\n'
         report += "\t[INFO] Broken down by interaction category and enrichment status: " + '\n'
-        for i_cat in ['DI', 'DI_S', 'DI_T', 'UIR', 'UI', 'ALL', ]:
+        for i_cat in ['DIX', 'DI', 'DI_S', 'DI_T', 'UIR', 'UI', 'ALL', ]:
             report += "\t\t[INFO] " + i_cat + ": " + '\n'
             for e_cat in ['NN', 'EE', 'NE', 'EN']:
                 report += "\t\t\t[INFO] " + e_cat + ": " + "{:,}".format(self._ingest_interaction_set_info_dict[i_cat][e_cat]) + '\n'
@@ -266,7 +275,7 @@ class IaFreqDistAnalysis:
 
             self.rp_num_dict['CHROMOSOMES'].append(chrom)
             self.i_dist_dict['CHROMOSOMES'].append(chrom)
-            for i_cat in ['DI', 'DI_S', 'DI_T', 'UIR', 'UI', 'ALL']:
+            for i_cat in ['DIX', 'DI', 'DI_S', 'DI_T', 'UIR', 'UI', 'ALL']:
                 for e_cat in ['NN', 'NE', 'EN', 'EE']:
                     for d11_inter in self._grouped_interactions[chrom][i_cat][e_cat]:
                         self.rp_num_dict[i_cat][e_cat].append(d11_inter.rp_total)
@@ -298,13 +307,13 @@ class IaFreqDistAnalysis:
         """
 
         # Catch wrong input
-        allowed_i_cats = ['DI', 'DI_S', 'DI_T', 'UI', 'UIR', 'ALL']
+        allowed_i_cats = ['DIX', 'DI', 'DI_S', 'DI_T', 'UI', 'UIR', 'ALL']
         for i_cat in i_cats:
             if i_cat not in allowed_i_cats:
-                print("[ERROR] Illegal interaction category tag! Allowed: 'DI', 'D_S', 'D_T', 'UI', 'UIR' and 'ALL'")
+                print("[ERROR] Illegal interaction category tag! Allowed: 'DIX', 'DI', 'D_S', 'D_T', 'UI', 'UIR' and 'ALL'")
                 return
 
-        allowed_e_cats =  ['NN', 'NE', 'EN', 'EE']
+        allowed_e_cats = ['NN', 'NE', 'EN', 'EE']
         for e_cat in e_cats:
             if e_cat not in allowed_e_cats:
                 print("[ERROR] Illegal interaction enrichment tag! Allowed: 'NN', 'NE', 'EN', 'EE'")

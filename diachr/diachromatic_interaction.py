@@ -209,6 +209,8 @@ class DiachromaticInteraction11(DiachromaticInteraction):
             self._category = 1
         elif category == "UIR":
             self._category = 2
+        elif category == "DIX":
+            self._category = 3
         else:
             raise TypeError(
                 "Invalid tag for interaction category: " + category + ". Must be either 'UI', 'DI' or 'UIR'")
@@ -225,6 +227,8 @@ class DiachromaticInteraction11(DiachromaticInteraction):
             return "DI"
         elif self._category == 2:
             return "UIR"
+        elif self._category == 3:
+            return "DIX"
         else:
             raise NameError("Interaction category not yet defined.")
 

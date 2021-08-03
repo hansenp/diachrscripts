@@ -739,7 +739,7 @@ class DiachromaticInteractionSet:
 
                 if rp_total in rp_inter_dict[enrichment_pair_tag] and 0 < rp_inter_dict[enrichment_pair_tag][rp_total]:
                     rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
-                    d11_inter.set_category('UI')
+                    d11_inter.set_category('DIX')
 
         # Calculate number of missing reference interactions
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
