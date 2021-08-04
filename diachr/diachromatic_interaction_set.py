@@ -8,6 +8,7 @@ from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
 from diachr.binomial_model import BinomialModel
+
 warnings.filterwarnings('always')
 
 
@@ -35,21 +36,24 @@ class DiachromaticInteractionSet:
 
         # Rule of how to use the four read pair counts of interactions in this set
         if not (rpc_rule == 'st' or rpc_rule == 'ht'):
-            raise ValueError("Invalid tag for rule how to use read pair counts: " + rpc_rule + "! Use \'st\' or \'ht\'.")
+            raise ValueError(
+                "Invalid tag for rule how to use read pair counts: " + rpc_rule + "! Use \'st\' or \'ht\'.")
         else:
             self.rpc_rule = rpc_rule
 
         # Object for calculating P-values
         if rpc_rule == 'st':
-            self._p_values = BinomialModel(two_sided = True)
+            self._p_values = BinomialModel(two_sided=True)
         else:
-            self._p_values = BinomialModel(two_sided = False)
+            self._p_values = BinomialModel(two_sided=False)
 
         # Smallest P-value threshold used so far
         self._smallest_pval_thresh = 1.0
 
         # Dictionary with information about read files
-        self._read_file_info_dict = {'I_FILE': [], 'I_NUM': [], 'MIN_RP_NUM': [], 'MIN_DIST': [], 'I_NUM_SKIPPED_RP': [], 'I_NUM_SKIPPED_DIST': [], 'I_NUM_ADDED': [], 'I_SET_SIZE': []}
+        self._read_file_info_dict = {'I_FILE': [], 'I_NUM': [], 'MIN_RP_NUM': [], 'MIN_DIST': [],
+                                     'I_NUM_SKIPPED_RP': [], 'I_NUM_SKIPPED_DIST': [], 'I_NUM_ADDED': [],
+                                     'I_SET_SIZE': []}
 
         # Dictionary with information about removing interactions with extreme digest pairs
         self._remove_extreme_digest_pairs_info_dict = {}
@@ -213,7 +217,7 @@ class DiachromaticInteractionSet:
                 statusB = 'N'
 
         # The interaction read has not yet been evaluated and categorized
-        if len(F) < 11 :
+        if len(F) < 11:
             di_inter = DiachromaticInteraction(
                 chrA=chrA,
                 fromA=fromA,
@@ -252,7 +256,12 @@ class DiachromaticInteractionSet:
             di_11_inter.set_category(i_cat)
             return di_11_inter
 
-    def remove_digest_length_outliers(self, dg_min_len: int = 500, dg_max_len: int = 10000, dg_min_len_q: float = 0.25, verbose: bool = False):
+    def remove_digest_length_outliers(self,
+                                      dg_min_len: int = 500,
+                                      dg_max_len: int = 10000,
+                                      dg_min_len_q: float = 0.25,
+                                      invert: bool = False,
+                                      verbose: bool = False):
         """
         This function is preliminary. It removes interactions with extreme digests pairs from the interaction set.
         Extreme digest pairs are those in which one of the digests is very short or very long and those in which the
@@ -261,6 +270,7 @@ class DiachromaticInteractionSet:
         :param dg_min_len: Minimum length that both digests must have.
         :param dg_max_len: Maximum length that both digests can have.
         :param dg_min_len_q: Tha quotient of the smaller divided by larger digest length must be greater.
+        :param invert: If true, the filtering is reversed, i.e. interactions that are normally removed are kept.
         :param verbose: If true, messages about progress will be written to the screen.
         :return: Number of interactions removed.
         """
@@ -270,6 +280,9 @@ class DiachromaticInteractionSet:
             print("\t[INFO] Minimum digest length: " + "{:,}".format(dg_min_len))
             print("\t[INFO] Maximum digest length: " + "{:,}".format(dg_max_len))
             print("\t[INFO] Most extreme length ratio: " + "{:.2f}".format(dg_min_len_q))
+            if (invert):
+                print("\t[INFO] Filtering is inverted!")
+                print("\t[INFO] Interactions with extreme digests will be kept and all others will be discarded!")
 
         # Create new dictionary that will replace the old one
         new_inter_dict = defaultdict(DiachromaticInteraction)
@@ -283,10 +296,16 @@ class DiachromaticInteractionSet:
             d2_len = d_inter._toB - d_inter._fromB
 
             # If conditions are met, add to new dictionary
-            if not (d1_len < dg_min_len or d2_len < dg_min_len or
-                    dg_max_len < d1_len or dg_max_len < d2_len or
-                    min(d1_len,d2_len)/max(d1_len,d2_len) < dg_min_len_q):
-                new_inter_dict[key] = d_inter
+            if invert:
+                if (d1_len < dg_min_len or d2_len < dg_min_len or
+                        dg_max_len < d1_len or dg_max_len < d2_len or
+                        min(d1_len, d2_len) / max(d1_len, d2_len) < dg_min_len_q):
+                    new_inter_dict[key] = d_inter
+            else:
+                if not (d1_len < dg_min_len or d2_len < dg_min_len or
+                        dg_max_len < d1_len or dg_max_len < d2_len or
+                        min(d1_len, d2_len) / max(d1_len, d2_len) < dg_min_len_q):
+                    new_inter_dict[key] = d_inter
 
             n_processed += 1
             if verbose:
@@ -321,12 +340,18 @@ class DiachromaticInteractionSet:
         """
 
         report = "[INFO] Report on removing interactions with extreme digest pairs:" + '\n'
-        report += "\t[INFO] Processed interactions: " + "{:,}".format(self._remove_extreme_digest_pairs_info_dict['N_PROCESSED'][0]) + '\n'
-        report += "\t[INFO] Minimum digest length: " + "{:,}".format(self._remove_extreme_digest_pairs_info_dict['DG_MIN_LEN'][0]) + '\n'
-        report += "\t[INFO] Maximum digest length: " + "{:,}".format(self._remove_extreme_digest_pairs_info_dict['DG_MAX_LEN'][0]) + '\n'
-        report += "\t[INFO] Most extreme length ratio: " + "{:.2f}".format(self._remove_extreme_digest_pairs_info_dict['DG_MIN_LEN_Q'][0]) + '\n'
-        report += "\t[INFO] Number of interactions removed: " + "{:,}".format(self._remove_extreme_digest_pairs_info_dict['N_REMOVED'][0]) + '\n'
-        report += "\t[INFO] Number of remaining interactions: " + "{:,}".format(self._remove_extreme_digest_pairs_info_dict['N_REMAINING'][0]) + '\n'
+        report += "\t[INFO] Processed interactions: " + "{:,}".format(
+            self._remove_extreme_digest_pairs_info_dict['N_PROCESSED'][0]) + '\n'
+        report += "\t[INFO] Minimum digest length: " + "{:,}".format(
+            self._remove_extreme_digest_pairs_info_dict['DG_MIN_LEN'][0]) + '\n'
+        report += "\t[INFO] Maximum digest length: " + "{:,}".format(
+            self._remove_extreme_digest_pairs_info_dict['DG_MAX_LEN'][0]) + '\n'
+        report += "\t[INFO] Most extreme length ratio: " + "{:.2f}".format(
+            self._remove_extreme_digest_pairs_info_dict['DG_MIN_LEN_Q'][0]) + '\n'
+        report += "\t[INFO] Number of interactions removed: " + "{:,}".format(
+            self._remove_extreme_digest_pairs_info_dict['N_REMOVED'][0]) + '\n'
+        report += "\t[INFO] Number of remaining interactions: " + "{:,}".format(
+            self._remove_extreme_digest_pairs_info_dict['N_REMAINING'][0]) + '\n'
         report += "[INFO] End of report." + '\n'
 
         return report
@@ -386,10 +411,10 @@ class DiachromaticInteractionSet:
             rp_total = d_inter.rp_total
 
             # If conditions are met, add to new dictionary
-            if not (prop_thresh < rp_1/rp_total or
-                    prop_thresh < rp_2/rp_total or
-                    prop_thresh < rp_3/rp_total or
-                    prop_thresh < rp_4/rp_total):
+            if not (prop_thresh < rp_1 / rp_total or
+                    prop_thresh < rp_2 / rp_total or
+                    prop_thresh < rp_3 / rp_total or
+                    prop_thresh < rp_4 / rp_total):
                 new_inter_dict[key] = d_inter
 
             n_processed += 1
@@ -420,8 +445,9 @@ class DiachromaticInteractionSet:
 
         # Check whether an equal or smaller P-value threshold was used before
         if self._smallest_pval_thresh <= pval_thresh:
-            warnings.warn("This interaction set has previously categorized using an equal or smaller threshold value!" + '\n'
-                          "Nothing is done. Interaction set remains unchanged.")
+            warnings.warn(
+                "This interaction set has previously categorized using an equal or smaller threshold value!" + '\n'
+                                                                                                               "Nothing is done. Interaction set remains unchanged.")
             return self._eval_cat_info_dict
         else:
             self._smallest_pval_thresh = pval_thresh
@@ -561,10 +587,10 @@ class DiachromaticInteractionSet:
                     d11_inter.set_category('UI')
 
         # Prepare dictionary for report
-        report_dict = {'NN': {'DI':[],'UIR':[],'M_UIR':[],'UI':[]},
-                       'NE': {'DI':[],'UIR':[],'M_UIR':[],'UI':[]},
-                       'EN': {'DI':[],'UIR':[],'M_UIR':[],'UI':[]},
-                       'EE': {'DI':[],'UIR':[],'M_UIR':[],'UI':[]}}
+        report_dict = {'NN': {'DI': [], 'UIR': [], 'M_UIR': [], 'UI': []},
+                       'NE': {'DI': [], 'UIR': [], 'M_UIR': [], 'UI': []},
+                       'EN': {'DI': [], 'UIR': [], 'M_UIR': [], 'UI': []},
+                       'EE': {'DI': [], 'UIR': [], 'M_UIR': [], 'UI': []}}
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             report_dict[enr_cat]['DI'] = [sum(rp_inter_dict_before[enr_cat].values())]
             report_dict[enr_cat]['UIR'] = [
@@ -598,10 +624,10 @@ class DiachromaticInteractionSet:
                          'EE': {}}
 
         # Count number of interactions in different categories
-        report_dict = {'NN': {'DI':[0],'UIR':[0],'M_UIR':[0],'UI':[0]},
-                       'NE': {'DI':[0],'UIR':[0],'M_UIR':[0],'UI':[0]},
+        report_dict = {'NN': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
+                       'NE': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
                        'EN': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
-                       'EE': {'DI':[0],'UIR':[0],'M_UIR':[0],'UI':[0]}}
+                       'EE': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]}}
 
         if verbose:
             print("\t[INFO] First pass: Count directed interactions for different read pair counts ...")
@@ -677,10 +703,10 @@ class DiachromaticInteractionSet:
                          'EE': {}}
 
         # Count number of interactions in different categories
-        report_dict = {'NN': {'DI':[0],'UIR':[0],'M_UIR':[0],'UI':[0]},
-                       'NE': {'DI':[0],'UIR':[0],'M_UIR':[0],'UI':[0]},
+        report_dict = {'NN': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
+                       'NE': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
                        'EN': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
-                       'EE': {'DI':[0],'UIR':[0],'M_UIR':[0],'UI':[0]}}
+                       'EE': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]}}
 
         if verbose:
             print("\t[INFO] First pass: Count directed interactions for different read pair counts ...")
@@ -871,8 +897,8 @@ class DiachromaticInteractionSet:
             # If the requested number of interactions could not be selected for the current interval, issue a warning
             if i_selected < i_per_interval_requested:
                 warnings.warn("[WARNING] Could not select the required number of interactions (only "
-                      + str(i_selected) + " of " + str(i_per_interval_requested) +
-                      ") for the P-value range " + pval_interval + '!')
+                              + str(i_selected) + " of " + str(i_per_interval_requested) +
+                              ") for the P-value range " + pval_interval + '!')
 
         # Close interaction file
         out_fh.close()
@@ -887,10 +913,9 @@ class DiachromaticInteractionSet:
                 {'PVAL_INTERVAL': pval_interval_list,
                  'I_SELECTED': i_selected_list,
                  'I_SELECTED_CUM': i_selected_cum_list
-            }
+                 }
         }
         return report_dict
-
 
     def get_read_file_info_dict(self):
         """
@@ -910,16 +935,21 @@ class DiachromaticInteractionSet:
         for i in range(0, file_num):
             report += "\t\t[INFO] " + "{:,}".format(self._read_file_info_dict['I_NUM'][i]) + " interactions from: \n" + \
                       "\t\t\t[INFO] " + self._read_file_info_dict['I_FILE'][i] + '\n' \
-                      "\t\t\t[INFO] Minimum number of read pairs: " + str(self._read_file_info_dict['MIN_RP_NUM'][i]) + '\n' \
-                      '\t\t\t[INFO] Skipped because less than ' + str(self._read_file_info_dict['MIN_RP_NUM'][i]) + \
+                                                                                 "\t\t\t[INFO] Minimum number of read pairs: " + str(
+                self._read_file_info_dict['MIN_RP_NUM'][i]) + '\n' \
+                                                              '\t\t\t[INFO] Skipped because less than ' + str(
+                self._read_file_info_dict['MIN_RP_NUM'][i]) + \
                       ' read pairs: ' + \
                       "{:,}".format(self._read_file_info_dict['I_NUM_SKIPPED_RP'][i]) + '\n' + \
-                      "\t\t\t[INFO] Minimum interaction distance: " + "{:,}".format(self._read_file_info_dict['MIN_DIST'][i]) + '\n' \
-                      '\t\t\t[INFO] Skipped because shorter than ' + "{:,}".format(self._read_file_info_dict['MIN_DIST'][i]) + \
+                      "\t\t\t[INFO] Minimum interaction distance: " + "{:,}".format(
+                self._read_file_info_dict['MIN_DIST'][i]) + '\n' \
+                                                            '\t\t\t[INFO] Skipped because shorter than ' + "{:,}".format(
+                self._read_file_info_dict['MIN_DIST'][i]) + \
                       ' bp: ' + \
                       "{:,}".format(self._read_file_info_dict['I_NUM_SKIPPED_DIST'][i]) + '\n' + \
                       '\t\t\t[INFO] Added to set: ' + "{:,}".format(self._read_file_info_dict['I_NUM_ADDED'][i]) + '\n' \
-                      '\t\t\t[INFO] Set size: ' + "{:,}".format(self._read_file_info_dict['I_SET_SIZE'][i]) + '\n'
+                                                                                                                   '\t\t\t[INFO] Set size: ' + "{:,}".format(
+                self._read_file_info_dict['I_SET_SIZE'][i]) + '\n'
         report += "\t[INFO] The interaction set has " + \
                   "{:,}".format(self._read_file_info_dict['I_SET_SIZE'][-1]) + " interactions." + '\n'
         report += "[INFO] End of report." + '\n'
@@ -980,8 +1010,8 @@ class DiachromaticInteractionSet:
         :return: String consisting of a header line and a line with values relating to written interactions
         """
 
-        table_row = ":TR_WRITE:" + "\t"\
-                    "TARGET_FILE" + "\t" + \
+        table_row = ":TR_WRITE:" + "\t" \
+                                   "TARGET_FILE" + "\t" + \
                     "REQUIRED_REPLICATES" + "\t" + \
                     "N_INCOMPLETE_DATA" + "\t" + \
                     "N_COMPLETE_DATA" + '\n'
@@ -1003,12 +1033,14 @@ class DiachromaticInteractionSet:
             self._eval_cat_info_dict['PVAL_THRESH'][0]) + '\n'
         report += "\t[INFO] Minimum number of read pairs required for significance: " + str(
             self._eval_cat_info_dict['MIN_RP'][0]) + '\n'
-        report += "\t[INFO] Smallest P-value with " + str(self._eval_cat_info_dict['MIN_RP'][0]) + " read pairs: " +\
-                  "{:.5f}".format( self._eval_cat_info_dict['MIN_RP_PVAL'][0]) + '\n'
+        report += "\t[INFO] Smallest P-value with " + str(self._eval_cat_info_dict['MIN_RP'][0]) + " read pairs: " + \
+                  "{:.5f}".format(self._eval_cat_info_dict['MIN_RP_PVAL'][0]) + '\n'
         report += "\t[INFO] Processed interactions: " + "{:,}".format(self._eval_cat_info_dict['N_PROCESSED'][0]) + '\n'
         report += "\t[INFO] Discarded interactions: " + "{:,}".format(self._eval_cat_info_dict['N_DISCARDED'][0]) + '\n'
-        report += "\t[INFO] Not significant interactions (UI): " + "{:,}".format(self._eval_cat_info_dict['N_UNDIRECTED'][0]) + '\n'
-        report += "\t[INFO] Significant interactions (DI): " + "{:,}".format(self._eval_cat_info_dict['N_DIRECTED'][0]) + '\n'
+        report += "\t[INFO] Not significant interactions (UI): " + "{:,}".format(
+            self._eval_cat_info_dict['N_UNDIRECTED'][0]) + '\n'
+        report += "\t[INFO] Significant interactions (DI): " + "{:,}".format(
+            self._eval_cat_info_dict['N_DIRECTED'][0]) + '\n'
         report += "[INFO] End of report." + '\n'
 
         return report
@@ -1027,7 +1059,7 @@ class DiachromaticInteractionSet:
                     "N_PROCESSED" + '\t' + \
                     "N_DISCARDED" + '\t' + \
                     "N_UNDIRECTED" + '\t' \
-                    "N_DIRECTED" + '\n'
+                                     "N_DIRECTED" + '\n'
 
         table_row += ":TR_EVAL_CAT:" + '\t' + \
                      str(out_prefix) + '\t' + \
@@ -1105,9 +1137,9 @@ class DiachromaticInteractionSet:
         # Line with values
         table_row += ":TR_SELECT:" + '\t'
         table_row += str(description) + '\t'
-        for i_cat in ['DI','UIR','M_UIR','UI']:
+        for i_cat in ['DI', 'UIR', 'M_UIR', 'UI']:
             total = 0
-            for enr_cat in ['NN','NE','EN','EE']:
+            for enr_cat in ['NN', 'NE', 'EN', 'EE']:
                 total += self._select_ref_info_dict[enr_cat][i_cat][0]
                 table_row += str(self._select_ref_info_dict[enr_cat][i_cat][0]) + '\t'
             if i_cat != 'UI':
