@@ -149,7 +149,7 @@ if remove_digest_length_outliers is not None:
     interaction_set.remove_digest_length_outliers(dg_min_len=int(dg_min_len),
                                                   dg_max_len = int(dg_max_len),
                                                   dg_min_len_q = float(dg_min_len_q),
-                                                  invert=True,
+                                                  invert=False,
                                                   verbose = True)
     remove_extreme_digest_pairs_file_info_report = interaction_set.get_remove_extreme_digest_pairs_read_file_info_report()
     remove_extreme_digest_pairs_file_info_table_row = interaction_set.get_remove_extreme_digest_pairs_read_file_info_table_row(description=out_prefix)
