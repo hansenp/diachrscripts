@@ -18,6 +18,8 @@ class IaFreqDistAnalysis:
         # Define interaction and enrichment categories
         self.i_cats = [
             'DIX',
+            'DIX_S',
+            'DIX_T',
             'DI',
             'DI_S',
             'DI_T',
@@ -26,6 +28,8 @@ class IaFreqDistAnalysis:
             'ALL']
         self.i_cat_colors = [
             'red',
+            'pink',
+            'cadetblue',
             'orange',
             'pink',
             'cadetblue',
@@ -34,6 +38,8 @@ class IaFreqDistAnalysis:
             'cornflowerblue']
         self.i_cat_names = [
             'Directed without reference',
+            'Directed simple without reference',
+            'Directed twisted without reference',
             'Directed',
             'Directed simple',
             'Directed twisted',
@@ -53,6 +59,18 @@ class IaFreqDistAnalysis:
         self._ingest_interaction_set_info_dict = {
             'TOTAL_INTERACTIONS_READ': 0,
             'DIX': {
+                'NN': 0,
+                'NE': 0,
+                'EN': 0,
+                'EE': 0
+            },
+            'DIX_S': {
+                'NN': 0,
+                'NE': 0,
+                'EN': 0,
+                'EE': 0
+            },
+            'DIX_T': {
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
@@ -169,6 +187,15 @@ class IaFreqDistAnalysis:
                     self._grouped_interactions[chrom]['DI_T'][e_cat_type].append( d11_inter)
                     self._ingest_interaction_set_info_dict['DI_T'][e_cat_type] += 1
 
+            # Add directed simple and directed twisted categories (DIX)
+            if d11_inter.get_category() == 'DIX':
+                if d11_inter.n_twisted < d11_inter.n_simple:
+                    self._grouped_interactions[chrom]['DIX_S'][e_cat_type].append(d11_inter)
+                    self._ingest_interaction_set_info_dict['DIX_S'][e_cat_type] += 1
+                else:
+                    self._grouped_interactions[chrom]['DIX_T'][e_cat_type].append( d11_inter)
+                    self._ingest_interaction_set_info_dict['DIX_T'][e_cat_type] += 1
+
         if verbose:
             print("\t[INFO] Total number of interactions read: " + "{:,}".format(
                 self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ']))
@@ -275,7 +302,7 @@ class IaFreqDistAnalysis:
 
             self.rp_num_dict['CHROMOSOMES'].append(chrom)
             self.i_dist_dict['CHROMOSOMES'].append(chrom)
-            for i_cat in ['DIX', 'DI', 'DI_S', 'DI_T', 'UIR', 'UI', 'ALL']:
+            for i_cat in ['DIX', 'DIX_S', 'DIX_T', 'DI', 'DI_S', 'DI_T', 'UIR', 'UI', 'ALL']:
                 for e_cat in ['NN', 'NE', 'EN', 'EE']:
                     for d11_inter in self._grouped_interactions[chrom][i_cat][e_cat]:
                         self.rp_num_dict[i_cat][e_cat].append(d11_inter.rp_total)

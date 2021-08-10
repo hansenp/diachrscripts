@@ -384,17 +384,17 @@ class DiachromaticInteractionSet:
 
         return table_row
 
-    def remove_read_pair_count_outliers(self, prop_thresh: float = 0.75, verbose: bool = False):
+    def remove_read_pair_count_outliers(self, invert: bool = False, verbose: bool = False):
         """
-        All interactions in which one of the four read pair counts makes up more than 'prop_thresh' will be removed.
+        All interactions in which at least one read pair count is zero will be removed.
 
-        :param prop_thresh: Maximum allowed proportion of all read pair counts.
+        :param invert: If true, the filtering is reversed, i.e. interactions that are normally removed are kept.
         :param verbose: If true, messages about progress will be written to the screen.
         :return: Number of interactions removed.
         """
 
         if verbose:
-            print("[INFO] Removing interactions with extreme digest lengths ...")
+            print("[INFO] Removing interactions with at least one zero read pair count ...")
 
         # Create new dictionary that will replace the old one
         new_inter_dict = defaultdict(DiachromaticInteraction)
@@ -410,12 +410,19 @@ class DiachromaticInteractionSet:
             rp_4 = d_inter._twisted_2
             rp_total = d_inter.rp_total
 
-            # If conditions are met, add to new dictionary
-            if not (prop_thresh < rp_1 / rp_total or
-                    prop_thresh < rp_2 / rp_total or
-                    prop_thresh < rp_3 / rp_total or
-                    prop_thresh < rp_4 / rp_total):
-                new_inter_dict[key] = d_inter
+            if invert:
+                # If conditions are met, add to new dictionary
+                if (rp_1 == 0 or
+                        rp_2 == 0 or
+                        rp_3 == 0 or
+                        rp_4 == 0):
+                    new_inter_dict[key] = d_inter
+            else:
+                if not (rp_1 == 0 or
+                        rp_2 == 0 or
+                        rp_3 == 0 or
+                        rp_4 == 0):
+                    new_inter_dict[key] = d_inter
 
             n_processed += 1
             if verbose:
