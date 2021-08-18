@@ -285,9 +285,9 @@ class IaFreqDistAnalysis:
 
         # Reset num_dicts
         self.i_dist_dict = self._get_empty_num_dict(
-            i_cats=self.i_cats,
-            i_cat_colors=self.i_cat_colors,
-            i_cat_names=self.i_cat_names,
+            i_cats=self.i_cats + ['UIR_S', 'UIR_T', 'UI_S', 'UI_T', 'ALL_S', 'ALL_T'],
+            i_cat_colors=self.i_cat_colors + ['pink', 'cadetblue', 'pink', 'cadetblue', 'pink', 'cadetblue'],
+            i_cat_names=self.i_cat_names + ['UIR_S', 'UIR_T', 'UI_S', 'UI_T', 'ALL_S', 'ALL_T'],
             e_cats=self.e_cats)
         self.i_dist_dict['NUM_TYPE'] = 'Interaction distance'
 
@@ -306,7 +306,24 @@ class IaFreqDistAnalysis:
                 for e_cat in ['NN', 'NE', 'EN', 'EE']:
                     for d11_inter in self._grouped_interactions[chrom][i_cat][e_cat]:
                         self.rp_num_dict[i_cat][e_cat].append(d11_inter.rp_total)
-                        self.i_dist_dict[i_cat][e_cat].append(d11_inter.i_dist)
+                        if i_cat == 'DIX':
+                            self.i_dist_dict['DIX_S'][e_cat].extend([d11_inter.i_dist] * d11_inter.n_simple)
+                            self.i_dist_dict['DIX_T'][e_cat].extend([d11_inter.i_dist] * d11_inter.n_twisted)
+                        elif i_cat == 'DI':
+                            self.i_dist_dict['DI_S'][e_cat].extend([d11_inter.i_dist] * d11_inter.n_simple)
+                            self.i_dist_dict['DI_T'][e_cat].extend([d11_inter.i_dist] * d11_inter.n_twisted)
+                        elif i_cat == 'UIR':
+                            self.i_dist_dict['UIR_S'][e_cat].extend([d11_inter.i_dist] * d11_inter.n_simple)
+                            self.i_dist_dict['UIR_T'][e_cat].extend([d11_inter.i_dist] * d11_inter.n_twisted)
+                        elif i_cat == 'UI':
+                            self.i_dist_dict['UI_S'][e_cat].extend([d11_inter.i_dist] * d11_inter.n_simple)
+                            self.i_dist_dict['UI_T'][e_cat].extend([d11_inter.i_dist] * d11_inter.n_twisted)
+                        elif i_cat == 'ALL':
+                            self.i_dist_dict['ALL_S'][e_cat].extend([d11_inter.i_dist] * d11_inter.n_simple)
+                            self.i_dist_dict['ALL_T'][e_cat].extend([d11_inter.i_dist] * d11_inter.n_twisted)
+                        else:
+                            pass
+                            #self.i_dist_dict[i_cat][e_cat].append(d11_inter.i_dist)
 
         if verbose:
             print("[INFO] ... done.")

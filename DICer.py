@@ -154,6 +154,7 @@ if remove_digest_length_outliers is not None:
     remove_extreme_digest_pairs_file_info_report = interaction_set.get_remove_extreme_digest_pairs_read_file_info_report()
     remove_extreme_digest_pairs_file_info_table_row = interaction_set.get_remove_extreme_digest_pairs_read_file_info_table_row(description=out_prefix)
     print()
+interaction_set.remove_read_pair_count_outliers(invert=True, verbose=True)
 interaction_set.shuffle_inter_dict(random_seed=random_seed_shuff_inter, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 read_file_info_table_row = interaction_set.get_read_file_info_table_row()
