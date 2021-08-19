@@ -9,6 +9,7 @@ from .ia_freq_dist_analysis import IaFreqDistAnalysis
 from .ia_freq_dist_analysis_2 import IaFreqDistAnalysis_2
 from .baited_digest import BaitedDigest
 from .baited_digest_set import BaitedDigestSet
+from .tad_boundaries import TadBoundarySet
 
 __all__ = [
     "BinomialModel",
@@ -20,5 +21,6 @@ __all__ = [
     "IaFreqDistAnalysis",
     "IaFreqDistAnalysis_2",
     "BaitedDigest",
-    "BaitedDigestSet"
+    "BaitedDigestSet",
+    "TadBoundarySet"
 ]
