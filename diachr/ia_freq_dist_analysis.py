@@ -285,9 +285,9 @@ class IaFreqDistAnalysis:
 
         # Reset num_dicts
         self.i_dist_dict = self._get_empty_num_dict(
-            i_cats=self.i_cats + ['UIR_S', 'UIR_T', 'UI_S', 'UI_T', 'ALL_S', 'ALL_T'],
-            i_cat_colors=self.i_cat_colors + ['pink', 'cadetblue', 'pink', 'cadetblue', 'pink', 'cadetblue'],
-            i_cat_names=self.i_cat_names + ['UIR_S', 'UIR_T', 'UI_S', 'UI_T', 'ALL_S', 'ALL_T'],
+            i_cats=self.i_cats,
+            i_cat_colors=self.i_cat_colors,
+            i_cat_names=self.i_cat_names,
             e_cats=self.e_cats)
         self.i_dist_dict['NUM_TYPE'] = 'Interaction distance'
 
@@ -303,6 +303,59 @@ class IaFreqDistAnalysis:
             self.rp_num_dict['CHROMOSOMES'].append(chrom)
             self.i_dist_dict['CHROMOSOMES'].append(chrom)
             for i_cat in ['DIX', 'DIX_S', 'DIX_T', 'DI', 'DI_S', 'DI_T', 'UIR', 'UI', 'ALL']:
+                for e_cat in ['NN', 'NE', 'EN', 'EE']:
+                    for d11_inter in self._grouped_interactions[chrom][i_cat][e_cat]:
+                        self.rp_num_dict[i_cat][e_cat].append(d11_inter.rp_total)
+                        self.i_dist_dict[i_cat][e_cat].append(d11_inter.i_dist)
+
+        if verbose:
+            print("[INFO] ... done.")
+
+        return self.rp_num_dict, self.i_dist_dict
+
+    def get_all_rp_nums_and_rp_dists(self,
+                                    chromosomes: [str] = None,
+                                    verbose: bool = False):
+        """
+        This function collects read pair numbers and read pair distances in the various interaction and enrichment
+        categories.
+
+        :param chromosomes: The analysis can be restricted to subsets chromosomes, e.g. ['chr19', 'chr20', 'chr21']
+        :param verbose: If true, messages about progress will be written to the screen
+        :return: A dictionary containing the results and a list of chromosomes that were taken into account.
+        """
+
+        if verbose:
+            print("[INFO] Getting all read pair numbers and interaction distances ...")
+
+        # Reset num_dicts
+        self.rp_num_dict = self._get_empty_num_dict(
+            i_cats=self.i_cats,
+            i_cat_colors=self.i_cat_colors,
+            i_cat_names=self.i_cat_names,
+            e_cats=self.e_cats)
+        self.rp_num_dict['NUM_TYPE'] = 'Read pair number'
+
+        # Reset num_dicts
+        self.i_dist_dict = self._get_empty_num_dict(
+            i_cats=self.i_cats + ['UIR_S', 'UIR_T', 'UI_S', 'UI_T', 'ALL_S', 'ALL_T'],
+            i_cat_colors=self.i_cat_colors + ['pink', 'cadetblue', 'pink', 'cadetblue', 'pink', 'cadetblue'],
+            i_cat_names=self.i_cat_names + ['UIR_S', 'UIR_T', 'UI_S', 'UI_T', 'ALL_S', 'ALL_T'],
+            e_cats=self.e_cats)
+        self.i_dist_dict['NUM_TYPE'] = 'Read pair distance'
+
+        # Combine lists of read pair numbers and distances from all chromosomes
+        for chrom in self._grouped_interactions.keys():
+            if chromosomes is not None:
+                if chrom not in chromosomes:
+                    continue
+
+            if verbose:
+                print("\t[INFO] Processing chromosome " + chrom + " ...")
+
+            self.rp_num_dict['CHROMOSOMES'].append(chrom)
+            self.i_dist_dict['CHROMOSOMES'].append(chrom)
+            for i_cat in ['DIX', 'DI', 'UIR', 'UI', 'ALL']:
                 for e_cat in ['NN', 'NE', 'EN', 'EE']:
                     for d11_inter in self._grouped_interactions[chrom][i_cat][e_cat]:
                         self.rp_num_dict[i_cat][e_cat].append(d11_inter.rp_total)
@@ -322,8 +375,7 @@ class IaFreqDistAnalysis:
                             self.i_dist_dict['ALL_S'][e_cat].extend([d11_inter.i_dist] * d11_inter.n_simple)
                             self.i_dist_dict['ALL_T'][e_cat].extend([d11_inter.i_dist] * d11_inter.n_twisted)
                         else:
-                            pass
-                            #self.i_dist_dict[i_cat][e_cat].append(d11_inter.i_dist)
+                            print("[ERROR] Interaction category " + i_cat + " not found!")
 
         if verbose:
             print("[INFO] ... done.")
@@ -494,10 +546,12 @@ class IaFreqDistAnalysis:
                 ax_dens.set_ylim(0, yd_max)
                 # Add text labels with total read pair or interaction numbers, median and median absolute deviation
                 ax[i + 1][j].text(x_lim - (x_lim / 3),
-                                  yc_max - (yc_max / 3.2),
-                                  'n: ' + "{:,}".format(len(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
-                                      np.median(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'MAD: ' + "{:,.0f}".format(stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])),
-                                  fontsize=9,
+                                  yc_max - (yc_max / 2.6), #3.2
+                                  'n: ' + "{:,}".format(len(num_dict[i_cats[i]][e_cats[j]])) + '\n' +
+                                  'Q1: ' + "{:,.0f}".format(np.quantile(num_dict[i_cats[i]][e_cats[j]], 0.25)) + '\n' +
+                                  'Mdn: ' + "{:,.0f}".format(np.median(num_dict[i_cats[i]][e_cats[j]])) + '\n' +
+                                  'MAD: ' + "{:,.0f}".format(stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])),
+                                  fontsize=8.5,
                                   bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
         # Save and return figure
@@ -654,13 +708,12 @@ class IaFreqDistAnalysis:
                 ax_dens.set_ylim(0, yd_max)
                 # Add text labels with total read pair or interaction numbers, median and median absolute deviation
                 ax[i + 1][j].text(x_lim - (x_lim / 3),
-                                  yc_max - (yc_max / 3.2),
-                                  'n: ' + "{:,}".format(
-                                      len(num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'Mdn: ' + "{:,.0f}".format(
-                                      np.median(
-                                          num_dict[i_cats[i]][e_cats[j]])) + '\n' + 'MAD: ' + "{:,.0f}".format(
-                                      stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])),
-                                  fontsize=9,
+                                  yc_max - (yc_max / 2.6), #3.2
+                                  'n: ' + "{:,}".format(len(num_dict[i_cats[i]][e_cats[j]])) + '\n' +
+                                  'Q1: ' + "{:,.0f}".format(np.quantile(num_dict[i_cats[i]][e_cats[j]], 0.25)) + '\n' +
+                                  'Mdn: ' + "{:,.0f}".format(np.median(num_dict[i_cats[i]][e_cats[j]])) + '\n' +
+                                  'MAD: ' + "{:,.0f}".format(stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])),
+                                  fontsize=8.5,
                                   bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
         # Add subplots for density differences
