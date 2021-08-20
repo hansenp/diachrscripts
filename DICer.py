@@ -33,7 +33,7 @@ parser.add_argument('-d', '--description-tag',
 parser.add_argument('-i', '--diachromatic-interaction-file',
                     help='Input file in Diachromatic interaction format.',
                     required=True)
-parser.add_argument('--remove-zero-read-pair-count-interactions',
+parser.add_argument('--remove-zero-rpc-interactions',
                     help='Remove interactions where at least one of the four read pair counts is zero. Default is '
                          '\'No\'. Other options are \'Yes\' or \'Invert\'. In the case of invert, interactions that '
                          'are discarded with \'Yes\' will be retained.',
