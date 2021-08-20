@@ -33,12 +33,12 @@ parser.add_argument('-d', '--description-tag',
 parser.add_argument('-i', '--diachromatic-interaction-file',
                     help='Input file in Diachromatic interaction format.',
                     required=True)
-parser.add_argument('--remove-digest-length-outliers',
-                    help='Remove interactions that are extreme in terms of digest pair lengths. Parameters are passed '
-                         'as a comma-separated string. For instance, with \'500,10000,0.25\' interactions with '
-                         'digests shorter than 500 or longer than 10000 will be removed. Furthermore, interactions '
-                         'where the digest length ration is smaller than 0.25 will be removed.',
-                    default=None)
+parser.add_argument('--remove-zero-read-pair-count-interactions',
+                    help='Remove interactions where at least one of the four read pair counts is zero. Default is '
+                         '\'No\'. Other options are \'Yes\' or \'Invert\'. In the case of invert, interactions that '
+                         'are discarded with \'Yes\' will be retained.',
+                    choices=['No', 'Yes', 'Invert'],
+                    default='No')
 parser.add_argument('--min-inter-dist',
                     help='Minimum interaction distance. Shorter interactions are not taken into account.',
                     default=0)
@@ -71,7 +71,7 @@ parser.add_argument('-t','--thread-num',
 parser.add_argument('--p-value-threshold',
                     help='By default, the final P-value threshold is determined via randomization. If a P-value is '
                          'specified, then this P-value threshold will be used as the final threshold and no '
-                         'randomizations will be performed.',
+                         'randomization will be performed.',
                     default=None)
 parser.add_argument('--enriched-digests-file',
                     help='BED file with digests coordinates that were selected for target enrichment. The digest '
@@ -86,7 +86,7 @@ args = parser.parse_args()
 out_prefix = args.out_prefix
 description_tag = args.description_tag
 diachromatic_interaction_file = args.diachromatic_interaction_file
-remove_digest_length_outliers = args.remove_digest_length_outliers
+remove_zero_read_pair_count_interactions = args.remove_zero_read_pair_count_interactions
 min_inter_dist = int(args.min_inter_dist)
 read_pair_counts_rule = args.read_pair_counts_rule
 fdr_threshold = float(args.fdr_threshold)
@@ -108,8 +108,7 @@ parameter_info += "\t[INFO] --out-prefix: " + out_prefix + '\n'
 parameter_info += "\t[INFO] --description-tag: " + description_tag + '\n'
 parameter_info += "\t[INFO] --diachromatic-interaction-file:" + '\n'
 parameter_info += "\t\t[INFO] " + diachromatic_interaction_file + '\n'
-if args.remove_digest_length_outliers is not None:
-    parameter_info += "\t[INFO] --remove-digest-length-outliers: " + remove_digest_length_outliers + '\n'
+parameter_info += "\t[INFO] --remove-zero-read-pair-count-interactions: " + remove_zero_read_pair_count_interactions + '\n'
 parameter_info += "\t[INFO] --min-inter-dist: " + "{:,}".format(min_inter_dist) + '\n'
 parameter_info += "\t[INFO] --read-pair-counts-rule: " + read_pair_counts_rule + '\n'
 parameter_info += "\t[INFO] --p-value-threshold: " + str(p_value_threshold) + '\n'
@@ -144,17 +143,15 @@ interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_dige
 min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(0.10)
 interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, min_dist=min_inter_dist, verbose=True)
 print()
-if remove_digest_length_outliers is not None:
-    dg_min_len, dg_max_len, dg_min_len_q = remove_digest_length_outliers.split(',')
-    interaction_set.remove_digest_length_outliers(dg_min_len=int(dg_min_len),
-                                                  dg_max_len = int(dg_max_len),
-                                                  dg_min_len_q = float(dg_min_len_q),
-                                                  invert=False,
-                                                  verbose=True)
-    remove_extreme_digest_pairs_file_info_report = interaction_set.get_remove_extreme_digest_pairs_read_file_info_report()
-    remove_extreme_digest_pairs_file_info_table_row = interaction_set.get_remove_extreme_digest_pairs_read_file_info_table_row(description=out_prefix)
+if remove_zero_read_pair_count_interactions != 'No':
+    if remove_zero_read_pair_count_interactions != 'Invert':
+        interaction_set.remove_zero_read_pair_count_interactions(verbose=True)
+    else:
+        interaction_set.remove_zero_read_pair_count_interactions(invert=True, verbose=True)
+    remove_zero_read_pair_count_interactions_info_report = interaction_set.get_remove_zero_read_pair_count_interactions_info_report()
+    remove_zero_read_pair_count_interactions_info_table_row = interaction_set.get_remove_zero_read_pair_count_interactions_info_table_row(
+        description=out_prefix)
     print()
-interaction_set.remove_read_pair_count_outliers(invert=True, verbose=True)
 interaction_set.shuffle_inter_dict(random_seed=random_seed_shuff_inter, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 read_file_info_table_row = interaction_set.get_read_file_info_table_row()
@@ -265,10 +262,10 @@ out_fh_summary.write(parameter_info + '\n')
 out_fh_summary.write(read_file_info_report + '\n')
 out_fh_summary.write(read_file_info_table_row + '\n')
 
-# Report on removing interactions with extreme digest pairs
-if args.remove_digest_length_outliers is not None:
-    out_fh_summary.write(remove_extreme_digest_pairs_file_info_report + '\n')
-    out_fh_summary.write(remove_extreme_digest_pairs_file_info_table_row + '\n')
+# Report on removing interactions with zero read pair counts
+if remove_zero_read_pair_count_interactions != 'No':
+    out_fh_summary.write(remove_zero_read_pair_count_interactions_info_report + '\n')
+    out_fh_summary.write(remove_zero_read_pair_count_interactions_info_table_row + '\n')
 
 # Report on shuffling interactions
 out_fh_summary.write("[INFO] Report on shuffling interactions:" + '\n')

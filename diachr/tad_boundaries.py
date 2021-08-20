@@ -8,16 +8,16 @@ class TadBoundarySet:
 
 
 
-    def get_distance_to_neighbouring_boundaries(chr:str, start:int, end:int) -> Tuple(int,int):
-        """
-        Get distance to the closest TAD boundaries
-        If the argument is located within a boundary, what happens?
-        """
-        pass
-
-
-    def get_overlapped_boundary_count(chr:str, start:int, end:int) -> int:
-        """
-        The argument is typically an interaction. start is the 'left' digest and end is the 'right' digest
-        """
-        pass
+    # def get_distance_to_neighbouring_boundaries(chr:str, start:int, end:int) -> Tuple(int,int):
+    #     """
+    #     Get distance to the closest TAD boundaries
+    #     If the argument is located within a boundary, what happens?
+    #     """
+    #     pass
+    #
+    #
+    # def get_overlapped_boundary_count(chr:str, start:int, end:int) -> int:
+    #     """
+    #     The argument is typically an interaction. start is the 'left' digest and end is the 'right' digest
+    #     """
+    #     pass

@@ -56,7 +56,7 @@ class DiachromaticInteractionSet:
                                      'I_SET_SIZE': []}
 
         # Dictionary with information about removing interactions with extreme digest pairs
-        self._remove_extreme_digest_pairs_info_dict = {}
+        self._remove_zero_read_pair_count_interactions_info_dict = {}
 
         # Dictionary with information about the last writing process
         self._write_file_info_dict = {}
@@ -256,135 +256,49 @@ class DiachromaticInteractionSet:
             di_11_inter.set_category(i_cat)
             return di_11_inter
 
-    def remove_digest_length_outliers(self,
-                                      dg_min_len: int = 500,
-                                      dg_max_len: int = 10000,
-                                      dg_min_len_q: float = 0.25,
-                                      invert: bool = False,
-                                      verbose: bool = False):
+    def get_remove_zero_read_pair_count_interactions_info_report(self):
         """
-        This function is preliminary. It removes interactions with extreme digests pairs from the interaction set.
-        Extreme digest pairs are those in which one of the digests is very short or very long and those in which the
-        ratio of the two digest lengths is very unbalanced.
-
-        :param dg_min_len: Minimum length that both digests must have.
-        :param dg_max_len: Maximum length that both digests can have.
-        :param dg_min_len_q: Tha quotient of the smaller divided by larger digest length must be greater.
-        :param invert: If true, the filtering is reversed, i.e. interactions that are normally removed are kept.
-        :param verbose: If true, messages about progress will be written to the screen.
-        :return: Number of interactions removed.
+        :return: String that contains information about removing interactions with zero read pair counts.
         """
 
-        if verbose:
-            print("[INFO] Removing interactions with extreme digest lengths ...")
-            print("\t[INFO] Minimum digest length: " + "{:,}".format(dg_min_len))
-            print("\t[INFO] Maximum digest length: " + "{:,}".format(dg_max_len))
-            print("\t[INFO] Most extreme length ratio: " + "{:.2f}".format(dg_min_len_q))
-            if (invert):
-                print("\t[INFO] Filtering is inverted!")
-                print("\t[INFO] Interactions with extreme digests will be kept and all others will be discarded!")
-
-        # Create new dictionary that will replace the old one
-        new_inter_dict = defaultdict(DiachromaticInteraction)
-
-        # Iterate interactions
-        n_processed = 0
-        for key, d_inter in self._inter_dict.items():
-
-            # Get digest lengths
-            d1_len = d_inter._toA - d_inter._fromA
-            d2_len = d_inter._toB - d_inter._fromB
-
-            # If conditions are met, add to new dictionary
-            if invert:
-                if (d1_len < dg_min_len or d2_len < dg_min_len or
-                        dg_max_len < d1_len or dg_max_len < d2_len or
-                        min(d1_len, d2_len) / max(d1_len, d2_len) < dg_min_len_q):
-                    new_inter_dict[key] = d_inter
-            else:
-                if not (d1_len < dg_min_len or d2_len < dg_min_len or
-                        dg_max_len < d1_len or dg_max_len < d2_len or
-                        min(d1_len, d2_len) / max(d1_len, d2_len) < dg_min_len_q):
-                    new_inter_dict[key] = d_inter
-
-            n_processed += 1
-            if verbose:
-                if n_processed % 1000000 == 0:
-                    print("\t[INFO] Processed " + "{:,}".format(n_processed) + " interactions ...")
-
-        # Replace old dictionary
-        num_of_interactions_originally = len(self._inter_dict)
-        num_of_interactions_remaining = len(new_inter_dict)
-        num_of_removed_interactions = num_of_interactions_originally - num_of_interactions_remaining
-        self._inter_dict = new_inter_dict
-
-        if verbose:
-            print("\t[INFO] Number of interactions removed: " + "{:,}".format(num_of_removed_interactions))
-            print("\t[INFO] Remaining interactions: " + "{:,}".format(num_of_interactions_remaining))
-            print("[INFO] ... done.")
-
-        # Prepare dictionary for report
-        self._remove_extreme_digest_pairs_info_dict = {
-            'DG_MIN_LEN': [dg_min_len],
-            'DG_MAX_LEN': [dg_max_len],
-            'DG_MIN_LEN_Q': [dg_min_len_q],
-            'N_PROCESSED': [n_processed],
-            'N_REMOVED': [num_of_removed_interactions],
-            'N_REMAINING': [num_of_interactions_remaining]
-        }
-        return self._remove_extreme_digest_pairs_info_dict
-
-    def get_remove_extreme_digest_pairs_read_file_info_report(self):
-        """
-        :return: String that contains information about removing interactions with extreme digest pairs.
-        """
-
-        report = "[INFO] Report on removing interactions with extreme digest pairs:" + '\n'
+        report = "[INFO] Report on removing interactions with zero read pair counts:" + '\n'
+        report += "\t[INFO] Invert filter: " +\
+                  str(self._remove_zero_read_pair_count_interactions_info_dict['INVERT'][0]) + '\n '
         report += "\t[INFO] Processed interactions: " + "{:,}".format(
-            self._remove_extreme_digest_pairs_info_dict['N_PROCESSED'][0]) + '\n'
-        report += "\t[INFO] Minimum digest length: " + "{:,}".format(
-            self._remove_extreme_digest_pairs_info_dict['DG_MIN_LEN'][0]) + '\n'
-        report += "\t[INFO] Maximum digest length: " + "{:,}".format(
-            self._remove_extreme_digest_pairs_info_dict['DG_MAX_LEN'][0]) + '\n'
-        report += "\t[INFO] Most extreme length ratio: " + "{:.2f}".format(
-            self._remove_extreme_digest_pairs_info_dict['DG_MIN_LEN_Q'][0]) + '\n'
+            self._remove_zero_read_pair_count_interactions_info_dict['N_PROCESSED'][0]) + '\n'
         report += "\t[INFO] Number of interactions removed: " + "{:,}".format(
-            self._remove_extreme_digest_pairs_info_dict['N_REMOVED'][0]) + '\n'
+            self._remove_zero_read_pair_count_interactions_info_dict['N_REMOVED'][0]) + '\n'
         report += "\t[INFO] Number of remaining interactions: " + "{:,}".format(
-            self._remove_extreme_digest_pairs_info_dict['N_REMAINING'][0]) + '\n'
+            self._remove_zero_read_pair_count_interactions_info_dict['N_REMAINING'][0]) + '\n'
         report += "[INFO] End of report." + '\n'
 
         return report
 
-    def get_remove_extreme_digest_pairs_read_file_info_table_row(self, description: str = '<DESCRIPTION>'):
+    def get_remove_zero_read_pair_count_interactions_info_table_row(self, description: str = '<DESCRIPTION>'):
         """
         :return: String consisting of a header line and a line with values relating to removal interactions with
-        extreme digest pairs.
+        zero read pair counts.
         """
 
         # Header row
-        table_row = ":TR_REMOVE_EXTREME_DIGEST_PAIRS:" + '\t'
+        table_row = ":TR_ZERO_RPC_INTERACTIONS:" + '\t'
         table_row += "DESCRIPTION" + '\t'
+        table_row += "INVERT" + '\t'
         table_row += "N_PROCESSED" + '\t'
-        table_row += "DG_MIN_LEN" + '\t'
-        table_row += "DG_MAX_LEN" + '\t'
-        table_row += "DG_MIN_LEN_Q" + '\t'
         table_row += "N_REMOVED" + '\t'
         table_row += "N_REMAINING" + '\n'
 
         # Row with values
-        table_row += ":TR_REMOVE_EXTREME_DIGEST_PAIRS:" + '\t'
+        table_row += ":TR_ZERO_RPC_INTERACTIONS:" + '\t'
         table_row += description + '\t'
-        table_row += "{:,}".format(self._remove_extreme_digest_pairs_info_dict['N_PROCESSED'][0]) + '\t'
-        table_row += "{:,}".format(self._remove_extreme_digest_pairs_info_dict['DG_MIN_LEN'][0]) + '\t'
-        table_row += "{:,}".format(self._remove_extreme_digest_pairs_info_dict['DG_MAX_LEN'][0]) + '\t'
-        table_row += "{:.2f}".format(self._remove_extreme_digest_pairs_info_dict['DG_MIN_LEN_Q'][0]) + '\t'
-        table_row += "{:,}".format(self._remove_extreme_digest_pairs_info_dict['N_REMOVED'][0]) + '\t'
-        table_row += "{:,}".format(self._remove_extreme_digest_pairs_info_dict['N_REMAINING'][0]) + '\n'
+        table_row += str(self._remove_zero_read_pair_count_interactions_info_dict['INVERT'][0]) + '\t'
+        table_row += "{:,}".format(self._remove_zero_read_pair_count_interactions_info_dict['N_PROCESSED'][0]) + '\t'
+        table_row += "{:,}".format(self._remove_zero_read_pair_count_interactions_info_dict['N_REMOVED'][0]) + '\t'
+        table_row += "{:,}".format(self._remove_zero_read_pair_count_interactions_info_dict['N_REMAINING'][0]) + '\n'
 
         return table_row
 
-    def remove_read_pair_count_outliers(self, invert: bool = False, verbose: bool = False):
+    def remove_zero_read_pair_count_interactions(self, invert: bool = False, verbose: bool = False):
         """
         All interactions in which at least one read pair count is zero will be removed.
 
@@ -394,7 +308,10 @@ class DiachromaticInteractionSet:
         """
 
         if verbose:
-            print("[INFO] Removing interactions with at least one zero read pair count ...")
+            if invert:
+                print("[INFO] Removing interactions for which none of the four read pair counts is zero ...")
+            else:
+                print("[INFO] Removing interactions for which at least one of the four read pair counts is zero ...")
 
         # Create new dictionary that will replace the old one
         new_inter_dict = defaultdict(DiachromaticInteraction)
@@ -438,7 +355,14 @@ class DiachromaticInteractionSet:
             print("\t[INFO] Remaining interactions: " + "{:,}".format(len(self._inter_dict)))
             print("[INFO] ... done.")
 
-        return num_of_removed_interactions
+        # Prepare dictionary for report
+        self._remove_zero_read_pair_count_interactions_info_dict = {
+            'INVERT': [invert],
+            'N_PROCESSED': [n_processed],
+            'N_REMOVED': [num_of_removed_interactions],
+            'N_REMAINING': [n_processed - num_of_removed_interactions]
+        }
+        return self._remove_zero_read_pair_count_interactions_info_dict
 
     def evaluate_and_categorize_interactions(self, pval_thresh: float = None, verbose: bool = False):
         """
