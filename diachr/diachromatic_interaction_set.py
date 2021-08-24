@@ -3,7 +3,7 @@ import os
 import copy
 import warnings
 import random
-from numpy import arange, log10
+from numpy import arange, log10, quantile
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
@@ -686,6 +686,11 @@ class DiachromaticInteractionSet:
         if verbose:
             print("\t[INFO] Third pass: Mark directed interactions for which there is no reference ...")
 
+        dix_rp_num_list = {
+            'NN': [],
+            'NEEN': [],
+            'EE': []
+        }
         for d11_inter in self._inter_dict.values():
             if d11_inter.get_category() == 'DI':
 
@@ -697,10 +702,39 @@ class DiachromaticInteractionSet:
                 if rp_total in rp_inter_dict[enrichment_pair_tag] and 0 < rp_inter_dict[enrichment_pair_tag][rp_total]:
                     rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
                     d11_inter.set_category('DIX')
+                    dix_rp_num_list[enrichment_pair_tag].append(d11_inter.rp_total)
 
         # Calculate number of missing reference interactions
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             report_dict[enr_cat]['M_UIR'][0] = report_dict[enr_cat]['DI'][0] - report_dict[enr_cat]['UIR'][0]
+
+        q1 = {
+            'NN': quantile(dix_rp_num_list['NN'], 0.25),
+            'NEEN': quantile(dix_rp_num_list['NEEN'], 0.25),
+            'EE': quantile(dix_rp_num_list['EE'], 0.25),
+        }
+        if verbose:
+            for enr_cat in ['NN', 'NEEN', 'EE']:
+                print("\t\t[INFO] Q1(" + enr_cat + "): " + str(quantile(dix_rp_num_list[enr_cat], 0.25)))
+                print("\t\t[INFO] Q2(" + enr_cat + "): " + str(quantile(dix_rp_num_list[enr_cat], 0.50)))
+                print("\t\t[INFO] Q3(" + enr_cat + "): " + str(quantile(dix_rp_num_list[enr_cat], 0.75)))
+
+        if verbose:
+            print("\t[INFO] Fourth pass: Moving interactions with high read pair counts from DI to DIX ...")
+
+        for d11_inter in self._inter_dict.values():
+            if d11_inter.get_category() == 'DI' or d11_inter.get_category() == 'DIX':
+
+                enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
+                if enrichment_pair_tag == 'NE' or enrichment_pair_tag == 'EN':
+                    enrichment_pair_tag = 'NEEN'
+                rp_total = d11_inter.rp_total
+
+                if q1[enrichment_pair_tag] <= rp_total:
+                    d11_inter.set_category('DIX')
+                    #print(rp_total)
+                else:
+                    d11_inter.set_category('DI')
 
         if verbose:
             print("[INFO] ... done.")
