@@ -27,3 +27,5 @@ if [ ! -e 'sorted_tad_boundaries.bed' ]; then
 fi
 
 bedtools merge -i sorted_tad_boundaries.bed -d ${MERGE_THRESHOLD} > merged_tad_boundaries.bed
+
+awk '{center_pos=$2+int(($3-$2)/2);print($1"\t"center_pos"\t"center_pos+1)}' merged_tad_boundaries.bed > merged_tad_boundary_centers.bed
