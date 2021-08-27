@@ -110,7 +110,7 @@ class TadBoundarySet:
             num_of_spanned_boundaries += 1
             boundary_to_the_right_idx += 1
 
-        while self.chr_dict[chr_key][boundary_to_the_right_idx] < end:
+        while boundary_to_the_right_idx < len(self.chr_dict[chr_key]) and self.chr_dict[chr_key][boundary_to_the_right_idx] < end:
             num_of_spanned_boundaries += 1
             boundary_to_the_right_idx += 1
 
