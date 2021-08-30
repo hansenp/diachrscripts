@@ -621,6 +621,11 @@ class DiachromaticInteractionSet:
 
         The difference to the original version is that it is not distinguished between NE and EN.
 
+        Furthermore, an additional category DIX for DI interactions without counterpart in reference interactions
+        is introduced.
+
+        ToDo: THE TEST FOR REFERENCE SELECTION SHOULD BE ADAPTED AND THIS FUNCTION SHOULD BE USED IN DICer.
+
         :return: Dictionary with interaction numbers in different categories
         """
 
@@ -634,10 +639,10 @@ class DiachromaticInteractionSet:
                          'EE': {}}
 
         # Count number of interactions in different categories
-        report_dict = {'NN': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
-                       'NE': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
-                       'EN': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
-                       'EE': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]}}
+        report_dict = {'NN': {'DIX': [0], 'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
+                       'NE': {'DIX': [0], 'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
+                       'EN': {'DIX': [0], 'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
+                       'EE': {'DIX': [0], 'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]}}
 
         if verbose:
             print("\t[INFO] First pass: Count directed interactions for different read pair counts ...")
@@ -684,7 +689,7 @@ class DiachromaticInteractionSet:
                     report_dict[d11_inter.enrichment_status_tag_pair]['UI'][0] += 1
 
         if verbose:
-            print("\t[INFO] Third pass: Mark directed interactions for which there is no reference ...")
+            print("\t[INFO] Third pass: Moving DI interactions for which there is no reference to DIX...")
 
         for d11_inter in self._inter_dict.values():
             if d11_inter.get_category() == 'DI':
@@ -697,6 +702,8 @@ class DiachromaticInteractionSet:
                 if rp_total in rp_inter_dict[enrichment_pair_tag] and 0 < rp_inter_dict[enrichment_pair_tag][rp_total]:
                     rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
                     d11_inter.set_category('DIX')
+                    report_dict[d11_inter.enrichment_status_tag_pair]['DI'][0] -= 1
+                    report_dict[d11_inter.enrichment_status_tag_pair]['DIX'][0] += 1
 
         # Calculate number of missing reference interactions
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:

@@ -109,10 +109,10 @@ class TestRateAndCategorizeInteractions(TestCase):
         # -----------------------------
 
         # Nested dictionaries that store the numbers of interactions (value) for different read pair numbers (key)
-        rp_inter_dict = {'NN': {'DI':{},'UIR':{},'UI':{}},
-                         'NE': {'DI':{},'UIR':{},'UI':{}},
-                         'EN': {'DI':{},'UIR':{},'UI':{}},
-                         'EE': {'DI':{},'UIR':{},'UI':{}}}
+        rp_inter_dict = {'NN': {'DIX': {}, 'DI': {}, 'UIR': {}, 'UI': {}},
+                         'NE': {'DIX': {}, 'DI': {}, 'UIR': {}, 'UI': {}},
+                         'EN': {'DIX': {}, 'DI': {}, 'UIR': {}, 'UI': {}},
+                         'EE': {'DIX': {}, 'DI': {}, 'UIR': {}, 'UI': {}}}
 
         with gzip.open('i_file.tsv', 'rt') as fp:
             for line in fp:
