@@ -468,164 +468,10 @@ class DiachromaticInteractionSet:
         Select reference interactions that match directed interactions in terms of enrichment category and total number
         of read pairs per interaction and return a dictionary with information on this selection process.
 
-        :return: Dictionary with information on this selection process
-        """
-
-        if verbose:
-            print("[INFO] Select reference interactions ...")
-
-        # Nested dictionary that stores the numbers of interactions (value) for different read pair numbers (key)
-        rp_inter_dict = {'NN': {},
-                         'NE': {},
-                         'EN': {},
-                         'EE': {}}
-
-        if verbose:
-            print("\t[INFO] First pass: Count directed interactions for different read pair counts ...")
-        for d11_inter in self._inter_dict.values():
-
-            if d11_inter.get_category() == 'DI':
-
-                # Get enrichment status tag pair and read pair number
-                enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
-                rp_total = d11_inter.rp_total
-
-                if rp_total not in rp_inter_dict[enrichment_pair_tag]:
-                    rp_inter_dict[enrichment_pair_tag][rp_total] = 1
-                else:
-                    rp_inter_dict[enrichment_pair_tag][rp_total] += 1
-
-        rp_inter_dict_before = copy.deepcopy(rp_inter_dict)
-        ui_inter_dict = {'NN': 0,
-                         'NE': 0,
-                         'EN': 0,
-                         'EE': 0}
-
-        if verbose:
-            print("\t[INFO] Second pass: Select undirected reference interactions for different read pair counts ...")
-        for d11_inter in self._inter_dict.values():
-
-            if d11_inter.get_category() != 'DI':
-
-                enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
-                rp_total = d11_inter.rp_total
-
-                if rp_total in rp_inter_dict[enrichment_pair_tag] and 0 < rp_inter_dict[enrichment_pair_tag][rp_total]:
-                    rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
-                    d11_inter.set_category('UIR')
-                else:
-                    ui_inter_dict[enrichment_pair_tag] += 1
-                    d11_inter.set_category('UI')
-
-        # Prepare dictionary for report
-        report_dict = {'NN': {'DI': [], 'UIR': [], 'M_UIR': [], 'UI': []},
-                       'NE': {'DI': [], 'UIR': [], 'M_UIR': [], 'UI': []},
-                       'EN': {'DI': [], 'UIR': [], 'M_UIR': [], 'UI': []},
-                       'EE': {'DI': [], 'UIR': [], 'M_UIR': [], 'UI': []}}
-        for enr_cat in ['NN', 'NE', 'EN', 'EE']:
-            report_dict[enr_cat]['DI'] = [sum(rp_inter_dict_before[enr_cat].values())]
-            report_dict[enr_cat]['UIR'] = [
-                sum(rp_inter_dict_before[enr_cat].values()) - sum(rp_inter_dict[enr_cat].values())]
-            report_dict[enr_cat]['M_UIR'] = [sum(rp_inter_dict[enr_cat].values())]
-            report_dict[enr_cat]['UI'] = [ui_inter_dict[enr_cat]]
-
-        if verbose:
-            print("[INFO] ... done.")
-
-        self._select_ref_info_dict = report_dict
-        return report_dict
-
-    def select_reference_interactions_2(self, verbose: bool = False):
-        """
-        Select reference interactions that match directed interactions in terms of enrichment category and total number
-        of read pairs per interaction and return a dictionary with information on this selection process.
-
         The difference to the original version is that it is not distinguished between NE and EN.
-
-        :return: Dictionary with interaction numbers in different categories
-        """
-
-        if verbose:
-            print("[INFO] Select reference interactions ...")
-            print("\t[INFO] Treating NE and EN as one category ...")
-
-        # Nested dictionary that stores the numbers of interactions (value) for different read pair numbers (key)
-        rp_inter_dict = {'NN': {},
-                         'NEEN': {},
-                         'EE': {}}
-
-        # Count number of interactions in different categories
-        report_dict = {'NN': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
-                       'NE': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
-                       'EN': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
-                       'EE': {'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]}}
-
-        if verbose:
-            print("\t[INFO] First pass: Count directed interactions for different read pair counts ...")
-        for d11_inter in self._inter_dict.values():
-
-            if d11_inter.get_category() == 'DI':
-
-                # Get enrichment status tag pair and read pair number
-                enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
-                report_dict[enrichment_pair_tag]['DI'][0] += 1
-                if enrichment_pair_tag == 'NE' or enrichment_pair_tag == 'EN':
-                    enrichment_pair_tag = 'NEEN'
-                rp_total = d11_inter.rp_total
-
-                if rp_total not in rp_inter_dict[enrichment_pair_tag]:
-                    rp_inter_dict[enrichment_pair_tag][rp_total] = 1
-                else:
-                    rp_inter_dict[enrichment_pair_tag][rp_total] += 1
-
-        rp_inter_dict_before = copy.deepcopy(rp_inter_dict)
-        ui_inter_dict = {'NN': 0,
-                         'NEEN': 0,
-                         'EE': 0}
-
-        if verbose:
-            print("\t[INFO] Second pass: Select undirected reference interactions for different read pair counts ...")
-
-        for d11_inter in self._inter_dict.values():
-
-            if d11_inter.get_category() != 'DI':
-
-                enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
-                if enrichment_pair_tag == 'NE' or enrichment_pair_tag == 'EN':
-                    enrichment_pair_tag = 'NEEN'
-                rp_total = d11_inter.rp_total
-
-                if rp_total in rp_inter_dict[enrichment_pair_tag] and 0 < rp_inter_dict[enrichment_pair_tag][rp_total]:
-                    rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
-                    d11_inter.set_category('UIR')
-                    report_dict[d11_inter.enrichment_status_tag_pair]['UIR'][0] += 1
-                else:
-                    ui_inter_dict[enrichment_pair_tag] += 1
-                    d11_inter.set_category('UI')
-                    report_dict[d11_inter.enrichment_status_tag_pair]['UI'][0] += 1
-
-        # Calculate number of missing reference interactions
-        for enr_cat in ['NN', 'NE', 'EN', 'EE']:
-            report_dict[enr_cat]['M_UIR'][0] = report_dict[enr_cat]['DI'][0] - report_dict[enr_cat]['UIR'][0]
-
-        if verbose:
-            print("[INFO] ... done.")
-
-        self._select_ref_info_dict = report_dict
-        return report_dict
-
-    def select_reference_interactions_2x(self, verbose: bool = False):
-        """
-        Select reference interactions that match directed interactions in terms of enrichment category and total number
-        of read pairs per interaction and return a dictionary with information on this selection process.
-
-        The difference to the original version is that it is not distinguished between NE and EN.
-
         Furthermore, an additional category DIX for DI interactions without counterpart in reference interactions
         is introduced.
 
-        ToDo: THE TEST FOR REFERENCE SELECTION SHOULD BE ADAPTED AND THIS FUNCTION SHOULD BE USED IN DICer.
-
         :return: Dictionary with interaction numbers in different categories
         """
 
@@ -639,10 +485,10 @@ class DiachromaticInteractionSet:
                          'EE': {}}
 
         # Count number of interactions in different categories
-        report_dict = {'NN': {'DIX': [0], 'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
-                       'NE': {'DIX': [0], 'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
-                       'EN': {'DIX': [0], 'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]},
-                       'EE': {'DIX': [0], 'DI': [0], 'UIR': [0], 'M_UIR': [0], 'UI': [0]}}
+        report_dict = {'NN': {'DIX': [0], 'DI': [0], 'UIR': [0], 'UI': [0]},
+                       'NE': {'DIX': [0], 'DI': [0], 'UIR': [0], 'UI': [0]},
+                       'EN': {'DIX': [0], 'DI': [0], 'UIR': [0], 'UI': [0]},
+                       'EE': {'DIX': [0], 'DI': [0], 'UIR': [0], 'UI': [0]}}
 
         if verbose:
             print("\t[INFO] First pass: Count directed interactions for different read pair counts ...")
@@ -689,7 +535,7 @@ class DiachromaticInteractionSet:
                     report_dict[d11_inter.enrichment_status_tag_pair]['UI'][0] += 1
 
         if verbose:
-            print("\t[INFO] Third pass: Moving DI interactions for which there is no reference to DIX...")
+            print("\t[INFO] Third pass: Moving DI interactions for which there is no reference to DIX ...")
 
         for d11_inter in self._inter_dict.values():
             if d11_inter.get_category() == 'DI':
@@ -705,9 +551,25 @@ class DiachromaticInteractionSet:
                     report_dict[d11_inter.enrichment_status_tag_pair]['DI'][0] -= 1
                     report_dict[d11_inter.enrichment_status_tag_pair]['DIX'][0] += 1
 
-        # Calculate number of missing reference interactions
-        for enr_cat in ['NN', 'NE', 'EN', 'EE']:
-            report_dict[enr_cat]['M_UIR'][0] = report_dict[enr_cat]['DI'][0] - report_dict[enr_cat]['UIR'][0]
+        # Sanity check DI and UIR must have the same number of interactions in each enrichment category
+        for enr_cat in ['NN', 'EE']:
+            if report_dict[enr_cat]['DI'][0] - report_dict[enr_cat]['UIR'][0] != 0:
+                print("[ERROR] DI and UIR must have the same number of interactions in category NN and EE!")
+                print("\t[ERROR] " + enr_cat)
+                print("\t[ERROR] DI: " + str(report_dict[enr_cat]['DI'][0]))
+                print("\t[ERROR] UIR: " + str(report_dict[enr_cat]['UIR'][0]))
+                exit(1)
+        neen_sum_di = report_dict['NE']['DI'][0] + report_dict['EN']['DI'][0]
+        neen_sum_uir = report_dict['NE']['UIR'][0] + report_dict['EN']['UIR'][0]
+        if neen_sum_di - neen_sum_uir != 0:
+            print("[ERROR] DI and UIR must have the same number of interactions in category NE and EN!")
+            print("\t[ERROR] DI-NE: " + str(report_dict['NE']['DI'][0] + report_dict['NE']['DI'][0]))
+            print("\t[ERROR] DI-EN: " + str(report_dict['NE']['DI'][0] + report_dict['EN']['DI'][0]))
+            print("\t[ERROR] DI-NEEN: " + str(neen_sum_di))
+            print("\t[ERROR] UIR-NE: " + str(report_dict['NE']['UIR'][0] + report_dict['NE']['UIR'][0]))
+            print("\t[ERROR] UIR-EN: " + str(report_dict['NE']['UIR'][0] + report_dict['EN']['UIR'][0]))
+            print("\t[ERROR] UIR-NEEN: " + str(neen_sum_uir))
+            exit(1)
 
         if verbose:
             print("[INFO] ... done.")
@@ -1023,28 +885,28 @@ class DiachromaticInteractionSet:
         """
 
         report = "[INFO] Report on selection of undirected reference interactions:" + '\n'
-        report += "\t[INFO] Numbers of directed interactions" + '\n'
+        report += "\t[INFO] Numbers of directed interactions without undirected reference (DIX)" + '\n'
+        total = 0
+        for enr_cat in ['NN', 'NE', 'EN', 'EE']:
+            total += self._select_ref_info_dict[enr_cat]['DIX'][0]
+            report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
+                self._select_ref_info_dict[enr_cat]['DIX'][0]) + '\n'
+        report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
+        report += "\t[INFO] Numbers of directed interactions (DI)" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             total += self._select_ref_info_dict[enr_cat]['DI'][0]
             report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
                 self._select_ref_info_dict[enr_cat]['DI'][0]) + '\n'
         report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
-        report += "\t[INFO] Numbers of undirected reference interactions" + '\n'
+        report += "\t[INFO] Numbers of undirected reference interactions (UIR)" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             total += self._select_ref_info_dict[enr_cat]['UIR'][0]
             report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
                 self._select_ref_info_dict[enr_cat]['UIR'][0]) + '\n'
         report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
-        report += "\t[INFO] Numbers of missing undirected reference interactions" + '\n'
-        total = 0
-        for enr_cat in ['NN', 'NE', 'EN', 'EE']:
-            total += self._select_ref_info_dict[enr_cat]['M_UIR'][0]
-            report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
-                self._select_ref_info_dict[enr_cat]['M_UIR'][0]) + '\n'
-        report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
-        report += "\t[INFO] Numbers undirected interactions" + '\n'
+        report += "\t[INFO] Numbers undirected interactions (UI)" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             total += self._select_ref_info_dict[enr_cat]['UI'][0]
@@ -1064,7 +926,7 @@ class DiachromaticInteractionSet:
         # Header line
         table_row = ":TR_SELECT:" + '\t'
         table_row += "DESCRIPTION" + '\t'
-        for i_cat in ['DI', 'UIR', 'M_UIR', 'UI']:
+        for i_cat in ['DIX', 'DI', 'UIR', 'UI']:
             for enr_cat in ['NN', 'NE', 'EN', 'EE']:
                 table_row += i_cat + '_' + enr_cat + '\t'
             if i_cat != 'UI':
@@ -1075,7 +937,7 @@ class DiachromaticInteractionSet:
         # Line with values
         table_row += ":TR_SELECT:" + '\t'
         table_row += str(description) + '\t'
-        for i_cat in ['DI', 'UIR', 'M_UIR', 'UI']:
+        for i_cat in ['DIX', 'DI', 'UIR', 'UI']:
             total = 0
             for enr_cat in ['NN', 'NE', 'EN', 'EE']:
                 total += self._select_ref_info_dict[enr_cat][i_cat][0]

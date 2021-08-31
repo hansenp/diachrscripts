@@ -23,6 +23,7 @@ class TestRateAndCategorizeInteractions(TestCase):
         In addition, there are four interactions that do not have enough read pairs to be significant at the given
         P-value threshold. For 16 directed interactions, there are undirected reference interactions with a
         corresponding number of read pairs, but for two interactions there is no matching reference interaction.
+        These two interactions are moved to a separate category DIX.
 
         First, the test data is used to create an object of class 'DiachromaticInteractionSet'.
         Within this project there are three processing steps that are tested here.
@@ -72,21 +73,19 @@ class TestRateAndCategorizeInteractions(TestCase):
 
         # Directed interactions
         self.assertEqual(3, self.select_ref_report_dict['NN']['DI'][0])
-        self.assertEqual(4, self.select_ref_report_dict['NE']['DI'][0])
+        self.assertEqual(3, self.select_ref_report_dict['NE']['DI'][0])
         self.assertEqual(5, self.select_ref_report_dict['EN']['DI'][0])
-        self.assertEqual(6, self.select_ref_report_dict['EE']['DI'][0])
+        self.assertEqual(5, self.select_ref_report_dict['EE']['DI'][0])
+
+        # Directed interactions without reference (104 and 106 read pairs)
+        self.assertEqual(1, self.select_ref_report_dict['NE']['DIX'][0])
+        self.assertEqual(1, self.select_ref_report_dict['EE']['DIX'][0])
 
         # Undirected reference interactions
         self.assertEqual(3, self.select_ref_report_dict['NN']['UIR'][0])
         self.assertEqual(3, self.select_ref_report_dict['NE']['UIR'][0])
         self.assertEqual(5, self.select_ref_report_dict['EN']['UIR'][0])
         self.assertEqual(5, self.select_ref_report_dict['EE']['UIR'][0])
-
-        # Missing undirected reference interactions
-        self.assertEqual(0, self.select_ref_report_dict['NN']['M_UIR'][0])
-        self.assertEqual(1, self.select_ref_report_dict['NE']['M_UIR'][0])
-        self.assertEqual(0, self.select_ref_report_dict['EN']['M_UIR'][0])
-        self.assertEqual(1, self.select_ref_report_dict['EE']['M_UIR'][0])
 
         # Undirected reference interactions
         self.assertEqual(3, self.select_ref_report_dict['NN']['UI'][0])
@@ -132,14 +131,20 @@ class TestRateAndCategorizeInteractions(TestCase):
         # There must be 3 directed interactions in category NN
         self.assertEqual(3, len(rp_inter_dict['NN']['DI']))
 
-        # There must be 4 directed interactions in category NE
-        self.assertEqual(4, len(rp_inter_dict['NE']['DI']))
+        # There must be 3 directed interactions in category NE
+        self.assertEqual(3, len(rp_inter_dict['NE']['DI']))
 
         # There must be 5 directed interactions in category EN
         self.assertEqual(5, len(rp_inter_dict['EN']['DI']))
 
-        # There must be 6 directed interactions in category EE
-        self.assertEqual(6, len(rp_inter_dict['EE']['DI']))
+        # There must be 5 directed interactions in category EE
+        self.assertEqual(5, len(rp_inter_dict['EE']['DI']))
+
+        # For one directed interactions in category NE with 104 read pairs there is no undirected reference interaction
+        self.assertEqual(1, len(rp_inter_dict['NE']['DIX']))
+
+        # For one directed interactions in category EE with 104 read pairs there is no undirected reference interaction
+        self.assertEqual(1, len(rp_inter_dict['EE']['DIX']))
 
         # There must be 3 undirected reference interactions in category NN
         self.assertEqual(3, len(rp_inter_dict['NN']['UIR']))
@@ -189,4 +194,4 @@ class TestRateAndCategorizeInteractions(TestCase):
         self.assertFalse(106 in rp_inter_dict['EE']['UIR']) # (missing)
 
         # Remove created interaction file
-        os.remove('i_file.tsv')
+        #os.remove('i_file.tsv')

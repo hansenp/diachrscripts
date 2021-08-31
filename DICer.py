@@ -237,7 +237,7 @@ eval_cat_info_table_row = interaction_set.get_eval_cat_info_table_row(out_prefix
 print()
 
 # Select undirected reference interactions from 'UI'
-interaction_set.select_reference_interactions_2(verbose=True)
+interaction_set.select_reference_interactions(verbose=True)
 select_ref_info_report = interaction_set.get_select_ref_info_report()
 select_ref_info_table_row = interaction_set.get_select_ref_info_table_row(out_prefix)
 print()
