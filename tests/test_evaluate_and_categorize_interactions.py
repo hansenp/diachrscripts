@@ -194,4 +194,4 @@ class TestRateAndCategorizeInteractions(TestCase):
         self.assertFalse(106 in rp_inter_dict['EE']['UIR']) # (missing)
 
         # Remove created interaction file
-        #os.remove('i_file.tsv')
+        os.remove('i_file.tsv')
