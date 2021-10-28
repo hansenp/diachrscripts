@@ -1,4 +1,4 @@
-from numpy import exp
+from numpy import array, argsort
 
 
 class DiachromaticInteraction:
@@ -234,3 +234,15 @@ class DiachromaticInteraction11(DiachromaticInteraction):
 
     def get_pval(self):
         return 10 ** -self._log10_pval
+
+    def get_ht_tag(self):
+        """
+        Returns one of the tags '01', '02', '03', '12', '13', '23' depending on which of the four read pair counts are
+        the largest. For instance, for '10:29:2:7' the tag '01' would be returned because the first two read pair
+        counts are the largest, whereas for '6:0:3:21' the tag '03' would be returned because the first and the last
+        read pair counts are the largest.
+        """
+        rpc_list = [self._simple_1, self._simple_2, self._twisted_1, self._twisted_2]
+        rpcs = -1 * array(rpc_list)
+        rpcs_sort_idx = argsort(rpcs)
+        return "".join(map(str, sorted(rpcs_sort_idx[:2])))

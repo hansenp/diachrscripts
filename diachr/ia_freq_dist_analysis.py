@@ -180,19 +180,25 @@ class IaFreqDistAnalysis:
 
             # Add directed simple and directed twisted categories
             if d11_inter.get_category() == 'DI':
-                if d11_inter.n_twisted < d11_inter.n_simple:
+                ht_tag = d11_inter.get_ht_tag()
+                #if d11_inter.n_twisted < d11_inter.n_simple:
+                if ht_tag == '01':
                     self._grouped_interactions[chrom]['DI_S'][e_cat_type].append(d11_inter)
                     self._ingest_interaction_set_info_dict['DI_S'][e_cat_type] += 1
-                else:
+               # else:
+                if ht_tag == '23':
                     self._grouped_interactions[chrom]['DI_T'][e_cat_type].append( d11_inter)
                     self._ingest_interaction_set_info_dict['DI_T'][e_cat_type] += 1
 
             # Add directed simple and directed twisted categories (DIX)
             if d11_inter.get_category() == 'DIX':
-                if d11_inter.n_twisted < d11_inter.n_simple:
+                ht_tag = d11_inter.get_ht_tag()
+                #if d11_inter.n_twisted < d11_inter.n_simple:
+                if ht_tag == '01':
                     self._grouped_interactions[chrom]['DIX_S'][e_cat_type].append(d11_inter)
                     self._ingest_interaction_set_info_dict['DIX_S'][e_cat_type] += 1
-                else:
+                #else:
+                if ht_tag == '23':
                     self._grouped_interactions[chrom]['DIX_T'][e_cat_type].append( d11_inter)
                     self._ingest_interaction_set_info_dict['DIX_T'][e_cat_type] += 1
 
