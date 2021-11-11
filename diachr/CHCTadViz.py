@@ -7,22 +7,45 @@ from shapely.geometry.polygon import Polygon
 from descartes import PolygonPatch
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.diachromatic_interaction import DiachromaticInteraction
+from typing import List
 
 
 class CHCTadViz:
     """
-    This class coorrdinates the visualization of TADs.
+    This class coordinates the visualization of TADs.
     """
 
-    def __init__(self, i_file, t_file) -> None:
+    def __init__(self, i_file: str = None, t_file: str = None, verbose: bool = False) -> None:
         if not isinstance(i_file, str) or not os.path.isfile(i_file):
-            raise ValueError("Invalid file {}".format(i_file))
+            raise ValueError("Invalid path {}".format(i_file))
 
-        self._figure_size = 10  # What does that mean?
+        # Set plot colors
+        self._i_cat_colors = {
+            'DIX': 'orangered',
+            'DI': 'orange',
+            'UIR': 'green',
+            'UI': 'gray'
+        }
+        self._ht_tag_colors = {
+            '01': 'pink',
+            '02': 'red',
+            '03': 'lime',
+            '12': 'magenta',
+            '13': 'blue',
+            '23': 'turquoise'
+        }
 
-        print('[INFO] Initializing DirectedTadVisualizer object ...')
+        # Global variables for converting genomic coordinates to plot coordinates and vice versa
+        self._figure_size = 10
+        self._min = None
+        self._max = None
+        self._span = None
+        self._factor = None
 
-        print('\t[INFO] Reading interactions and group them by chromosomes ...')
+        if verbose:
+            print('[INFO] Initializing DirectedTadVisualizer object ...')
+            print('\t[INFO] Reading interactions and group them by chromosomes ...')
+
         self._d_inter_by_chrom_dict = dict()
         d_inter_set = DiachromaticInteractionSet(rpc_rule='ht')
         d_inter_set.parse_file(i_file=i_file, verbose=False)
@@ -32,11 +55,13 @@ class CHCTadViz:
                     self._d_inter_by_chrom_dict[d_inter.chrA] = [d_inter]
                 else:
                     self._d_inter_by_chrom_dict[d_inter.chrA].append(d_inter)
-                    # for key, d_inter_list in self._d_inter_by_chrom_dict.items():
-            # print('\t' + key + ': ' + '{:,}'.format(len(d_inter_list)) + ' interactions')
-        print('\t[INFO] ... done.')
 
-        print('\t[INFO] Reading TAD regions and group them by chromosomes ...')
+        if verbose:
+            for key, d_inter_list in self._d_inter_by_chrom_dict.items():
+                print('\t\t' + key + ': ' + '{:,}'.format(len(d_inter_list)) + ' interactions')
+            print('\t[INFO] ... done.')
+            print('\t[INFO] Reading TAD regions and group them by chromosomes ...')
+
         self._tads_by_chrom_dict = dict()
         with open(t_file, 'rt') as fp:
             next(fp)
@@ -47,14 +72,17 @@ class CHCTadViz:
                     self._tads_by_chrom_dict[c] = [(int(s), int(e))]
                 else:
                     self._tads_by_chrom_dict[c].append((int(s), int(e)))
-        # for key, tad_list in self._tads_by_chrom_dict.items():
-        # print('\t' + key + ': ' + '{:,}'.format(len(tad_list)) + ' TADs')
-        print('\t[INFO] ... done.')
-        print('[INFO] ... done.')
 
-    def extract_interactions(self, chrom, begin, end):
+        if verbose:
+            for key, tad_list in self._tads_by_chrom_dict.items():
+                print('\t\t' + key + ': ' + '{:,}'.format(len(tad_list)) + ' TADs')
+            print('\t[INFO] ... done.')
+            print('[INFO] ... done.')
+
+    def extract_interactions(self, chrom: str, begin: int, end: int):
         """
-        Create reduced interaction list that only contains interactions within the region to be visualized.
+        Given genomic coordinates, this function returns a list of Diachromatic interactions that are completely
+        contained in the region to be visualized.
         """
 
         # Check arguments
@@ -65,7 +93,7 @@ class CHCTadViz:
 
         # If there are no interactions for this chromosome, return empty list
         if chrom not in self._d_inter_by_chrom_dict:
-            return inter_list
+            return []
 
         # Extract interactions
         inter_list = []
@@ -75,7 +103,6 @@ class CHCTadViz:
             if d_inter.chrA == chrom and begin < d_inter.fromA and d_inter.toB < end:
                 inter_list.append(d_inter)
 
-        print("[INFO] Extracted {} interactions in range {}:{}-{}".format(len(inter_list), chrom, begin, end))
         return inter_list
 
     def pos_to_coordinate(self, pos):
@@ -156,47 +183,50 @@ class CHCTadViz:
         bd = bd_x - b
         bd_y = TANGENT_45 * bd
         poly = Polygon([(bc_x, bc_y), (bd_x, bd_y), (ad_x, ad_y), (ac_x, ac_y)])
-
-        return PolygonPatch(polygon=poly, color=pp_color, alpha=pp_alpha)
+        return PolygonPatch(polygon=poly, color=pp_color, alpha=pp_alpha, linewidth=0.5)
 
     def create_visualization(self,
                              chrom: str,
                              begin: int,
                              end: int,
                              inter_cat_list: List = ['DIX', 'DI', 'UIR', 'UI'],
-                             enr_cat_list: List = ['NE', 'EN'],
+                             enr_cat_list: List = ['NE', 'EN', 'EE', 'NN'],
                              ht_tag_list: List = ['01', '02', '03', '12', '13', '23'],
-                             color_i_cats=True):
+                             color_i_cats: bool = True,
+                             plot_title: str = 'TadViz plot',
+                             pdf_file_name: str = None,
+                             verbose: bool = True):
         """
-        Create a TADviz plot.
+        This function creates the CHCTadViz plot for given genomic coordinates.
         """
+        if verbose:
+            print("[INFO] Creating visualization ...")
 
-        i_cat_colors = {
-            'DIX': 'orangered',
-            'DI': 'orange',
-            'UIR': 'green',
-            'UI': 'gray'
-        }
+        # Check arguments
+        if not isinstance(inter_cat_list, list):
+            print("[ERROR] Interaction categories must be passed as a list!")
+            return
+        if not isinstance(enr_cat_list, list):
+            print("[ERROR] Enrichment states must be passed as a list!")
+            return
+        if not isinstance(ht_tag_list, list):
+            print("[ERROR] HT tags must be passed as a list!")
+            return
 
-        ht_tag_colors = {
-            '01': 'pink',
-            '02': 'red',
-            '03': 'lime',
-            '12': 'magenta',
-            '13': 'blue',
-            '23': 'turquoise'
-        }
-
-        figure_height = 8
+        figure_height = 6
         figure_width = 2 * figure_height
 
         # Get list of all interactions completely within the region to be visualized
         inter_list = self.extract_interactions(chrom=chrom,
                                                begin=begin,
                                                end=end)
+        if verbose:
+            print("\t[INFO] Extracted a total number of " + '{:,}'.format(len(inter_list)) + " interactions in range:")
+            print('\t\t' + chrom + ':' + str(begin) + '-' + str(end))
 
         # If there are no interaction within this region, do nothing
         if len(inter_list) == 0:
+            print("[ERROR] No interactions to be visualized!")
             return
 
         # Get TAD regions for this chromosome
@@ -210,7 +240,6 @@ class CHCTadViz:
             i_cat = d_inter.get_category()
             e_cat = d_inter.enrichment_status_tag_pair
             ht_tag = d_inter.get_ht_tag()
-            # if d_inter.get_category() in inter_cat_list: # Filter for interaction category
             if i_cat in inter_cat_list and e_cat in enr_cat_list and ht_tag in ht_tag_list:
                 d_inter_list.append(d_inter)
                 if max_i_dist < d_inter.i_dist:
@@ -218,36 +247,44 @@ class CHCTadViz:
                 rp_total_list.append(d_inter.rp_total)  # (for all interactions or visualized interactions only?)
                 # rp_total_list.append(d_inter._log10_pval)
 
-        # Determine read pair counts for quantiles 0.1, ..., 1.0
+        # If there are no interaction within this region, do nothing
+        if len(d_inter_list) == 0:
+            print("[ERROR] After filtering, there are no interactions left to be visualized!")
+            return
+
+        if verbose:
+            print("\t[INFO] Filter for interactions to be visualized:")
+            print("\t\t[INFO] Interaction categories:")
+            print("\t\t\t" + str(inter_cat_list))
+            print("\t\t[INFO] Enrichment status:")
+            print("\t\t\t" + str(enr_cat_list))
+            print("\t\t[INFO] HT tag:")
+            print("\t\t\t" + str(ht_tag_list))
+            print("\t\t[INFO] " + "Number interactions:")
+            print("\t\t\t" + '{:,}'.format(len(d_inter_list)))
+
+        # Determine read pair counts of interactions to be visualized for quantiles 0.1, ..., 1.0
+        min_q = 0.1
+        q_num = 10
         quantile_range = np.arange(0.1, 1.1, 0.1)
         quantile_values = np.quantile(rp_total_list, quantile_range)
-        print('[INFO] Read pair count quantiles:')
-        print('\t[INFO] ' + str(str(quantile_range)))
-        print('\t[INFO] ' + str(quantile_values))
 
-        # Get scaling factor
+        if verbose:
+            print("\t[INFO] Read pair count quantiles of interactions to be visualized:")
+            print("\t\t" + str(str(quantile_range)))
+            print("\t\t" + str(quantile_values))
+
+        # Set scaling factor for converting genomic coordinates to plot coordinates and vice versa
         self._min = begin
         self._max = end
         self._span = end - begin
         self._factor = self._figure_size / self._span
 
-        print("[INFO] Got {} interactions".format(len(d_inter_list)))
-        print('[INFO] begin: ' + str(begin))
-        print('[INFO] end: ' + str(end))
-        print('[TEST] pos_to_coordinate(begin): ' + str(self.pos_to_coordinate(begin)))
-        print('[TEST] pos_to_coordinate(end): ' + str(self.pos_to_coordinate(end)))
-        print('[TEST] coordinate_to_pos(pos_to_coordinate(begin)): ' + str(
-            self.coordinate_to_pos(self.pos_to_coordinate(begin))))
-        print('[TEST] coordinate_to_pos(pos_to_coordinate(end)): ' + str(
-            self.coordinate_to_pos(self.pos_to_coordinate(end))))
-
-        # Created figure
-        fig = plt.figure(1, figsize=(figure_width, figure_height))
-        ax = fig.add_subplot(111)
-
-        ax.set_title(str(inter_cat_list) + str(enr_cat_list) + str(ht_tag_list), loc='left', fontsize='x-large')
-        ax.set_xlabel('Genomic coordinate', labelpad=12, fontsize='x-large')
-        ax.set_ylabel('Interaction distance', labelpad=12, fontsize='x-large')
+        # Create figure
+        fig, ax = plt.subplots(1, figsize=(figure_width, figure_height))
+        ax.set_title(plot_title, loc='left', fontsize='x-large')
+        ax.set_xlabel('Genomic coordinate', labelpad=12, fontsize=14.5)
+        ax.set_ylabel('Interaction distance', labelpad=12, fontsize=14.5)
 
         # Set limits of x and y axes
         xrange = [self.pos_to_coordinate(begin), self.pos_to_coordinate(end)]
@@ -257,37 +294,33 @@ class CHCTadViz:
         ax.set_xlim(xrange)
         ax.set_ylim(yrange)
 
-        ## Plot the TADs
+        # Plot the TADs
         for (left_boundary, right_boundary) in tads:
             polypatch = self.tad_to_grey_triangle(start=left_boundary, end=right_boundary)
             ax.add_patch(polypatch)
 
         # Plot the interaction polygons
         for d_inter in d_inter_list:
-            i_cat = d_inter.get_category()
-            e_cat = d_inter.enrichment_status_tag_pair
-            ht_tag = d_inter.get_ht_tag()
-            if i_cat in inter_cat_list and e_cat in enr_cat_list and ht_tag in ht_tag_list:
 
-                # Determine transparency depending on read pair count
-                pp_alpha = 0.1
-                for i in range(0, 10):
-                    if quantile_values[i] <= d_inter.rp_total:
-                        pp_alpha = quantile_range[i]
-                # if pp_alpha >= 0.8:
-                # print(str(d_inter.rp_total) + '\t' + str(pp_alpha))
+            # Choose color depending on the interaction category or ht_tag
+            if color_i_cats:
+                pp_color = self._i_cat_colors[d_inter.get_category()]
+            else:
+                pp_color = self._ht_tag_colors[d_inter.get_ht_tag()]
 
-                # Choose color depending on the interaction category or ht_tag
-                if color_i_cats:
-                    pp_color = i_cat_colors[i_cat]
-                else:
-                    pp_color = ht_tag_colors[d_inter.get_ht_tag()]
+            # Determine transparency depending on read pair count
+            pp_alpha = min_q
+            for i in range(0, q_num):
+                if quantile_values[i] <= d_inter.rp_total:
+                    pp_alpha = quantile_range[i]
+            # if pp_alpha >= 0.8:
+            # print(str(d_inter.rp_total) + '\t' + str(pp_alpha))
 
-                # Get and plot interaction polypatch
-                polypatch = self.interaction_to_polygon(d_inter=d_inter,
-                                                        pp_color=pp_color,
-                                                        pp_alpha=pp_alpha)
-                ax.add_patch(polypatch)
+            # Get and plot interaction polypatch
+            polypatch = self.interaction_to_polygon(d_inter=d_inter,
+                                                    pp_color=pp_color,
+                                                    pp_alpha=pp_alpha)
+            ax.add_patch(polypatch)
 
         # Plot black triangles
         polypatch = self.black_triangle_left(start=begin, end=end)
@@ -298,14 +331,30 @@ class CHCTadViz:
         # Add genomic coordinate labels to x-axis
         ax.set_xticks(ax.get_xticks())
         xtick_labels = ['{:,}'.format(round(self.coordinate_to_pos(x))) for x in ax.get_xticks()]
-        ax.set_xticklabels(xtick_labels)
+        ax.set_xticklabels(xtick_labels, fontsize=11.5)
 
         # Add interaction distance labels to y-axis (correct?)
         ax.set_yticks(ax.get_yticks())
         ytick_labels = ['{:,}'.format(2 * round(self.coordinate_to_pos(y) - begin)) for y in ax.get_yticks()]
         ytick_labels[0] = ''
-        ax.set_yticklabels(ytick_labels)
-
+        ax.set_yticklabels(ytick_labels, fontsize=11.5)
         ax.set_aspect(1)
-        plt.show()
 
+        if verbose:
+            print("[INFO] ... done.")
+
+        # Add annotations
+        label_text = chrom + ':' + str(begin) + '-' + str(end) + '\n'
+        label_text += '# Interactions: ' + '{:,}'.format(len(d_inter_list)) + '\n'
+        label_text += 'I cats: ' + str(inter_cat_list) + '\n'
+        label_text += 'E states: ' + str(enr_cat_list) + '\n'
+        label_text += 'HT tags: ' + str(ht_tag_list)
+        label_x_pos = xrange[0] + (xrange[1] - xrange[0])/60
+        label_y_pos = yrange[1] - yrange[1]/4.7
+        ax.annotate(label_text, xy=(label_x_pos, label_y_pos), color='white', size=12)
+
+        # Save and return figure
+        fig.tight_layout()
+        if pdf_file_name is not None:
+            fig.savefig(pdf_file_name)
+        return fig
