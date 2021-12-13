@@ -33,12 +33,6 @@ parser.add_argument('-d', '--description-tag',
 parser.add_argument('-i', '--diachromatic-interaction-file',
                     help='Input file in Diachromatic interaction format.',
                     required=True)
-parser.add_argument('--remove-zero-rpc-interactions',
-                    help='Remove interactions where at least one of the four read pair counts is zero. Default is '
-                         '\'No\'. Other options are \'Yes\' or \'Invert\'. In the case of invert, interactions that '
-                         'are discarded with \'Yes\' will be retained.',
-                    choices=['No', 'Yes', 'Invert'],
-                    default='No')
 parser.add_argument('--min-inter-dist',
                     help='Minimum interaction distance. Shorter interactions are not taken into account.',
                     default=0)
@@ -86,7 +80,6 @@ args = parser.parse_args()
 out_prefix = args.out_prefix
 description_tag = args.description_tag
 diachromatic_interaction_file = args.diachromatic_interaction_file
-remove_zero_read_pair_count_interactions = args.remove_zero_rpc_interactions
 min_inter_dist = int(args.min_inter_dist)
 read_pair_counts_rule = args.read_pair_counts_rule
 fdr_threshold = float(args.fdr_threshold)
@@ -108,7 +101,6 @@ parameter_info += "\t[INFO] --out-prefix: " + out_prefix + '\n'
 parameter_info += "\t[INFO] --description-tag: " + description_tag + '\n'
 parameter_info += "\t[INFO] --diachromatic-interaction-file:" + '\n'
 parameter_info += "\t\t[INFO] " + diachromatic_interaction_file + '\n'
-parameter_info += "\t[INFO] --remove-zero-read-pair-count-interactions: " + remove_zero_read_pair_count_interactions + '\n'
 parameter_info += "\t[INFO] --min-inter-dist: " + "{:,}".format(min_inter_dist) + '\n'
 parameter_info += "\t[INFO] --read-pair-counts-rule: " + read_pair_counts_rule + '\n'
 parameter_info += "\t[INFO] --p-value-threshold: " + str(p_value_threshold) + '\n'
@@ -143,15 +135,6 @@ interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_dige
 min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(0.10)
 interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, min_dist=min_inter_dist, verbose=True)
 print()
-if remove_zero_read_pair_count_interactions != 'No':
-    if remove_zero_read_pair_count_interactions != 'Invert':
-        interaction_set.remove_zero_read_pair_count_interactions(verbose=True)
-    else:
-        interaction_set.remove_zero_read_pair_count_interactions(invert=True, verbose=True)
-    remove_zero_read_pair_count_interactions_info_report = interaction_set.get_remove_zero_read_pair_count_interactions_info_report()
-    remove_zero_read_pair_count_interactions_info_table_row = interaction_set.get_remove_zero_read_pair_count_interactions_info_table_row(
-        description=out_prefix)
-    print()
 interaction_set.shuffle_inter_dict(random_seed=random_seed_shuff_inter, verbose=True)
 read_file_info_report = interaction_set.get_read_file_info_report()
 read_file_info_table_row = interaction_set.get_read_file_info_table_row()
@@ -261,11 +244,6 @@ out_fh_summary.write(parameter_info + '\n')
 # Report on reading files
 out_fh_summary.write(read_file_info_report + '\n')
 out_fh_summary.write(read_file_info_table_row + '\n')
-
-# Report on removing interactions with zero read pair counts
-if remove_zero_read_pair_count_interactions != 'No':
-    out_fh_summary.write(remove_zero_read_pair_count_interactions_info_report + '\n')
-    out_fh_summary.write(remove_zero_read_pair_count_interactions_info_table_row + '\n')
 
 # Report on shuffling interactions
 out_fh_summary.write("[INFO] Report on shuffling interactions:" + '\n')

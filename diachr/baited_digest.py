@@ -21,6 +21,9 @@ class BaitedDigest:
     def __init__(self):
 
         self.interactions = {
+            'DIX': {
+                'NE': [],
+                'EN': []},
             'DI': {
                 'NE': [],
                 'EN': []},

@@ -242,7 +242,18 @@ class DiachromaticInteraction11(DiachromaticInteraction):
         counts are the largest, whereas for '6:0:3:21' the tag '03' would be returned because the first and the last
         read pair counts are the largest.
         """
-        rpc_list = [self._simple_1, self._simple_2, self._twisted_1, self._twisted_2]
+
+        rpc_list = [self._simple_1, self._simple_2, self._twisted_2, self._twisted_1]
+        rp_total = sum(rpc_list)
+        if 0.75 < self._simple_1/rp_total:
+            return '0X'
+        if 0.75 < self._simple_2/rp_total:
+            return '1X'
+        if 0.75 < self._twisted_2/rp_total:
+            return '2X'
+        if 0.75 < self._twisted_1/rp_total:
+            return '3X'
         rpcs = -1 * array(rpc_list)
         rpcs_sort_idx = argsort(rpcs)
-        return "".join(map(str, sorted(rpcs_sort_idx[:2])))
+        ht_tag = "".join(map(str, sorted(rpcs_sort_idx[:2])))
+        return ht_tag

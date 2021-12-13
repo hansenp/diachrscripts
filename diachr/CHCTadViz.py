@@ -15,7 +15,7 @@ class CHCTadViz:
     This class coordinates the visualization of TADs.
     """
 
-    def __init__(self, i_file: str = None, t_file: str = None, verbose: bool = False) -> None:
+    def __init__(self, i_file: str = None, t_file: str = None, b_file: str = None, verbose: bool = False) -> None:
         if not isinstance(i_file, str) or not os.path.isfile(i_file):
             raise ValueError("Invalid path {}".format(i_file))
 
@@ -60,6 +60,13 @@ class CHCTadViz:
             for key, d_inter_list in self._d_inter_by_chrom_dict.items():
                 print('\t\t' + key + ': ' + '{:,}'.format(len(d_inter_list)) + ' interactions')
             print('\t[INFO] ... done.')
+
+        if t_file is None:
+            if verbose:
+                print('[INFO] ... done.')
+            return
+
+        if verbose:
             print('\t[INFO] Reading TAD regions and group them by chromosomes ...')
 
         self._tads_by_chrom_dict = dict()
@@ -76,6 +83,30 @@ class CHCTadViz:
         if verbose:
             for key, tad_list in self._tads_by_chrom_dict.items():
                 print('\t\t' + key + ': ' + '{:,}'.format(len(tad_list)) + ' TADs')
+            print('\t[INFO] ... done.')
+
+        if b_file is None:
+            if verbose:
+                print('[INFO] ... done.')
+            return
+
+        if verbose:
+            print('\t[INFO] Reading baited digest regions and group them by chromosomes ...')
+
+        self._baits_by_chrom_dict = dict()
+        with open(b_file, 'rt') as fp:
+            next(fp)
+            for line in fp:
+                c, s, e = line.rstrip().split('\t')
+
+                if c not in self._baits_by_chrom_dict:
+                    self._baits_by_chrom_dict[c] = [(int(s), int(e))]
+                else:
+                    self._baits_by_chrom_dict[c].append((int(s), int(e)))
+
+        if verbose:
+            for key, bait_list in self._baits_by_chrom_dict.items():
+                print('\t\t' + key + ': ' + '{:,}'.format(len(bait_list)) + ' Baits')
             print('\t[INFO] ... done.')
             print('[INFO] ... done.')
 
@@ -150,19 +181,29 @@ class CHCTadViz:
         color = 'black'
         return PolygonPatch(polygon=poly, color=color)
 
-    def interaction_to_polygon(self, d_inter, pp_color, pp_alpha):
+    def interaction_to_polygon(self, d_inter, pp_color, pp_alpha, d_radius: int = 0):
         """
         Creates a PolygonPatch for a given interaction.
         """
         if not isinstance(d_inter, DiachromaticInteraction):
             raise ValueError("Not a DiachromaticInteraction")
 
-        TANGENT_45 = math.tan(math.pi / 4)  # The lines go up at 45 degree angles
         # a,b,c,d are coordinates of the two digests on the X axis
-        a = self.pos_to_coordinate(d_inter.fromA)
-        b = self.pos_to_coordinate(d_inter.toA)
-        c = self.pos_to_coordinate(d_inter.fromB)
-        d = self.pos_to_coordinate(d_inter.toB)
+        if 0 < d_radius:
+            center_1 = d_inter.fromA + (d_inter.toA - d_inter.fromA) / 2
+            a = self.pos_to_coordinate(center_1 - d_radius)
+            b = self.pos_to_coordinate(center_1 + d_radius)
+            center_2 = d_inter.fromB + (d_inter.toB - d_inter.fromB) / 2
+            c = self.pos_to_coordinate(center_2 - d_radius)
+            d = self.pos_to_coordinate(center_2 + d_radius)
+            #print(str(center_1) + '\t' + str(a) + '\t' + str(b) + '\t' + str(c) + '\t' + str(d))
+        else:
+            a = self.pos_to_coordinate(d_inter.fromA)
+            b = self.pos_to_coordinate(d_inter.toA)
+            c = self.pos_to_coordinate(d_inter.fromB)
+            d = self.pos_to_coordinate(d_inter.toB)
+
+        TANGENT_45 = math.tan(math.pi / 4)  # The lines go up at 45 degree angles
         # bc is the point where lines from b and c meet
         bc_x = b + 0.5 * (c - b)
         # bc is the length of the segment from b to bc_x
@@ -183,7 +224,7 @@ class CHCTadViz:
         bd = bd_x - b
         bd_y = TANGENT_45 * bd
         poly = Polygon([(bc_x, bc_y), (bd_x, bd_y), (ad_x, ad_y), (ac_x, ac_y)])
-        return PolygonPatch(polygon=poly, color=pp_color, alpha=pp_alpha, linewidth=0.5)
+        return PolygonPatch(polygon=poly, color=pp_color, alpha=pp_alpha, linewidth=0)
 
     def create_visualization(self,
                              chrom: str,
@@ -193,6 +234,7 @@ class CHCTadViz:
                              enr_cat_list: List = ['NE', 'EN', 'EE', 'NN'],
                              ht_tag_list: List = ['01', '02', '03', '12', '13', '23'],
                              color_i_cats: bool = True,
+                             d_radius: int = 0,
                              plot_title: str = 'TadViz plot',
                              pdf_file_name: str = None,
                              verbose: bool = True):
@@ -231,6 +273,9 @@ class CHCTadViz:
 
         # Get TAD regions for this chromosome
         tads = self._tads_by_chrom_dict[chrom]
+
+        # Get bait regions for this chromosome
+        baits = self._baits_by_chrom_dict[chrom]
 
         # Get list of interactions to be visualized and collect read pair counts
         d_inter_list = []
@@ -299,6 +344,13 @@ class CHCTadViz:
             polypatch = self.tad_to_grey_triangle(start=left_boundary, end=right_boundary)
             ax.add_patch(polypatch)
 
+        # Plot the baits
+        for (sta_pos, end_pos) in baits:
+            #begin = self.pos_to_coordinate(sta_pos)
+            #end = self.pos_to_coordinate(end_pos)
+            x = self.pos_to_coordinate(sta_pos) + (self.pos_to_coordinate(end_pos) - self.pos_to_coordinate(sta_pos)) / 2
+            ax.axvline(x, color='gray', linewidth=0.5, zorder=0, alpha=0.5)
+
         # Plot the interaction polygons
         for d_inter in d_inter_list:
 
@@ -319,7 +371,8 @@ class CHCTadViz:
             # Get and plot interaction polypatch
             polypatch = self.interaction_to_polygon(d_inter=d_inter,
                                                     pp_color=pp_color,
-                                                    pp_alpha=pp_alpha)
+                                                    pp_alpha=pp_alpha,
+                                                    d_radius=d_radius)
             ax.add_patch(polypatch)
 
         # Plot black triangles

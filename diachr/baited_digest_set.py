@@ -15,6 +15,12 @@ class BaitedDigestSet:
         # Dictionary with information about ingestion of interactions
         self._ingest_interaction_set_info_dict = {
             'TOTAL_INTERACTIONS_READ': 0,
+            'DIX': {
+                'NN': 0,
+                'NE': 0,
+                'EN': 0,
+                'EE': 0
+            },
             'DI': {
                 'NN': 0,
                 'NE': 0,
@@ -113,6 +119,9 @@ class BaitedDigestSet:
                    self._ingest_interaction_set_info_dict['ALL']['EN']
         report += "\t[INFO] Total number of ingested NE and EN interactions: " + "{:,}".format(ingested) + '\n'
         report += "\t[INFO] Broken down by interaction category and enrichment status: " + '\n'
+        report += "\t\t[INFO] DIX: " + '\n'
+        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DIX']['NE']) + '\n'
+        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DIX']['EN']) + '\n'
         report += "\t\t[INFO] DI: " + '\n'
         report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI']['NE']) + '\n'
         report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI']['EN']) + '\n'
@@ -143,6 +152,9 @@ class BaitedDigestSet:
         table_row += "DISCARDED" + '\t'
         table_row += "INGESTED" + '\t'
 
+        table_row += "DIX_NE" + '\t'
+        table_row += "DIX_EN" + '\t'
+
         table_row += "DI_NE" + '\t'
         table_row += "DI_EN" + '\t'
 
@@ -168,6 +180,9 @@ class BaitedDigestSet:
         ingested = self._ingest_interaction_set_info_dict['ALL']['NE'] + \
                    self._ingest_interaction_set_info_dict['ALL']['EN']
         table_row += str(ingested) + '\t'
+
+        table_row += str(self._ingest_interaction_set_info_dict['DIX']['NE']) + '\t'
+        table_row += str(self._ingest_interaction_set_info_dict['DIX']['EN']) + '\t'
 
         table_row += str(self._ingest_interaction_set_info_dict['DI']['NE']) + '\t'
         table_row += str(self._ingest_interaction_set_info_dict['DI']['EN']) + '\t'

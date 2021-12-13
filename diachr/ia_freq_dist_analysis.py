@@ -36,14 +36,14 @@ class IaFreqDistAnalysis:
             'lightgray',
             'cornflowerblue']
         self.i_cat_names = [
-            'Directed without reference',
-            'Directed simple without reference',
-            'Directed twisted without reference',
-            'Directed',
-            'Directed simple',
-            'Directed twisted',
-            'Undirected reference',
-            'Undirected',
+            'Unbalanced without reference',
+            'Unbalanced simple without reference',
+            'Unbalanced twisted without reference',
+            'Unbalanced',
+            'Unbalanced simple',
+            'Unbalanced twisted',
+            'Balanced reference',
+            'Balanced',
             'All']
         self.e_cats = [
             'NN',
@@ -407,6 +407,7 @@ class IaFreqDistAnalysis:
         :return: A matplotlib 'Figure' object that can be displayed in Jupyter notebooks
         """
 
+        print("1")
         # Catch wrong input
         allowed_i_cats = ['DIX', 'DI', 'DI_S', 'DI_T', 'UI', 'UIR', 'ALL']
         for i_cat in i_cats:
@@ -420,6 +421,7 @@ class IaFreqDistAnalysis:
                 print("[ERROR] Illegal interaction enrichment tag! Allowed: 'NN', 'NE', 'EN', 'EE'")
                 return
 
+        print("2")
         # Prepare grid for individual plots
         n = len(i_cats)
         y = 11.79/4.75
@@ -443,6 +445,10 @@ class IaFreqDistAnalysis:
                     x_lim = q
         x_ticks, x_tick_labels = self.make_ticks(x_lim)
         bin_width = int(x_lim / 30)
+        if bin_width < 1:
+            bin_width = 1
+
+        print("3")
 
         # Add header section with description and chromosomes that were taken into account
         ax[0][0].plot()
@@ -473,7 +479,7 @@ class IaFreqDistAnalysis:
 
         # Create histograms for each interaction category
         # -----------------------------------------------
-
+        print("4")
         # Prepare bins
         x_max = 0
         for i in range(0, n):
@@ -486,7 +492,10 @@ class IaFreqDistAnalysis:
         densities_2d_array = [[] for i in range(0, n)]
         for i in range(0, n):
 
+            print("4, i=" + str(i))
+
             for j in range(0, m):
+                print("4, j=" + str(j))
 
                 # Create histogram
                 counts, bins, patches = ax[i + 1][j].hist(
@@ -513,8 +522,9 @@ class IaFreqDistAnalysis:
 
                 # Keep track of bin counts and densities
                 abs_2d_array[i].append(counts)
-                densities_2d_array[i].append([count / sum(counts) for count in counts])
+                densities_2d_array[i].append([count / sum(counts) for count in counts]) # slow?
 
+        print("5")
         # Add second axes with densities and normalize all histograms to maximum density
         # ------------------------------------------------------------------------------
 
@@ -535,6 +545,8 @@ class IaFreqDistAnalysis:
         y_padding = yd_max / 20
         yd_max += y_padding
 
+        print("6")
+
         # Add density axes, normalize and add text labels to histograms
         for i in range(0, n):
             for j in range(0, m):
@@ -551,14 +563,14 @@ class IaFreqDistAnalysis:
                 ax_dens.set_ylim(0, yd_max)
                 # Add text labels with total read pair or interaction numbers, median and median absolute deviation
                 ax[i + 1][j].text(x_lim - (x_lim / 3),
-                                  yc_max - (yc_max / 2.6), #3.2
+                                  yc_max - (yc_max / 3.2), #3.2
                                   'n: ' + "{:,}".format(len(num_dict[i_cats[i]][e_cats[j]])) + '\n' +
-                                  'Q1: ' + "{:,.0f}".format(np.quantile(num_dict[i_cats[i]][e_cats[j]], 0.25)) + '\n' +
                                   'Mdn: ' + "{:,.0f}".format(np.median(num_dict[i_cats[i]][e_cats[j]])) + '\n' +
                                   'MAD: ' + "{:,.0f}".format(stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])),
                                   fontsize=8.5,
                                   bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
+        print("7")
         # Save and return figure
         fig.tight_layout(pad=1.25)
         fig.savefig(pdf_file_name)

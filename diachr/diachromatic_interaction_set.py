@@ -298,72 +298,6 @@ class DiachromaticInteractionSet:
 
         return table_row
 
-    def remove_zero_read_pair_count_interactions(self, invert: bool = False, verbose: bool = False):
-        """
-        All interactions in which at least one read pair count is zero will be removed.
-
-        :param invert: If true, the filtering is reversed, i.e. interactions that are normally removed are kept.
-        :param verbose: If true, messages about progress will be written to the screen.
-        :return: Number of interactions removed.
-        """
-
-        if verbose:
-            if invert:
-                print("[INFO] Removing interactions for which none of the four read pair counts is zero ...")
-            else:
-                print("[INFO] Removing interactions for which at least one of the four read pair counts is zero ...")
-
-        # Create new dictionary that will replace the old one
-        new_inter_dict = defaultdict(DiachromaticInteraction)
-
-        # Iterate interactions
-        n_processed = 0
-        for key, d_inter in self._inter_dict.items():
-
-            # Get read pair counts
-            rp_1 = d_inter._simple_1
-            rp_2 = d_inter._simple_2
-            rp_3 = d_inter._twisted_1
-            rp_4 = d_inter._twisted_2
-            rp_total = d_inter.rp_total
-
-            if invert:
-                # If conditions are met, add to new dictionary
-                if (rp_1 == 0 or
-                        rp_2 == 0 or
-                        rp_3 == 0 or
-                        rp_4 == 0):
-                    new_inter_dict[key] = d_inter
-            else:
-                if not (rp_1 == 0 or
-                        rp_2 == 0 or
-                        rp_3 == 0 or
-                        rp_4 == 0):
-                    new_inter_dict[key] = d_inter
-
-            n_processed += 1
-            if verbose:
-                if n_processed % 1000000 == 0:
-                    print("\t[INFO] Processed " + "{:,}".format(n_processed) + " interactions ...")
-
-        # Replace old dictionary
-        num_of_removed_interactions = len(self._inter_dict) - len(new_inter_dict)
-        self._inter_dict = new_inter_dict
-
-        if verbose:
-            print("\t[INFO] Total number of interactions removed: " + "{:,}".format(num_of_removed_interactions))
-            print("\t[INFO] Remaining interactions: " + "{:,}".format(len(self._inter_dict)))
-            print("[INFO] ... done.")
-
-        # Prepare dictionary for report
-        self._remove_zero_read_pair_count_interactions_info_dict = {
-            'INVERT': [invert],
-            'N_PROCESSED': [n_processed],
-            'N_REMOVED': [num_of_removed_interactions],
-            'N_REMAINING': [n_processed - num_of_removed_interactions]
-        }
-        return self._remove_zero_read_pair_count_interactions_info_dict
-
     def evaluate_and_categorize_interactions(self, pval_thresh: float = None, verbose: bool = False):
         """
         Calculate the P-value and define interaction category ('DI' or 'UI') for all interactions in this object.
@@ -463,7 +397,7 @@ class DiachromaticInteractionSet:
         self._eval_cat_info_dict = report_dict
         return report_dict
 
-    def select_reference_interactions(self, verbose: bool = False):
+    def select_reference_interactions(self, rpc_factor: int = 1.0, verbose: bool = False):
         """
         Select reference interactions that match directed interactions in terms of enrichment category and total number
         of read pairs per interaction and return a dictionary with information on this selection process.
@@ -523,7 +457,7 @@ class DiachromaticInteractionSet:
                 enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
                 if enrichment_pair_tag == 'NE' or enrichment_pair_tag == 'EN':
                     enrichment_pair_tag = 'NEEN'
-                rp_total = d11_inter.rp_total
+                rp_total = int(d11_inter.rp_total * rpc_factor)
 
                 if rp_total in rp_inter_dict[enrichment_pair_tag] and 0 < rp_inter_dict[enrichment_pair_tag][rp_total]:
                     rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
