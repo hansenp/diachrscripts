@@ -224,7 +224,7 @@ class CHCTadViz:
         bd = bd_x - b
         bd_y = TANGENT_45 * bd
         poly = Polygon([(bc_x, bc_y), (bd_x, bd_y), (ad_x, ad_y), (ac_x, ac_y)])
-        return PolygonPatch(polygon=poly, color=pp_color, alpha=pp_alpha, linewidth=0)
+        return PolygonPatch(polygon=poly, color=pp_color, alpha=pp_alpha)#, linewidth=0)
 
     def create_visualization(self,
                              chrom: str,
