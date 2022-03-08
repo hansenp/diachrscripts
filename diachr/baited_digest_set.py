@@ -3,6 +3,12 @@ from .diachromatic_interaction_set import DiachromaticInteractionSet
 from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FormatStrFormatter
+
+
+def histogram_tick_format_func(value, tick_number):
+    return '%.2f'.format(value)
 
 
 class BaitedDigestSet:
@@ -200,14 +206,6 @@ class BaitedDigestSet:
 
         return table_row
 
-    def add_di_simple_twisted_categories_for_all_baits(self):
-        """
-        Add simple and twisted categories for all baits.
-        """
-        for chrom in self._baited_digest_dict.keys():
-            for baited_digest in self._baited_digest_dict[chrom].values():
-                baited_digest.add_di_simple_twisted_categories()
-
     def get_empty_pair_dict(self,
                             i_cats: list = None,
                             i_cat_colors: list = None,
@@ -275,8 +273,8 @@ class BaitedDigestSet:
             return 1
 
         # Prepare data structure for results
-        i_cats = ['DI', 'UIR', 'UI', 'ALL']
-        pair_dict = self.get_empty_pair_dict(['DI', 'UIR', 'UI', 'ALL'])
+        i_cats = ['DIX', 'DI', 'UIR', 'UI', 'ALL']
+        pair_dict = self.get_empty_pair_dict(['DIX', 'DI', 'UIR', 'UI', 'ALL'])
         pair_dict['BAIT_NUM_TOTAL'] = 0
         if number_pair_type == 'I_NUM':
             pair_dict['NUM_PAIR_TYPE'] = 'Interaction number'
@@ -466,12 +464,16 @@ class BaitedDigestSet:
         ax_hx.set_xlim(ax_s.get_xlim())
         ax_hy.set_ylim(ax_s.get_ylim())
 
+        ax_hx.yaxis.set_major_formatter(FormatStrFormatter('%.4f'))
+        ax_hy.xaxis.set_major_formatter(FormatStrFormatter('%.4f'))
+        ax_hy.tick_params(labelrotation=-90)
+
         # set y-axes
-        ax_hy.ticklabel_format(useOffset=False, style='plain')
-        #ax_hx.set_yticks([0, xy_hist_max])
-        #ax_hy.set_xticks([0, xy_hist_max])
-        #ax_hx.set_ylim(0, xy_hist_max)
-        #ax_hy.set_xlim(0, xy_hist_max)
+        #ax_hy.ticklabel_format(useOffset=False, style='plain')
+        ax_hx.set_yticks([0, xy_hist_max])
+        ax_hy.set_xticks([0, xy_hist_max])
+        ax_hx.set_ylim(0, xy_hist_max)
+        ax_hy.set_xlim(0, xy_hist_max)
 
         # Add text labels
         if add_text_labels:
@@ -490,7 +492,7 @@ class BaitedDigestSet:
                        rotation=-90,
                        bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
-        ax_hx.set_title(i_cat_label, size='x-large', loc='left')
+        ax_hx.set_title(i_cat_label, fontsize=12, loc='left')
         ax_s.set_xlabel(x_lab)
         ax_s.set_ylabel(y_lab)
 
@@ -588,15 +590,15 @@ class BaitedDigestSet:
             fig.text(0.045, 0.86, '[' + ", ".join(i for i in CHROMOSOMES[:22]) + ',', fontsize=8)
             fig.text(0.045, 0.84, ", ".join(i for i in CHROMOSOMES[22:]) + ']', fontsize=8)
 
-        # Directed interactions (DI)
+        # Unbalanced interactions (DI)
         ax1_hx = plt.axes(r11)
         ax1_hx.tick_params(direction='in', labelbottom=False)
         ax1_hy = plt.axes(r8)
-        ax1_hy.tick_params(direction='in', labelleft=False)
+        ax1_hy.tick_params(direction='in', labelleft=False, labeltop=True, labelbottom=False)
         ax1_s = plt.axes(r7)
         ax1_s.tick_params(direction='in', top=True, right=True)
         self.create_single_pair_scatter_plot_with_histograms(
-            i_cat_label='DI',
+            i_cat_label='Unbalanced',
             en_list=pairs_dict['DI']['EN'],
             ne_list=pairs_dict['DI']['NE'],
             x_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - EN',
@@ -610,15 +612,15 @@ class BaitedDigestSet:
             ax_hy=ax1_hy,
             ax_s=ax1_s)
 
-        # Undirected reference interactions (UIR)
+        # Balanced reference interactions (UIR)
         ax2_hx = plt.axes(r12)
         ax2_hx.tick_params(direction='in', labelbottom=False)
         ax2_hy = plt.axes(r10)
-        ax2_hy.tick_params(direction='in', labelleft=False)
+        ax2_hy.tick_params(direction='in', labelleft=False, labeltop=True, labelbottom=False)
         ax2_s = plt.axes(r9)
         ax2_s.tick_params(direction='in', top=True, right=True)
         self.create_single_pair_scatter_plot_with_histograms(
-            i_cat_label='UIR',
+            i_cat_label='Balanced reference',
             en_list=pairs_dict['UIR']['EN'],
             ne_list=pairs_dict['UIR']['NE'],
             x_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - EN',
@@ -714,20 +716,20 @@ class BaitedDigestSet:
                     rotation=-90,
                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.85, boxstyle='round'))
 
-        # Undirected interactions (UI)
+        # Unbalanced interactions without reference (DIX)
         ax3_hx = plt.axes(r5)
         ax3_hx.tick_params(direction='in', labelbottom=False)
         ax3_hy = plt.axes(r2)
-        ax3_hy.tick_params(direction='in', labelleft=False)
+        ax3_hy.tick_params(direction='in', labelleft=False, labeltop=True, labelbottom=False)
         ax3_s = plt.axes(r1)
         ax3_s.tick_params(direction='in', top=True, right=True)
         self.create_single_pair_scatter_plot_with_histograms(
-            i_cat_label='UI',
-            en_list=pairs_dict['UI']['EN'],
-            ne_list=pairs_dict['UI']['NE'],
+            i_cat_label='Unbalanced without reference',
+            en_list=pairs_dict['DIX']['EN'],
+            ne_list=pairs_dict['DIX']['NE'],
             x_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - EN',
             y_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - NE',
-            i_cat_color='gray',
+            i_cat_color='orangered',
             bin_size=BIN_SIZE,
             xy_max=set_xy_max,
             draw_mean_and_sd=draw_mean_and_sd,
@@ -735,20 +737,20 @@ class BaitedDigestSet:
             ax_hy=ax3_hy,
             ax_s=ax3_s)
 
-        # All interactions (ALL)
+        # Balanced interactions (UI)
         ax4_hx = plt.axes(r6)
         ax4_hx.tick_params(direction='in', labelbottom=False)
         ax4_hy = plt.axes(r4)
-        ax4_hy.tick_params(direction='in', labelleft=False)
+        ax4_hy.tick_params(direction='in', labelleft=False, labeltop=True, labelbottom=False)
         ax4_s = plt.axes(r3)
         ax4_s.tick_params(direction='in', top=True, right=True)
         self.create_single_pair_scatter_plot_with_histograms(
-            i_cat_label='ALL',
-            en_list=pairs_dict['ALL']['EN'],
-            ne_list=pairs_dict['ALL']['NE'],
+            i_cat_label='Balanced',
+            en_list=pairs_dict['UI']['EN'],
+            ne_list=pairs_dict['UI']['NE'],
             x_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - EN',
             y_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - NE',
-            i_cat_color='pink',
+            i_cat_color='gray',
             bin_size=BIN_SIZE,
             xy_max=set_xy_max,
             draw_mean_and_sd=draw_mean_and_sd,
@@ -759,27 +761,18 @@ class BaitedDigestSet:
         # Unify axes of histograms
         hy_max = max([ax1_hx.get_ylim()[1], ax2_hx.get_ylim()[1], ax3_hx.get_ylim()[1], ax4_hx.get_ylim()[1],
                       ax1_hy.get_xlim()[1], ax2_hy.get_xlim()[1], ax3_hy.get_xlim()[1], ax4_hy.get_xlim()[1]])
-        print(ax1_hx.get_ylim()[1])
-        print(ax2_hx.get_ylim()[1])
-        print(ax3_hx.get_ylim()[1])
-        print(ax4_hx.get_ylim()[1])
-        print(ax1_hy.get_xlim()[1])
-        print(ax2_hy.get_xlim()[1])
-        print(ax3_hy.get_xlim()[1])
-        print(ax4_hy.get_xlim()[1])
-        print(hy_max)
 
-        ax1_hx.set_ylim(0, hy_max)
-        ax1_hy.set_xlim(0, hy_max)
+        #ax1_hx.set_ylim(0, hy_max)
+        #ax1_hy.set_xlim(0, hy_max)
 
-        ax2_hx.set_ylim(0, hy_max)
-        ax2_hy.set_xlim(0, hy_max)
+        #ax2_hx.set_ylim(0, hy_max)
+        #ax2_hy.set_xlim(0, hy_max)
 
-        ax3_hx.set_ylim(0, hy_max)
-        ax3_hy.set_xlim(0, hy_max)
+        #ax3_hx.set_ylim(0, hy_max)
+        #ax3_hy.set_xlim(0, hy_max)
 
-        ax4_hx.set_ylim(0, hy_max)
-        ax4_hy.set_xlim(0, hy_max)
+        #ax4_hx.set_ylim(0, hy_max)
+        #ax4_hy.set_xlim(0, hy_max)
 
         #ax2_hx.set_ylim(0, hy_max)
         #ax3_hx.set_ylim(0, hy_max)
@@ -789,7 +782,6 @@ class BaitedDigestSet:
         #ax2_hy.set_xlim(0, hy_max)
         #ax3_hy.set_xlim(0, hy_max)
         #ax4_hy.set_xlim(0, hy_max)
-
 
         # Save and return figure
         fig.savefig(pdf_file_name)
