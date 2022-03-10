@@ -502,6 +502,7 @@ class BaitedDigestSet:
                                                pairs_dict=None,
                                                set_xy_max=None,
                                                draw_mean_and_sd=False,
+                                               plot_all_instead_of_ui=False,
                                                sup_title: str = 'SUP_TITLE',
                                                description: str = 'DESCRIPTION',
                                                pdf_file_name: str = 'pair_scatter_plots_with_histograms.pdf'):
@@ -737,26 +738,48 @@ class BaitedDigestSet:
             ax_hy=ax3_hy,
             ax_s=ax3_s)
 
-        # Balanced interactions (UI)
-        ax4_hx = plt.axes(r6)
-        ax4_hx.tick_params(direction='in', labelbottom=False)
-        ax4_hy = plt.axes(r4)
-        ax4_hy.tick_params(direction='in', labelleft=False, labeltop=True, labelbottom=False)
-        ax4_s = plt.axes(r3)
-        ax4_s.tick_params(direction='in', top=True, right=True)
-        self.create_single_pair_scatter_plot_with_histograms(
-            i_cat_label='Balanced',
-            en_list=pairs_dict['UI']['EN'],
-            ne_list=pairs_dict['UI']['NE'],
-            x_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - EN',
-            y_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - NE',
-            i_cat_color='gray',
-            bin_size=BIN_SIZE,
-            xy_max=set_xy_max,
-            draw_mean_and_sd=draw_mean_and_sd,
-            ax_hx=ax4_hx,
-            ax_hy=ax4_hy,
-            ax_s=ax4_s)
+        if not plot_all_instead_of_ui:
+            # Balanced interactions (UI)
+            ax4_hx = plt.axes(r6)
+            ax4_hx.tick_params(direction='in', labelbottom=False)
+            ax4_hy = plt.axes(r4)
+            ax4_hy.tick_params(direction='in', labelleft=False, labeltop=True, labelbottom=False)
+            ax4_s = plt.axes(r3)
+            ax4_s.tick_params(direction='in', top=True, right=True)
+            self.create_single_pair_scatter_plot_with_histograms(
+                i_cat_label='Balanced',
+                en_list=pairs_dict['UI']['EN'],
+                ne_list=pairs_dict['UI']['NE'],
+                x_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - EN',
+                y_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - NE',
+                i_cat_color='gray',
+                bin_size=BIN_SIZE,
+                xy_max=set_xy_max,
+                draw_mean_and_sd=draw_mean_and_sd,
+                ax_hx=ax4_hx,
+                ax_hy=ax4_hy,
+                ax_s=ax4_s)
+        else:
+            # All interactions (ALL)
+            ax4_hx = plt.axes(r6)
+            ax4_hx.tick_params(direction='in', labelbottom=False)
+            ax4_hy = plt.axes(r4)
+            ax4_hy.tick_params(direction='in', labelleft=False, labeltop=True, labelbottom=False)
+            ax4_s = plt.axes(r3)
+            ax4_s.tick_params(direction='in', top=True, right=True)
+            self.create_single_pair_scatter_plot_with_histograms(
+                i_cat_label='All',
+                en_list=pairs_dict['ALL']['EN'],
+                ne_list=pairs_dict['ALL']['NE'],
+                x_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - EN',
+                y_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - NE',
+                i_cat_color='cornflowerblue',
+                bin_size=BIN_SIZE,
+                xy_max=set_xy_max,
+                draw_mean_and_sd=draw_mean_and_sd,
+                ax_hx=ax4_hx,
+                ax_hy=ax4_hy,
+                ax_s=ax4_s)
 
         # Unify axes of histograms
         hy_max = max([ax1_hx.get_ylim()[1], ax2_hx.get_ylim()[1], ax3_hx.get_ylim()[1], ax4_hx.get_ylim()[1],
@@ -789,15 +812,6 @@ class BaitedDigestSet:
 
     ############################
 
-    def select_undirected_reference_interactions_at_baits(self, lower_q: float = 0.25, upper_q: float = 0.75):
-
-        # Iterate chromosomes and baits on chromosomes
-        sorted_baited_digest_keys = self.get_baited_digest_keys_sorted_by_sta_pos()
-        for chrom in self._baited_digest_dict.keys():
-            # Select reference interactions at individual baits
-            for baited_digest_key in sorted_baited_digest_keys[chrom]:
-                baited_digest = self._baited_digest_dict[chrom][baited_digest_key]
-                baited_digest.select_undirected_reference_interactions(lower_q, upper_q)
 
     def write_bed_files_with_baited_interactions(self, out_prefix: str = 'OUT_PREFIX', chromosomes: [str] = None):
 
