@@ -25,8 +25,6 @@ class DiachromaticInteractionSet:
     Column 10 contains the negative of the natural logarithm of the P-value and column 11 the interaction category
     (DI, UI or UIR).
 
-    The functions of this class are tested and detailed documentation on this class can be found in the relevant
-    section in the RTD of this repository.
     """
 
     def __init__(self, enriched_digests_file: str = None, rpc_rule: str = 'st'):
@@ -68,6 +66,8 @@ class DiachromaticInteractionSet:
         self._select_ref_info_dict = {}
 
         # Take information about digests selected for enrichment from BED file
+        # By default, the enrichment states of digests are taken from the interaction files.
+        # If this file is passed, the enrichment sates are taken from this file.
         self._enriched_digests_set = None
         if enriched_digests_file is not None:
             print("[INFO] Reading list with digests selected for enrichment ...")
@@ -82,7 +82,7 @@ class DiachromaticInteractionSet:
     def parse_file(self, i_file: str = None, min_rp_num: int = 0, min_dist: int = 0, verbose: bool = False):
         """
         Parses a file with interactions. For interactions that have already been parsed from another file,
-        only the simple and twisted read pair counts are added.
+        only the read pair counts are added.
 
         :param i_file: Diachromatic interaction file
         :param min_rp_num: Interactions with a smaller number of read pairs are skipped
