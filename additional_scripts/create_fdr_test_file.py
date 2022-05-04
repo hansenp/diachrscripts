@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+
+"""
+With this script the test file for the FDR procedure was generated.
+"""
 
 import argparse
 from numpy import log, arange
@@ -58,7 +63,7 @@ for p_thresh in p_threshs:
               + str(i_count_range) + " of " + str(i_count_per_range) +
               ") of interactions for the P-value range ]"
               + str(p_thresh - p_value_step) + ';' + str(str(p_thresh)) + ']')
-    print(str(p_thresh - p_value_step) + '\t' + str(p_thresh) + '\t' + str(i_count_range)+ '\t' + str(i_count))
+    print(str(p_thresh - p_value_step) + '\t' + str(p_thresh) + '\t' + str(i_count_range) + '\t' + str(i_count))
 
 # Open stream for output interaction file
 out_fh.close()

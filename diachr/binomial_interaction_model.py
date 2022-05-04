@@ -19,7 +19,7 @@ class BinomialInteractionModel:
     In addition, this class is used in the following script to create all plots that are also created in the
     Jupyter notebook:
 
-           00_explore_binomial_model.py
+           additional_scripts/00_explore_binomial_model.py
     """
 
     def __init__(
