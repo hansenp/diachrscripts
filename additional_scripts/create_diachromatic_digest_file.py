@@ -6,6 +6,8 @@ and creates a new Diachromatic digest file in which digest regions that are cont
  '1' and all other digests are marked with '0'.
 
 You can find a detailed documentation on this script in the relevant section of RTD for this repository.
+
+THIS SCRIPT IS NECESSARY TO REPRODUCE THE RESULTS. DO NOT DELETE!
 """
 
 import argparse
