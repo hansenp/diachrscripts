@@ -53,9 +53,6 @@ class DiachromaticInteractionSet:
                                      'I_NUM_SKIPPED_RP': [], 'I_NUM_SKIPPED_DIST': [], 'I_NUM_ADDED': [],
                                      'I_SET_SIZE': []}
 
-        # Dictionary with information about removing interactions with extreme digest pairs
-        self._remove_zero_read_pair_count_interactions_info_dict = {}
-
         # Dictionary with information about the last writing process
         self._write_file_info_dict = {}
 
@@ -171,9 +168,9 @@ class DiachromaticInteractionSet:
 
     def _parse_line(self, line: str = None) -> DiachromaticInteraction:
         """
-        Parses a Diachromatic interaction formatted line with 9 fields.
+        Parses a Diachromatic interaction formatted line with 9 or 11 fields.
 
-        :param line: Tab separated string 9 fields.
+        :param line: Tab separated string 9 or 11 fields.
         :return: DiachromaticInteraction object
         """
 
@@ -255,48 +252,6 @@ class DiachromaticInteractionSet:
             # Set interaction category
             di_11_inter.set_category(i_cat)
             return di_11_inter
-
-    def get_remove_zero_read_pair_count_interactions_info_report(self):
-        """
-        :return: String that contains information about removing interactions with zero read pair counts.
-        """
-
-        report = "[INFO] Report on removing interactions with zero read pair counts:" + '\n'
-        report += "\t[INFO] Invert filter: " +\
-                  str(self._remove_zero_read_pair_count_interactions_info_dict['INVERT'][0]) + '\n '
-        report += "\t[INFO] Processed interactions: " + "{:,}".format(
-            self._remove_zero_read_pair_count_interactions_info_dict['N_PROCESSED'][0]) + '\n'
-        report += "\t[INFO] Number of interactions removed: " + "{:,}".format(
-            self._remove_zero_read_pair_count_interactions_info_dict['N_REMOVED'][0]) + '\n'
-        report += "\t[INFO] Number of remaining interactions: " + "{:,}".format(
-            self._remove_zero_read_pair_count_interactions_info_dict['N_REMAINING'][0]) + '\n'
-        report += "[INFO] End of report." + '\n'
-
-        return report
-
-    def get_remove_zero_read_pair_count_interactions_info_table_row(self, description: str = '<DESCRIPTION>'):
-        """
-        :return: String consisting of a header line and a line with values relating to removal interactions with
-        zero read pair counts.
-        """
-
-        # Header row
-        table_row = ":TR_ZERO_RPC_INTERACTIONS:" + '\t'
-        table_row += "DESCRIPTION" + '\t'
-        table_row += "INVERT" + '\t'
-        table_row += "N_PROCESSED" + '\t'
-        table_row += "N_REMOVED" + '\t'
-        table_row += "N_REMAINING" + '\n'
-
-        # Row with values
-        table_row += ":TR_ZERO_RPC_INTERACTIONS:" + '\t'
-        table_row += description + '\t'
-        table_row += str(self._remove_zero_read_pair_count_interactions_info_dict['INVERT'][0]) + '\t'
-        table_row += "{:,}".format(self._remove_zero_read_pair_count_interactions_info_dict['N_PROCESSED'][0]) + '\t'
-        table_row += "{:,}".format(self._remove_zero_read_pair_count_interactions_info_dict['N_REMOVED'][0]) + '\t'
-        table_row += "{:,}".format(self._remove_zero_read_pair_count_interactions_info_dict['N_REMAINING'][0]) + '\n'
-
-        return table_row
 
     def evaluate_and_categorize_interactions(self, pval_thresh: float = None, verbose: bool = False):
         """
