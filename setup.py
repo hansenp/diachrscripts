@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.0.1",
     author="Peter Hansen, Peter N Robinson",
     author_email="peter.hansen@jax.org,peter.robinson@jax.org",
-    description="A package for working with capture Hi-C/Hi-C read pair orientation data",
+    description="A package for working with capture Hi-C/Hi-C paired-end data",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/TheJacksonLaboratory/diachrscripts",
@@ -20,5 +20,5 @@ setuptools.setup(
     ],
     test_suite='nose.collector',
     tests_require=['nose'],
-    python_requires='>=3.6',
+    python_requires='>=3.8',
 )

@@ -1,31 +1,54 @@
 # diachrscripts
 
-This is a collection of Python (3.7) scripts for the analysis of simple and twisted read pairs and interactions.
+This is a collection of Python (3.8) modules, scripts and Jupyter notebooks that can be used to investigate
+Diachromatic interactions in terms of the four counts for the different types of mapped paired-end reads.
+
+## Setup
+
+First you need to clone this repository with:
+```
+$ git clone https://github.com/TheJacksonLaboratory/diachrscripts.git
+```
+
+Then change into the cloned directory, create a virtual environment and activate it:
+```
+$ virtualenv dscripts
+$ source dscripts/bin/activate
+```
+
+Install all required packages into this environment:
+```
+(dscripts)$ pip install -r requirements.txt
+```
+
+To make the environment available in Jupyter notebooks create a Jupyter kernel.
+```
+(dscripts)$ pip install ipykernel
+(dscripts)$ python -m ipykernel install --user --name=dscripts
+```
+When using Jupyter notebooks select the kernel `dscripts`.
 
 ## Documentation
 
-To generate the documentation locally, do the following to set up RTD
+To set up the RTD documentation locally,
+install two additionally required packages into the environment.
 ```
-virtualenv p38  ## first time only
-source p38/bin/activate
-pip install sphinx
-pip install sphinx-rtd-thema
-```
-
-To generate documentation
-```
-source p38/bin/activate
-make html
+(dscripts)$ pip install sphinx
+(dscripts)$ pip install sphinx-rtd-theme
 ```
 
-You should now find documentation here: ``GIT/diachrscripts/docs/_build/html/index.html``
+After that, change into the `docs` directory and generate
+the RTD documentation as follows:
+```
+(dscripts)$ make html
+```
+You should now find documentation here: `diachrscripts/docs/_build/html/index.html`
 
 ## Testing
 
-To setup testing, run the setup.py script
+To set up testing, install the `nose` package.
 ```
-source p38/bin/activate
-python setup.py test
+(dscripts)$ pip install nose
 ```
 Now test everything at once
 ```
