@@ -19,6 +19,7 @@ To deactivate the environment use:
 ```
 (dscripts)$ deactivate
 ```
+But for now, leave the environment activated.
 
 Install all required packages into this environment:
 ```
@@ -50,15 +51,7 @@ You should now find documentation here: `diachrscripts/docs/_build/html/index.ht
 
 ## Testing
 
-To set up testing, install the `nose` package.
+Run all tests as follows:
 ```
-(dscripts)$ pip install nose
-```
-Now test everything at once
-```
-nosetests tests
-```
-or specific files
-```
- nosetests tests/test_binomial.py 
+(dscripts)$ python -m unittest discover tests/
 ```
