@@ -15,6 +15,10 @@ Then change into the cloned directory, create a virtual environment and activate
 $ virtualenv dscripts
 $ source dscripts/bin/activate
 ```
+To deactivate the environment use:
+```
+(dscripts)$ deactivate
+```
 
 Install all required packages into this environment:
 ```

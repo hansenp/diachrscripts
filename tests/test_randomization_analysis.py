@@ -40,7 +40,8 @@ class TestRandomizationAnalysis(TestCase):
 
         # Prepare interaction set to test for correct determination of potentially significant interaction numbers
         cls.interaction_set_pot_sig = DiachromaticInteractionSet()
-        cls.interaction_set_pot_sig.parse_file("data/test_03/diachromatic_interaction_file_test_pot_sig.tsv.gz")
+        fdr_pot_sig_file = os.path.join(test_dir, "data/test_03/diachromatic_interaction_file_test_pot_sig.tsv.gz")
+        cls.interaction_set_pot_sig.parse_file(fdr_pot_sig_file)
         cls.randomize_pot_sig = RandomizeInteractionSet(random_seed=0)
 
     def test_parallel_processing(self):
