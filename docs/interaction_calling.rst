@@ -1,8 +1,8 @@
 .. _RST_Interaction_calling:
 
-###################
-Interaction calling
-###################
+######################################
+Interaction calling using Diachromatic
+######################################
 
 
 We used the Java program Diachromatic to derive interactions from
@@ -252,19 +252,19 @@ These are the first few lines of a file in Diachromatic's interaction format:
 
 .. code-block:: console
 
-    chr1    46297999   46305684   A   chr1    51777391   51781717   I   2:1
-    chr17   72411026   72411616   I   chr17   72712662   72724357   I   3:2
-    chr7    69513952   69514636   I   chr7    87057837   87061499   A   4:3
-    chr11    9641153    9642657   I   chr11   47259263   47272706   A   5:4
+    chr1    46297999   46305684   E   chr1    51777391   51781717   N   2:0:1:0
+    chr17   72411026   72411616   N   chr17   72712662   72724357   N   3:0:2:0
+    chr7    69513952   69514636   N   chr7    87057837   87061499   E   4:0:3:0
+    chr11    9641153    9642657   N   chr11   47259263   47272706   E   5:0:4:0
 
 Each line represents one interaction.
 Columns 1 to 3 and 5 to 7 contain the coordinates of the digest pair,
 whereby the smaller coordinates are always in columns 1 to 3.
 
-In column 4 and 8 there is either an ``A`` or an ``I``,
+In column 4 and 8 there is either an ``E`` or an ``N``,
 where column 4 belongs to the first and column 8 belongs to the second digest.
-An ``A`` means that the corresponding digest was selected for target enrichment
-and an ``I`` means that it was not selected.
+An ``E`` means that the corresponding digest was selected for target enrichment
+and an ``N`` means that it was not selected.
 Diachromatic takes the information about enriched digests from the digest map
 that was generated with GOPHER.
 In addition,
