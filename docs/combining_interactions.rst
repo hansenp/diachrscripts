@@ -1,25 +1,20 @@
 .. _RST_Combining_interactions:
 
-######################
-Combining interactions
-######################
+#################################################
+Pooling of interactions from different replicates
+#################################################
 
-For the dataset that we analyzed, there are three to four biological replicates
+For the dataset on the hematopoietic cell types, there are three to four biological replicates
 for each cell type.
-On the other hand, we need as many read pairs as possible in the individual
-interactions in order to decide whether an interaction is directed or not.
-We therefore decided on an compromise when combining interactions from different
-replicates.
-We discard interactions that occur in less than two replicates and,
+In order to pool interactions from different replicates,
+we discard interactions that occur in less than two replicates and,
 for the remaining interactions, we add up the read pair counts from
-all replicates separately for simple and twisted read pairs.
+all replicates separately for the four counts.
 
 Using the script
 ================
 
-This way
-of combining interactions from different replicates is implemented in
-the following script:
+We implemented the pooling of interactions from different replicates in the following script:
 
 .. code-block:: console
 
@@ -49,12 +44,13 @@ In addition, the required number of replicates must be specified (``--required-r
 All interactions that occur in less replicates
 will be discarded.
 For the remaining interactions,
-the simple and twisted read pair counts from different replicates
+the four read pair counts from different replicates
 will be added up separately.
 For this analysis,
 we required that an interaction must occur in at least two replicates.
-The name of each created file will have the same prefix ``--out-prefix``, which can also contain the path to an already existing directory.
-For combined replicates,
+The name of each created file will have the same prefix ``--out-prefix``,
+which can also contain the path to an already existing directory.
+For pooled replicates,
 we have used the abbreviation ``RALT``,
 where ``ALT`` stands for **A**\ t\  **L**\ east **T**\ wo.
 
@@ -67,7 +63,7 @@ The command above will generate the following two files:
 
 The first file contains an overview of the numbers of interactions
 in the individual files and
-the second file contains the combined interactions.
+the second file contains the pooled interactions.
 
 
 Testing the script
@@ -75,7 +71,7 @@ Testing the script
 
 Diachromatic
 even outputs interactions that have only a single read pair.
-On the other hand, when combining interactions,
+On the other hand, when pooling interactions,
 the interactions from multiple replicates must be read into memory.
 Therefore, the memory consumption can become very high
 and we carried out this step on a compute cluster.
@@ -88,25 +84,29 @@ the second interaction occurs in replicates 1 and 2,
 the third interaction occurs in replicates 1,2 and 3 and
 the fourth interactions occurs in all replicates.
 
-This is content of the interaction file for replicate 4:
+These are the contents of the four interaction files:
 
 .. code-block:: console
 
-    chr1    46297999   46305684   A   chr1    51777391   51781717   I   2:1
-    chr17   72411026   72411616   I   chr17   72712662   72724357   I   3:2
-    chr7    69513952   69514636   I   chr7    87057837   87061499   A   4:3
-    chr11    9641153    9642657   I   chr11   47259263   47272706   A   5:4
+    # REPLICATE 1
+    chr1    46297999    46305684    E    chr1    51777391    51781717    N    1:1:1:0
 
-From this file, we created the files for the other three replicates
-by deleting interactions from the last line one by one.
-By creating the files in this way,
-the individual interactions have same simple and twisted read pair counts
-for all replicates, which is usually not the case.
-However, it simplifies the presentation here,
-because we only need to know the content of the file for replicate 4
-in order to understand the results.
+    # REPLICATE 2
+    chr1    46297999    46305684    E    chr1    51777391    51781717    N    2:0:1:0
+    chr17   72411026    72411616    N    chr17   72712662    72724357    N    3:0:1:1
 
-To get the combined interactions that occur in at least two replicates,
+    # REPLICATE 3
+    chr1    46297999    46305684    E    chr1    51777391    51781717    N    0:2:1:0
+    chr17   72411026    72411616    N    chr17   72712662    72724357    N    3:0:0:2
+    chr7    69513952    69514636    N    chr7    87057837    87061499    E    3:1:1:2
+
+    # REPLICATE 4
+    chr1    46297999    46305684    E    chr1    51777391    51781717    N    1:1:1:0
+    chr17   72411026    72411616    N    chr17   72712662    72724357    N    3:0:2:0
+    chr7    69513952    69514636    N    chr7    87057837    87061499    E    2:2:2:1
+    chr11   47259263    47272706    N    chr11   91641153    91642657    E    3:2:1:3
+
+To get the pooled interactions that occur in at least two replicates,
 execute the following command:
 
 .. code-block:: console
@@ -116,22 +116,44 @@ execute the following command:
        --required-replicates 2
        --out-prefix TEST \
 
-This is the content of the generated file with the combined interactions:
+This is the content of the generated file with the pooled interactions:
 
 .. code-block:: console
 
-    chr1    46297999   46305684   A   chr1    51777391   51781717   I   8:4
-    chr17   72411026   72411616   I   chr17   72712662   72724357   I   9:6
-    chr7    69513952   69514636   I   chr7    87057837   87061499   A   8:6
+    chr1    46297999    46305684    E    chr1    51777391    51781717    N    4:4:4:0
+    chr17   72411026    72411616    N    chr17   72712662    72724357    N    9:0:3:3
+    chr7    69513952    69514636    N    chr7    87057837    87061499    E    5:3:3:3
 
 The interaction on chromosome ``chr11`` does not occur in this file
-because it was observed for replicate 4 only.
-However, we required that an interaction must have been observed in at least two replicates.
+because it was observed for replicate 4 only,
+but we require that an interaction occurs in at least two replicates.
+
 The interaction on chromosome ``chr7`` occurs in the files for replicate 3 and 4.
-Since this interaction has the same read pair counts for both replicates,
-the counts in the file for combined interactions double
-(``4:3`` becomes ``8:6``).
-The interaction on chromosome ``chr17`` occurs in the files for replicate 2, 3 and 4
-and the counts triple (``3:2`` becomes ``9:6``).
-Finally, the interaction on ``chr11`` occurs in the files for all four replicates
-and the counts quadruple (``2:1`` becomes ``8:4``).
+
+.. code-block:: console
+
+    chr7    69513952    69514636    N    chr7    87057837    87061499    E    3:1:1:2 (R3)
+    chr7    69513952    69514636    N    chr7    87057837    87061499    E    2:2:2:1 (R4)
+    ------------------------------------------------------------------------------------------
+    chr7    69513952    69514636    N    chr7    87057837    87061499    E    5:3:3:3 (POOLED)
+
+The interaction on chromosome ``chr17`` occurs in the files for replicate 2, 3 and 4.
+
+.. code-block:: console
+
+    chr17   72411026    72411616    N    chr17   72712662    72724357    N    3:0:1:1 (R2)
+    chr17   72411026    72411616    N    chr17   72712662    72724357    N    3:0:0:2 (R3)
+    chr17   72411026    72411616    N    chr17   72712662    72724357    N    3:0:2:0 (R4)
+    ------------------------------------------------------------------------------------------
+    chr17   72411026    72411616    N    chr17   72712662    72724357    N    9:0:3:3 (POOLED)
+
+Finally, the interaction on ``chr1`` occurs in the files for all four replicates.
+
+.. code-block:: console
+
+    chr1    46297999    46305684    E    chr1    51777391    51781717    N    1:1:1:0 (R1)
+    chr1    46297999    46305684    E    chr1    51777391    51781717    N    2:0:1:0 (R2)
+    chr1    46297999    46305684    E    chr1    51777391    51781717    N    0:2:1:0 (R3)
+    chr1    46297999    46305684    E    chr1    51777391    51781717    N    1:1:1:0 (R4)
+    ------------------------------------------------------------------------------------------
+    chr1    46297999    46305684    E    chr1    51777391    51781717    N    4:4:4:0 (POOLED)
