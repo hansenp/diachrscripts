@@ -4,16 +4,18 @@
 Binomial model
 ##############
 
-We use a binomial test in order to assess imbalances of simple and twisted
-read pairs within individual interactions for statistical significance,
-whereby the total number of read pairs (n) corresponds to a parameter
-of the binomial distribution (*number of trials*).
-Therefore, the test is based on different null distributions for interactions with
-different n.
-In this section, we review our implementation of the P-value calculation
-and investigate the consequences of the different null distributions.
+We use a binomial test in order to assess the imbalances
+in the four read pair counts of individual interactions for statistical significance,
+whereby the total number of read pairs corresponds the number of trials (n) and
+the sum of the two highest counts to the number of successes (k).
+For our null model, we assume a probability of success of p=0.5.
 
-For our analyzes, we have implented various functions in the class `BinomialInteractionModel`.
+For different total numbers of reads (n), the test is based on different null
+distributions and has different power.
+In addition, the binomial distribution is a discrete distribution.
+In this section, we examine the implications of this.
+
+For our analyzes, we have implemented some methods in the class `BinomialInteractionModel`.
 
 .. code-block:: console
 
