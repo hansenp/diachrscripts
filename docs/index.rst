@@ -20,11 +20,12 @@ for each interaction separately by type.
    interaction_calling
    coordinates_of_enriched_digests
    combining_interactions
+   tutorial
    binomial_model
    simple_twisted_randomization
    false_discovery_rate
    rate_and_categorize_interactions
-   interaction_categories
+
 
 
 

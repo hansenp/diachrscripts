@@ -10,16 +10,17 @@ First you need to clone this repository with:
 $ git clone https://github.com/TheJacksonLaboratory/diachrscripts.git
 ```
 
+If `virtualenv` is not installed on your system, install it with:
+```
+pip install virtualenv
+```
+
 Then change into the cloned directory, create a virtual environment and activate it:
 ```
 $ virtualenv dscripts
 $ source dscripts/bin/activate
 ```
-To deactivate the environment use:
-```
-(dscripts)$ deactivate
-```
-But for now, leave the environment activated.
+To deactivate the environment use `deactivate`. But for now, leave the environment activated.
 
 Install all required packages into this environment:
 ```

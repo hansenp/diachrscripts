@@ -61,54 +61,51 @@ class CHCTadViz:
                 print('\t\t' + key + ': ' + '{:,}'.format(len(d_inter_list)) + ' interactions')
             print('\t[INFO] ... done.')
 
-        if t_file is None:
+        if t_file is not None:
             if verbose:
-                print('[INFO] ... done.')
-            return
+                print('\t[INFO] Reading TAD regions and group them by chromosomes ...')
 
-        if verbose:
-            print('\t[INFO] Reading TAD regions and group them by chromosomes ...')
+            self._tads_by_chrom_dict = dict()
+            with open(t_file, 'rt') as fp:
+                next(fp)
+                for line in fp:
+                    c, s, e = line.rstrip().split('\t')
 
-        self._tads_by_chrom_dict = dict()
-        with open(t_file, 'rt') as fp:
-            next(fp)
-            for line in fp:
-                c, s, e = line.rstrip().split('\t')
+                    if c not in self._tads_by_chrom_dict:
+                        self._tads_by_chrom_dict[c] = [(int(s), int(e))]
+                    else:
+                        self._tads_by_chrom_dict[c].append((int(s), int(e)))
 
-                if c not in self._tads_by_chrom_dict:
-                    self._tads_by_chrom_dict[c] = [(int(s), int(e))]
-                else:
-                    self._tads_by_chrom_dict[c].append((int(s), int(e)))
-
-        if verbose:
-            for key, tad_list in self._tads_by_chrom_dict.items():
-                print('\t\t' + key + ': ' + '{:,}'.format(len(tad_list)) + ' TADs')
-            print('\t[INFO] ... done.')
-
-        if b_file is None:
             if verbose:
-                print('[INFO] ... done.')
-            return
+                for key, tad_list in self._tads_by_chrom_dict.items():
+                    print('\t\t' + key + ': ' + '{:,}'.format(len(tad_list)) + ' TADs')
+                print('\t[INFO] ... done.')
+        else:
+            self._tads_by_chrom_dict = None
 
-        if verbose:
-            print('\t[INFO] Reading baited digest regions and group them by chromosomes ...')
+        if b_file is not None:
+            if verbose:
+                print('\t[INFO] Reading baited digest regions and group them by chromosomes ...')
 
-        self._baits_by_chrom_dict = dict()
-        with open(b_file, 'rt') as fp:
-            next(fp)
-            for line in fp:
-                c, s, e = line.rstrip().split('\t')
+            self._baits_by_chrom_dict = dict()
+            with open(b_file, 'rt') as fp:
+                next(fp)
+                for line in fp:
+                    c, s, e = line.rstrip().split('\t')
 
-                if c not in self._baits_by_chrom_dict:
-                    self._baits_by_chrom_dict[c] = [(int(s), int(e))]
-                else:
-                    self._baits_by_chrom_dict[c].append((int(s), int(e)))
+                    if c not in self._baits_by_chrom_dict:
+                        self._baits_by_chrom_dict[c] = [(int(s), int(e))]
+                    else:
+                        self._baits_by_chrom_dict[c].append((int(s), int(e)))
 
-        if verbose:
-            for key, bait_list in self._baits_by_chrom_dict.items():
-                print('\t\t' + key + ': ' + '{:,}'.format(len(bait_list)) + ' Baits')
-            print('\t[INFO] ... done.')
-            print('[INFO] ... done.')
+            if verbose:
+                for key, bait_list in self._baits_by_chrom_dict.items():
+                    print('\t\t' + key + ': ' + '{:,}'.format(len(bait_list)) + ' Baits')
+                print('\t[INFO] ... done.')
+        else:
+            self._baits_by_chrom_dict = None
+
+        print('[INFO] ... done.')
 
     def extract_interactions(self, chrom: str, begin: int, end: int):
         """
@@ -181,7 +178,7 @@ class CHCTadViz:
         color = 'black'
         return PolygonPatch(polygon=poly, color=color)
 
-    def interaction_to_polygon(self, d_inter, pp_color, pp_alpha, d_radius: int = 0):
+    def interaction_to_polygon(self, d_inter, pp_color, pp_alpha, pp_linewidth=None, d_radius: int = 0):
         """
         Creates a PolygonPatch for a given interaction.
         """
@@ -224,7 +221,12 @@ class CHCTadViz:
         bd = bd_x - b
         bd_y = TANGENT_45 * bd
         poly = Polygon([(bc_x, bc_y), (bd_x, bd_y), (ad_x, ad_y), (ac_x, ac_y)])
-        return PolygonPatch(polygon=poly, color=pp_color, alpha=pp_alpha)#, linewidth=0)
+        if pp_linewidth is None:
+            # Let 'PolygonPatch' choose the line width for the border of polygons
+            return PolygonPatch(polygon=poly, color=pp_color, alpha=pp_alpha)
+        else:
+            # Choose the line width yourself
+            return PolygonPatch(polygon=poly, color=pp_color, alpha=pp_alpha, linewidth=pp_linewidth)
 
     def create_visualization(self,
                              chrom: str,
@@ -234,7 +236,10 @@ class CHCTadViz:
                              enr_cat_list: List = ['NE', 'EN', 'EE', 'NN'],
                              ht_tag_list: List = ['01', '02', '03', '12', '13', '23'],
                              color_i_cats: bool = True,
+                             pp_linewidth=None,
+                             transparent_polygons=True,
                              d_radius: int = 0,
+                             plot_bait_diagonals = False,
                              plot_title: str = 'TadViz plot',
                              pdf_file_name: str = None,
                              verbose: bool = True):
@@ -272,10 +277,16 @@ class CHCTadViz:
             return
 
         # Get TAD regions for this chromosome
-        tads = self._tads_by_chrom_dict[chrom]
+        if self._tads_by_chrom_dict is not None:
+            tads = self._tads_by_chrom_dict[chrom]
+        else:
+            tads = None
 
         # Get bait regions for this chromosome
-        baits = self._baits_by_chrom_dict[chrom]
+        if self._baits_by_chrom_dict is not None:
+            baits = self._baits_by_chrom_dict[chrom]
+        else:
+            baits = None
 
         # Get list of interactions to be visualized and collect read pair counts
         d_inter_list = []
@@ -340,16 +351,19 @@ class CHCTadViz:
         ax.set_ylim(yrange)
 
         # Plot the TADs
-        for (left_boundary, right_boundary) in tads:
-            polypatch = self.tad_to_grey_triangle(start=left_boundary, end=right_boundary)
-            ax.add_patch(polypatch)
+        if tads is not None:
+            for (left_boundary, right_boundary) in tads:
+                polypatch = self.tad_to_grey_triangle(start=left_boundary, end=right_boundary)
+                ax.add_patch(polypatch)
 
         # Plot the baits
-        for (sta_pos, end_pos) in baits:
-            #begin = self.pos_to_coordinate(sta_pos)
-            #end = self.pos_to_coordinate(end_pos)
-            x = self.pos_to_coordinate(sta_pos) + (self.pos_to_coordinate(end_pos) - self.pos_to_coordinate(sta_pos)) / 2
-            ax.axvline(x, color='gray', linewidth=0.5, zorder=0, alpha=0.5)
+        if baits is not None:
+            for (sta_pos, end_pos) in baits:
+                x = self.pos_to_coordinate(sta_pos) + (self.pos_to_coordinate(end_pos) - self.pos_to_coordinate(sta_pos)) / 2
+                ax.axvline(x, color='gray', linewidth=0.5, zorder=0, alpha=0.5)
+                if plot_bait_diagonals:
+                    ax.axline((x, 0), (x+10, -10), color='darkred', linewidth=0.5, zorder=0)
+                    ax.axline((x, 0), (x+10, 10), color='darkblue', linewidth=0.5, zorder=0)
 
         # Plot the interaction polygons
         for d_inter in d_inter_list:
@@ -368,10 +382,15 @@ class CHCTadViz:
             # if pp_alpha >= 0.8:
             # print(str(d_inter.rp_total) + '\t' + str(pp_alpha))
 
+            # Render all polygons without transparency
+            if not transparent_polygons:
+                pp_alpha = 1
+
             # Get and plot interaction polypatch
             polypatch = self.interaction_to_polygon(d_inter=d_inter,
                                                     pp_color=pp_color,
                                                     pp_alpha=pp_alpha,
+                                                    pp_linewidth=pp_linewidth,
                                                     d_radius=d_radius)
             ax.add_patch(polypatch)
 
@@ -401,7 +420,7 @@ class CHCTadViz:
         label_text += '# Interactions: ' + '{:,}'.format(len(d_inter_list)) + '\n'
         label_text += 'I cats: ' + str(inter_cat_list) + '\n'
         label_text += 'E states: ' + str(enr_cat_list) + '\n'
-        label_text += 'HT tags: ' + str(ht_tag_list)
+        label_text += 'HTC tags: ' + str(ht_tag_list)
         label_x_pos = xrange[0] + (xrange[1] - xrange[0])/60
         label_y_pos = yrange[1] - yrange[1]/4.7
         ax.annotate(label_text, xy=(label_x_pos, label_y_pos), color='white', size=12)
