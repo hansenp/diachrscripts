@@ -9,18 +9,22 @@ four types of read pairs can be distinguished depending on
 their relative orientation and which strand they were
 mapped to.
 This information was previously used only to remove artifacts.
-We have extended our Diachromatic software to report
+We have extended our ``Diachromatic`` software to report
 the counts of the remaining valid read pairs
 for each interaction separately by type.
+In ``diachscripts`` we have implemented methods that can be used
+to analyze interactions with respect to the four counts.
+The tutorial provides an overview of the entire workflow and possible
+analyzes is therefore a good starting point for your own analyzes.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   tutorial
    interaction_calling
    coordinates_of_enriched_digests
    combining_interactions
-   tutorial
    binomial_model
    simple_twisted_randomization
    false_discovery_rate
