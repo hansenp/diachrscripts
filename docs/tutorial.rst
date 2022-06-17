@@ -14,47 +14,80 @@ analyzes of interactions with unbalanced read counts that can be performed in Ju
 Downloading paired-end Hi-C or capture Hi-C data
 ************************************************
 
-For our publication we used data for which you first have to sign a European Genome-phenome Archive (EGA) data usage
-agreement. But in the `Sequence Read Archive (SRA) <https://www.ncbi.nlm.nih.gov/sra/docs/>`_ many datasets are freely
-available. In order to download data from there, you must first
-`download, install and configure the SRA Toolkit <https://github.com/ncbi/sra-tools/wiki/02.-Installing-SRA-Toolkit>`_.
-
-Alternatively, data can also be downloaded from the `European Nucleotide Archive (ENA) <https://www.ebi.ac.uk/ena/browser/home>`_.
-
-Replicate 1 - Forward:
+Use the following code to download promoter capture Hi-C data on GM12878 cells
+`(Mifsud et al. 2015) <https://pubmed.ncbi.nlm.nih.gov/25938943/>`_.
+There are three replicates. Because it is paired-end data, there are pairs of forward and reverse FASTQ files with
+suffixes ``_1`` and ``_2``. Both files contain the same number of reads.
 
 .. code-block:: console
 
-    wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR436/ERR436029/ERR436029_1.fastq.gz -O ERR436029_1.fastq.gz
+    #!/bin/bash
 
-Replicate 1 - Reverse:
+    #OUT_DIR=$1
+    #OUT_PREFIX=$2
+    #SRR_LIST=$3
 
-.. code-block:: console
+    OUT_DIR="MIF_R1"
+    OUT_PREFIX="MIF_R1"
+    SRR_LIST="ERR436029"
 
-    wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR436/ERR436029/ERR436029_2.fastq.gz -O ERR436029_2.fastq.gz
-
-.. code-block:: console
-
-    #OUT_PREFIX="MIFSUD_R10"
-    #SRR_LIST="ERR436029"
-
-    #OUT_PREFIX="MIFSUD_R20"
+    #OUT_DIR="MIF_R2"
+    #OUT_PREFIX="MIF_R2"
     #SRR_LIST="ERR436028 ERR436030 ERR436033"
 
-    OUT_PREFIX="MIFSUD_R30"
-    SRR_LIST="ERR436031 ERR436026"
+    #OUT_DIR="MIF_R3"
+    #OUT_PREFIX="MIF_R3"
+    #SRR_LIST="ERR436031 ERR436026"
 
-    > $OUT_DIR/$OUT_PREFIX\_1.fastq
-    > $OUT_DIR/$OUT_PREFIX\_2.fastq
+    mkdir $OUT_DIR
+    > $OUT_DIR/$OUT_PREFIX\_1.fastq # Forward
+    > $OUT_DIR/$OUT_PREFIX\_2.fastq # Reverse
     for SRR in $SRR_LIST;
     do
+            # Forward
             wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR436/$SRR/$SRR\_1.fastq.gz -O $OUT_DIR/$SRR\_1.fastq.gz
-            wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR436/$SRR/$SRR\_2.fastq.gz -O $OUT_DIR/$SRR\_2.fastq.gz
             zcat $OUT_DIR/$SRR\_1.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_1.fastq
+            md5sum $OUT_DIR/$SRR\_1.fastq.gz
+
+            # Reverse
+            wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR436/$SRR/$SRR\_2.fastq.gz -O $OUT_DIR/$SRR\_2.fastq.gz
             zcat $OUT_DIR/$SRR\_2.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_2.fastq
+            md5sum $OUT_DIR/$SRR\_2.fastq.gz
     done
-    gzip $OUT_DIR/$OUT_PREFIX\_1.fastq
-    gzip $OUT_DIR/$OUT_PREFIX\_2.fastq
+    gzip $OUT_DIR/$OUT_PREFIX\_1.fastq # Forward
+    md5sum $OUT_DIR/$OUT_PREFIX\_1.fastq
+    gzip $OUT_DIR/$OUT_PREFIX\_2.fastq # Reverse
+    md5sum $OUT_DIR/$OUT_PREFIX\_2.fastq
+
+
++-----------------------+----------------------------------------------------------+
+| Dataset               | MD5 checksum                                             |
++=======================+==========================================================+
+| ``ERR436029_1``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
++-----------------------+----------------------------------------------------------+
+| ``ERR436029_2``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
++-----------------------+----------------------------------------------------------+
+| ``ERR436028_1``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
++-----------------------+----------------------------------------------------------+
+| ``ERR436030_1``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
++-----------------------+----------------------------------------------------------+
+| ``ERR436033_1``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
++-----------------------+----------------------------------------------------------+
+| ``ERR436028_2``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
++-----------------------+----------------------------------------------------------+
+| ``ERR436030_2``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
++-----------------------+----------------------------------------------------------+
+| ``ERR436033_2``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
++-----------------------+----------------------------------------------------------+
+| ``ERR436031_1``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
++-----------------------+----------------------------------------------------------+
+| ``ERR436026_1``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
++-----------------------+----------------------------------------------------------+
+| ``ERR436031_2``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
++-----------------------+----------------------------------------------------------+
+| ``ERR436026_2``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
++-----------------------+----------------------------------------------------------+
+
 
 ******************************************
 Calling interactions with ``Diachromatic``
