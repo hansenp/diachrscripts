@@ -8,13 +8,13 @@ Interaction calling using Diachromatic
 We used the Java program Diachromatic to derive interactions from
 unprocessed capture Hi-C reads.
 There is already a
-`publication <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6678864/>`_
+`publication <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6678864/>`__
 and a
-`detailed documentation <https://diachromatic.readthedocs.io/en/latest/index.html>`_
+`detailed documentation <https://diachromatic.readthedocs.io/en/latest/index.html>`__
 on this program.
 This section is intended to give a brief overview
 and to describe the details of the analysis of the
-`capture Hi-C dataset for 17 hematopoietic cell types <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5123897/>`_.
+`capture Hi-C dataset for 17 hematopoietic cell types <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5123897/>`__.
 
 The input of Diachromatic essentially consists of the following:
 
@@ -105,7 +105,7 @@ that are passed to Diachromatic in form of a text file,
 which we refer to as digest map.
 For a given restriction enzyme and a reference genome,
 a corresponding digest map can be created with the GOPHER software
-`as described in the documentation <https://diachromatic.readthedocs.io/en/latest/digest.html>`_.
+`as described in the documentation <https://diachromatic.readthedocs.io/en/latest/digest.html>`__.
 The digest map can also contain information about which digests have been selected for enrichment
 (see also :ref:`RST_coordinates_of_enriched_digests`).
 Diachromatic will report the enrichment status for the two digests of
@@ -144,7 +144,7 @@ For capture Hi-C data, we don't use the ``--sticky-ends`` option,
 i.e. we assume that the sticky ends resulting from the restriction
 have been filled in.
 More details on the truncation of reads can be found in the
-`relevant section of the Diachromatic documentation <https://diachromatic.readthedocs.io/en/latest/truncate.html>`_.
+`relevant section of the Diachromatic documentation <https://diachromatic.readthedocs.io/en/latest/truncate.html>`__.
 
 
 ****************************
@@ -196,7 +196,7 @@ The reads of a pair are mapped independently to all chromosomes,
 but a pair for which at least one read is mapped to a non-canonical
 chromosome cannot be re-paired.
 This is the relevant section in the
-`Diachromatic source code <https://github.com/TheJacksonLaboratory/diachromatic/blob/master/src/main/java/org/jax/diachromatic/align/ReadPair.java>`_.
+`Diachromatic source code <https://github.com/TheJacksonLaboratory/diachromatic/blob/master/src/main/java/org/jax/diachromatic/align/ReadPair.java>`__.
 
 .. code-block:: java
 
@@ -207,7 +207,7 @@ This is the relevant section in the
 
 The output can be redirected and given prefixes as with the ``truncate`` command.
 More details on the mapping and removal of artifact read pairs can be found in the
-`relevant section of the Diachromatic documentation <https://diachromatic.readthedocs.io/en/latest/mapping.html>`_.
+`relevant section of the Diachromatic documentation <https://diachromatic.readthedocs.io/en/latest/mapping.html>`__.
 
 ****************************
 Counting of valid read pairs
