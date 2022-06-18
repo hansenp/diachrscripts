@@ -18,76 +18,15 @@ Use the following code to download promoter capture Hi-C data on GM12878 cells
 `(Mifsud et al. 2015) <https://pubmed.ncbi.nlm.nih.gov/25938943/>`_.
 There are three replicates. Because it is paired-end data, there are pairs of forward and reverse FASTQ files with
 suffixes ``_1`` and ``_2``. Both files contain the same number of reads.
+Use the script
+`dumpy.sh <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/additional_scripts/dumpy.sh>`__
+to download the data.
 
 .. code-block:: console
 
-    #!/bin/bash
-
-    #OUT_DIR=$1
-    #OUT_PREFIX=$2
-    #SRR_LIST=$3
-
-    OUT_DIR="MIF_R1"
-    OUT_PREFIX="MIF_R1"
-    SRR_LIST="ERR436029"
-
-    #OUT_DIR="MIF_R2"
-    #OUT_PREFIX="MIF_R2"
-    #SRR_LIST="ERR436028 ERR436030 ERR436033"
-
-    #OUT_DIR="MIF_R3"
-    #OUT_PREFIX="MIF_R3"
-    #SRR_LIST="ERR436031 ERR436026"
-
-    mkdir $OUT_DIR
-    > $OUT_DIR/$OUT_PREFIX\_1.fastq # Forward
-    > $OUT_DIR/$OUT_PREFIX\_2.fastq # Reverse
-    for SRR in $SRR_LIST;
-    do
-            # Forward
-            wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR436/$SRR/$SRR\_1.fastq.gz -O $OUT_DIR/$SRR\_1.fastq.gz
-            zcat $OUT_DIR/$SRR\_1.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_1.fastq
-            md5sum $OUT_DIR/$SRR\_1.fastq.gz
-
-            # Reverse
-            wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR436/$SRR/$SRR\_2.fastq.gz -O $OUT_DIR/$SRR\_2.fastq.gz
-            zcat $OUT_DIR/$SRR\_2.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_2.fastq
-            md5sum $OUT_DIR/$SRR\_2.fastq.gz
-    done
-    gzip $OUT_DIR/$OUT_PREFIX\_1.fastq # Forward
-    md5sum $OUT_DIR/$OUT_PREFIX\_1.fastq
-    gzip $OUT_DIR/$OUT_PREFIX\_2.fastq # Reverse
-    md5sum $OUT_DIR/$OUT_PREFIX\_2.fastq
-
-
-+-----------------------+----------------------------------------------------------+
-| Dataset               | MD5 checksum                                             |
-+=======================+==========================================================+
-| ``ERR436029_1``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
-+-----------------------+----------------------------------------------------------+
-| ``ERR436029_2``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
-+-----------------------+----------------------------------------------------------+
-| ``ERR436028_1``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
-+-----------------------+----------------------------------------------------------+
-| ``ERR436030_1``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
-+-----------------------+----------------------------------------------------------+
-| ``ERR436033_1``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
-+-----------------------+----------------------------------------------------------+
-| ``ERR436028_2``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
-+-----------------------+----------------------------------------------------------+
-| ``ERR436030_2``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
-+-----------------------+----------------------------------------------------------+
-| ``ERR436033_2``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
-+-----------------------+----------------------------------------------------------+
-| ``ERR436031_1``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
-+-----------------------+----------------------------------------------------------+
-| ``ERR436026_1``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
-+-----------------------+----------------------------------------------------------+
-| ``ERR436031_2``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
-+-----------------------+----------------------------------------------------------+
-| ``ERR436026_2``       | XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX                         |
-+-----------------------+----------------------------------------------------------+
-
+    $ dumpy.sh  MIF_R1 MIF_R1 "ERR436029"
+    $ dumpy.sh  MIF_R2 MIF_R2 "ERR436028 ERR436030 ERR436033"
+    $ dumpy.sh  MIF_R3 MIF_R3 "ERR436031 ERR436026"
 
 ******************************************
 Calling interactions with ``Diachromatic``
