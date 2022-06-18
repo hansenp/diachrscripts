@@ -4,3 +4,5 @@ scipy
 pandas
 shapely
 descartes
+sphinx
+sphinx-rtd-theme

@@ -20,7 +20,6 @@ Then change into the cloned directory, create a virtual environment and activate
 $ virtualenv dscripts
 $ source dscripts/bin/activate
 ```
-To deactivate the environment use `deactivate`. But for now, leave the environment activated.
 
 Install all required packages into this environment:
 ```
@@ -36,14 +35,7 @@ When using Jupyter notebooks select the kernel `dscripts`.
 
 ## Documentation
 
-To set up the RTD documentation locally,
-install two additionally required packages into the environment.
-```
-(dscripts)$ pip install sphinx
-(dscripts)$ pip install sphinx-rtd-theme
-```
-
-After that, change into the `docs` directory and generate
+Change into the `docs` directory and generate
 the RTD documentation as follows:
 ```
 (dscripts)$ make html
@@ -56,3 +48,5 @@ Run all tests as follows:
 ```
 (dscripts)$ python -m unittest discover tests/
 ```
+To deactivate the environment use `deactivate`.
+

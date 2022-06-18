@@ -1,5 +1,5 @@
 #!/bin/bash
-#USAGE
+# USAGE EXAMPLES
 # dumpy.sh  MIF_R1 MIF_R1 "ERR436029"
 # dumpy.sh  MIF_R2 MIF_R2 "ERR436028 ERR436030 ERR436033"
 # dumpy.sh  MIF_R3 MIF_R3 "ERR436031 ERR436026"
@@ -8,9 +8,9 @@ OUT_PREFIX=$2
 SRR_LIST=$3
 # Init target results
 mkdir $OUT_DIR
-> $OUT_DIR/md5.txt
 > $OUT_DIR/$OUT_PREFIX\_1.fastq # Forward
 > $OUT_DIR/$OUT_PREFIX\_2.fastq # Reverse
+> $OUT_DIR/md5.txt
 # Iterate through list of identifiers
 for SRR in $SRR_LIST;
 do
