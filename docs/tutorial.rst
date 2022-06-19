@@ -14,19 +14,30 @@ analyzes of interactions with unbalanced read counts that can be performed in Ju
 Downloading paired-end Hi-C or capture Hi-C data
 ************************************************
 
-Use the following code to download promoter capture Hi-C data on GM12878 cells
-`(Mifsud et al. 2015) <https://pubmed.ncbi.nlm.nih.gov/25938943/>`_.
-There are three replicates. Because it is paired-end data, there are pairs of forward and reverse FASTQ files with
-suffixes ``_1`` and ``_2``. Both files contain the same number of reads.
 Use the script
 `dumpy.sh <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/additional_scripts/dumpy.sh>`__
-to download the data.
+to download promoter capture Hi-C data on GM12878 cells
+`(Mifsud et al. 2015) <https://pubmed.ncbi.nlm.nih.gov/25938943/>`_.
 
 .. code-block:: console
 
-    $ dumpy.sh  MIF_R1 MIF_R1 "ERR436029"
-    $ dumpy.sh  MIF_R2 MIF_R2 "ERR436028 ERR436030 ERR436033"
-    $ dumpy.sh  MIF_R3 MIF_R3 "ERR436031 ERR436026"
+    $ dumpy.sh MIF_R1 MIF_R1 "ERR436029"
+    $ dumpy.sh MIF_R2 MIF_R2 "ERR436028 ERR436030 ERR436033"
+    $ dumpy.sh MIF_R3 MIF_R3 "ERR436031 ERR436026"
+
+A separate directory is created for each of the three replicates.
+Because it is paired-end data, there are pairs of forward and reverse FASTQ files with
+suffixes ``_1`` and ``_2``.
+The lines of the two files are in sync, meaning that the forward read from line ``i`` in the first file
+and the reverse read from line i in the second file form a pair.
+
+.. code-block:: console
+
+    $ ls -l MIF_R*/
+    XXX
+
+
+Both files contain the same number of reads.
 
 ******************************************
 Calling interactions with ``Diachromatic``

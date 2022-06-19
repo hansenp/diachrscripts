@@ -17,8 +17,6 @@ to analyze interactions with respect to the four counts.
 The tutorial provides an overview of the entire workflow and possible
 analyzes is therefore a good starting point for your own analyzes.
 
-_RST_tutorial
-
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
