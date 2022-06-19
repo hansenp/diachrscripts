@@ -31,7 +31,6 @@ suffixes ``_1`` and ``_2``.
 The lines of the two files are in sync, meaning that the forward read from line ``i`` in the first file
 and the reverse read from line i in the second file form a pair.
 
-
 .. code-block:: console
 
     $ ls -l MIF_R*/
