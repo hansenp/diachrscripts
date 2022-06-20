@@ -71,6 +71,18 @@ Calling interactions with ``Diachromatic``
 
 This is described here: :ref:`RST_Interaction_calling`.
 
+
+Truncation of chimeric reads
+============================
+
+The sequencing of Hi-C libraries can result in chimeric reads containing sequences from different regions.
+Such reads cannot be mapped.
+Therefore, they must first be truncated so that they are no longer chimeric.
+This can be done with ``Diachromatic`` using the subcommand ``truncate``.
+The chimeric reads must be cut at the ligation sites, which is why the restriction enzyme used for the experiment must
+be specified (``-e``).
+The prepared FASTQ files with the forward and reverse reads are specified using the ``-q`` and ``-r`` options.
+
 .. code-block:: console
 
     $ java -jar Diachromatic.jar truncate \
@@ -80,34 +92,65 @@ This is described here: :ref:`RST_Interaction_calling`.
        -o MIF_R1 \
        -x MIF_R1
 
-XXX
+All result files are written to the directory specified by the option ``-o`` and have the same prefix specified by the
+option ``-x``.
+
+Mapping and artifact removal
+============================
+
+For Hi-C data, no distribution particular of distances between reads of mapped pairs can be assumed (insert size).
+However, for paired-end data, read mappers rely on a minimum and maximum insert size.
+Therefore, the truncated forward and reverse reads must be mapped independently, like single-end data, and the reads
+must be re-paired afterwards.
+Re-pairing only requires that both reads of a pair have been mapped.
+In addition, there are certain rules by which artifacts can be recognized that are specific to Hi-C data.
+This can be done with ``Diachromatic`` using the subcommand ``align``.
+For the single-end mappings, paths to ``bowtie2`` (``-b``) and to an index for the matching reference sequence (``-i``)
+must be specified. If the ``-bsu`` is used, then reads are considered to be mapped uniquely if they map to only one
+location. The ``-p`` option specifies how many CPUs can be used by ``bowtie2``.
+For the detection of artifacts, a digest file is required, which must be specified via the option ``-d``.
+The FASTQ files with the truncated forward and reverse reads are specified using the ``-q`` and ``-r`` options.
 
 .. code-block:: console
 
     $ java -jar Diachromatic.jar align \
+       -b <BOWTIE2_EXECUTABLE> \
+       -i <BOWTIE2_INDEX>/hg38 \
        -bsu \
+       -p 4 \
        -d <DIGEST_MAP> \
        -q MIF_R1/MIF_R1.truncated_R1.fastq.gz \
        -r MIF_R1/MIF_R1.truncated_R2.fastq.gz \
-       -b <BOWTIE2_EXECUTABLE> \
-       -i <BOWTIE2_INDEX>/hg38 \
-       -p 32 \
-       -j \
        -o MIF_R1 \
-       -x MIF_R1
+       -x MIF_R1 \
+       -j
 
-XXX
+All result files from this step are written to the same directory (``-o``) and have the same prefix (``-x``) as the
+truncated reads.
+The main result from this step is a BAM file with valid read pairs that have not been classified as artifacts.
+If the ``-j`` option is used, then an additional BAM file is created containing all read pairs that were determined to
+be invalid and therefore rejected.
+
+Counting valid read pairs
+=========================
+
+XXX.
 
 .. code-block:: console
 
     $ java -jar Diachromatic.jar count \
        -d <DIGEST_MAP>  \
-       -v MIF_R1.valid_pairs.aligned.bam \
+       -v MIF_R1/MIF_R1.valid_pairs.aligned.bam \
        -s \
        -o MIF_R1 \
        -x MIF_R1
 
-Filter for cis long range interactions.
+XXX.
+
+Filtering for cis-chromosomal long range interactions
+=====================================================
+
+XXX.
 
 .. code-block:: console
 
