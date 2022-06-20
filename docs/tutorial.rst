@@ -18,23 +18,43 @@ Use the script
 `dumpy.sh <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/additional_scripts/dumpy.sh>`__
 to download promoter capture Hi-C data on GM12878 cells
 `(Mifsud et al. 2015) <https://pubmed.ncbi.nlm.nih.gov/25938943/>`_.
+For this dataset, ``XGB`` memory must be available.
+
 
 .. code-block:: console
 
     $ dumpy.sh MIF_R1 MIF_R1 "ERR436029"
-    $ dumpy.sh MIF_R2 MIF_R2 "ERR436028 ERR436030 ERR436033"
-    $ dumpy.sh MIF_R3 MIF_R3 "ERR436031 ERR436026"
+    $ dumpy.sh MIF_R2 MIF_R2 "ERR436028;ERR436030;ERR436033"
+    $ dumpy.sh MIF_R3 MIF_R3 "ERR436026;ERR436031"
 
 A separate directory is created for each of the three replicates.
 Because it is paired-end data, there are pairs of forward and reverse FASTQ files with
 suffixes ``_1`` and ``_2``.
-The lines of the two files are in sync, meaning that the forward read from line ``i`` in the first file
-and the reverse read from line i in the second file form a pair.
+Both files have the same number of lines and reads with the same line index form a pair.
 
 .. code-block:: console
 
-    $ ls -l MIF_R*/
-    XXX
+    $ ls -lh MIF_R*
+    MIF_R1:
+    total 96G
+    -rw-r--r-- 1 hansep robinson-pchi-c 12G Jun 20 02:26 ERR436029_2.fastq.gz
+    -rw-r--r-- 1 hansep robinson-pchi-c 35G Jun 20 02:18 MIF_R1_1.fastq
+    -rw-r--r-- 1 hansep robinson-pchi-c 34G Jun 20 02:31 MIF_R1_2.fastq
+    -rw-r--r-- 1 hansep robinson-pchi-c  62 Jun 20 02:19 MIF_R1_md5.txt
+
+    MIF_R2:
+    total 21G
+    -rw-r--r-- 1 hansep robinson-pchi-c 7.2G Jun 20 02:29 ERR436028_1.fastq.gz
+    -rw-r--r-- 1 hansep robinson-pchi-c  11G Jun 20 02:31 MIF_R2_1.fastq
+    -rw-r--r-- 1 hansep robinson-pchi-c    0 Jun 20 02:25 MIF_R2_2.fastq
+    -rw-r--r-- 1 hansep robinson-pchi-c    0 Jun 20 02:25 MIF_R2_md5.txt
+
+    MIF_R3:
+    total 66G
+    -rw-r--r-- 1 hansep robinson-pchi-c 3.8G Jun 20 02:30 ERR436026_1.fastq.gz
+    -rw-r--r-- 1 hansep robinson-pchi-c  26G Jun 20 02:17 MIF_R3_1.fastq
+    -rw-r--r-- 1 hansep robinson-pchi-c  26G Jun 20 02:26 MIF_R3_2.fastq
+    -rw-r--r-- 1 hansep robinson-pchi-c  124 Jun 20 02:26 MIF_R3_md5.txt
 
 
 Both files contain the same number of reads.
