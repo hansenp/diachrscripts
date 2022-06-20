@@ -27,7 +27,7 @@ class DiachromaticInteractionSet:
 
     """
 
-    def __init__(self, enriched_digests_file: str = None, rpc_rule: str = 'st'):
+    def __init__(self, enriched_digests_file: str = None, rpc_rule: str = 'ht'):
 
         # Dictionary that contains all interaction objects
         self._inter_dict = defaultdict(DiachromaticInteraction)

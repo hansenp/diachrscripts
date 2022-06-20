@@ -28,6 +28,5 @@ do
   cat $OUT_DIR/$SRR\_2.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_2.fastq.gz
   rm $OUT_DIR/$SRR\_2.fastq.gz
 done
-# Compress concatenated files
 md5sum $OUT_DIR/$OUT_PREFIX\_1.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_md5.txt
 md5sum $OUT_DIR/$OUT_PREFIX\_2.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_md5.txt

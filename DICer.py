@@ -37,9 +37,9 @@ parser.add_argument('--min-inter-dist',
                     help='Minimum interaction distance. Shorter interactions are not taken into account.',
                     default=0)
 parser.add_argument('--read-pair-counts-rule',
-                    help='Define how the four read pair counts will be used. Can be \'st\' for simple/twisted or '
-                         '\'ht\' for heaviest two.',
-                    default='st')
+                    help='Define how the four read pair counts will be used. Can be \'ht\' for heaviest two or '
+                         '\'st\' for simple/twisted.',
+                    default='ht')
 parser.add_argument('--fdr-threshold',
                     help='The P-value is chosen so that the estimated FDR remains below this threshold.',
                     default=0.05)

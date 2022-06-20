@@ -18,7 +18,7 @@ We implemented the pooling of interactions from different replicates in the foll
 
 .. code-block:: console
 
-    $ python diachrscripts/01_combine_interactions_from_replicates.py
+    $ python diachrscripts/additional_scripts/pooler.py
        --interaction-files-path MK/gzdir
        --required-replicates 2
        --out-prefix MK/JAV_MK_RALT
@@ -111,7 +111,7 @@ execute the following command:
 
 .. code-block:: console
 
-    $ python diachrscripts/01_combine_interactions_from_replicates.py \
+    $ python diachrscripts/additional_scripts/pooler.py \
        --interaction-files-path tests/data/test_01/ \
        --required-replicates 2
        --out-prefix TEST \

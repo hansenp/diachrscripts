@@ -11,14 +11,14 @@ import argparse
 import os
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
-
-### Parse command line
-######################
+# Parse command line
+####################
 
 parser = argparse.ArgumentParser(description='Combine interactions that occur in a specified number of replicates.')
-parser.add_argument('-o','--out-prefix', help='Prefix for output.', default='OUTPREFIX')
-parser.add_argument('-i','--interaction-files-path', help='Path to directory with Diachromatic interaction files', required=True)
-parser.add_argument('-r','--required-replicates', help='Required number of replicates.', required=True)
+parser.add_argument('-o', '--out-prefix', help='Prefix for output.', default='OUTPREFIX')
+parser.add_argument('-i', '--interaction-files-path', help='Path to directory with Diachromatic interaction files',
+                    required=True)
+parser.add_argument('-r', '--required-replicates', help='Required number of replicates.', required=True)
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
@@ -33,8 +33,8 @@ parameter_info += "\t[INFO] --required-replicates: " + str(required_replicates) 
 print(parameter_info)
 
 
-### Get list of interaction files under given path
-##################################################
+# Get list of interaction files under given path
+################################################
 
 def get_gzip_tsv_files(path):
     """
@@ -47,14 +47,15 @@ def get_gzip_tsv_files(path):
             gz_files.append(gz_path)
     return gz_files
 
+
 gz_files = get_gzip_tsv_files(interaction_files_path)
 if len(gz_files) < int(required_replicates):
-    print("[FATAL] Not enough replicates. Must be at least " + str(required_replicates) + " But there are only " + str(len(gz_files)) + " files.")
+    print("[FATAL] Not enough replicates. Must be at least " + str(required_replicates) + " But there are only " + str(
+        len(gz_files)) + " files.")
     exit(1)
 
-
-### Perform analysis
-####################
+# Perform analysis
+##################
 
 # Read interaction files
 interaction_set = DiachromaticInteractionSet()
@@ -66,15 +67,15 @@ print()
 
 # Write interactions that occur in the required number of replicates to file
 f_name_interactions = out_prefix + "_at_least_" + str(required_replicates) + "_combined_interactions.tsv.gz"
-interaction_set.write_diachromatic_interaction_file(target_file=f_name_interactions, required_replicates=required_replicates, verbose=True)
+interaction_set.write_diachromatic_interaction_file(target_file=f_name_interactions,
+                                                    required_replicates=required_replicates, verbose=True)
 write_file_info_report = interaction_set.get_write_file_info_report()
 write_file_info_table_row = interaction_set.get_write_file_info_table_row()
 
+# Create file with summary statistics
+#####################################
 
-### Create file with summary statistics
-#######################################
-
-f_name_summary =  out_prefix + "_at_least_" + str(required_replicates) + "_combined_summary.txt"
+f_name_summary = out_prefix + "_at_least_" + str(required_replicates) + "_combined_summary.txt"
 
 out_fh = open(f_name_summary, 'wt')
 

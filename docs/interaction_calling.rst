@@ -285,8 +285,6 @@ We filtered out interactions between different chromosomes (trans).
 From the remaining interactions (cis),
 we have filtered out short interactions with a distance 20,000 bp
 and interactions with and on chromosome ``chrM``.
-We implemented the filtering with the
-`command line tool AWK <https://en.wikipedia.org/wiki/AWK>`_:
 
 .. code-block:: console
 
