@@ -8,8 +8,8 @@ OUT_PREFIX=$2
 SRR_LIST=$3
 # Init target results
 mkdir $OUT_DIR
-> $OUT_DIR/$OUT_PREFIX\_1.fastq # Forward
-> $OUT_DIR/$OUT_PREFIX\_2.fastq # Reverse
+> $OUT_DIR/$OUT_PREFIX\_1.fastq.gz # Forward
+> $OUT_DIR/$OUT_PREFIX\_2.fastq.gz # Reverse
 > $OUT_DIR/$OUT_PREFIX\_md5.txt
 # Iterate through list of identifiers
 IFS=";"
@@ -19,17 +19,15 @@ do
   SRR_TRUNC=$(echo $SRR | cut -c1-6)
   # Forward
   wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/$SRR_TRUNC/$SRR/$SRR\_1.fastq.gz -O $OUT_DIR/$SRR\_1.fastq.gz
-  zcat $OUT_DIR/$SRR\_1.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_1.fastq
   md5sum $OUT_DIR/$SRR\_1.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_md5.txt
+  cat $OUT_DIR/$SRR\_1.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_1.fastq.gz
   rm $OUT_DIR/$SRR\_1.fastq.gz
   # Reverse
   wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/$SRR_TRUNC/$SRR/$SRR\_2.fastq.gz -O $OUT_DIR/$SRR\_2.fastq.gz
-  zcat $OUT_DIR/$SRR\_2.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_2.fastq
   md5sum $OUT_DIR/$SRR\_2.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_md5.txt
+  cat $OUT_DIR/$SRR\_2.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_2.fastq.gz
   rm $OUT_DIR/$SRR\_2.fastq.gz
 done
 # Compress concatenated files
-gzip $OUT_DIR/$OUT_PREFIX\_1.fastq # Forward
 md5sum $OUT_DIR/$OUT_PREFIX\_1.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_md5.txt
-gzip $OUT_DIR/$OUT_PREFIX\_2.fastq # Reverse
 md5sum $OUT_DIR/$OUT_PREFIX\_2.fastq.gz >> $OUT_DIR/$OUT_PREFIX\_md5.txt
