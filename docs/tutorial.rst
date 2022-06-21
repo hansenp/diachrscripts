@@ -69,8 +69,17 @@ The MD5 checksums are as follows:
 Calling interactions with ``Diachromatic``
 ******************************************
 
-This is described here: :ref:`RST_Interaction_calling`.
+We used the Java program
+`Diachromatic <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6678864/>`__
+to derive interactions from Hi-C and capture Hi-C data.
+There is a more
+`detailed documentation <https://diachromatic.readthedocs.io/en/latest/index.html>`__
+on this program.
+Diachromatic processes the data in three steps:
 
+1. Truncation of chimeric reads ``>`` Truncated reads
+2. Mapping and artifact removal ``>`` Valid mapped read pairs
+3. Counting supporting read pairs for interacting digest pairs ``>`` Interactions
 
 Truncation of chimeric reads
 ============================
@@ -100,16 +109,20 @@ Mapping and artifact removal
 
 For Hi-C data, no distribution particular of distances between reads of mapped pairs can be assumed (insert size).
 However, for paired-end data, read mappers rely on a minimum and maximum insert size.
-Therefore, the truncated forward and reverse reads must be mapped independently, like single-end data, and the reads
-must be re-paired afterwards.
-Re-pairing only requires that both reads of a pair have been mapped.
-In addition, there are certain rules by which artifacts can be recognized that are specific to Hi-C data.
-This can be done with ``Diachromatic`` using the subcommand ``align``.
+Therefore, the truncated forward and reverse reads must be mapped independently, like single-end data, and the mapped
+reads must be re-paired afterwards.
+In addition, there are certain rules by which artifacts that are specific to Hi-C data can be recognized and removed.
+This can be done with ``Diachromatic`` using the subcommand ``align`` for which we recommend having ``16`` to ``32 GB``
+memory available.
 For the single-end mappings, paths to ``bowtie2`` (``-b``) and to an index for the matching reference sequence (``-i``)
 must be specified. If the ``-bsu`` is used, then reads are considered to be mapped uniquely if they map to only one
 location. The ``-p`` option specifies how many CPUs can be used by ``bowtie2``.
-For the detection of artifacts, a digest file is required, which must be specified via the option ``-d``.
+For the detection of artifacts, a digest file is required, which contains all restriction fragments resulting from a
+complete digestion of the genome and must be specified via the option ``-d``.
 The FASTQ files with the truncated forward and reverse reads are specified using the ``-q`` and ``-r`` options.
+
+In order to execute the following command, the ``bowtie2`` index and the digest map must first be prepared.
+How to do this is documented here: :ref:`RST_Diachromatic_input_preparation`.
 
 .. code-block:: console
 
@@ -127,14 +140,17 @@ The FASTQ files with the truncated forward and reverse reads are specified using
 
 All result files from this step are written to the same directory (``-o``) and have the same prefix (``-x``) as the
 truncated reads.
-The main result from this step is a BAM file with valid read pairs that have not been classified as artifacts.
+The main result from this step is a BAM file with valid mapped read pairs that have not been classified as artifacts.
 If the ``-j`` option is used, then an additional BAM file is created containing all read pairs that were determined to
 be invalid and therefore rejected.
 
-Counting valid read pairs
-=========================
+Counting supporting read pairs for interacting digest pairs
+===========================================================
 
-XXX.
+In ``Diachromatic``, an interactions is defined as any pair of digests having at least one supporting valid mapped read
+pair. Using the subcommand ``count``, the number of supporting read pairs for all interactions can be determined.
+To do this, a corresponding digest map (``-d``) and a BAM file containing valid mapped read pairs (``-v``) are required.
+The ``-s`` option causes the read pair counts to be reported separately for the four types.
 
 .. code-block:: console
 
@@ -145,12 +161,40 @@ XXX.
        -o MIF_R1 \
        -x MIF_R1
 
-XXX.
+The interactions are written to the following file:
+
+.. code-block:: console
+
+    MIF_R1/MIF_R1.interaction.counts.table.tsv
+
+This file is in Diachromatic's interaction format:
+
+.. code-block:: console
+
+    chr1    46297999   46305684   E   chr1    51777391   51781717   N   2:0:1:0
+    chr17   72411026   72411616   N   chr17   72712662   72724357   N   3:0:2:0
+    chr7    69513952   69514636   N   chr7    87057837   87061499   E   4:0:3:0
+    chr11    9641153    9642657   N   chr11   47259263   47272706   E   5:0:4:0
+
+Each line represents an interaction.
+Columns 1 to 3 and 5 to 7 contain the coordinates of the digest pair,
+whereby the digest with the smaller coordinates always comes before the other digest.
+Columns 4 and 8 indicate the enrichment states of the digests.
+An ``E`` means that the corresponding digest has been selected for target enrichment
+and an ``N`` means that it has not been selected.
+The last column contains the counts of the supporting read pairs separated by type
+(``<Type 0>``:``<Type 1>``:``<Type 2>``:``<Type 3>``).
 
 Filtering for cis-chromosomal long range interactions
 =====================================================
 
-XXX.
+Interactions between different chromosomes are referred to as trans-chromosomal and interactions within the same
+chromosome cis-chromosomal.
+We restricted our analyzes to cis-chromosomal interactions.
+Typically, interactions with particularly short distances are excluded from downstream analyzes.
+We define the distance between the two inner ends of interacting digests (column 3 and 6) as interaction distance
+and discard all interactions with a distance smaller than 20,000 bp.
+We also discard all interactions on chromosome ``chrM``.
 
 .. code-block:: console
 
@@ -173,7 +217,7 @@ After that, the directory ``gzdir`` should contain three files.
 Pooling interactions from different replicates
 **********************************************
 
-This is described here: :ref:`RST_Combining_interactions`.
+This is described here: :ref:`RST_Interaction_pooling`.
 
 .. code-block:: console
 

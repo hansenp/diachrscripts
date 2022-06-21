@@ -1,8 +1,55 @@
-.. _RST_coordinates_of_enriched_digests:
+.. _RST_Diachromatic_input_preparation:
 
-###############################
-Coordinates of enriched digests
-###############################
+##################################
+``Diachromatic`` input preparation
+##################################
+
+*************
+bowtie2 index
+*************
+
+Diachromatic uses bowtie2 to map reads to a reference sequence,
+which requires an index for the reference sequence.
+Such an index can be created with bowtie2 or a pre-calculated index can be downloaded.
+For the data on the hematopoietic cell types,
+we used the reference sequence hg38 and downloaded a pre-calculated index from here:
+
+.. code-block:: console
+
+    ftp://ftp.ncbi.nlm.nih.gov/genomes/archive/old_genbank/Eukaryotes/vertebrates_mammals/Homo_sapiens/GRCh38/seqs_for_alignment_pipelines/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bowtie_index.tar.gz
+
+Note that the index consists of several files:
+
+.. code-block:: console
+
+    hg38.1.bt2
+    hg38.2.bt2
+    hg38.3.bt2
+    hg38.4.bt2
+    hg38.rev.1.bt2
+    hg38.rev.2.bt2
+
+Only the path together with the prefix (``hg38``) of these files are passed to Diachromatic.
+
+
+***********
+Digest file
+***********
+
+Diachromatic reports individual interactions as a pair of restriction fragments (or digest pairs)
+along with the number of read pairs that map to this digest pair.
+This requires the coordinates of all digests in the reference genome
+that are passed to Diachromatic in form of a text file,
+which we refer to as digest map.
+For a given restriction enzyme and a reference genome,
+a corresponding digest map can be created with the GOPHER software
+`as described in the documentation <https://diachromatic.readthedocs.io/en/latest/digest.html>`__.
+The digest map can also contain information about which digests have been selected for enrichment.
+Diachromatic will report the enrichment status for the two digests of
+each called interaction (see below).
+To ensure consistency,
+we recommend creating the digest map from the same FASTA file that was used
+to create the bowtie2 index.
 
 When analyzing data from capture Hi-C experiments,
 it is important to know which restriction fragments or digests were selected for enrichment.
@@ -10,8 +57,10 @@ In this section,
 we describe how to introduce this information into the analysis with
 ``Diachromatic`` and ``diachrscripts``.
 
+
+**********************************************
 GOPHER's digest file as input for Diachromatic
-==============================================
+**********************************************
 
 If the probes for a capture Hi-C experiment were created with GOPHER,
 then the digest file, which
@@ -40,11 +89,12 @@ an ``E`` corresponds to an ``T`` (enriched) and an ``N`` to an ``F`` (not enrich
 
     chr11    9641153    9642657   E   chr11   47259263   47272706   N   5:4
 
+**********************************
 Digest file used for Javierre data
-==================================
+**********************************
 
 hg38 coordinates of enriched digests
-------------------------------------
+====================================
 
 We used a
 `list of enriched digests <https://osf.io/u8tzp/>`_
@@ -77,7 +127,7 @@ Here are the first four lines of this file:
     1	850619	874081	220	AL645608.1;RP11-54O7.3;SAMD11
     1	889424	903640	223	KLHL17;NOC2L;PLEKHN1
 
-We extracted the coordinates of enriched digests from this file with 
+We extracted the coordinates of enriched digests from this file with
 the following awk command:
 
 .. code-block:: console
@@ -105,7 +155,7 @@ The resulting file in BED format can be found here:
     additional_files/javierre_2016/baited_digest_regions/Digest_Human_HindIII_baits_e75_ID.baitmap.hg38.bed
 
 hg38 digest file
-----------------
+================
 
 In order to create a Diachromatic digest file for the analysis of the Javierre data,
 we first created a GOPHER project with the name ``no_digests_selected_HindIII``.
@@ -173,3 +223,4 @@ which confirms our assumption.
 
 In our analysis of the Javierre data,
 we used the digest file for ``hg38`` created as described above as input for Diachromatic.
+

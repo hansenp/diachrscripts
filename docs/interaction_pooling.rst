@@ -1,8 +1,8 @@
-.. _RST_Combining_interactions:
+.. _RST_Interaction_pooling:
 
-#################################################
-Pooling of interactions from different replicates
-#################################################
+###################
+Interaction pooling
+###################
 
 For the dataset on the hematopoietic cell types, there are three to four biological replicates
 for each cell type.
@@ -11,8 +11,9 @@ we discard interactions that occur in less than two replicates and,
 for the remaining interactions, we add up the read pair counts from
 all replicates separately for the four counts.
 
+****************
 Using the script
-================
+****************
 
 We implemented the pooling of interactions from different replicates in the following script:
 
@@ -28,8 +29,7 @@ The script expects a path to a directory that contains gzipped files in Diachrom
 From the files output by Diachromatic,
 we have filtered out interactions between different chromosomes (trans),
 interactions with a distance of less than 20,000 bp and
-interactions with or on chromosome ``chrM``
-(see :ref:`RST_Interaction_calling`).
+interactions with or on chromosome ``chrM``.
 This is the content of the directory with the gzipped files for ``MK``:
 
 .. code-block:: console
@@ -66,8 +66,9 @@ in the individual files and
 the second file contains the pooled interactions.
 
 
+******************
 Testing the script
-==================
+******************
 
 Diachromatic
 even outputs interactions that have only a single read pair.

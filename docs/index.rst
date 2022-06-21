@@ -22,13 +22,10 @@ analyzes is therefore a good starting point for your own analyzes.
    :caption: Contents:
 
    tutorial
-   interaction_calling
-   coordinates_of_enriched_digests
-   combining_interactions
+   diachromatic_input_preparation
+   interaction_pooling
+   unbalanced_interaction_calling
    binomial_model
-   simple_twisted_randomization
-   false_discovery_rate
-   rate_and_categorize_interactions
 
 
 
