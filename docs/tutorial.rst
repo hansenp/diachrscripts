@@ -128,7 +128,7 @@ How to do this is documented here: :ref:`RST_Diachromatic_input_preparation`.
 
     $ java -jar Diachromatic.jar align \
        -b <BOWTIE2_EXECUTABLE> \
-       -i <BOWTIE2_INDEX>/hg38 \
+       -i <BOWTIE2_INDEX_PATH>/hg38 \
        -bsu \
        -p 4 \
        -d <DIGEST_MAP> \
