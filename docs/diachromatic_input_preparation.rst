@@ -8,10 +8,9 @@ Diachromatic input preparation
 bowtie2 index
 *************
 
-Diachromatic uses bowtie2 to map reads to a reference sequence,
-which requires an index for the reference sequence.
+Diachromatic uses bowtie2 to map reads to a reference sequence, which requires an reference index.
 Such an index can be created with bowtie2 or a pre-calculated index can e.g. be downloaded from the
-`iGenomes website <https://support.illumina.com/sequencing/sequencing_software/igenome.html>`_
+`iGenomes website <https://support.illumina.com/sequencing/sequencing_software/igenome.html>`_:
 
 .. code-block:: console
 
@@ -19,6 +18,7 @@ Such an index can be created with bowtie2 or a pre-calculated index can e.g. be 
     $ mkdir Homo_sapiens_UCSC_hg38
     $ tar -xf Homo_sapiens_UCSC_hg38.tar.gz -C Homo_sapiens_UCSC_hg38
 
+In addition to the bowtie2 index, the downloaded directory contains other data and is about ``30 GB`` in size.
 The index consists of several files:
 
 .. code-block:: console
@@ -32,13 +32,8 @@ The index consists of several files:
     genome.rev.1.bt2
     genome.rev.2.bt2
 
-Only the path together with the file prefix of these files are passed to Diachromatic.
+Only the path together with the file prefix of these files are passed to Diachromatic ``-i <PATH>/genome``.
 
-.. code-block:: console
-
-    -i <PATH>/genome
-
-In addition to the bowtie2 index, the downloaded directory contains other data and is about ``30 GB`` in size.
 
 ***********
 Digest file
@@ -48,9 +43,8 @@ Diachromatic reports individual interactions as a pairs of restriction fragments
 along with the number of supporting read pairs.
 This requires the coordinates of all possible digests in the entire reference genome.
 These are passed to Diachromatic in form of a text file, which we refer to as digest file.
-For a given restriction enzyme and a reference genome,
-a corresponding digest map can be created with the GOPHER software
-`as described in the documentation <https://diachromatic.readthedocs.io/en/latest/digest.html>`__.
+For a given restriction enzyme and a reference genome, a corresponding
+`digest map can be created with the GOPHER software <https://diachromatic.readthedocs.io/en/latest/digest.html>`__.
 For example, here are the first few lines from a digest file:
 
 .. code-block:: console
@@ -82,7 +76,8 @@ If this is not the case,
 then with promoter capture Hi-C experiments for which all promoters have been selected for target enrichment,
 there is the possibility to create a design with the shortcut ``All protein coding genes``
 before exporting the digest file from GOPHER.
-However, this is inaccurate because the selection of digests depends on the software used and the parameter settings.
+However, this is inaccurate because the selection of digests for enrichment depends on the software used and the
+parameter settings.
 For cases in which the coordinates of enriched digests are known,
 we provide a script that can be used to create an appropriate digest file.
 
@@ -98,10 +93,15 @@ Such information can be found, for example, in the supplementary material of the
 (see examples below).
 In addition, a digest file for the appropriate reference genome and restriction enzyme must be passed.
 You can export a digest file from GOPHER before creating a design or you can  take any existing digest file.
-It is only used as a template and the information related to enrichment will be completely rewritten.
+The script uses the file only as a template and the information related to enrichment will be completely rewritten.
+For convenience, we have added a template file to this repository that just need to be decompressed:
+
+.. code-block:: console
+
+    $ gunzip -k diachrscripts/additional_files/template_digest_file_hg38_HindIII.txt.gz
 
 Selecting enriched digests for Mifsud et al. 2015
-=================================================
+-------------------------------------------------
 
 Supplementary Table 4 of the work published by
 `Mifsud et al. 2015 <https://pubmed.ncbi.nlm.nih.gov/25938943/>`__
@@ -112,49 +112,59 @@ Save this table in text format and extract the coordinates.
 
     $ cat mifsud_supplementary_table_4.txt | \
         awk '{if($1 ~ /^>/){split($0,a," ");split(a[1],b,":");gsub(/>C/,"c",b[1]);split(b[2],c,"-");print b[1]"\t"c[1]"\t"c[2]}}' \
-        > mifsud_bait_coords_hg19.bed
+        > mifsud_baits_hg19.bed
 
 Use
 `UCSC's LiftOver tool <https://genome.ucsc.edu/cgi-bin/hgLiftOver>`_
-to convert the coordinates to from ``hg19`` to ``hg38`` and save the resulting file as ``mifsud_bait_coords_hg38.bed``.
-Generate a digest file for ``hg38`` with GOPHER and extract the coordinates of all digests in the genome.
+to convert the coordinates to from ``hg19`` to ``hg38``.
+Deselect ``Allow multiple output regions``.
+Save the resulting file as ``mifsud_baits_hg38.bed``.
+37,603 bait coordinates were successfully converted  to ``hg38``.
+The conversion failed for 5 bait coordinates because the corresponding regions in ``hg38`` are either deleted or
+partially deleted.
+Next, extract the coordinates of all digests in the genome from digest file template and write them to a BED file:
 
 .. code-block:: console
 
-    $ tail -n+2 template_digest_file_hg38_HindIII.txt \
+    $ tail -n+2 diachrscripts/additional_files/template_digest_file_hg38_HindIII.txt \
     | awk '{print $1"\t"$2"\t"$3}' > all_hg38_digests.bed
 
-Use
+Then use
 `bedtools <https://bedtools.readthedocs.io/en/latest/content/tools/intersect.html>`_
-to extract all digests that contain at least one bait completely.
+to extract all digests that contain at least one bait completely:
 
 .. code-block:: console
 
-    $ intersectBed -wa -u -F 1.00 -a all_hg38_digests.bed -b mifsud_bait_coords_hg38.bed \
+    $ intersectBed -wa -u -F 1.00 -a all_hg38_digests.bed -b mifsud_baits_hg38.bed \
     > mifsud_baited_digests_hg38.bed
 
-Use our script to create a digest file in which digests that Mifsud et al. have selected for enrichment are marked with
+This results in 22,077 baited digests.
+Finally, use our script to create a digest file in which digests that Mifsud et al. have selected for enrichment are marked with
 a ``T`` and all others with an ``F``.
 
 .. code-block:: console
 
     $ python diachrscripts/additional_scripts/create_diachromatic_digest_file.py \
         --enriched-digests-file mifsud_baited_digests_hg38.bed \
-        --diachromatic-digest-file template_digest_file_hg38_HindIII.txt \
+        --diachromatic-digest-file \
+            diachrscripts/additional_files/template_digest_file_hg38_HindIII.txt \
         --out-prefix mifsud_hg38_HindIII
 
-This will produce the file ``mifsud_hg38_HindIII_diachromatic_digest_file.txt`` that can be used as input for Diachromatic.
+This will produce the file ``mifsud_hg38_HindIII_diachromatic_digest_file.txt`` that can be used as input for
+Diachromatic.
+All 22,077 digests in the digest file were marked with a ``T``.
+We have added the file ``mifsud_baited_digests_hg38.bed`` to this repository so that the digest file can be recreated
+if needed.
 
 Selecting enriched digests for Javierre et al. 2016
-===================================================
+---------------------------------------------------
 
 For the work published by
 `Javierre et al. 2016 <https://pubmed.ncbi.nlm.nih.gov/27863249/>`__,
 the ``hg19`` coordinates of the baited digests can be downloaded from
 `OFS <https://osf.io/e594p/>`__.
-
-Download an archive that expands into a *design folder* that can be provided to the interaction caller
-`CHiCAGO <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4908757/>`_.
+First, download an archive that expands into a *design folder* that is intended as input for the interaction caller
+`CHiCAGO <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4908757/>`_:
 
 .. code-block:: console
 
@@ -174,99 +184,40 @@ that consists of the following columns:
         1	850619	874081	220	AL645608.1;RP11-54O7.3;SAMD11
         1	889424	903640	223	KLHL17;NOC2L;PLEKHN1
 
-Convert the bait map file into BED format.
+Coordinates are available for a total of 22,076 baited digests.
+Next, convert the bait map file into BED format:
 
 .. code-block:: console
 
     $ awk '{print "chr"$1"\t"$2"\t"$3}' Human_hg19/Digest_Human_HindIII_baits_e75_ID.baitmap \
-    > mifsud_baited_digests_hg19.bed
+    > javierre_baited_digests_hg19.bed
 
-Use
+Then use
 `UCSC's LiftOver tool <https://genome.ucsc.edu/cgi-bin/hgLiftOver>`_
 to convert the coordinates to from ``hg19`` to ``hg38`` and save the resulting file as
 ``javierre_baited_digests_hg38.bed``.
-
-Use our script to create a digest file in which digests that Javierre et al. have selected for enrichment are marked
+Deselect ``Allow multiple output regions``.
+22,056 digest coordinates were successfully converted  to ``hg38``.
+The conversion failed for 20 digests
+because ``hg19`` coordinates in ``hg38``
+are either split or partially deleted.
+Finally, use our script to create a digest file in which digests that Javierre et al. have selected for enrichment are marked
 with a ``T`` and all others with an ``F``.
 
 .. code-block:: console
 
     $ python diachrscripts/additional_scripts/create_diachromatic_digest_file.py \
         --enriched-digests-file javierre_baited_digests_hg38.bed \
-        --diachromatic-digest-file template_digest_file_hg38_HindIII.txt \
+        --diachromatic-digest-file \
+            diachrscripts/additional_files/template_digest_file_hg38_HindIII.txt \
         --out-prefix javierre_hg38_HindIII
 
-This will produce the file ``javierre_hg38_HindIII_diachromatic_digest_file.txt`` that can be used as input for Diachromatic.
-
-XXXXXXXXXXX.
-
-Coordinates are avaiable for a total of 22,076 digests.
-
-These coordinates refer to the genome build ``hg19``.
-We used
-`UCSC's LiftOver tool <https://genome.ucsc.edu/cgi-bin/hgLiftOver>`_
-to convert the coordinates to ``hg38``.
-22,056 digests were successfully converted  to ``hg38``.
-The conversion failed for 20 digests
-because ``hg19`` coordinates in ``hg38``
-are either split or partially deleted.
-The resulting file in BED format can be found here:
-
-.. code-block:: console
-
-    additional_files/javierre_2016/baited_digest_regions/Digest_Human_HindIII_baits_e75_ID.baitmap.hg38.bed
-
-hg38 digest file
-================
-
-We wrote a Python script to overwrite the values in the ``Selected`` column
-of a digest file:
-
-.. code-block:: console
-
-    $ python diachrscripts/additional_scripts/create_diachromatic_digest_file.py
-       --enriched-digests-file Digest_Human_HindIII_baits_e75_ID.baitmap.hg38.bed
-       --diachromatic-digest-file no_digests_selected_HindIII_hg38_DigestedGenome.txt
-       --out-prefix /JAV_hg38_HindIII
-
-
-It is important that the coordinates in the two files refer to the same genome build,
-e.g. ``hg19`` or ``hg38``.
-
-For each line of the digest file, the script checks
-whether there is a digest with matching coordinates in the BED file.
-If this is the case, the ``Selected`` field is overwritten with a ``T`` and otherwise with an ``F``.
-Furthermore, the fields ``5'_Probes`` and ``3'_Probes`` are set to ``1``.
-
-We applied the script to the prepared enriched digest BED file for the Javierre data
-and the digest file for ``hg38`` and ``HindIII`` in which no digest is marked as selected.
-For the command above,
-the created digest file has the following name:
-
-.. code-block:: console
-
-    JAV_HindIII_hg38_diachromatic_digest_file.txt
-
-The script reports that for 22,008 of the 22,056 enriched digests
-no matching coordinates were found in the digest file,
-i.e. no matching coordinates were found for 48 digests.
-The coordinates of these digests are written to the following file:
-
-.. code-block:: console
-
-    JAV_HindIII_hg38_digests_not_found.bed
-
-The script has an option ``--verbose`` that can be used to examine such cases
-more closely by printing the associated lines from the digest file.
-Three categories of error were responsible for the 48 cases in which a digest could not be mapped.
-In 34 cases, the enriched digest is shifted three positions to the right
-with respect to the corresponding digest in the Diachromatic digest file.
-In 10 cases, the enriched digest spans a restriction site
-(i.e., overlaps two or more digests in the Diachromatic digest file).
-And in four cases, the enriched digest is completely contained in a digest
-from the Diachromatic digest file.
-We assumed that these cases result from the LiftOver from ``hg19`` to ``hg38``
-and repeated the same procedure for ``hg19``.
-In this case, all enriched digests are found in the Diachromatic digest file,
-which confirms our assumption.
-
+This will produce the file ``javierre_hg38_HindIII_diachromatic_digest_file.txt`` that can be used as input for
+Diachromatic.
+22,008 digests in the digest file were marked with a ``T``.
+48 input digest could not be found in the digest file.
+We examined these cases in more detail (``--verbose``) and concluded that these cases are due to the LiftOver step.
+We have added the file ``javierre_baited_digests_hg38.bed`` to this repository so that the digest file can be recreated
+if needed. For the files ``javierre_baited_digests_hg38.bed`` and ``mifsud_baited_digests_hg38.bed``,
+22,008 baited digests overlap, i.e. the digest files we generated for the Mifsud and Javierre data are also almost
+identical.

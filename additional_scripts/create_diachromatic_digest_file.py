@@ -43,7 +43,11 @@ print("[INFO] Reading list with digests selected for enrichment ...")
 enriched_digests_set = set()
 with open(enriched_digests_file, 'rt') as fp:
     for line in fp:
-        chr, sta, end = line.rstrip().split('\t')
+        #chr, sta, end = line.rstrip().split('\t')
+        fields = line.rstrip().split('\t')
+        chr = fields[0]
+        sta = fields[1]
+        end = fields[2]
         enriched_digests_set.add(chr + '\t' + str(sta) + '\t' + str(end))
 
 n_enriched_digests = len(enriched_digests_set)
