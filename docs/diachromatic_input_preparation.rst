@@ -111,17 +111,23 @@ Save this table in text format and extract the coordinates.
 .. code-block:: console
 
     $ cat mifsud_supplementary_table_4.txt | \
-        awk '{if($1 ~ /^>/){split($0,a," ");split(a[1],b,":");gsub(/>C/,"c",b[1]);split(b[2],c,"-");print b[1]"\t"c[1]"\t"c[2]}}' \
+        awk '{if($1 ~ /^>/){split($0,a," ");split(a[1],b,":");gsub(/>C/,"c",b[1]);split(b[2],c,"-");print b[1]"\t"c[1]-1"\t"c[2]}}' \
         > mifsud_baits_hg19.bed
 
 Use
 `UCSC's LiftOver tool <https://genome.ucsc.edu/cgi-bin/hgLiftOver>`_
 to convert the coordinates to from ``hg19`` to ``hg38``.
 Deselect ``Allow multiple output regions``.
-Save the resulting file as ``mifsud_baits_hg38.bed``.
-37,603 bait coordinates were successfully converted  to ``hg38``.
-The conversion failed for 5 bait coordinates because the corresponding regions in ``hg38`` are either deleted or
+37,604 bait coordinates were successfully converted  to ``hg38``.
+The conversion failed for 4 bait coordinates because the corresponding regions in ``hg38`` are either deleted or
 partially deleted.
+Furthermore, two bait coordinates are mapped to chromosome ``chr22_KI270879v1_alt`` of ``hg38``.
+These can be removed as follows:
+
+.. code-block:: console
+
+    $ grep -v 'chr22_KI270879v1_alt' lift_over_results.bed  > mifsud_baits_hg38.bed
+
 Next, extract the coordinates of all digests in the genome from digest file template and write them to a BED file:
 
 .. code-block:: console
@@ -138,7 +144,7 @@ to extract all digests that contain at least one bait completely:
     $ intersectBed -wa -u -F 1.00 -a all_hg38_digests.bed -b mifsud_baits_hg38.bed \
     > mifsud_baited_digests_hg38.bed
 
-This results in 22,077 baited digests.
+This results in 22,076 baited digests.
 Finally, use our script to create a digest file in which digests that Mifsud et al. have selected for enrichment are marked with
 a ``T`` and all others with an ``F``.
 
@@ -152,7 +158,7 @@ a ``T`` and all others with an ``F``.
 
 This will produce the file ``mifsud_hg38_HindIII_diachromatic_digest_file.txt`` that can be used as input for
 Diachromatic.
-All 22,077 digests in the digest file were marked with a ``T``.
+All 22,076 digests in the digest file were marked with a ``T``.
 We have added the file ``mifsud_baited_digests_hg38.bed`` to this repository so that the digest file can be recreated
 if needed.
 

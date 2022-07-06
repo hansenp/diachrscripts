@@ -5,7 +5,7 @@ With this script the test file for the FDR procedure was generated.
 """
 
 import argparse
-from numpy import log, arange
+from numpy import arange
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
 parser = argparse.ArgumentParser(description='Evaluate and categorize interactions and select unndirected reference interactions.')
