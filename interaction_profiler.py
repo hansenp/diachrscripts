@@ -72,8 +72,8 @@ WRITE_BED = args.write_bed
 VERBOSE = args.verbose
 
 # Define names for output files
-BEDGRAPH_FILENAME = OUT_PREFIX + '_|IC=' + I_CAT + '|EC=' + E_CAT + '|PT=' + PROFILE_TYPE + '|_profile.bedgraph'
-BED_FILENAME = OUT_PREFIX + '_|IC=' + I_CAT + '|EC=' + E_CAT + '|PT=' + PROFILE_TYPE + '|_interactions.bed'
+BEDGRAPH_FILENAME = OUT_PREFIX + '_profile.bedgraph'
+BED_FILENAME = OUT_PREFIX + '_interactions.bed'
 
 # Report on parameters
 if VERBOSE:
