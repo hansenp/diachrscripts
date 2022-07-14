@@ -32,15 +32,15 @@ parser.add_argument('-ec', '--enrichment-category',
                     default='ALL')
 parser.add_argument('-t', '--profile-type',
                     help='Type of profile that will be created.'
-                         'By default, an interaction profile (\'I\') is created.'
+                         'By default, an interaction profile (\'INUM\') is created.'
                          'With this type, the count in a bin for a given restriction fragment corresponds to the number'
                          'of interactions spanning that fragment.'
-                         'For type \'SRPT\', the bin count of a fragment corresponds to the total number of spanning'
-                         'supporting read pairs, and for type \'SRPM\','
+                         'For type \'RPNUM\', the bin count of a fragment corresponds to the total number of spanning'
+                         'supporting read pairs, and for type \'RPMAX\','
                          'not the total number, but only the maximum of the counts for the four read types is taken'
                          'into account for each interaction.',
-                    choices=['I', 'SRPT', 'SRPM'],
-                    default='I')
+                    choices=['INUM', 'RPNUM', 'RPMAX'],
+                    default='INUM')
 parser.add_argument('-d', '--gopher-digest-file',
                     help='Digest file created with GOPHER using the same genome build and restriction enzyme that'
                          'were used to call the interactions.',
@@ -143,11 +143,11 @@ for d11_inter in d11_interaction_set.interaction_list:
         continue
 
     # Define increment
-    if PROFILE_TYPE == 'I':
+    if PROFILE_TYPE == 'INUM':
         increment_by = 1
-    elif PROFILE_TYPE == 'SRPT':
+    elif PROFILE_TYPE == 'RPNUM':
         increment_by = d11_inter.rp_total
-    elif PROFILE_TYPE == 'SRPM':
+    elif PROFILE_TYPE == 'RPMAX':
         increment_by = max(d11_inter._simple_1, d11_inter._simple_2, d11_inter._twisted_1, d11_inter._twisted_2)
     else:
         print('[ERROR] Invalid increment type!')

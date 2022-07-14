@@ -614,13 +614,13 @@ class IaFreqDistAnalysis:
 
         print("9")
 
-        # Perform KS test
+        # Perform Wilcoxon rank-sums test
         print(i_cats)
         print(e_cats)
-        print(stats.ks_2samp(num_dict[i_cats[0]][e_cats[0]], num_dict[i_cats[1]][e_cats[0]]))
-        print(stats.ks_2samp(num_dict[i_cats[0]][e_cats[1]], num_dict[i_cats[1]][e_cats[1]]))
-        print(stats.ks_2samp(num_dict[i_cats[0]][e_cats[0]], num_dict[i_cats[0]][e_cats[1]]))
-        print(stats.ks_2samp(num_dict[i_cats[1]][e_cats[0]], num_dict[i_cats[1]][e_cats[1]]))
+        print(stats.ranksums(num_dict[i_cats[0]][e_cats[0]], num_dict[i_cats[1]][e_cats[0]]))
+        print(stats.ranksums(num_dict[i_cats[0]][e_cats[1]], num_dict[i_cats[1]][e_cats[1]]))
+        print(stats.ranksums(num_dict[i_cats[0]][e_cats[0]], num_dict[i_cats[0]][e_cats[1]]))
+        print(stats.ranksums(num_dict[i_cats[1]][e_cats[0]], num_dict[i_cats[1]][e_cats[1]]))
 
         print("10")
 

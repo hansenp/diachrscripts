@@ -352,7 +352,7 @@ class DiachromaticInteractionSet:
         self._eval_cat_info_dict = report_dict
         return report_dict
 
-    def select_reference_interactions(self, rpc_factor: int = 1.0, verbose: bool = False):
+    def select_reference_interactions(self, selection_rule: str = "RPNUM", verbose: bool = False):
         """
         Select reference interactions that match directed interactions in terms of enrichment category and total number
         of read pairs per interaction and return a dictionary with information on this selection process.
@@ -367,6 +367,10 @@ class DiachromaticInteractionSet:
         if verbose:
             print("[INFO] Select reference interactions ...")
             print("\t[INFO] Treating NE and EN as one category ...")
+
+        if selection_rule not in ['RPNUM', 'RPMAX', 'RPMAX2', 'RPMAX3']:
+            print('[ERROR] The selection rule must be \'RPNUM\', \'RPMAX\', \'RPMAX2\', \'RPMAX3\'!')
+            return
 
         # Nested dictionary that stores the numbers of interactions (value) for different read pair numbers (key)
         rp_inter_dict = {'NN': {},
@@ -390,7 +394,21 @@ class DiachromaticInteractionSet:
                 report_dict[enrichment_pair_tag]['DI'][0] += 1
                 if enrichment_pair_tag == 'NE' or enrichment_pair_tag == 'EN':
                     enrichment_pair_tag = 'NEEN'
-                rp_total = d11_inter.rp_total
+
+                if selection_rule == 'RPNUM':
+                    rp_total = d11_inter.rp_total
+                elif selection_rule == 'RPMAX':
+                    rp_total = max([d11_inter._simple_1, d11_inter._simple_2, d11_inter._twisted_1, d11_inter._twisted_2])
+                elif selection_rule == 'RPMAX2':
+                    rp_total = max([d11_inter._twisted_1, d11_inter._twisted_2])
+                elif selection_rule == 'RPMAX3':
+                    rpcs = sorted(
+                        [d11_inter._simple_1, d11_inter._simple_2, d11_inter._twisted_1, d11_inter._twisted_2],
+                        reverse=True)
+                    rp_total = sum(rpcs[:2])
+                else:
+                    print('[ERROR] The selection rule must be \'RPNUM\', \'RPMAX\', \'RPMAX2\', \'RPMAX3\'!')
+                    return
 
                 if rp_total not in rp_inter_dict[enrichment_pair_tag]:
                     rp_inter_dict[enrichment_pair_tag][rp_total] = 1
@@ -412,7 +430,21 @@ class DiachromaticInteractionSet:
                 enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
                 if enrichment_pair_tag == 'NE' or enrichment_pair_tag == 'EN':
                     enrichment_pair_tag = 'NEEN'
-                rp_total = int(d11_inter.rp_total * rpc_factor)
+
+                if selection_rule == 'RPNUM':
+                    rp_total = d11_inter.rp_total
+                elif selection_rule == 'RPMAX':
+                    rp_total = max([d11_inter._simple_1, d11_inter._simple_2, d11_inter._twisted_1, d11_inter._twisted_2])
+                elif selection_rule == 'RPMAX2':
+                    rp_total = max([d11_inter._twisted_1, d11_inter._twisted_2])
+                elif selection_rule == 'RPMAX3':
+                    rpcs = sorted(
+                        [d11_inter._simple_1, d11_inter._simple_2, d11_inter._twisted_1, d11_inter._twisted_2],
+                        reverse=True)
+                    rp_total = sum(rpcs[:2])
+                else:
+                    print('[ERROR] The selection rule must be \'RPNUM\', \'RPMAX\', \'RPMAX2\', \'RPMAX3\'!')
+                    return
 
                 if rp_total in rp_inter_dict[enrichment_pair_tag] and 0 < rp_inter_dict[enrichment_pair_tag][rp_total]:
                     rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
@@ -432,7 +464,21 @@ class DiachromaticInteractionSet:
                 enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
                 if enrichment_pair_tag == 'NE' or enrichment_pair_tag == 'EN':
                     enrichment_pair_tag = 'NEEN'
-                rp_total = d11_inter.rp_total
+
+                if selection_rule == 'RPNUM':
+                    rp_total = d11_inter.rp_total
+                elif selection_rule == 'RPMAX':
+                    rp_total = max([d11_inter._simple_1, d11_inter._simple_2, d11_inter._twisted_1, d11_inter._twisted_2])
+                elif selection_rule == 'RPMAX2':
+                    rp_total = max([d11_inter._twisted_1, d11_inter._twisted_2])
+                elif selection_rule == 'RPMAX3':
+                    rpcs = sorted(
+                        [d11_inter._simple_1, d11_inter._simple_2, d11_inter._twisted_1, d11_inter._twisted_2],
+                        reverse=True)
+                    rp_total = sum(rpcs[:2])
+                else:
+                    print('[ERROR] The selection rule must be \'RPNUM\', \'RPMAX\', \'RPMAX2\', \'RPMAX3\'!')
+                    return
 
                 if rp_total in rp_inter_dict[enrichment_pair_tag] and 0 < rp_inter_dict[enrichment_pair_tag][rp_total]:
                     rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
@@ -458,13 +504,24 @@ class DiachromaticInteractionSet:
             print("\t[ERROR] UIR-NE: " + str(report_dict['NE']['UIR'][0] + report_dict['NE']['UIR'][0]))
             print("\t[ERROR] UIR-EN: " + str(report_dict['NE']['UIR'][0] + report_dict['EN']['UIR'][0]))
             print("\t[ERROR] UIR-NEEN: " + str(neen_sum_uir))
-            exit(1)
+            return
 
         if verbose:
             print("[INFO] ... done.")
 
         self._select_ref_info_dict = report_dict
         return report_dict
+
+    def deselect_reference_interactions(self):
+        """
+        This function undoes the selection of reference interactions. The tag 'DIX' is replaced with 'DI' and the tag
+        'UIR' with 'UI'.
+        """
+        for d11_inter in self._inter_dict.values():
+            if d11_inter.get_category() == 'DIX':
+                d11_inter.set_category('DI')
+            if d11_inter.get_category() == 'UIR':
+                d11_inter.set_category('UI')
 
     def write_diachromatic_interaction_file(self, required_replicates: int = 1, target_file: str = None,
                                             verbose: bool = False):
@@ -858,3 +915,39 @@ class DiachromaticInteractionSet:
             if min_rp_num <= d_inter.rp_total:
                 i_num += 1
         return i_num
+
+    def sort_and_select_top_n_interactions(self, sort_by: str = 'RPNUM', top_n: int = 100000):
+
+        # Get list of interactions
+        interaction_list = list(self._inter_dict.values())
+
+        if len(interaction_list) < top_n:
+            print('[ERROR] Invalid \'top_n\' parameter! Must be less then the total number of interactions, ' + \
+                  'which is ' + '{:,}'.format(len(interaction_list)) + '.')
+
+        # Get list of interaction indices
+        idx_list = list(range(0, len(interaction_list)))
+
+        # Get RPNUM or RPMAX list
+        if sort_by == 'RPNUM':
+            rp_list = [d_inter.rp_total for d_inter in interaction_list]
+        elif sort_by == 'RPMAX':
+            rp_list = [max(d_inter._simple_1, d_inter._simple_2, d_inter._twisted_1, d_inter._twisted_2) \
+                       for d_inter in interaction_list]
+        elif sort_by == 'RPMAX2':
+            rp_list = [max(d_inter._twisted_1, d_inter._twisted_2) \
+                       for d_inter in interaction_list]
+        else:
+            print('[ERROR] Invalid \'sort_by\' parameter! Must be \'RPNUM\' or \'RPMAX\'')
+
+        # Sort interaction indices by read pair number
+        sorted_idx = [i for _, i in sorted(zip(rp_list, idx_list), reverse=True)]
+
+        # Select indices of the top n interactions
+        sorted_idx = sorted_idx[0:top_n]
+
+        # Create and return new interaction set with top n interactions
+        return_interaction_set = DiachromaticInteractionSet()
+        for idx in sorted_idx:
+            return_interaction_set._inter_dict[interaction_list[idx].key] = interaction_list[idx]
+        return return_interaction_set

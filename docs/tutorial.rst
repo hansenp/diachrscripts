@@ -23,9 +23,9 @@ For this dataset, ``200 GB`` hard disk space must be available.
 
 .. code-block:: console
 
-    $ diachrscripts/additional_scripts/dumpy.sh MIF_R1 MIF_R1 "ERR436029"
-    $ diachrscripts/additional_scripts/dumpy.sh MIF_R2 MIF_R2 "ERR436028;ERR436030;ERR436033"
-    $ diachrscripts/additional_scripts/dumpy.sh MIF_R3 MIF_R3 "ERR436026;ERR436031"
+    $ diachrscripts/additional_scripts/dumpy.sh MIF_REP1 MIF_REP1 "ERR436029"
+    $ diachrscripts/additional_scripts/dumpy.sh MIF_REP2 MIF_REP2 "ERR436028;ERR436030;ERR436033"
+    $ diachrscripts/additional_scripts/dumpy.sh MIF_REP3 MIF_REP3 "ERR436026;ERR436031"
 
 A separate directory is created for each of the three replicates.
 Because it is paired-end data, there are pairs of forward and reverse FASTQ files with
@@ -34,36 +34,36 @@ Both files have the same number of lines and reads with the same line index form
 
 .. code-block:: console
 
-    $ ls -lh MIF_R*/
-    MIF_R1/:
+    $ ls -lh MIF_REP*/
+    MIF_REP1/:
     total 28G
-    12G MIF_R1_1.fastq.gz
-    12G MIF_R1_2.fastq.gz
-    242 MIF_R1_md5.txt
+    12G MIF_REP1_1.fastq.gz
+    12G MIF_REP1_2.fastq.gz
+    242 MIF_REP1_md5.txt
 
-    MIF_R2/:
+    MIF_REP2/:
     total 87G
-    36G MIF_R2_1.fastq.gz
-    37G MIF_R2_2.fastq.gz
-    490 MIF_R2_md5.txt
+    36G MIF_REP2_1.fastq.gz
+    37G MIF_REP2_2.fastq.gz
+    490 MIF_REP2_md5.txt
 
-    MIF_R3/:
+    MIF_REP3/:
     total 57G
-    24G MIF_R3_1.fastq.gz
-    24G MIF_R3_2.fastq.gz
-    366 MIF_R3_md5.txt
+    24G MIF_REP3_1.fastq.gz
+    24G MIF_REP3_2.fastq.gz
+    366 MIF_REP3_md5.txt
 
 The MD5 checksums are as follows:
 
 .. code-block:: console
 
-    $ cat MIF_R*/MIF_R*_md5.txt | grep -v ERR
-    c68ab47d9f8cb9b49c1701ff04c7fd41  MIF_R1/MIF_R1_1.fastq.gz
-    338980ac0a0bc1a3ea26bc6cf55dfb43  MIF_R1/MIF_R1_2.fastq.gz
-    b6c248b48ded9eee8c4e951f4ea8d4a4  MIF_R2/MIF_R2_1.fastq.gz
-    a3ff3dfde21d39dc41dc3c1212cbb3e3  MIF_R2/MIF_R2_2.fastq.gz
-    5ceed4dd8784a467afa35f00b83d132d  MIF_R3/MIF_R3_1.fastq.gz
-    4260c37ed24ee29c5046ef74096ba1f7  MIF_R3/MIF_R3_2.fastq.gz
+    $ cat MIF_REP*/MIF_REP*_md5.txt | grep -v ERR
+    c68ab47d9f8cb9b49c1701ff04c7fd41  MIF_REP1/MIF_REP1_1.fastq.gz
+    338980ac0a0bc1a3ea26bc6cf55dfb43  MIF_REP1/MIF_REP1_2.fastq.gz
+    b6c248b48ded9eee8c4e951f4ea8d4a4  MIF_REP2/MIF_REP2_1.fastq.gz
+    a3ff3dfde21d39dc41dc3c1212cbb3e3  MIF_REP2/MIF_REP2_2.fastq.gz
+    5ceed4dd8784a467afa35f00b83d132d  MIF_REP3/MIF_REP3_1.fastq.gz
+    4260c37ed24ee29c5046ef74096ba1f7  MIF_REP3/MIF_REP3_2.fastq.gz
 
 ******************************************
 Calling interactions with ``Diachromatic``
@@ -96,10 +96,10 @@ The prepared FASTQ files with the forward and reverse reads are specified using 
 
     $ java -jar Diachromatic.jar truncate \
        -e HindIII \
-       -q MIF_R1/MIF_R1_1.fastq.gz \
-       -r MIF_R1/MIF_R1_2.fastq.gz \
-       -o MIF_R1 \
-       -x MIF_R1
+       -q MIF_REP1/MIF_REP1_1.fastq.gz \
+       -r MIF_REP1/MIF_REP1_2.fastq.gz \
+       -o MIF_REP1 \
+       -x MIF_REP1
 
 All result files are written to the directory specified by the option ``-o`` and have the same prefix specified by the
 option ``-x``.
@@ -132,10 +132,10 @@ How to do this is documented here: :ref:`RST_Diachromatic_input_preparation`.
        -bsu \
        -p 4 \
        -d <DIGEST_MAP> \
-       -q MIF_R1/MIF_R1.truncated_R1.fastq.gz \
-       -r MIF_R1/MIF_R1.truncated_R2.fastq.gz \
-       -o MIF_R1 \
-       -x MIF_R1 \
+       -q MIF_REP1/MIF_REP1.truncated_R1.fastq.gz \
+       -r MIF_REP1/MIF_REP1.truncated_R2.fastq.gz \
+       -o MIF_REP1 \
+       -x MIF_REP1 \
        -j
 
 All result files from this step are written to the same directory (``-o``) and have the same prefix (``-x``) as the
@@ -156,16 +156,16 @@ The ``-s`` option causes the read pair counts to be reported separately for the 
 
     $ java -jar Diachromatic.jar count \
        -d <DIGEST_MAP>  \
-       -v MIF_R1/MIF_R1.valid_pairs.aligned.bam \
+       -v MIF_REP1/MIF_REP1.valid_pairs.aligned.bam \
        -s \
-       -o MIF_R1 \
-       -x MIF_R1
+       -o MIF_REP1 \
+       -x MIF_REP1
 
 The interactions are written to the following file:
 
 .. code-block:: console
 
-    MIF_R1/MIF_R1.interaction.counts.table.tsv
+    MIF_REP1/MIF_REP1.interaction.counts.table.tsv
 
 This file is in Diachromatic's interaction format:
 
@@ -199,9 +199,9 @@ We also discard all interactions on chromosome ``chrM``.
 .. code-block:: console
 
     $ mkdir gzip
-    $ awk '{if($1==$5 && $6-$3>=20000){print $0}}' MIF_R1/MIF_R1.interaction.counts.table.tsv \
+    $ awk '{if($1==$5 && $6-$3>=20000){print $0}}' MIF_REP1/MIF_REP1.interaction.counts.table.tsv \
        | grep -v chrM \
-       | gzip > gzdir/MIF_R1.interaction.counts.table.clr_200000.tsv.gz
+       | gzip > gzdir/MIF_REP1.interaction.counts.table.clr_200000.tsv.gz
 
 Do the last four steps for the other two replicates as well.
 After that, the directory ``gzdir`` should contain three files.
@@ -209,9 +209,9 @@ After that, the directory ``gzdir`` should contain three files.
 .. code-block:: console
 
     $ ls gzdir
-    MIF_R1.interaction.counts.table.clr_200000.tsv.gz
-    MIF_R2.interaction.counts.table.clr_200000.tsv.gz
-    MIF_R3.interaction.counts.table.clr_200000.tsv.gz
+    MIF_REP1.interaction.counts.table.clr_200000.tsv.gz
+    MIF_REP2.interaction.counts.table.clr_200000.tsv.gz
+    MIF_REP3.interaction.counts.table.clr_200000.tsv.gz
 
 **********************************************
 Pooling interactions from different replicates
@@ -221,17 +221,17 @@ This is described here: :ref:`RST_Interaction_pooling`.
 
 .. code-block:: console
 
-    $ mkdir MIF_RALT
+    $ mkdir MIF_REPALT
     $ diachrscripts/additional_scripts/pooler.py \
        --interaction-files-path gzdir \
        --required-replicates 2 \
-       --out-prefix MIF_RALT/MIF_RALT
+       --out-prefix MIF_REPALT/MIF_REPALT
 
 .. code-block:: console
 
-    $ ls MIF_RALT | cat
-    MIF_RALT_at_least_in_2_replicates_summary.txt
-    MIF_RALT_at_least_in_2_replicates_interactions.tsv.gz
+    $ ls MIF_REPALT | cat
+    MIF_REPALT_at_least_in_2_replicates_summary.txt
+    MIF_REPALT_at_least_in_2_replicates_interactions.tsv.gz
 
 
 **********************************************
@@ -244,9 +244,9 @@ So far, this is only described in this
 .. code-block:: console
 
     $ diachrscripts/DICer.py \
-        --out-prefix MIF_RALT/MIF_RALT \
-        --description-tag MIF_RALT \
-        --diachromatic-interaction-file MIF_RALT/MIF_RALT_at_least_in_2_replicates_interactions.tsv.gz \
+        --out-prefix MIF_REPALT/MIF_REPALT \
+        --description-tag MIF_REPALT \
+        --diachromatic-interaction-file MIF_REPALT/MIF_REPALT_at_least_in_2_replicates_interactions.tsv.gz \
         --fdr-threshold 0.05 \
         --iter-num 1000 \
         --random-seed 1 \
@@ -257,17 +257,17 @@ various processing steps.
 
 .. code-block:: console
 
-    $ ls MIF_RALT | cat
-    MIF_RALT_at_least_in_2_replicates_summary.txt
-    MIF_RALT_at_least_in_2_replicates_interactions.tsv.gz
-    MIF_RALT_evaluated_and_categorized_interactions.tsv.gz
-    MIF_RALT_randomization_histogram_at_001.pdf
-    MIF_RALT_randomization_histogram_at_005.pdf
-    MIF_RALT_randomization_histogram_at_010.pdf
-    MIF_RALT_randomization_histogram_at_threshold.pdf
-    MIF_RALT_randomization_plot.pdf
-    MIF_RALT_randomization_table.txt
-    MIF_RALT_reports.txt
+    $ ls MIF_REPALT | cat
+    MIF_REPALT_at_least_in_2_replicates_summary.txt
+    MIF_REPALT_at_least_in_2_replicates_interactions.tsv.gz
+    MIF_REPALT_evaluated_and_categorized_interactions.tsv.gz
+    MIF_REPALT_randomization_histogram_at_001.pdf
+    MIF_REPALT_randomization_histogram_at_005.pdf
+    MIF_REPALT_randomization_histogram_at_010.pdf
+    MIF_REPALT_randomization_histogram_at_threshold.pdf
+    MIF_REPALT_randomization_plot.pdf
+    MIF_REPALT_randomization_table.txt
+    MIF_REPALT_reports.txt
 
 The format of the interaction file corresponds to the Diachromatic interaction format with two additional columns for
 a score to evaluate the imbalances in the four counts and the interaction category.
@@ -307,7 +307,7 @@ It can be created from an interaction file generated with ``DICer``.
     from diachr import DiachromaticInteractionSet
     d11_interaction_set = DiachromaticInteractionSet()
     d11_interaction_set.parse_file(
-        i_file = "MIF_RALT/MIF_RALT_evaluated_and_categorized_interactions.tsv.gz",
+        i_file = "MIF_REPALT/MIF_REPALT_evaluated_and_categorized_interactions.tsv.gz",
         verbose = True)
 
 Interaction distances
