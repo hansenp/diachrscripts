@@ -20,6 +20,10 @@ parser.add_argument('-o', '--out-prefix',
 parser.add_argument('-i', '--diachromatic-interaction-file',
                     help='File in Diachromatic interaction format.',
                     required=True)
+parser.add_argument('-s', '--select-top-n',
+                    help='Use \'<N>,RPNUM\' or \'<N>,RPMAX\' to select the top n interactions sorted with respect to '
+                         'total or maximum read pair count.',
+                    default='ALL')
 parser.add_argument('-ic', '--interaction-category',
                     help='Tag for interaction category.',
                     choices=['DIX', 'DI', 'UIR', 'UI', 'ALL'],
@@ -62,6 +66,7 @@ parser.add_argument('-v', '--verbose', help='If true, the script will provide fe
 args = parser.parse_args()
 OUT_PREFIX = args.out_prefix
 INTERACTION_FILE = args.diachromatic_interaction_file
+SELECT_TOP_N = args.select_top_n
 I_CAT = args.interaction_category
 E_CAT = args.enrichment_category
 PROFILE_TYPE = args.profile_type
@@ -82,6 +87,7 @@ if VERBOSE:
     parameter_info += "\t[INFO] --diachromatic-interaction-file:" + '\n'
     parameter_info += "\t\t[INFO] " + INTERACTION_FILE + '\n'
     parameter_info += "\t[INFO] --diachromatic-interaction-file:" + '\n'
+    parameter_info += "\t[INFO] --select-top-n: " + SELECT_TOP_N + '\n'
     parameter_info += "\t[INFO] --interaction-category: " + I_CAT + '\n'
     parameter_info += "\t[INFO] --enrichment-category: " + E_CAT + '\n'
     parameter_info += "\t[INFO] --profile-type: " + PROFILE_TYPE + '\n'
@@ -100,6 +106,21 @@ d11_interaction_set = DiachromaticInteractionSet(rpc_rule='ht')
 d11_interaction_set.parse_file(
     i_file=INTERACTION_FILE,
     verbose=VERBOSE)
+
+# Select the top n interactions sorted with respect to 'RPNUM' or 'RPMAX'
+if SELECT_TOP_N != 'ALL':
+    if VERBOSE:
+        print()
+        print('[INFO] Selecting top n interactions...')
+    n, sort_criterion = SELECT_TOP_N.split(',')
+    if sort_criterion not in ['RPNUM', 'RPMAX']:
+        print('[ERROR] Invalid sort criterion! Must be \'RPNUM\' or \'RPMAX\'.')
+    print('\t[INFO] Sorting parameters: ' + SELECT_TOP_N)
+    d11_interaction_set_top_selected = \
+        d11_interaction_set.sort_and_select_top_n_interactions(sort_by=sort_criterion, top_n=int(n))
+    d11_interaction_set = d11_interaction_set_top_selected
+    if VERBOSE:
+        print('[INFO] ...done.')
 
 if VERBOSE:
     print()
