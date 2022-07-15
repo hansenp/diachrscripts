@@ -21,7 +21,7 @@ parser.add_argument('-i', '--diachromatic-interaction-file',
                     help='File in Diachromatic interaction format.',
                     required=True)
 parser.add_argument('-s', '--select-top-n',
-                    help='Use \'<N>,RPNUM\' or \'<N>,RPMAX\' to select the top n interactions sorted with respect to '
+                    help='Use \'<N>:RPNUM\' or \'<N>:RPMAX\' to select the top n interactions sorted with respect to '
                          'total or maximum read pair count.',
                     default='ALL')
 parser.add_argument('-ic', '--interaction-category',
@@ -112,7 +112,7 @@ if SELECT_TOP_N != 'ALL':
     if VERBOSE:
         print()
         print('[INFO] Selecting top n interactions...')
-    n, sort_criterion = SELECT_TOP_N.split(',')
+    n, sort_criterion = SELECT_TOP_N.split(':')
     if sort_criterion not in ['RPNUM', 'RPMAX']:
         print('[ERROR] Invalid sort criterion! Must be \'RPNUM\' or \'RPMAX\'.')
     print('\t[INFO] Sorting parameters: ' + SELECT_TOP_N)
