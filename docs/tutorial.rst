@@ -126,9 +126,9 @@ How to do this is documented here: :ref:`RST_Diachromatic_input_preparation`.
 
 .. code-block:: console
 
-    $ java -jar Diachromatic.jar align \
+    $ java -Xmx32000m -jar Diachromatic.jar align \
        -b <BOWTIE2_EXECUTABLE> \
-       -i <BOWTIE2_INDEX_PATH>/hg38 \
+       -i <BOWTIE2_INDEX_PATH>/genome \
        -bsu \
        -p 4 \
        -d <DIGEST_MAP> \
@@ -154,7 +154,7 @@ The ``-s`` option causes the read pair counts to be reported separately for the 
 
 .. code-block:: console
 
-    $ java -jar Diachromatic.jar count \
+    $ java -Xmx32000m -jar Diachromatic.jar count \
        -d <DIGEST_MAP>  \
        -v MIF_REP1/MIF_REP1.valid_pairs.aligned.bam \
        -s \
@@ -198,7 +198,7 @@ We also discard all interactions on chromosome ``chrM``.
 
 .. code-block:: console
 
-    $ mkdir gzip
+    $ mkdir gzdir
     $ awk '{if($1==$5 && $6-$3>=20000){print $0}}' MIF_REP1/MIF_REP1.interaction.counts.table.tsv \
        | grep -v chrM \
        | gzip > gzdir/MIF_REP1.interaction.counts.table.clr_200000.tsv.gz
@@ -221,17 +221,17 @@ This is described here: :ref:`RST_Interaction_pooling`.
 
 .. code-block:: console
 
-    $ mkdir MIF_REPALT
+    $ mkdir MIF_REPC
     $ diachrscripts/additional_scripts/pooler.py \
        --interaction-files-path gzdir \
        --required-replicates 2 \
-       --out-prefix MIF_REPALT/MIF_REPALT
+       --out-prefix MIF_REPC/MIF_REPC
 
 .. code-block:: console
 
-    $ ls MIF_REPALT | cat
-    MIF_REPALT_at_least_in_2_replicates_summary.txt
-    MIF_REPALT_at_least_in_2_replicates_interactions.tsv.gz
+    $ ls MIF_REPC | cat
+    MIF_REPC_at_least_in_2_replicates_summary.txt
+    MIF_REPC_at_least_in_2_replicates_interactions.tsv.gz
 
 
 **********************************************
@@ -244,30 +244,30 @@ So far, this is only described in this
 .. code-block:: console
 
     $ diachrscripts/DICer.py \
-        --out-prefix MIF_REPALT/MIF_REPALT \
-        --description-tag MIF_REPALT \
-        --diachromatic-interaction-file MIF_REPALT/MIF_REPALT_at_least_in_2_replicates_interactions.tsv.gz \
+        --out-prefix MIF_REPC/MIF_REPC \
+        --description-tag MIF_REPC \
+        --diachromatic-interaction-file MIF_REPC/MIF_REPC_at_least_in_2_replicates_interactions.tsv.gz \
         --fdr-threshold 0.05 \
         --iter-num 1000 \
         --random-seed 1 \
         --thread-num 4
 
-``DICer``` generates a file with the evaluated and categorized interactions and several files with statistics on the
+``DICer`` generates a file with the evaluated and categorized interactions and several files with statistics on the
 various processing steps.
 
 .. code-block:: console
 
-    $ ls MIF_REPALT | cat
-    MIF_REPALT_at_least_in_2_replicates_summary.txt
-    MIF_REPALT_at_least_in_2_replicates_interactions.tsv.gz
-    MIF_REPALT_evaluated_and_categorized_interactions.tsv.gz
-    MIF_REPALT_randomization_histogram_at_001.pdf
-    MIF_REPALT_randomization_histogram_at_005.pdf
-    MIF_REPALT_randomization_histogram_at_010.pdf
-    MIF_REPALT_randomization_histogram_at_threshold.pdf
-    MIF_REPALT_randomization_plot.pdf
-    MIF_REPALT_randomization_table.txt
-    MIF_REPALT_reports.txt
+    $ ls MIF_REPC | cat
+    MIF_REPC_at_least_in_2_replicates_summary.txt
+    MIF_REPC_at_least_in_2_replicates_interactions.tsv.gz
+    MIF_REPC_evaluated_and_categorized_interactions.tsv.gz
+    MIF_REPC_randomization_histogram_at_001.pdf
+    MIF_REPC_randomization_histogram_at_005.pdf
+    MIF_REPC_randomization_histogram_at_010.pdf
+    MIF_REPC_randomization_histogram_at_threshold.pdf
+    MIF_REPC_randomization_plot.pdf
+    MIF_REPC_randomization_table.txt
+    MIF_REPC_reports.txt
 
 The format of the interaction file corresponds to the Diachromatic interaction format with two additional columns for
 a score to evaluate the imbalances in the four counts and the interaction category.
@@ -307,7 +307,7 @@ It can be created from an interaction file generated with ``DICer``.
     from diachr import DiachromaticInteractionSet
     d11_interaction_set = DiachromaticInteractionSet()
     d11_interaction_set.parse_file(
-        i_file = "MIF_REPALT/MIF_REPALT_evaluated_and_categorized_interactions.tsv.gz",
+        i_file = "MIF_REPC/MIF_REPC_evaluated_and_categorized_interactions.tsv.gz",
         verbose = True)
 
 Interaction distances
