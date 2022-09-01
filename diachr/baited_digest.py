@@ -8,8 +8,8 @@ from scipy.stats import binom
 class BaitedDigest:
     """
     Objects of this class are used to group interactions interactions that end in the same bait. Interactions are broken
-    down by category and direction as seen from the bait. For the interaction categories directed (DI), undirected
-    reference (UIR), undirected (UI) and all interactions (ALL) there are two lists of interactions each, one with
+    down by category and direction as seen from the bait. For the interaction categories unbalanced (DI), balanced
+    reference (UIR), balanced (UI) and all interactions (ALL) there are two lists of interactions each, one with
     interactions from the bait to the left (NE) and one with interactions from the bait to the right (EN).
     """
 
