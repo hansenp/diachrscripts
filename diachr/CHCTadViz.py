@@ -28,10 +28,10 @@ class CHCTadViz:
         }
         self._ht_tag_colors = {
             '01': 'pink',
-            '02': 'red',
+            '02': 'red',#'02': 'red',
             '03': 'lime',
             '12': 'magenta',
-            '13': 'blue',
+            '13': 'blue',#'13': 'blue',
             '23': 'turquoise'
         }
 
@@ -419,7 +419,7 @@ class CHCTadViz:
         label_text = chrom + ':' + str(begin) + '-' + str(end) + '\n'
         label_text += '# Interactions: ' + '{:,}'.format(len(d_inter_list)) + '\n'
         label_text += 'I cats: ' + str(inter_cat_list) + '\n'
-        label_text += 'E states: ' + str(enr_cat_list) + '\n'
+        label_text += 'E cats: ' + str(enr_cat_list) + '\n'
         label_text += 'HTC tags: ' + str(ht_tag_list)
         label_x_pos = xrange[0] + (xrange[1] - xrange[0])/60
         label_y_pos = yrange[1] - yrange[1]/4.7
