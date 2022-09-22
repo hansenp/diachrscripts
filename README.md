@@ -38,6 +38,7 @@ When using Jupyter notebooks select the kernel `dscripts`.
 Change into the `docs` directory and generate
 the RTD documentation as follows:
 ```
+(dscripts)$ cd docs
 (dscripts)$ make html
 ```
 You should now find documentation here: `diachrscripts/docs/_build/html/index.html`

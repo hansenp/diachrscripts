@@ -25,6 +25,7 @@ analyzes is therefore a good starting point for your own analyzes.
    diachromatic_input_preparation
    interaction_pooling
    unbalanced_interaction_calling
+   jupyter_notebooks
    binomial_model
 
 
