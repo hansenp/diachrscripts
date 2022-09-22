@@ -10,6 +10,7 @@ from diachr.diachromatic_interaction import DiachromaticInteraction
 from typing import List
 
 
+
 class CHCTadViz:
     """
     This class coordinates the visualization of TADs.
