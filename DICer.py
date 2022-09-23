@@ -10,7 +10,7 @@ You can find documentation on this script in the relevant section in the RTD of 
 The individual steps that are carried out in this script are demonstrated in the following Jupyter notebooks:
 
        diachrscripts/jupyter_notebooks/evaluate_and_categorize_interactions.ipynb
-       diachrscripts/jupyter_notebooks/Demonstration_of_DICer.ipynb
+       diachrscripts/jupyter_notebooks/usage/Demonstration_of_DICer.ipynb
 """
 
 import argparse
