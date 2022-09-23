@@ -3,7 +3,6 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
-import gzip
 
 
 class IaFreqDistAnalysis:
@@ -252,7 +251,6 @@ class IaFreqDistAnalysis:
         :return: A matplotlib 'Figure' object that can be displayed in Jupyter notebooks
         """
 
-        print("1")
         # Catch wrong input
         allowed_i_cats = ['DIX', 'DI', 'UI', 'UIR', 'ALL']
         for i_cat in i_cats:
@@ -266,7 +264,6 @@ class IaFreqDistAnalysis:
                 print("[ERROR] Illegal interaction enrichment tag! Allowed: 'NN', 'NE', 'EN', 'EE'")
                 return
 
-        print("2")
         # Prepare grid for individual plots
         n = len(i_cats)
         y = 11.79/4.75
@@ -292,8 +289,6 @@ class IaFreqDistAnalysis:
         bin_width = int(x_lim / 30)
         if bin_width < 1:
             bin_width = 1
-
-        print("3")
 
         # Add header section with description and chromosomes that were taken into account
         ax[0][0].plot()
@@ -324,7 +319,7 @@ class IaFreqDistAnalysis:
 
         # Create histograms for each interaction category
         # -----------------------------------------------
-        print("4")
+
         # Prepare bins
         x_max = 0
         for i in range(0, n):
@@ -336,11 +331,7 @@ class IaFreqDistAnalysis:
         abs_2d_array = [[] for i in range(0, n)]
         densities_2d_array = [[] for i in range(0, n)]
         for i in range(0, n):
-
-            print("4, i=" + str(i))
-
             for j in range(0, m):
-                print("4, j=" + str(j))
 
                 # Create histogram
                 counts, bins, patches = ax[i + 1][j].hist(
@@ -370,7 +361,6 @@ class IaFreqDistAnalysis:
                 sum_counts = sum(counts)
                 densities_2d_array[i].append([count / sum_counts for count in counts]) # slow?
 
-        print("5")
         # Add second axes with densities and normalize all histograms to maximum density
         # ------------------------------------------------------------------------------
 
@@ -390,8 +380,6 @@ class IaFreqDistAnalysis:
                     yd_max = max(densities_2d_array[i][j])
         y_padding = yd_max / 20
         yd_max += y_padding
-
-        print("6")
 
         # Add density axes, normalize and add text labels to histograms
         for i in range(0, n):
@@ -416,7 +404,6 @@ class IaFreqDistAnalysis:
                                   fontsize=8.5,
                                   bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
-        print("7")
         # Save and return figure
         fig.tight_layout(pad=1.25)
         fig.savefig(pdf_file_name)
@@ -449,8 +436,6 @@ class IaFreqDistAnalysis:
             print("[ERROR] The density difference plot is only defined for two enrichment categories!")
             return
 
-        print("1")
-
         # Prepare grid for individual plots
         fig_height = 9.16
         n = len(i_cats)
@@ -471,8 +456,6 @@ class IaFreqDistAnalysis:
                     x_lim = q
         x_ticks, x_tick_labels = self.make_ticks(x_lim)
         bin_width = int(x_lim / 30)
-
-        print("2")
 
         # Add header section with description and chromosomes that were taken into account
         ax[0][0].plot()
@@ -496,8 +479,6 @@ class IaFreqDistAnalysis:
         fig.text(0.030*(9.5/14.25), 1-((1-0.90)*(11.79/fig_height)), 'For chromosomes:', fontsize=12)
         fig.text(0.045*(9.5/14.25), 1-((1-0.88)*(11.79/fig_height)), '[' + ", ".join(i for i in num_dict['CHROMOSOMES']) + ']', fontsize=8)
 
-        print("3")
-
         # Prepare bins
         x_max = 0
         for i in range(0, n):
@@ -510,15 +491,10 @@ class IaFreqDistAnalysis:
         # Create histograms for the two categories
         # ----------------------------------------
 
-        print("4")
-
         abs_2d_array = [[] for i in range(0, n)]
         densities_2d_array = [[] for i in range(0, n)]
         for i in range(0, n):
-            print("4" + ': i=' + str(i))
-
             for j in range(0, m):
-                print("4" + ': i=' + str(i) + ', j=' + str(j))
 
                 # Create histogram
                 counts, bins, patches = ax[i + 1][j].hist(
@@ -548,8 +524,6 @@ class IaFreqDistAnalysis:
                 sum_counts = sum(counts)
                 densities_2d_array[i].append([count / sum_counts for count in counts])
 
-        print("5")
-
         # Add second axes with densities and normalize all histograms to maximum density
         # ------------------------------------------------------------------------------
 
@@ -561,8 +535,6 @@ class IaFreqDistAnalysis:
             bcp += bin_width
             bcp_list.append(bcp)
 
-        print("6")
-
         # Determine maximal density in all four plots
         yd_max = 0
         for i in range(0, n):
@@ -571,8 +543,6 @@ class IaFreqDistAnalysis:
                     yd_max = max(densities_2d_array[i][j])
         y_padding = yd_max / 20
         yd_max += y_padding
-
-        print("7")
 
         # Add density axes, normalize and add text labels to histograms
         for i in range(0, n):
@@ -599,7 +569,6 @@ class IaFreqDistAnalysis:
 
         # Add subplots for density differences
         # ------------------------------------
-        print("8")
 
         # Get four lists with densities differences from all four density lists
         density_diff_cat_0_cat_1_ne = [] # Below histograms on the left
@@ -611,26 +580,6 @@ class IaFreqDistAnalysis:
             density_diff_cat_0_cat_1_en.append(densities_2d_array[0][1][i] - densities_2d_array[1][1][i])
             density_diff_cat_0_ne_en.append(densities_2d_array[0][0][i] - densities_2d_array[0][1][i])
             density_diff_cat_1_ne_en.append(densities_2d_array[1][0][i] - densities_2d_array[1][1][i])
-
-        print("9")
-
-        # Perform Wilcoxon rank-sums test
-        print(i_cats)
-        print(e_cats)
-        print(stats.ranksums(num_dict[i_cats[0]][e_cats[0]], num_dict[i_cats[1]][e_cats[0]]))
-        print(stats.ranksums(num_dict[i_cats[0]][e_cats[1]], num_dict[i_cats[1]][e_cats[1]]))
-        print(stats.ranksums(num_dict[i_cats[0]][e_cats[0]], num_dict[i_cats[0]][e_cats[1]]))
-        print(stats.ranksums(num_dict[i_cats[1]][e_cats[0]], num_dict[i_cats[1]][e_cats[1]]))
-
-        print("10")
-
-        # Determine sum of density differences
-        dd_cat_0_cat_1_ne_sum = sum(map(abs, density_diff_cat_0_cat_1_ne))
-        dd_cat_0_cat_1_en_sum = sum(map(abs, density_diff_cat_0_cat_1_en))
-        dd_cat_0_ne_en_sum = sum(map(abs, density_diff_cat_0_ne_en))
-        dd_cat_1_ne_en_sum = sum(map(abs, density_diff_cat_1_ne_en))
-
-        print("11")
 
         # Bar plot below histograms on the left
         ax[3][0].bar(bcp_list,
@@ -671,8 +620,6 @@ class IaFreqDistAnalysis:
         ax[3][1].yaxis.set_ticks_position('both')
         ax[3][1].set_ylabel('Density difference', labelpad=7)
         ax[3][1].yaxis.set_label_position('right')
-
-        print("12")
 
         # Make y-axes comparable for the two bar plots below the histograms and add sums of density differences
         y_min = min(min(density_diff_cat_0_cat_1_ne), min(density_diff_cat_0_cat_1_en))
@@ -733,8 +680,6 @@ class IaFreqDistAnalysis:
         ax[2][2].set_ylabel('Density difference', labelpad=7)
         ax[2][2].yaxis.set_label_position('right')
 
-        print("13")
-
         # Make y-axes comparable for the two bar plots to the left of the histograms and add sums of density differences
         y_min = min(min(density_diff_cat_0_ne_en), min(density_diff_cat_1_ne_en))
         y_max = max(max(density_diff_cat_0_ne_en), max(density_diff_cat_1_ne_en))
@@ -753,8 +698,6 @@ class IaFreqDistAnalysis:
         #               'sum(|dd|): ' + "{:.2f}".format(dd_cat_1_ne_en_sum),
         #               fontsize=9,
         #               bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
-
-        print("14")
 
         # Save and return figure
         fig.tight_layout(pad=1.25)
