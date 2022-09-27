@@ -11,7 +11,7 @@ from typing import List
 
 
 
-class CHCTadViz:
+class TIMViz:
     """
     This class coordinates the visualization of TADs.
     """

@@ -1,7 +1,7 @@
 from unittest import TestCase
 import os
 import sys
-from diachr.CHCTadViz import CHCTadViz
+from diachr.TIMViz import CHCTadViz
 
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
