@@ -3,7 +3,7 @@ import os
 import copy
 import warnings
 import random
-from numpy import arange, log10, quantile
+from numpy import arange, log10
 from collections import defaultdict
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
@@ -17,8 +17,8 @@ class DiachromaticInteractionSet:
     This class can read interactions from one ore more Diachromatic interaction files and perform the following
     operations on them:
 
-        1. Calculation of P-values and categorization into directed and undirected
-        2. Selection of undirected reference interactions
+        1. Calculation of P-values and classification into unbalanced and balanced
+        2. Selection of balanced reference interactions
         3. Writing interactions that occur in a required number of input files to a new file
 
     If interactions have been evaluated and categorized (1,2), the output format is expanded by two columns on the left.
@@ -354,7 +354,7 @@ class DiachromaticInteractionSet:
 
     def select_reference_interactions(self, selection_rule: str = "RPNUM", verbose: bool = False):
         """
-        Select reference interactions that match directed interactions in terms of enrichment category and total number
+        Select balanced reference interactions that match unbalanced interactions in terms of enrichment category and total number
         of read pairs per interaction and return a dictionary with information on this selection process.
 
         The difference to the original version is that it is not distinguished between NE and EN.
@@ -384,7 +384,7 @@ class DiachromaticInteractionSet:
                        'EE': {'DIX': [0], 'DI': [0], 'UIR': [0], 'UI': [0]}}
 
         if verbose:
-            print("\t[INFO] First pass: Count directed interactions for different read pair counts ...")
+            print("\t[INFO] First pass: Count unbalanced interactions for different read pair counts ...")
         for d11_inter in self._inter_dict.values():
 
             if d11_inter.get_category() == 'DI':
@@ -421,7 +421,7 @@ class DiachromaticInteractionSet:
                          'EE': 0}
 
         if verbose:
-            print("\t[INFO] Second pass: Select undirected reference interactions for different read pair counts ...")
+            print("\t[INFO] Second pass: Select balanced reference interactions for different read pair counts ...")
 
         for d11_inter in self._inter_dict.values():
 
@@ -830,29 +830,29 @@ class DiachromaticInteractionSet:
         :return: String that contains information about the last reference selection process.
         """
 
-        report = "[INFO] Report on selection of undirected reference interactions:" + '\n'
-        report += "\t[INFO] Numbers of directed interactions without undirected reference (DIX)" + '\n'
+        report = "[INFO] Report on selection of balanced reference interactions:" + '\n'
+        report += "\t[INFO] Numbers of unbalanced interactions without balanced reference (DIX)" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             total += self._select_ref_info_dict[enr_cat]['DIX'][0]
             report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
                 self._select_ref_info_dict[enr_cat]['DIX'][0]) + '\n'
         report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
-        report += "\t[INFO] Numbers of directed interactions (DI)" + '\n'
+        report += "\t[INFO] Numbers of unbalanced interactions (DI)" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             total += self._select_ref_info_dict[enr_cat]['DI'][0]
             report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
                 self._select_ref_info_dict[enr_cat]['DI'][0]) + '\n'
         report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
-        report += "\t[INFO] Numbers of undirected reference interactions (UIR)" + '\n'
+        report += "\t[INFO] Numbers of balanced reference interactions (UIR)" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             total += self._select_ref_info_dict[enr_cat]['UIR'][0]
             report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
                 self._select_ref_info_dict[enr_cat]['UIR'][0]) + '\n'
         report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
-        report += "\t[INFO] Numbers undirected interactions (UI)" + '\n'
+        report += "\t[INFO] Numbers balanced interactions (UI)" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             total += self._select_ref_info_dict[enr_cat]['UI'][0]
