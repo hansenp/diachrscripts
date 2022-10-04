@@ -3,8 +3,8 @@
 
 <svg
    width="320mm"
-   height="510mm"
-   viewBox="0 0 320 510"
+   height="550mm"
+   viewBox="0 0 320 550"
    version="1.1"
    id="svg5"
    inkscape:version="1.2-dev (9ee32be, 2021-06-19)"
@@ -26,9 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:document-units="mm"
      showgrid="true"
-     inkscape:zoom="0.48201722"
-     inkscape:cx="420.10947"
-     inkscape:cy="1319.4549"
+     inkscape:zoom="0.20528425"
+     inkscape:cx="358.04013"
+     inkscape:cy="1471.1309"
      inkscape:window-width="1440"
      inkscape:window-height="900"
      inkscape:window-x="0"
@@ -131,6 +131,14 @@
      inkscape:groupmode="layer"
      id="layer1">
     <rect
+       style="fill:#a0dcfa;fill-opacity:1;stroke:#000000;stroke-width:1.00004;stroke-miterlimit:4;stroke-dasharray:none"
+       id="rect13278"
+       width="54.043926"
+       height="16.841961"
+       x="231.10773"
+       y="362.69559"
+       ry="4.9530015" />
+    <rect
        style="fill:#e6e6e6;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"
        id="rect49770"
        width="62.823097"
@@ -179,45 +187,37 @@
        y="355.91791"
        ry="0" />
     <rect
-       style="fill:#8de4bf;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"
+       style="fill:#8de4bf;fill-opacity:1;stroke:#000000;stroke-width:1.00015;stroke-miterlimit:4;stroke-dasharray:none"
        id="rect39671"
-       width="54.398788"
-       height="31.934793"
-       x="233.00101"
-       y="412.91354"
-       ry="5" />
+       width="95.211418"
+       height="32.264847"
+       x="185.53995"
+       y="412.91406"
+       ry="5.0516763" />
     <rect
-       style="fill:#8de4bf;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"
+       style="fill:#8de4bf;fill-opacity:1;stroke:#000000;stroke-width:1.00012;stroke-miterlimit:4;stroke-dasharray:none"
        id="rect39669"
-       width="94.728432"
-       height="31.962358"
-       x="112.847"
-       y="412.90912"
-       ry="5" />
-    <rect
-       style="fill:#8de4bf;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"
-       id="rect39559"
-       width="56.33186"
-       height="29.558857"
-       x="32.048"
-       y="414.20154"
-       ry="5" />
+       width="136.23065"
+       height="32.264885"
+       x="35.161118"
+       y="412.91406"
+       ry="5.0473247" />
     <rect
        style="fill:#a0dcfa;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"
        id="rect39557"
-       width="36.132771"
-       height="17.001772"
-       x="142.37512"
-       y="312.46304"
-       ry="5" />
+       width="49.100788"
+       height="16.84156"
+       x="135.57616"
+       y="312.54315"
+       ry="4.9528832" />
     <rect
        style="fill:#a0dcfa;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"
        id="rect39555"
-       width="76.9282"
-       height="18.415203"
-       x="121.625"
-       y="211.70676"
-       ry="5" />
+       width="51.342091"
+       height="18.594294"
+       x="134.23538"
+       y="211.61722"
+       ry="5.0486255" />
     <rect
        style="fill:#a0dcfa;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"
        id="rect39553"
@@ -255,7 +255,7 @@
          id="tspan1898"
          style="text-align:center;text-anchor:middle;stroke-width:0.264583"
          x="160.04675"
-         y="324.78687">DICer</tspan></text>
+         y="324.78687">DICer.py</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;stroke-width:0.264583"
@@ -281,51 +281,35 @@
     <text
        xml:space="preserve"
        style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;stroke-width:0.264583"
-       x="60.03199"
-       y="425.93829"
-       id="text4308"><tspan
-         sodipodi:role="line"
-         id="tspan4306"
-         style="text-align:center;text-anchor:middle;stroke-width:0.264583"
-         x="60.03199"
-         y="425.93829">Interaction</tspan><tspan
-         sodipodi:role="line"
-         style="text-align:center;text-anchor:middle;stroke-width:0.264583"
-         x="60.03199"
-         y="439.16742"
-         id="tspan24228">distances</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;stroke-width:0.264583"
-       x="160.19289"
+       x="102.51414"
        y="424.98129"
        id="text5236"><tspan
          sodipodi:role="line"
-         id="tspan5234"
          style="text-align:center;text-anchor:middle;stroke-width:0.264583"
-         x="160.19289"
-         y="424.98129">Read types</tspan><tspan
+         x="102.51414"
+         y="424.98129"
+         id="tspan13474">Read type and</tspan><tspan
          sodipodi:role="line"
          style="text-align:center;text-anchor:middle;stroke-width:0.264583"
-         x="160.19289"
+         x="102.51414"
          y="438.21042"
-         id="tspan13474">and configurations</tspan></text>
+         id="tspan2636">configuration frequencies</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;stroke-width:0.264583"
-       x="260.03018"
+       x="231.45546"
        y="424.96729"
        id="text5768"><tspan
          sodipodi:role="line"
          id="tspan5766"
          style="text-align:center;text-anchor:middle;stroke-width:0.264583"
-         x="260.03018"
+         x="231.45546"
          y="424.96729">Triangle</tspan><tspan
          sodipodi:role="line"
          style="text-align:center;text-anchor:middle;stroke-width:0.264583"
-         x="260.03018"
+         x="231.45546"
          y="438.19641"
-         id="tspan26899">heatmaps</tspan></text>
+         id="tspan26899">interaction maps</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;stroke-width:0.264583"
@@ -357,17 +341,17 @@
        xml:space="preserve"
        style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;stroke-width:0.264583"
        x="159.13768"
-       y="162.75293"
+       y="162.22377"
        id="text10292"><tspan
          sodipodi:role="line"
          id="tspan10290"
          style="text-align:center;text-anchor:middle;stroke-width:0.264583"
          x="159.13768"
-         y="162.75293">Diachromatic</tspan><tspan
+         y="162.22377">Diachromatic</tspan><tspan
          sodipodi:role="line"
          style="text-align:center;text-anchor:middle;stroke-width:0.264583"
          x="159.13768"
-         y="175.98206"
+         y="175.4529"
          id="tspan10294">interaction files</tspan></text>
     <text
        xml:space="preserve"
@@ -379,7 +363,7 @@
          id="tspan11088"
          style="text-align:center;text-anchor:middle;stroke-width:0.264583"
          x="159.94987"
-         y="223.7235">Pool replicates</tspan></text>
+         y="223.7235">pooler.py</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;stroke-width:0.264583"
@@ -501,17 +485,17 @@
        xml:space="preserve"
        style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;stroke-width:0.264583"
        x="159.99626"
-       y="269.11557"
+       y="268.5864"
        id="text50310"><tspan
          sodipodi:role="line"
          id="tspan50306"
          style="text-align:center;text-anchor:middle;stroke-width:0.264583"
          x="159.99626"
-         y="269.11557">Diachromatic</tspan><tspan
+         y="268.5864">Diachromatic</tspan><tspan
          sodipodi:role="line"
          style="text-align:center;text-anchor:middle;stroke-width:0.264583"
          x="159.99626"
-         y="282.3447"
+         y="281.81552"
          id="tspan50308">interaction file</tspan></text>
     <text
        xml:space="preserve"
@@ -529,20 +513,20 @@
        id="rect51180"
        width="62.823097"
        height="17.048096"
-       x="29.059"
+       x="43.875679"
        y="-329.44003"
        ry="0"
        transform="scale(1,-1)" />
     <text
        xml:space="preserve"
        style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;stroke-width:0.264583"
-       x="60.281181"
+       x="75.097862"
        y="324.69666"
        id="text51184"><tspan
          sodipodi:role="line"
          id="tspan51182"
          style="text-align:center;text-anchor:middle;stroke-width:0.264583"
-         x="60.281181"
+         x="75.097862"
          y="324.69666">Parameters</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -648,18 +632,18 @@
          y="110.21921">pass</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleOutS)"
-       d="m 107.04218,320.9372 c 17.16154,0 17.16154,0 17.16154,0"
+       d="m 111.80471,320.9372 c 17.16154,0 17.16154,0 17.16154,0"
        id="path14738" />
     <text
        xml:space="preserve"
        style="font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:start;text-anchor:start;stroke-width:0.264583"
-       x="108.24018"
+       x="113.00268"
        y="315.91238"
        id="text14742"><tspan
          sodipodi:role="line"
          id="tspan14740"
          style="font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:start;text-anchor:start;stroke-width:0.264583"
-         x="108.24018"
+         x="113.00268"
          y="315.91238">pass</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleOutS)"
@@ -680,43 +664,43 @@
          style="font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:start;text-anchor:start;stroke-width:0.264583"
          x="164.49696"
          y="404.07089"
-         id="tspan16180">Jupyter Notebook</tspan></text>
+         id="tspan16180">Jupyter notebook</tspan></text>
     <rect
-       style="fill:#8de4bf;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"
+       style="fill:#8de4bf;fill-opacity:1;stroke:#000000;stroke-width:1.00003;stroke-miterlimit:4;stroke-dasharray:none"
        id="rect16712"
-       width="73.135056"
-       height="32.265255"
-       x="70.790321"
-       y="457.30768"
-       ry="5" />
+       width="95.191643"
+       height="32.264973"
+       x="41.137535"
+       y="457.30801"
+       ry="4.9999561" />
     <text
        xml:space="preserve"
        style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;stroke-width:0.264583"
-       x="107.27664"
+       x="88.666954"
        y="469.96115"
        id="text16718"><tspan
          sodipodi:role="line"
          style="text-align:center;text-anchor:middle;stroke-width:0.264583"
-         x="107.27664"
+         x="88.666954"
          y="469.96115"
-         id="tspan16716">Classify</tspan><tspan
+         id="tspan16716">Classification</tspan><tspan
          sodipodi:role="line"
          style="text-align:center;text-anchor:middle;stroke-width:0.264583"
-         x="107.27664"
+         x="88.666954"
          y="483.19028"
-         id="tspan16918">baited digests</tspan></text>
+         id="tspan16918">of baited digests</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.317574px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 160.73055,-599.9996 c -1.28647,513.40458 0,499.80643 0,499.80643"
        id="path26377" />
     <rect
-       style="fill:none;stroke:#8c8c8c;stroke-width:1.99986;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;stroke:#8c8c8c;stroke-width:2;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="rect18156"
-       width="298.00012"
-       height="291.00015"
-       x="10.99993"
-       y="205.82697"
-       ry="4.9011421" />
+       width="297.84573"
+       height="337.84573"
+       x="11"
+       y="205.90416"
+       ry="5.6901345" />
     <text
        xml:space="preserve"
        style="font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11.2889px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial Bold Italic';fill:#828282;fill-opacity:1;stroke-width:0.264583"
@@ -728,28 +712,83 @@
          style="font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11.2889px;font-family:Arial;-inkscape-font-specification:'Arial Bold Italic';fill:#828282;fill-opacity:1;stroke-width:0.264583"
          x="16.404161"
          y="219.60405">diachrscripts</tspan></text>
-    <rect
-       style="fill:#8de4bf;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"
-       id="rect21874"
-       width="83.966629"
-       height="16.905975"
-       x="165.53705"
-       y="464.61316"
-       ry="2.6198418" />
-    <text
-       xml:space="preserve"
-       style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;stroke-width:0.264583"
-       x="207.617"
-       y="477.3696"
-       id="text21880"><tspan
-         sodipodi:role="line"
-         style="text-align:center;text-anchor:middle;stroke-width:0.264583"
-         x="207.617"
-         y="477.3696"
-         id="tspan21878">TAD boundaries</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.317574px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 260.73055,-599.9996 c -1.28647,513.40458 0,499.80643 0,499.80643"
        id="path26461" />
+    <rect
+       style="fill:#8de4bf;fill-opacity:1;stroke:#000000;stroke-width:1.00007;stroke-miterlimit:4;stroke-dasharray:none"
+       id="rect982"
+       width="124.07188"
+       height="32.264931"
+       x="99.159599"
+       y="501.70203"
+       ry="4.9999499" />
+    <text
+       xml:space="preserve"
+       style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;stroke-width:0.264583"
+       x="160.89542"
+       y="514.35516"
+       id="text988"><tspan
+         sodipodi:role="line"
+         style="text-align:center;text-anchor:middle;stroke-width:0.264583"
+         x="160.89542"
+         y="514.35516"
+         id="tspan986">Distance-dependent</tspan><tspan
+         sodipodi:role="line"
+         style="text-align:center;text-anchor:middle;stroke-width:0.264583"
+         x="160.89542"
+         y="527.58429"
+         id="tspan1242">interaction frequencies</tspan></text>
+    <rect
+       style="fill:#8de4bf;fill-opacity:1;stroke:#000000;stroke-width:0.999989;stroke-miterlimit:4;stroke-dasharray:none"
+       id="rect7174"
+       width="134.33775"
+       height="32.265011"
+       x="150.70752"
+       y="457.30798"
+       ry="4.9999619" />
+    <text
+       xml:space="preserve"
+       style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;stroke-width:0.264583"
+       x="218.24553"
+       y="469.96115"
+       id="text7180"><tspan
+         sodipodi:role="line"
+         style="text-align:center;text-anchor:middle;stroke-width:0.264583"
+         x="218.24553"
+         y="469.96115"
+         id="tspan7836">Analysis of BDC0,</tspan><tspan
+         sodipodi:role="line"
+         style="text-align:center;text-anchor:middle;stroke-width:0.264583"
+         x="218.24553"
+         y="483.19028"
+         id="tspan9286">BDC1 and BDC2 digests</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:10.5833px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;stroke-width:0.264583"
+       x="258.24155"
+       y="374.5293"
+       id="text13270"><tspan
+         sodipodi:role="line"
+         id="tspan13268"
+         style="text-align:center;text-anchor:middle;stroke-width:0.264583"
+         x="258.24155"
+         y="374.5293">profiler.py</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleOutS)"
+       d="m 206.29581,371.20835 c 17.16154,0 17.16154,0 17.16154,0"
+       id="path13272" />
+    <text
+       xml:space="preserve"
+       style="font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:start;text-anchor:start;stroke-width:0.264583"
+       x="207.49362"
+       y="366.18399"
+       id="text13276"><tspan
+         sodipodi:role="line"
+         id="tspan13274"
+         style="font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:start;text-anchor:start;stroke-width:0.264583"
+         x="207.49362"
+         y="366.18399">pass</tspan></text>
   </g>
 </svg>

@@ -21,28 +21,34 @@ It can be created from an interaction file generated with ``DICer``.
         verbose = True)
 
 
-Frequencies of read types and configurations of interactions
-============================================================
+Read type and configuration Frequencies
+=======================================
 
 See this
-`notebook <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/read_pair_and_interaction_types.ipynb>`__.
+`notebook <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/publication/read_type_and_configuration_frequencies.ipynb>`__.
 
-Representation of interactions in triangle heatmaps
-===================================================
+Triangle interaction maps
+=========================
 
 See this
-`notebook <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/dtvis.ipynb>`__.
+`notebook <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/publication/triangle_interaction_maps.ipynb>`__.
 
 Classification of baited digests
 ================================
 
 See this
-`notebook <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/interactions_at_baited_digests_select_baited_digests.ipynb>`__.
+`notebook <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/publication/baited_digest_analysis_1.ipynb>`__.
 
-Interaction distances
-=====================
+Analysis of BDC0, BDC1 and BDC2 digests
+=======================================
 
 See this
-`notebook <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/interaction_frequency_distance_analysis.ipynb>`__
+`notebook <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/publication/baited_digest_analysis_2.ipynb>`__.
+
+Distance-dependent interaction frequencies
+==========================================
+
+See this
+`notebook <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/publication/interaction_frequency_distance_analysis_1.ipynb>`__
 and this
-`one <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/interaction_frequency_distance_analysis_2.ipynb>`__.
+`one <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/publication/interaction_frequency_distance_analysis_2.ipynb>`__.
