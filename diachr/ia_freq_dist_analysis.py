@@ -199,7 +199,7 @@ class IaFreqDistAnalysis:
             i_cat_colors=self.i_cat_colors,
             i_cat_names=self.i_cat_names,
             e_cats=self.e_cats)
-        self.rp_num_dict['NUM_TYPE'] = 'Read pair number'
+        self.rp_num_dict['NUM_TYPE'] = 'Read count per interaction'
 
         # Reset num_dicts
         self.i_dist_dict = self._get_empty_num_dict(
@@ -345,7 +345,7 @@ class IaFreqDistAnalysis:
                     num_dict[i_cats[i]]['NAME'] + ' - ' + e_cats[j],
                     loc='left')
                 ax[i + 1][j].set_xlabel(num_dict['NUM_TYPE'])
-                ax[i + 1][j].set_ylabel('Frequency')
+                ax[i + 1][j].set_ylabel('Interaction count')
                 ax[i + 1][j].set_xticks(x_ticks)
                 ax[i + 1][j].set_xticklabels(x_tick_labels)
                 ax[i + 1][j].set_xlim(0, x_lim)
@@ -508,7 +508,7 @@ class IaFreqDistAnalysis:
                     num_dict[i_cats[i]]['NAME'] + ' - ' + e_cats[j],
                     loc='left')
                 ax[i + 1][j].set_xlabel(num_dict['NUM_TYPE'])
-                ax[i + 1][j].set_ylabel('Frequency')
+                ax[i + 1][j].set_ylabel('Interaction count')
                 ax[i + 1][j].set_xticks(x_ticks)
                 ax[i + 1][j].set_xticklabels(x_tick_labels)
                 ax[i + 1][j].set_xlim(0, x_lim)
@@ -765,7 +765,7 @@ class IaFreqDistAnalysis:
                 i_cat_colors=self.i_cat_colors,
                 i_cat_names=self.i_cats,
                 e_cats=self.e_cats)
-            rp_num_dict_chr['NUM_TYPE'] = 'Read pair number'
+            rp_num_dict_chr['NUM_TYPE'] = 'Read count per interaction'
             rp_num_dict_chr['CHROMOSOMES'].append(chrom)
 
             # Create one read pair number num_dict for all chromosomes

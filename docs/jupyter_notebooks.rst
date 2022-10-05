@@ -8,7 +8,7 @@ Jupyter notebooks
 Performing various analyzes on unbalanced interactions
 ******************************************************
 
-We have implemented all analyzes following the calling of unbalanced interactions in different Jupyter Notebooks.
+We have implemented all analyzes following the calling of unbalanced interactions in different Jupyter notebooks.
 The ``DiachromaticInteractionSet`` is the central data structure in all of these analyzes.
 It can be created from an interaction file generated with ``DICer``.
 
@@ -20,8 +20,14 @@ It can be created from an interaction file generated with ``DICer``.
         i_file = "MIF_REPC/MIF_REPC_evaluated_and_categorized_interactions.tsv.gz",
         verbose = True)
 
+An interaction file generated with ``DICer.py`` for the Mifsud data can be downloaded as follows:
 
-Read type and configuration Frequencies
+.. code-block:: console
+
+    $ wget https://www.genecascade.org/downloads/diachrscripts/MIF_REPC_evaluated_and_categorized_interactions.tsv.gz
+
+
+Read type and configuration frequencies
 =======================================
 
 See this
