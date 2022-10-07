@@ -141,7 +141,8 @@ class IaFreqDistAnalysis:
         for i_cat in ['DIX', 'DI', 'UIR', 'UI', 'ALL', ]:
             report += "\t\t[INFO] " + i_cat + ": " + '\n'
             for e_cat in ['NN', 'EE', 'NE', 'EN']:
-                report += "\t\t\t[INFO] " + e_cat + ": " + "{:,}".format(self._ingest_interaction_set_info_dict[i_cat][e_cat]) + '\n'
+                report += "\t\t\t[INFO] " + e_cat + ": " + "{:,}".format(
+                    self._ingest_interaction_set_info_dict[i_cat][e_cat]) + '\n'
         report += "[INFO] End of report." + '\n'
 
         return report
@@ -220,7 +221,7 @@ class IaFreqDistAnalysis:
 
             self.rp_num_dict['CHROMOSOMES'].append(chrom)
             self.i_dist_dict['CHROMOSOMES'].append(chrom)
-            for i_cat in ['DIX', 'DI','UIR', 'UI', 'ALL']:
+            for i_cat in ['DIX', 'DI', 'UIR', 'UI', 'ALL']:
                 for e_cat in ['NN', 'NE', 'EN', 'EE']:
                     for d11_inter in self._grouped_interactions[chrom][i_cat][e_cat]:
                         self.rp_num_dict[i_cat][e_cat].append(d11_inter.rp_total)
@@ -255,7 +256,8 @@ class IaFreqDistAnalysis:
         allowed_i_cats = ['DIX', 'DI', 'UI', 'UIR', 'ALL']
         for i_cat in i_cats:
             if i_cat not in allowed_i_cats:
-                print("[ERROR] Illegal interaction category tag! Allowed: 'DIX', 'DI', 'D_S', 'D_T', 'UI', 'UIR' and 'ALL'")
+                print(
+                    "[ERROR] Illegal interaction category tag! Allowed: 'DIX', 'DI', 'D_S', 'D_T', 'UI', 'UIR' and 'ALL'")
                 return
 
         allowed_e_cats = ['NN', 'NE', 'EN', 'EE']
@@ -266,13 +268,13 @@ class IaFreqDistAnalysis:
 
         # Prepare grid for individual plots
         n = len(i_cats)
-        y = 11.79/4.75
+        y = 11.79 / 4.75
         fig_height = 0.75 * y + n * y
         m = len(e_cats)
         x = 4.75
         fig_width = m * x
-        fig, ax = plt.subplots(nrows=n+1, ncols=m, figsize=(fig_width, fig_height),
-                               gridspec_kw={'height_ratios': [0.75] + [1]*n})
+        fig, ax = plt.subplots(nrows=n + 1, ncols=m, figsize=(fig_width, fig_height),
+                               gridspec_kw={'height_ratios': [0.75] + [1] * n})
 
         # Hide unnecessary subplots
         for j in range(0, m):
@@ -306,16 +308,19 @@ class IaFreqDistAnalysis:
         ax[0][1].tick_params(axis='x', colors='white')
         ax[0][1].tick_params(axis='y', colors='white')
 
-        fig.text(0.015, 1-((1-0.97)*(11.79/fig_height)), num_dict['NUM_TYPE'] + 's', fontsize=18,
+        fig.text(0.015, 1 - ((1 - 0.97) * (11.79 / fig_height)), num_dict['NUM_TYPE'] + 's', fontsize=18,
                  fontweight='bold')
-        fig.text(0.030, 1-((1-0.94)*(11.79/fig_height)), 'Description: ' + description, fontsize=12)
-        fig.text(0.030, 1-((1-0.92)*(11.79/fig_height)), 'Bin size: ' + "{:,}".format(bin_width), fontsize=12)
-        fig.text(0.030, 1-((1-0.90)*(11.79/fig_height)), 'For chromosomes:', fontsize=12)
+        fig.text(0.030, 1 - ((1 - 0.94) * (11.79 / fig_height)), 'Description: ' + description, fontsize=12)
+        fig.text(0.030, 1 - ((1 - 0.92) * (11.79 / fig_height)), 'Bin size: ' + "{:,}".format(bin_width), fontsize=12)
+        fig.text(0.030, 1 - ((1 - 0.90) * (11.79 / fig_height)), 'For chromosomes:', fontsize=12)
         if len(num_dict['CHROMOSOMES']) < 22:
-            fig.text(0.045, 1-((1-0.88)*(11.79/fig_height)), '[' + ", ".join(i for i in num_dict['CHROMOSOMES']) + ']', fontsize=8)
+            fig.text(0.045, 1 - ((1 - 0.88) * (11.79 / fig_height)),
+                     '[' + ", ".join(i for i in num_dict['CHROMOSOMES']) + ']', fontsize=8)
         else:
-            fig.text(0.045, 1-((1-0.88)*(11.79/fig_height)), '[' + ", ".join(i for i in num_dict['CHROMOSOMES'][:22]) + ',', fontsize=8)
-            fig.text(0.045, 1-((1-0.86)*(11.79/fig_height)), ", ".join(i for i in num_dict['CHROMOSOMES'][22:]) + ']', fontsize=8)
+            fig.text(0.045, 1 - ((1 - 0.88) * (11.79 / fig_height)),
+                     '[' + ", ".join(i for i in num_dict['CHROMOSOMES'][:22]) + ',', fontsize=8)
+            fig.text(0.045, 1 - ((1 - 0.86) * (11.79 / fig_height)),
+                     ", ".join(i for i in num_dict['CHROMOSOMES'][22:]) + ']', fontsize=8)
 
         # Create histograms for each interaction category
         # -----------------------------------------------
@@ -332,7 +337,6 @@ class IaFreqDistAnalysis:
         densities_2d_array = [[] for i in range(0, n)]
         for i in range(0, n):
             for j in range(0, m):
-
                 # Create histogram
                 counts, bins, patches = ax[i + 1][j].hist(
                     num_dict[i_cats[i]][e_cats[j]],
@@ -359,7 +363,7 @@ class IaFreqDistAnalysis:
                 # Keep track of bin counts and densities
                 abs_2d_array[i].append(counts)
                 sum_counts = sum(counts)
-                densities_2d_array[i].append([count / sum_counts for count in counts]) # slow?
+                densities_2d_array[i].append([count / sum_counts for count in counts])  # slow?
 
         # Add second axes with densities and normalize all histograms to maximum density
         # ------------------------------------------------------------------------------
@@ -384,23 +388,23 @@ class IaFreqDistAnalysis:
         # Add density axes, normalize and add text labels to histograms
         for i in range(0, n):
             for j in range(0, m):
-
                 yc_max = yd_max * sum(abs_2d_array[i][j])
                 yc_ticks, yc_tick_labels = self.make_ticks(yc_max)
                 ax[i + 1][j].set_yticks(yc_ticks)
                 ax[i + 1][j].set_yticklabels(yc_tick_labels)
                 ax[i + 1][j].set_ylim(0, yc_max)
                 ax_dens = ax[i + 1][j].twinx()
-                #ax_dens.plot(bcp_list, densities_2d_array[i][j], color='red', linewidth=0.5)
+                # ax_dens.plot(bcp_list, densities_2d_array[i][j], color='red', linewidth=0.5)
                 ax_dens.set_ylabel('Density', labelpad=7)
                 ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
                 ax_dens.set_ylim(0, yd_max)
                 # Add text labels with total read pair or interaction numbers, median and median absolute deviation
                 ax[i + 1][j].text(x_lim - (x_lim / 3),
-                                  yc_max - (yc_max / 3.2), #3.2
+                                  yc_max - (yc_max / 3.2),  # 3.2
                                   'n: ' + "{:,}".format(len(num_dict[i_cats[i]][e_cats[j]])) + '\n' +
                                   'Mdn: ' + "{:,.0f}".format(np.median(num_dict[i_cats[i]][e_cats[j]])) + '\n' +
-                                  'MAD: ' + "{:,.0f}".format(stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])),
+                                  'MAD: ' + "{:,.0f}".format(
+                                      stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])),
                                   fontsize=8.5,
                                   bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
@@ -414,6 +418,7 @@ class IaFreqDistAnalysis:
                                                      i_cats: list = None,
                                                      e_cats: list = None,
                                                      q_lim: float = 0.95,
+                                                     perform_tests: bool = False,
                                                      description: str = "DESCRIPTION",
                                                      pdf_file_name: str = "density_diff_plot.pdf"):
         """
@@ -421,18 +426,19 @@ class IaFreqDistAnalysis:
 
         :param num_dict: A data structure that contains read pair numbers and distances for all interaction categories
         :param i_cats: List of two interaction categories to be compared, e.g. ['DI', 'UIR']
-        :param e_cats: List of two enrichment categories to be compared, e.g. ['EE', 'EN']
+        :param e_cats: List of two enrichment categories to be compared, e.g. ['NE', 'EN']
         :param q_lim: Upper limit at quantile level, e.g. at 0.95, 5% of the data with the larger quantile are not shown
+        :param perform_tests: If true, KS and Mann-Whitney U tests will be performed
         :param description: Brief description that is shown in the plot above the histograms
         :param pdf_file_name: Name of the PDF file that will be created
         :return: A 'Figure' object of 'matplotlib' that can be displayed in a Jupyter notebook
         """
 
         # Catch wrong input
-        if len(i_cats) !=2:
+        if len(i_cats) != 2:
             print("[ERROR] The density difference plot is only defined for two interaction categories!")
             return
-        if len(e_cats) !=2:
+        if len(e_cats) != 2:
             print("[ERROR] The density difference plot is only defined for two enrichment categories!")
             return
 
@@ -472,12 +478,16 @@ class IaFreqDistAnalysis:
         ax[0][1].spines['bottom'].set_color('white')
         ax[0][1].tick_params(axis='x', colors='white')
         ax[0][1].tick_params(axis='y', colors='white')
-        fig.text(0.015*(9.5/14.25), 1-((1-0.97)*(11.79/fig_height)), num_dict['NUM_TYPE'] + 's', fontsize=18,
+        fig.text(0.015 * (9.5 / 14.25), 1 - ((1 - 0.97) * (11.79 / fig_height)), num_dict['NUM_TYPE'] + 's',
+                 fontsize=18,
                  fontweight='bold')
-        fig.text(0.030*(9.5/14.25), 1-((1-0.94)*(11.79/fig_height)), 'Description: ' + description, fontsize=12)
-        fig.text(0.030 * (9.5 / 14.25), 1-((1-0.92)*(11.79/fig_height)), 'Bin size: ' + "{:,}".format(bin_width), fontsize=12)
-        fig.text(0.030*(9.5/14.25), 1-((1-0.90)*(11.79/fig_height)), 'For chromosomes:', fontsize=12)
-        fig.text(0.045*(9.5/14.25), 1-((1-0.88)*(11.79/fig_height)), '[' + ", ".join(i for i in num_dict['CHROMOSOMES']) + ']', fontsize=8)
+        fig.text(0.030 * (9.5 / 14.25), 1 - ((1 - 0.94) * (11.79 / fig_height)), 'Description: ' + description,
+                 fontsize=12)
+        fig.text(0.030 * (9.5 / 14.25), 1 - ((1 - 0.92) * (11.79 / fig_height)),
+                 'Bin size: ' + "{:,}".format(bin_width), fontsize=12)
+        fig.text(0.030 * (9.5 / 14.25), 1 - ((1 - 0.90) * (11.79 / fig_height)), 'For chromosomes:', fontsize=12)
+        fig.text(0.045 * (9.5 / 14.25), 1 - ((1 - 0.88) * (11.79 / fig_height)),
+                 '[' + ", ".join(i for i in num_dict['CHROMOSOMES']) + ']', fontsize=8)
 
         # Prepare bins
         x_max = 0
@@ -487,7 +497,6 @@ class IaFreqDistAnalysis:
                     x_max = max(num_dict[i_cats[i]][e_cats[j]])
         bins = range(0, x_max + bin_width, bin_width)
 
-
         # Create histograms for the two categories
         # ----------------------------------------
 
@@ -495,7 +504,6 @@ class IaFreqDistAnalysis:
         densities_2d_array = [[] for i in range(0, n)]
         for i in range(0, n):
             for j in range(0, m):
-
                 # Create histogram
                 counts, bins, patches = ax[i + 1][j].hist(
                     num_dict[i_cats[i]][e_cats[j]],
@@ -553,28 +561,44 @@ class IaFreqDistAnalysis:
                 ax[i + 1][j].set_yticklabels(yc_tick_labels)
                 ax[i + 1][j].set_ylim(0, yc_max)
                 ax_dens = ax[i + 1][j].twinx()
-                #ax_dens.plot(bcp_list, densities_2d_array[i][j], color='red', linewidth=0.5)
+                # ax_dens.plot(bcp_list, densities_2d_array[i][j], color='red', linewidth=0.5)
                 ax_dens.set_ylabel('Density', labelpad=7)
                 ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
                 ax_dens.set_ylim(0, yd_max)
                 # Add text labels with total read pair or interaction numbers, median and median absolute deviation
                 ax[i + 1][j].text(x_lim - (x_lim / 3),
-                                  yc_max - (yc_max / 3.2), #3.2
+                                  yc_max - (yc_max / 3.2),  # 3.2
                                   'n: ' + "{:,}".format(len(num_dict[i_cats[i]][e_cats[j]])) + '\n' +
-                                  #'Q1: ' + "{:,.0f}".format(np.quantile(num_dict[i_cats[i]][e_cats[j]], 0.25)) + '\n' +
+                                  # 'Q1: ' + "{:,.0f}".format(np.quantile(num_dict[i_cats[i]][e_cats[j]], 0.25)) + '\n' +
                                   'Mdn: ' + "{:,.0f}".format(np.median(num_dict[i_cats[i]][e_cats[j]])) + '\n' +
-                                  'MAD: ' + "{:,.0f}".format(stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])),
+                                  'MAD: ' + "{:,.0f}".format(
+                                      stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])),
                                   fontsize=8.5,
                                   bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
         # Add subplots for density differences
         # ------------------------------------
 
+        if perform_tests:
+            # Perform KS and Mann-Whitney U test
+            print(i_cats[0] + '-' + e_cats[0] + ' vs. ' + i_cats[0] + '-' + e_cats[1])
+            print(stats.ks_2samp(num_dict[i_cats[0]][e_cats[0]], num_dict[i_cats[0]][e_cats[1]]))
+            print(stats.mannwhitneyu(num_dict[i_cats[0]][e_cats[0]], num_dict[i_cats[0]][e_cats[1]]))
+            print(i_cats[1] + '-' + e_cats[0] + ' vs. ' + i_cats[1] + '-' + e_cats[1])
+            print(stats.ks_2samp(num_dict[i_cats[1]][e_cats[0]], num_dict[i_cats[1]][e_cats[1]]))
+            print(stats.mannwhitneyu(num_dict[i_cats[1]][e_cats[0]], num_dict[i_cats[1]][e_cats[1]]))
+            print(i_cats[0] + '-' + e_cats[0] + ' vs. ' + i_cats[1] + '-' + e_cats[0])
+            print(stats.ks_2samp(num_dict[i_cats[0]][e_cats[0]], num_dict[i_cats[1]][e_cats[0]]))
+            print(stats.mannwhitneyu(num_dict[i_cats[0]][e_cats[0]], num_dict[i_cats[1]][e_cats[0]]))
+            print(i_cats[0] + '-' + e_cats[1] + ' vs. ' + i_cats[1] + '-' + e_cats[1])
+            print(stats.ks_2samp(num_dict[i_cats[0]][e_cats[1]], num_dict[i_cats[1]][e_cats[1]]))
+            print(stats.mannwhitneyu(num_dict[i_cats[0]][e_cats[1]], num_dict[i_cats[1]][e_cats[1]]))
+
         # Get four lists with densities differences from all four density lists
-        density_diff_cat_0_cat_1_ne = [] # Below histograms on the left
-        density_diff_cat_0_cat_1_en = [] # Below histograms on the right
-        density_diff_cat_0_ne_en = []    # To the left of the upper histograms
-        density_diff_cat_1_ne_en = []    # To the left of the lower histograms
+        density_diff_cat_0_cat_1_ne = []  # Below histograms on the left
+        density_diff_cat_0_cat_1_en = []  # Below histograms on the right
+        density_diff_cat_0_ne_en = []  # To the left of the upper histograms
+        density_diff_cat_1_ne_en = []  # To the left of the lower histograms
         for i in range(0, len(densities_2d_array[0][0])):
             density_diff_cat_0_cat_1_ne.append(densities_2d_array[0][0][i] - densities_2d_array[1][0][i])
             density_diff_cat_0_cat_1_en.append(densities_2d_array[0][1][i] - densities_2d_array[1][1][i])
@@ -585,7 +609,8 @@ class IaFreqDistAnalysis:
         ax[3][0].bar(bcp_list,
                      density_diff_cat_0_cat_1_ne,
                      width=bin_width,
-                     color=[num_dict[i_cats[0]]['COLOR'] if 0 < dd else num_dict[i_cats[1]]['COLOR'] for dd in density_diff_cat_0_cat_1_ne],
+                     color=[num_dict[i_cats[0]]['COLOR'] if 0 < dd else num_dict[i_cats[1]]['COLOR'] for dd in
+                            density_diff_cat_0_cat_1_ne],
                      edgecolor="dimgray",
                      linewidth=0.5
                      )
@@ -595,7 +620,7 @@ class IaFreqDistAnalysis:
         ax[3][0].set_xlim(0, x_lim)
         ax[3][0].set_xlabel(num_dict['NUM_TYPE'])
         ax[3][0].axhline(0, linestyle='-.', linewidth=0.75, color='blue', zorder=2)
-        ax[3][0].ticklabel_format(axis='y', style='sci', scilimits=(-2,0))
+        ax[3][0].ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
         ax[3][0].yaxis.tick_right()
         ax[3][0].yaxis.set_ticks_position('both')
         ax[3][0].set_ylabel('Density difference', labelpad=7)
@@ -605,7 +630,8 @@ class IaFreqDistAnalysis:
         ax[3][1].bar(bcp_list,
                      density_diff_cat_0_cat_1_en,
                      width=bin_width,
-                     color=[num_dict[i_cats[0]]['COLOR'] if 0 < dd else num_dict[i_cats[1]]['COLOR'] for dd in density_diff_cat_0_cat_1_en],
+                     color=[num_dict[i_cats[0]]['COLOR'] if 0 < dd else num_dict[i_cats[1]]['COLOR'] for dd in
+                            density_diff_cat_0_cat_1_en],
                      edgecolor="dimgray",
                      linewidth=0.5
                      )
@@ -624,17 +650,17 @@ class IaFreqDistAnalysis:
         # Make y-axes comparable for the two bar plots below the histograms and add sums of density differences
         y_min = min(min(density_diff_cat_0_cat_1_ne), min(density_diff_cat_0_cat_1_en))
         y_max = max(max(density_diff_cat_0_cat_1_ne), max(density_diff_cat_0_cat_1_en))
-        y_padding = ((y_max - y_min)/20)
+        y_padding = ((y_max - y_min) / 20)
         y_min -= y_padding
         y_max += y_padding
         ax[3][0].set_ylim(y_min, y_max)
         ax[3][1].set_ylim(y_min, y_max)
-        #ax[3][0].text(x_lim - (x_lim / 3),
+        # ax[3][0].text(x_lim - (x_lim / 3),
         #              y_max - ((y_max - y_min) / 8),
         #              'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_cat_1_ne_sum),
         #              fontsize=9,
         #              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
-        #ax[3][1].text(x_lim - (x_lim / 3),
+        # ax[3][1].text(x_lim - (x_lim / 3),
         #              y_max - ((y_max - y_min) / 8),
         #              'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_cat_1_en_sum),
         #              fontsize=9,
@@ -644,11 +670,12 @@ class IaFreqDistAnalysis:
         ax[1][2].bar(bcp_list,
                      density_diff_cat_0_ne_en,
                      width=bin_width,
-                     color=[num_dict[i_cats[0]]['COLOR'] if 0 < dd else num_dict[i_cats[0]]['COLOR'] for dd in density_diff_cat_0_ne_en],
+                     color=[num_dict[i_cats[0]]['COLOR'] if 0 < dd else num_dict[i_cats[0]]['COLOR'] for dd in
+                            density_diff_cat_0_ne_en],
                      edgecolor="dimgray",
                      linewidth=0.5
                      )
-        ax[1][2].set_title( num_dict[i_cats[0]]['NAME'], loc='left')
+        ax[1][2].set_title(num_dict[i_cats[0]]['NAME'], loc='left')
         ax[1][2].set_xticks(x_ticks)
         ax[1][2].set_xticklabels(x_tick_labels)
         ax[1][2].set_xlim(0, x_lim)
@@ -664,7 +691,8 @@ class IaFreqDistAnalysis:
         ax[2][2].bar(bcp_list,
                      density_diff_cat_1_ne_en,
                      width=bin_width,
-                     color=[num_dict[i_cats[1]]['COLOR'] if 0 < dd else num_dict[i_cats[1]]['COLOR'] for dd in density_diff_cat_1_ne_en],
+                     color=[num_dict[i_cats[1]]['COLOR'] if 0 < dd else num_dict[i_cats[1]]['COLOR'] for dd in
+                            density_diff_cat_1_ne_en],
                      edgecolor="dimgray",
                      linewidth=0.5
                      )
@@ -706,7 +734,7 @@ class IaFreqDistAnalysis:
 
     def write_num_table(self,
                         out_prefix: str = 'OUT_PREFIX',
-                        description: str =  'DESCRIPTION',
+                        description: str = 'DESCRIPTION',
                         chromosomes: [str] = None,
                         verbose: bool = False):
         """
@@ -733,9 +761,9 @@ class IaFreqDistAnalysis:
 
         # Create two files, one for read pair numbers and one for interaction distances
         out_rp_num_stats = open(out_prefix + "_rp_num_stats.txt", 'wt')
-        out_rp_num_stats.write('DESCRIPTION' + '\t' + 'DESCRIPTION_SHORT' + header_row  + '\n')
+        out_rp_num_stats.write('DESCRIPTION' + '\t' + 'DESCRIPTION_SHORT' + header_row + '\n')
         out_i_dist_stats = open(out_prefix + "_i_dist_stats.txt", 'wt')
-        out_i_dist_stats.write('DESCRIPTION' + '\t' + 'DESCRIPTION_SHORT' + header_row  + '\n')
+        out_i_dist_stats.write('DESCRIPTION' + '\t' + 'DESCRIPTION_SHORT' + header_row + '\n')
 
         # Create one read pair number num_dict for all chromosomes
         rp_num_dict = self._get_empty_num_dict(
@@ -788,15 +816,20 @@ class IaFreqDistAnalysis:
                         i_dist_dict[i_cat][e_cat].append(d11_inter.i_dist)
 
             # Get table row for num_dicts of this chromosome
-            rp_num_chr_table_row = self.get_num_dict_table_row(description = description + '|RP_NUM', description_short = description, num_dict = rp_num_dict_chr)
+            rp_num_chr_table_row = self.get_num_dict_table_row(description=description + '|RP_NUM',
+                                                               description_short=description, num_dict=rp_num_dict_chr)
             out_rp_num_stats.write(rp_num_chr_table_row + '\n')
-            i_dist_num_chr_table_row = self.get_num_dict_table_row(description = description + '|I_DIST', description_short = description, num_dict = i_dist_dict_chr)
+            i_dist_num_chr_table_row = self.get_num_dict_table_row(description=description + '|I_DIST',
+                                                                   description_short=description,
+                                                                   num_dict=i_dist_dict_chr)
             out_i_dist_stats.write(i_dist_num_chr_table_row + '\n')
 
         # Get table row for num_dict of all chromosomes
-        rp_num_table_row = self.get_num_dict_table_row(description = description + '|RP_NUM', description_short = description, num_dict = rp_num_dict)
+        rp_num_table_row = self.get_num_dict_table_row(description=description + '|RP_NUM',
+                                                       description_short=description, num_dict=rp_num_dict)
         out_rp_num_stats.write(rp_num_table_row + '\n')
-        i_dist_num_table_row = self.get_num_dict_table_row(description = description + '|I_DIST', description_short = description, num_dict = i_dist_dict)
+        i_dist_num_table_row = self.get_num_dict_table_row(description=description + '|I_DIST',
+                                                           description_short=description, num_dict=i_dist_dict)
         out_i_dist_stats.write(i_dist_num_table_row + '\n')
 
         # Close the two files with tables
@@ -812,17 +845,17 @@ class IaFreqDistAnalysis:
             print("[INFO] ... done.")
 
     def get_num_dict_table_row(self,
-                               description: str =  'DESCRIPTION',
-                               description_short: str =  'CT',
-                               num_dict = dict):
+                               description: str = 'DESCRIPTION',
+                               description_short: str = 'CT',
+                               num_dict=dict):
 
         # Create description tag for first column
         if len(num_dict['CHROMOSOMES']) == 1:
             table_row = description + '|' + num_dict['CHROMOSOMES'][0].upper() + '\t'
         else:
-            table_row = description + '|CHR_ALL'  + '\t'
+            table_row = description + '|CHR_ALL' + '\t'
 
-        table_row += description_short  + '\t'
+        table_row += description_short + '\t'
 
         # Add values for all interaction and enrichment categories
         for i_cat in self.i_cats:
@@ -834,7 +867,7 @@ class IaFreqDistAnalysis:
                 else:
                     median = 'NA'
                     mad = 'NA'
-                table_row += n + '\t' +  median + '\t' +  mad + '\t'
+                table_row += n + '\t' + median + '\t' + mad + '\t'
 
         # Add last column for chromosomes that were taken into aaccount
         table_row += str(num_dict['CHROMOSOMES']).replace(' ', '')

@@ -1,4 +1,3 @@
-from collections import defaultdict
 import os
 import math
 import numpy as np
@@ -10,10 +9,10 @@ from diachr.diachromatic_interaction import DiachromaticInteraction
 from typing import List
 
 
-
 class TIMViz:
     """
-    This class coordinates the visualization of TADs.
+    This class coordinates the visualization of interactions as polygons along the genomic axis (triangle interaction
+    maps).
     """
 
     def __init__(self, i_file: str = None, t_file: str = None, b_file: str = None, verbose: bool = False) -> None:
@@ -44,7 +43,7 @@ class TIMViz:
         self._factor = None
 
         if verbose:
-            print('[INFO] Initializing DirectedTadVisualizer object ...')
+            print('[INFO] Initializing TIMviz object ...')
             print('\t[INFO] Reading interactions and group them by chromosomes ...')
 
         self._d_inter_by_chrom_dict = dict()
@@ -106,7 +105,8 @@ class TIMViz:
         else:
             self._baits_by_chrom_dict = None
 
-        print('[INFO] ... done.')
+        if verbose:
+            print('[INFO] ... done.')
 
     def extract_interactions(self, chrom: str, begin: int, end: int):
         """
@@ -241,11 +241,11 @@ class TIMViz:
                              transparent_polygons=True,
                              d_radius: int = 0,
                              plot_bait_diagonals = False,
-                             plot_title: str = 'TadViz plot',
+                             plot_title: str = 'TIMviz plot',
                              pdf_file_name: str = None,
                              verbose: bool = True):
         """
-        This function creates the CHCTadViz plot for given genomic coordinates.
+        This function creates the TIMviz plot for given genomic coordinates.
         """
         if verbose:
             print("[INFO] Creating visualization ...")
