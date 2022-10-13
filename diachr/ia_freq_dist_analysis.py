@@ -232,16 +232,17 @@ class IaFreqDistAnalysis:
 
         return self.rp_num_dict, self.i_dist_dict
 
-    def get_all_rp_nums_or_i_dists_histograms(self,
-                                              num_dict: dict = None,
-                                              i_cats: list = None,
-                                              e_cats: list = None,
-                                              q_lim: float = 0.95,
-                                              description: str = "DESCRIPTION",
-                                              pdf_file_name: str = "num_histograms.pdf"):
+    def create_ixe_hist_grid(self,
+                             num_dict: dict = None,
+                             i_cats: list = None,
+                             e_cats: list = None,
+                             q_lim: float = 0.95,
+                             description: str = "DESCRIPTION",
+                             pdf_file_name: str = "ixe_hist_grid.pdf"):
         """
-        This function creates the histograms for read pair numbers or interaction distances in the various
-        interaction and enrichment categories.
+        This function creates a ixe grid of histograms that are comparable to each other in terms of x-axis,
+        y-axis and bin size. It can be used to compare distributions of read pair counts per interaction or
+        interaction distance for different interaction categories and enrichment states.
 
         :param i_cats: List of interaction categories
         :param e_cats: List of enrichment categories
@@ -257,7 +258,8 @@ class IaFreqDistAnalysis:
         for i_cat in i_cats:
             if i_cat not in allowed_i_cats:
                 print(
-                    "[ERROR] Illegal interaction category tag! Allowed: 'DIX', 'DI', 'D_S', 'D_T', 'UI', 'UIR' and 'ALL'")
+                    "[ERROR] Illegal interaction category tag! Allowed: 'DIX', 'DI', 'D_S', 'D_T', 'UI', 'UIR' and "
+                    "'ALL'")
                 return
 
         allowed_e_cats = ['NN', 'NE', 'EN', 'EE']
@@ -288,8 +290,12 @@ class IaFreqDistAnalysis:
                 if x_lim < q:
                     x_lim = q
         x_ticks, x_tick_labels = self.make_ticks(x_lim)
-        bin_width = int(x_lim / 30)
-        if bin_width < 1:
+        if 30 <= x_lim:
+            # In this case, each histogram is divided into approximately 30 bins
+            bin_width = int(x_lim / 30)
+        else:
+            # In this case, each histogram is divided into less than.
+            # May happen for datasets with low read pair counts per interaction
             bin_width = 1
 
         # Add header section with description and chromosomes that were taken into account
@@ -413,21 +419,23 @@ class IaFreqDistAnalysis:
         fig.savefig(pdf_file_name)
         return fig
 
-    def get_all_rp_nums_or_i_dists_denisty_diff_plot(self,
-                                                     num_dict: dict = None,
-                                                     i_cats: list = None,
-                                                     e_cats: list = None,
-                                                     q_lim: float = 0.95,
-                                                     perform_tests: bool = False,
-                                                     description: str = "DESCRIPTION",
-                                                     pdf_file_name: str = "density_diff_plot.pdf"):
+    def create_2x2_hist_grid(self,
+                             num_dict: dict = None,
+                             i_cats: list = None,
+                             e_cats: list = None,
+                             q_lim: float = 0.95,
+                             perform_tests: bool = False,
+                             description: str = "DESCRIPTION",
+                             pdf_file_name: str = "2x2_hist_grid.pdf"):
         """
-        This function creates the density difference plot for given pairs of interaction and enrichment categories.
+        This function creates a 2x2 grid of histograms that are comparable to each other in terms of x-axis,
+        y-axis and bin size. It can be used to compare distributions of read pair counts per interaction or
+        interaction distance for different interaction categories and enrichment states.
 
         :param num_dict: A data structure that contains read pair numbers and distances for all interaction categories
         :param i_cats: List of two interaction categories to be compared, e.g. ['DI', 'UIR']
         :param e_cats: List of two enrichment categories to be compared, e.g. ['NE', 'EN']
-        :param q_lim: Upper limit at quantile level, e.g. at 0.95, 5% of the data with the larger quantile are not shown
+        :param q_lim: Upper limit at quantile level
         :param perform_tests: If true, KS and Mann-Whitney U tests will be performed
         :param description: Brief description that is shown in the plot above the histograms
         :param pdf_file_name: Name of the PDF file that will be created
@@ -458,12 +466,16 @@ class IaFreqDistAnalysis:
         for i in range(0, n):
             for j in range(0, m):
                 q = np.quantile(num_dict[i_cats[i]][e_cats[j]], q_lim)
-                print(q)
                 if x_lim < q:
                     x_lim = q
         x_ticks, x_tick_labels = self.make_ticks(x_lim)
-        bin_width = x_lim / 30
-        print()
+        if 30 <= x_lim:
+            # In this case, each histogram is divided into approximately 30 bins
+            bin_width = int(x_lim / 30)
+        else:
+            # In this case, each histogram is divided into less than.
+            # May happen for datasets with low read pair counts per interaction
+            bin_width = 1
 
         # Add header section with description and chromosomes that were taken into account
         ax[0][0].plot()
@@ -571,15 +583,14 @@ class IaFreqDistAnalysis:
                 ax[i + 1][j].text(x_lim - (x_lim / 3),
                                   yc_max - (yc_max / 3.2),  # 3.2
                                   'n: ' + "{:,}".format(len(num_dict[i_cats[i]][e_cats[j]])) + '\n' +
-                                  # 'Q1: ' + "{:,.0f}".format(np.quantile(num_dict[i_cats[i]][e_cats[j]], 0.25)) + '\n' +
                                   'Mdn: ' + "{:,.0f}".format(np.median(num_dict[i_cats[i]][e_cats[j]])) + '\n' +
                                   'MAD: ' + "{:,.0f}".format(
                                       stats.median_abs_deviation(num_dict[i_cats[i]][e_cats[j]])),
                                   fontsize=8.5,
                                   bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
-        # Add subplots for density differences
-        # ------------------------------------
+        # Perform KS and Mann-Whitney U test
+        # ----------------------------------
 
         if perform_tests:
             # Perform KS and Mann-Whitney U test
@@ -595,6 +606,9 @@ class IaFreqDistAnalysis:
             print(i_cats[0] + '-' + e_cats[1] + ' vs. ' + i_cats[1] + '-' + e_cats[1])
             print(stats.ks_2samp(num_dict[i_cats[0]][e_cats[1]], num_dict[i_cats[1]][e_cats[1]]))
             print(stats.mannwhitneyu(num_dict[i_cats[0]][e_cats[1]], num_dict[i_cats[1]][e_cats[1]]))
+
+        # Add subplots for density differences
+        # ------------------------------------
 
         # Get four lists with densities differences from all four density lists
         density_diff_cat_0_cat_1_ne = []  # Below histograms on the left
@@ -657,16 +671,6 @@ class IaFreqDistAnalysis:
         y_max += y_padding
         ax[3][0].set_ylim(y_min, y_max)
         ax[3][1].set_ylim(y_min, y_max)
-        # ax[3][0].text(x_lim - (x_lim / 3),
-        #              y_max - ((y_max - y_min) / 8),
-        #              'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_cat_1_ne_sum),
-        #              fontsize=9,
-        #              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
-        # ax[3][1].text(x_lim - (x_lim / 3),
-        #              y_max - ((y_max - y_min) / 8),
-        #              'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_cat_1_en_sum),
-        #              fontsize=9,
-        #              bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
         # Bar plot to the left of the upper histograms
         ax[1][2].bar(bcp_list,
@@ -718,16 +722,6 @@ class IaFreqDistAnalysis:
         y_max += y_padding
         ax[1][2].set_ylim(y_min, y_max)
         ax[2][2].set_ylim(y_min, y_max)
-        # ax[1][2].text(x_lim - (x_lim / 3),
-        #               y_max - ((y_max - y_min) / 8),
-        #               'sum(|dd|): ' + "{:.2f}".format(dd_cat_0_ne_en_sum),
-        #               fontsize=9,
-        #               bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
-        # ax[2][2].text(x_lim - (x_lim / 3),
-        #               y_max - ((y_max - y_min) / 8),
-        #               'sum(|dd|): ' + "{:.2f}".format(dd_cat_1_ne_en_sum),
-        #               fontsize=9,
-        #               bbox=dict(facecolor='white', edgecolor='none', alpha=0.75, boxstyle='round'))
 
         # Save and return figure
         fig.tight_layout(pad=1.25)
