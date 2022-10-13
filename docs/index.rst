@@ -26,8 +26,6 @@ analyzes is therefore a good starting point for your own analyzes.
    interaction_pooling
    unbalanced_interaction_calling
    jupyter_notebooks
-   binomial_model
-
 
 
 
