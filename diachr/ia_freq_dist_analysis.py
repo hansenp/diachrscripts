@@ -458,10 +458,12 @@ class IaFreqDistAnalysis:
         for i in range(0, n):
             for j in range(0, m):
                 q = np.quantile(num_dict[i_cats[i]][e_cats[j]], q_lim)
+                print(q)
                 if x_lim < q:
                     x_lim = q
         x_ticks, x_tick_labels = self.make_ticks(x_lim)
-        bin_width = int(x_lim / 30)
+        bin_width = x_lim / 30
+        print()
 
         # Add header section with description and chromosomes that were taken into account
         ax[0][0].plot()
