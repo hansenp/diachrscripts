@@ -4,12 +4,13 @@
 Interaction pooling
 ###################
 
-For the dataset on the hematopoietic cell types, there are three to four biological replicates
-for each cell type.
-In order to pool interactions from different replicates,
+In order to pool interactions from biological replicates,
 we discard interactions that occur in less than two replicates and,
 for the remaining interactions, we add up the read pair counts from
 all replicates separately for the four counts.
+For example, if the same interaction occurs in two replicates and has counts ``1:2:3:4``
+for the one replicate and counts ``4:3:2:1`` for the other, then the pooled counts will be
+``5:5:5:5``. We have implemented this way of pooling in the script ``pooler.py``.
 
 ****************
 Using the script

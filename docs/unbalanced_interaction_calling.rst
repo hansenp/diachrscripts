@@ -4,7 +4,14 @@
 Unbalanced interaction calling
 ##############################
 
-DICer will be described here.
+We implemented the calling of unbalanced interactions in the Python script ``DICer.py``.
+As input, this script requires a file in Diachromatic interaction format.
+If a P-value threshold is specified, then this will be used for the classification of interactions.
+Otherwise, a randomization procedure is used to set the P-value threshold such that the FDR
+remains below a chosen threshold of 5\%.
+The output also consists of a file in Diachromatic interaction format extended by two columns for P-values and
+interaction categories. This file contains only interactions that are powered at the P-value threshold
+used for classification.
 
 ****************
 Using the script
@@ -31,6 +38,7 @@ Random seed that is used for the first iteration. The random seed is incremented
 - ``--thread-num <Integer>``
 Number of processes in which the iterations are performed in batches of the same size.
 - ``--p-value-threshold <Float>``
+
 By default, the final P-value threshold is determined via randomization. If a P-value is specified, then this P-value threshold will be used and no randomizations will be performed.
 
 ******
