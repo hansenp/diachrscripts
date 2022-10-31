@@ -23,7 +23,7 @@ class DiachromaticInteractionSet:
 
     If interactions have been evaluated and categorized (1,2), the output format is expanded by two columns on the left.
     Column 10 contains the negative of the natural logarithm of the P-value and column 11 the interaction category
-    (DI, UI or UIR).
+    (DIX, DI, UI or UIR).
 
     """
 
