@@ -1,5 +1,5 @@
 from scipy.stats import binom
-from numpy import log10, random, mean, std
+from numpy import log10, random, mean, std, unique, array
 from math import floor, ceil
 import matplotlib.pyplot as plt
 import warnings
@@ -10,6 +10,22 @@ from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.diachromatic_interaction_set import BinomialModel
 
 warnings.filterwarnings('always')
+
+
+def _get_four_random_count_list(population, i_num: int = None, rp_num: int = None):
+
+    # Draw index samples for all interactions at once
+    multi_sample_idx = random.randint(len(population) - 1, size=(i_num, rp_num))
+
+    # Determine read type counts for each simulated interaction
+    random_counts_list = []
+    for sample in population[multi_sample_idx]:  # Runtime could be further improved with 'apply'
+        indices, counts = unique(sample, return_counts=True)
+        random_counts = array([0, 0, 0, 0])
+        random_counts[indices] = counts
+        random_counts_list.append(random_counts)
+
+    return random_counts_list
 
 
 class RandomizeInteractionSet:
@@ -246,9 +262,54 @@ class RandomizeInteractionSet:
                     rp_inter_dict[d_inter.rp_total] = 1
         return rp_inter_dict
 
-    def _get_list_of_p_values_from_randomized_data(self,
-                                                   interaction_set: DiachromaticInteractionSet = None,
-                                                   random_seed: int = None):
+    @staticmethod
+    def _get_four_random_count_list(population, i_num: int = None, rp_num: int = None):
+
+        # Draw index samples for all interactions at once
+        multi_sample_idx = random.randint(len(population) - 1, size=(i_num, rp_num))
+
+        # Determine read type counts for each simulated interaction
+        random_counts_list = []
+        for sample in population[multi_sample_idx]:  # Runtime could be further improved with 'apply'
+            indices, counts = unique(sample, return_counts=True)
+            random_counts = array([0, 0, 0, 0])
+            random_counts[indices] = counts
+            random_counts_list.append(random_counts)
+
+        return random_counts_list
+
+    def _get_list_of_p_values_from_randomized_data_4c(self, random_seed: int = None):
+        """
+        This function generates randomized read pair counts (0, 1, 2, 3) for all interactions of the
+        interaction set of this object and calculates associated P-values.
+
+        :return: List of P-values for randomized interactions
+        """
+
+        # Init random generator
+        random.seed(random_seed)
+
+        random_pval_list = []
+
+        # Draw one big random population of 0, 1, 2, 3
+        population = random.choice([0, 1, 2, 3], size=100000, p=[0.25, 0.25, 0.25, 0.25])
+
+        for rp_num, i_num in self._rp_inter_dict.items():
+
+            # Generate random read pair counts for current read pair number
+            random_counts_list = _get_four_random_count_list(population=population, i_num=i_num, rp_num=rp_num)
+
+            # Calculate P-values and append to list
+            for random_counts in random_counts_list:
+                rp_counts = sorted(random_counts, reverse=True)
+                highest_two = rp_counts[0] + rp_counts[1]
+                lowest_two = rp_counts[2] + rp_counts[3]
+                log10_pval = self.p_values.get_binomial_log10_p_value(highest_two, lowest_two)
+                random_pval_list.append(log10_pval)
+
+        return random_pval_list
+
+    def _get_list_of_p_values_from_randomized_data(self, random_seed: int = None):
         """
         This function generates randomized simple and twisted read pair counts for all interactions of the
         interaction set of this object and calculates associated P-values.
@@ -283,7 +344,8 @@ class RandomizeInteractionSet:
         """
 
         # Get list of P-values for randomized interactions
-        randomized_log10_pvals = self._get_list_of_p_values_from_randomized_data(random_seed=random_seed)
+        #randomized_log10_pvals = self._get_list_of_p_values_from_randomized_data(random_seed=random_seed)
+        randomized_log10_pvals = self._get_list_of_p_values_from_randomized_data_4c(random_seed=random_seed)
 
         # Determine number of randomized significant interactions for each nominal alpha in 'log10_nominal_alphas'
         sig_num_r_list = self._determine_significant_pvals_at_nominal_alphas_log10(
