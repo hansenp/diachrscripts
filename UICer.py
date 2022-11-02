@@ -1,16 +1,21 @@
 #!/usr/bin/env python
 
 """
-This script takes a file in Diachromatic interaction format and an FDR or P-value threshold, calculates the P-values of
-interactions, assigns interactions to directed (DI) and undirected interactions (UI), selects undirected reference
-interactions (UIR) from UI and creates a new file with two additional columns for P-value and interaction category.
+The script performs the following processing steps:
 
-You can find documentation on this script in the relevant section in the RTD of this repository.
+1. Randomization: If no P-value threshold is specified, then a threshold is determined using randomization so that
+the FDR remains below 5%.
 
-The individual steps that are carried out in this script are demonstrated in the following Jupyter notebooks:
+2. Calling of unbalanced interactions: All interactions that do not have enough read pairs to
+achieve a significant test result at the chosen P-threshold are discarded. The remaining interactions that achieve a
+significant test result are classified as unbalanced and all others as balanced.
 
-       diachrscripts/jupyter_notebooks/evaluate_and_categorize_interactions.ipynb
-       diachrscripts/jupyter_notebooks/usage/Demonstration_of_DICer.ipynb
+3. Selection of comparison sets: From the unbalanced and balanced interactions, two comparison sets are selected that
+are as large as possible and comparable with respect to their total read pair counts per interaction.
+
+The usage of UICer is demonstrated in the following Jupyter notebook:
+
+       diachrscripts/jupyter_notebooks/usage/usage_of_UICer.ipynb
 """
 
 import argparse
