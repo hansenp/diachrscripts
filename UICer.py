@@ -131,8 +131,8 @@ print(parameter_info)
 
 # Load interactions into a Diachromatic interaction set
 interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_digests_file, rpc_rule=read_pair_counts_rule)
-# To save memory, we only read interactions that can be significant at a nominal alpha of 0.10.
-min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(0.10)
+# To save memory, we only read interactions that can be significant at the maximum nominal alpha
+min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(nominal_alpha_max)
 interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, min_dist=min_inter_dist, verbose=True)
 print()
 interaction_set.shuffle_inter_dict(random_seed=random_seed_shuff_inter, verbose=True)
@@ -149,8 +149,6 @@ if p_value_threshold is None:
         nominal_alphas= append(nominal_alphas, 0.01)
     if 0.05 not in nominal_alphas:
         nominal_alphas = append(nominal_alphas, 0.05)
-    if 0.10 not in nominal_alphas:
-        nominal_alphas = append(nominal_alphas, 0.10)
 
     # Perform randomization procedure
     randomize_fdr = RandomizeInteractionSet(random_seed=random_seed)
@@ -174,7 +172,7 @@ if p_value_threshold is None:
 
     # Get table row for randomization for the determined P-value threshold
     fdr_info_info_table_row = randomize_fdr.get_randomization_info_table_row(
-        nominal_alphas_selected = [p_value_threshold, 0.01, 0.05, 0.10],
+        nominal_alphas_selected = [p_value_threshold, 0.01, 0.05],
         description=description_tag.replace(' ','_'))
 
     # Get entire table with randomization results
@@ -206,12 +204,6 @@ if p_value_threshold is None:
         nominal_alpha_selected = 0.05,
         pdf_file_name  = out_prefix + "_randomization_histogram_at_005.pdf",
         description = description_tag + " - At a nominal alpha of 0.05")
-
-    # Create randomization histogram for a nominal alpha of 0.10
-    randomize_fdr.get_randomization_info_plot(
-        nominal_alpha_selected = 0.10,
-        pdf_file_name  = out_prefix + "_randomization_histogram_at_010.pdf",
-        description = description_tag + " - At a nominal alpha of 0.10")
 
 # Calculate P-values of interactions and assign interactions to 'DI' or 'UI'
 interaction_set.evaluate_and_categorize_interactions(p_value_threshold, verbose=True)
