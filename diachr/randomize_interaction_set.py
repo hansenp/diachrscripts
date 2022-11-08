@@ -1036,6 +1036,7 @@ class RandomizeInteractionSet:
         ax[2].axhline(min_rp_num_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[2].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[2].set_xlim(pval_thresh_min, pval_thresh_max)
+        ax[2].set_ylim(0, max(min_rp_num_column))
 
         # Smallest possible P-values with minimum read pair numbers
         ax[3].plot(pval_thresh_column[:idx_max], min_rp_num_pval_column[:idx_max])

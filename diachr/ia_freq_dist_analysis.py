@@ -402,7 +402,7 @@ class IaFreqDistAnalysis:
                 ax_dens = ax[i + 1][j].twinx()
                 # ax_dens.plot(bcp_list, densities_2d_array[i][j], color='red', linewidth=0.5)
                 ax_dens.set_ylabel('Density', labelpad=7)
-                ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
+                ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
                 ax_dens.set_ylim(0, yd_max)
                 # Add text labels with total read pair or interaction numbers, median and median absolute deviation
                 ax[i + 1][j].text(x_lim - (x_lim / 3),
@@ -577,7 +577,7 @@ class IaFreqDistAnalysis:
                 ax_dens = ax[i + 1][j].twinx()
                 # ax_dens.plot(bcp_list, densities_2d_array[i][j], color='red', linewidth=0.5)
                 ax_dens.set_ylabel('Density', labelpad=7)
-                ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(-2, 0))
+                ax_dens.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
                 ax_dens.set_ylim(0, yd_max)
                 # Add text labels with total read pair or interaction numbers, median and median absolute deviation
                 ax[i + 1][j].text(x_lim - (x_lim / 3),
