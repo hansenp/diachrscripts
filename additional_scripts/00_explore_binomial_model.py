@@ -3,7 +3,7 @@
 """
 With this script all plots can be created that are also created in the following Jupyter notebook:
 
-       jupyter_notebooks/binomialModel.ipynb
+       jupyter_notebooks/obsolete/binomialModel.ipynb
 
 All functionality is in class BinomialInteractionModel that is also used by the notebook.
 

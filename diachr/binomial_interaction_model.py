@@ -14,7 +14,7 @@ class BinomialInteractionModel:
 
     A more detailed description and application examples can be found in the following Jupyter notebook:
 
-           jupyter_notebooks/binomialModel.ipynb
+           jupyter_notebooks/obsolete/binomialModel.ipynb
 
     In addition, this class is used in the following script to create all plots that are also created in the
     Jupyter notebook:
