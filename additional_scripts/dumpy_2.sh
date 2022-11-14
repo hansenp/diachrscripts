@@ -7,7 +7,7 @@ OUT_DIR=$1
 OUT_PREFIX=$2
 SRR_LIST=$3
 # Init target results
-mkdir $OUT_DIR
+mkdir -p $OUT_DIR
 > $OUT_DIR/$OUT_PREFIX\_1.fastq.gz # Forward
 > $OUT_DIR/$OUT_PREFIX\_2.fastq.gz # Reverse
 > $OUT_DIR/$OUT_PREFIX\_md5.txt
