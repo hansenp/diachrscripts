@@ -27,6 +27,18 @@ For this dataset, ``200 GB`` hard disk space must be available.
     $ diachrscripts/additional_scripts/dumpy.sh MIF_REP2 MIF_REP2 "ERR436028;ERR436030;ERR436033"
     $ diachrscripts/additional_scripts/dumpy.sh MIF_REP3 MIF_REP3 "ERR436026;ERR436031"
 
+.. code-block:: console
+
+    $ diachrscripts/additional_scripts/dumpy.sh MON_IPSC_REP1 MON_IPSC_REP1 "ERR2365275"
+    $ diachrscripts/additional_scripts/dumpy.sh MON_IPSC_REP2 MON_IPSC_REP2 "ERR2365276"
+    $ diachrscripts/additional_scripts/dumpy.sh MON_IPSC_REP3 MON_IPSC_REP3 "ERR2365277"
+
+.. code-block:: console
+
+    $ diachrscripts/additional_scripts/dumpy.sh MON_CM_REP1 MON_CM_REP1 "ERR2365269"
+    $ diachrscripts/additional_scripts/dumpy.sh MON_CM_REP2 MON_CM_REP2 "ERR2365270"
+    $ diachrscripts/additional_scripts/dumpy.sh MON_CM_REP3 MON_CM_REP3 "ERR2365271"
+
 A separate directory is created for each of the three replicates.
 Because it is paired-end data, there are pairs of forward and reverse FASTQ files with
 suffixes ``_1`` and ``_2``.
