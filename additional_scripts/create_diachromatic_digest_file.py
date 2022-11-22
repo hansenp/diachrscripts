@@ -16,7 +16,7 @@ import argparse
 ####################
 
 parser = argparse.ArgumentParser(description='Overwrite enrichment status in column 12 of a Diachromatic digest file.')
-parser.add_argument('-o', '--out-prefix', help='Prefix for output.', default='OUTPREFIX')
+parser.add_argument('-o', '--out-prefix', help='Prefix for output.', default='OUT_PREFIX')
 parser.add_argument('--enriched-digests-file', help='BED file with digests that were selected for target enrichment.',
                     required=True)
 parser.add_argument('-i', '--diachromatic-digest-file', help='Diachromatic digest file created with GOPHER.',

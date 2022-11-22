@@ -252,7 +252,7 @@ class ReadTypeAndConfigCounter:
         """
 
         # Define labels and colors
-        config_colors = ['grey', 'grey', 'grey', 'grey', 'pink', 'red', 'lime', 'magenta', 'blue', 'turquoise']
+        config_colors = ['lightsteelblue', 'lightsteelblue', 'lightsteelblue', 'lightsteelblue', 'pink', 'red', 'lime', 'magenta', 'blue', 'turquoise']
         i_cat_titles = {'DIX': 'Unbalanced without reference',
                         'DI': 'Unbalanced with reference',
                         'UIR': 'Balanced reference',
@@ -262,7 +262,7 @@ class ReadTypeAndConfigCounter:
                         'B': 'Balanced'}
         xy_label_font_size = 11.2
 
-        # Fill second dictionary with recalcultated realtive frequencies (required for second y-axis)
+        # Fill second dictionary with recalculated relative frequencies (required for second y-axis)
         ht_tag_dens_dict = copy.deepcopy(conf_freq_dict)
         for i_cat in i_cats:
             i_total = sum(conf_freq_dict[i_cat][e_cat_1].values())

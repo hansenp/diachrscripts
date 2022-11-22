@@ -27,11 +27,15 @@ class TIMViz:
             'UI': 'gray'
         }
         self._ht_tag_colors = {
+            '0X': 'lightsteelblue',
+            '1X': 'lightsteelblue',
+            '2X': 'lightsteelblue',
+            '3X': 'lightsteelblue',
             '01': 'pink',
-            '02': 'red',#'02': 'red',
+            '02': 'red',
             '03': 'lime',
             '12': 'magenta',
-            '13': 'blue',#'13': 'blue',
+            '13': 'blue',
             '23': 'turquoise'
         }
 
@@ -194,7 +198,7 @@ class TIMViz:
             center_2 = d_inter.fromB + (d_inter.toB - d_inter.fromB) / 2
             c = self.pos_to_coordinate(center_2 - d_radius)
             d = self.pos_to_coordinate(center_2 + d_radius)
-            #print(str(center_1) + '\t' + str(a) + '\t' + str(b) + '\t' + str(c) + '\t' + str(d))
+            # print(str(center_1) + '\t' + str(a) + '\t' + str(b) + '\t' + str(c) + '\t' + str(d))
         else:
             a = self.pos_to_coordinate(d_inter.fromA)
             b = self.pos_to_coordinate(d_inter.toA)
@@ -240,8 +244,9 @@ class TIMViz:
                              pp_linewidth=None,
                              transparent_polygons=True,
                              d_radius: int = 0,
-                             plot_bait_diagonals = False,
+                             plot_bait_diagonals=False,
                              plot_title: str = 'TIMviz plot',
+                             show_complete_annotations=False,
                              pdf_file_name: str = None,
                              verbose: bool = True):
         """
@@ -360,11 +365,12 @@ class TIMViz:
         # Plot the baits
         if baits is not None:
             for (sta_pos, end_pos) in baits:
-                x = self.pos_to_coordinate(sta_pos) + (self.pos_to_coordinate(end_pos) - self.pos_to_coordinate(sta_pos)) / 2
+                x = self.pos_to_coordinate(sta_pos) + (
+                        self.pos_to_coordinate(end_pos) - self.pos_to_coordinate(sta_pos)) / 2
                 ax.axvline(x, color='gray', linewidth=0.5, zorder=0, alpha=0.5)
                 if plot_bait_diagonals:
-                    ax.axline((x, 0), (x+10, -10), color='darkred', linewidth=0.5, zorder=0)
-                    ax.axline((x, 0), (x+10, 10), color='darkblue', linewidth=0.5, zorder=0)
+                    ax.axline((x, 0), (x + 10, -10), color='darkred', linewidth=0.5, zorder=0)
+                    ax.axline((x, 0), (x + 10, 10), color='darkblue', linewidth=0.5, zorder=0)
 
         # Plot the interaction polygons
         for d_inter in d_inter_list:
@@ -374,6 +380,10 @@ class TIMViz:
                 pp_color = self._i_cat_colors[d_inter.get_category()]
             else:
                 pp_color = self._ht_tag_colors[d_inter.get_ht_tag()]
+                if d_inter.get_category() == 'UI' or d_inter.get_category() == 'UIR':
+                    # pp_color = 'lightsteelblue'
+                    # pp_color = 'black'
+                    pp_color = 'dimgray'
 
             # Determine transparency depending on read pair count
             pp_alpha = min_q
@@ -417,13 +427,19 @@ class TIMViz:
             print("[INFO] ... done.")
 
         # Add annotations
-        label_text = chrom + ':' + str(begin) + '-' + str(end) + '\n'
-        label_text += '# Interactions: ' + '{:,}'.format(len(d_inter_list)) + '\n'
-        label_text += 'I cats: ' + str(inter_cat_list) + '\n'
-        label_text += 'E cats: ' + str(enr_cat_list) + '\n'
-        label_text += 'HTC tags: ' + str(ht_tag_list)
-        label_x_pos = xrange[0] + (xrange[1] - xrange[0])/60
-        label_y_pos = yrange[1] - yrange[1]/4.7
+        if show_complete_annotations:
+            label_text = chrom + ':' + str(begin) + '-' + str(end) + '\n'
+            label_text += '{:,}'.format(len(d_inter_list)) + ' interactions' + '\n'
+            label_text += 'I cats: ' + str(inter_cat_list) + '\n'
+            label_text += 'E cats: ' + str(enr_cat_list) + '\n'
+            label_text += 'HTC tags: ' + str(ht_tag_list)
+            label_x_pos = xrange[0] + (xrange[1] - xrange[0]) / 60
+            label_y_pos = yrange[1] - (xrange[1] - xrange[0]) / 8.8
+        else:
+            label_text = chrom + ':' + str(begin) + '-' + str(end) + '\n'
+            label_text += '{:,}'.format(len(d_inter_list)) + ' interactions' + '\n'
+            label_x_pos = xrange[0] + (xrange[1] - xrange[0]) / 60
+            label_y_pos = yrange[1] - (xrange[1] - xrange[0]) / 14.3
         ax.annotate(label_text, xy=(label_x_pos, label_y_pos), color='white', size=12)
 
         # Save and return figure

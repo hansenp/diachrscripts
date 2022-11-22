@@ -15,7 +15,7 @@ from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 ####################
 
 parser = argparse.ArgumentParser(description='Combine interactions that occur in a specified number of replicates.')
-parser.add_argument('-o', '--out-prefix', help='Prefix for output.', default='OUTPREFIX')
+parser.add_argument('-o', '--out-prefix', help='Prefix for output.', default='OUT_PREFIX')
 parser.add_argument('-i', '--interaction-files-path', help='Path to directory with Diachromatic interaction files',
                     required=True)
 parser.add_argument('-r', '--required-replicates', help='Required number of replicates.', required=True)
