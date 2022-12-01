@@ -100,10 +100,10 @@ print("\nIntersect between set A and B (Should be large.): " + str(len(a_interse
 
 set_diff_b_minus_a = enriched_digests_interactions -  enriched_digests_set
 print("\nSet difference B minus A (Must be empty!): " + str(len(set_diff_b_minus_a)))
-if(0 < len(set_diff_b_minus_a)):
+if 0 < len(set_diff_b_minus_a):
     print("Something is wrong! B must be completely contained in A.")
 
 a_intersect_c = enriched_digests_set & not_enriched_digests_interactions
 print("\nIntersect between set A and C (Must be empty!): " + str(len(a_intersect_c)))
-if(0 < len(a_intersect_c)):
+if 0 < len(a_intersect_c):
     print("Something is wrong! A and C must not overlap.")
