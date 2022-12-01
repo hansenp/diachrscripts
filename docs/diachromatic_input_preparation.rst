@@ -100,8 +100,8 @@ For convenience, we have added a template file to this repository that just need
 
     $ gunzip -k diachrscripts/additional_files/template_digest_file_hg38_HindIII.txt.gz
 
-Selecting enriched digests for Mifsud et al. 2015
--------------------------------------------------
+Mifsud et al. 2015
+------------------
 
 Supplementary Table 4 of the work published by
 `Mifsud et al. 2015 <https://pubmed.ncbi.nlm.nih.gov/25938943/>`__
@@ -163,8 +163,8 @@ All 22,076 digests in the digest file were marked with a ``T``.
 We have added the file ``mifsud_baited_digests_hg38.bed`` to this repository so that the digest file can be recreated
 if needed.
 
-Selecting enriched digests for Javierre et al. 2016
----------------------------------------------------
+Javierre et al. 2016
+--------------------
 
 For the work published by
 `Javierre et al. 2016 <https://pubmed.ncbi.nlm.nih.gov/27863249/>`__,
@@ -229,8 +229,8 @@ if needed. For the files ``javierre_baited_digests_hg38.bed`` and ``mifsud_baite
 22,008 baited digests overlap, i.e. the digest files we generated for the Mifsud and Javierre data are also almost
 identical.
 
-Selecting enriched digests for Montefiori et al. 2018
------------------------------------------------------
+Montefiori et al. 2018
+----------------------
 
 Supplementary Table 9.1 of the work published by
 `Montefiori et al. 2018 <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6053306/#supp9>`__
@@ -319,8 +319,8 @@ are marked with a ``T`` and all others with an ``F``.
 This results in the file ``montefiori_hg38_DpnII_diachromatic_digest_file.txt``.
 We use this file as input for Diachromatic.
 
-Selecting enriched digests for Schoenefelder et al. 2015
---------------------------------------------------------
+Schoenefelder et al. 2015
+-------------------------
 
 Supplementary Table 1 of the work published by
 `Schoenefelder et al. 2015 <https://pubmed.ncbi.nlm.nih.gov/25752748/>`__
@@ -357,8 +357,8 @@ to extract all digests that contain at least one bait completely:
 
 This results in 22,224 baited digests.
 
-Finally, use our script to create a digest file in which digests that Mifsud et al. have selected for enrichment are marked with
-a ``T`` and all others with an ``F``.
+Finally, use our script to create a digest file in which digests that Schoenefelder et al. have selected for enrichment
+are marked with a ``T`` and all others with an ``F``.
 
 .. code-block:: console
 
@@ -370,8 +370,5 @@ a ``T`` and all others with an ``F``.
 
 This will produce the file ``schoenefelder_mm10_HindIII_diachromatic_digest_file.txt`` that can be used as input for
 Diachromatic.
-All XX,XXX digests in the digest file were marked with a ``T``.
-We have added the file ``schoenefelder_baited_digests_mm10.bed`` to this repository so that the digest file can be recreated
-if needed.
 
 

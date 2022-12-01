@@ -46,7 +46,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'diachr'
-copyright = u'2019'
+copyright = u'2022'
 author = u'Peter Hansen, Peter Robinson'
 
 # The version info for the project you're documenting, acts as replacement for

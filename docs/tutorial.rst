@@ -5,7 +5,7 @@ Tutorial
 ########
 
 This tutorial describes the entire workflow from downloading the data, calling the interactions with ``Diachromatic``,
-pooling interactions from different replicates, calling unbalanced interactions with ``DICer`` up to the various
+pooling interactions from different replicates, calling unbalanced interactions with ``UICer`` up to the various
 analyzes of interactions with unbalanced read counts that can be performed in Jupyter Notebooks.
 
 .. image:: img/analysis_flowchart.png
@@ -23,9 +23,9 @@ For this dataset, ``200 GB`` hard disk space must be available.
 
 .. code-block:: console
 
-    $ diachrscripts/additional_scripts/dumpy.sh MIF_REP1 MIF_REP1 "ERR436029"
-    $ diachrscripts/additional_scripts/dumpy.sh MIF_REP2 MIF_REP2 "ERR436028;ERR436030;ERR436033"
-    $ diachrscripts/additional_scripts/dumpy.sh MIF_REP3 MIF_REP3 "ERR436026;ERR436031"
+    $ diachrscripts/additional_scripts/dumpy.sh MIF_GM12878_CHC_REP1 MIF_GM12878_CHC_REP1 "ERR436029"
+    $ diachrscripts/additional_scripts/dumpy.sh MIF_GM12878_CHC_REP2 MIF_GM12878_CHC_REP2 "ERR436028;ERR436030;ERR436033"
+    $ diachrscripts/additional_scripts/dumpy.sh MIF_GM12878_CHC_REP3 MIF_GM12878_CHC_REP3 "ERR436026;ERR436031"
 
 .. code-block:: console
 
@@ -48,36 +48,36 @@ Both files have the same number of lines and reads with the same line index form
 
 .. code-block:: console
 
-    $ ls -lh MIF_REP*/
-    MIF_REP1/:
+    $ ls -lh MIF_GM12878_CHC_REP*/
+    MIF_GM12878_CHC_REP1/:
     total 28G
-    12G MIF_REP1_1.fastq.gz
-    12G MIF_REP1_2.fastq.gz
-    242 MIF_REP1_md5.txt
+    12G MIF_GM12878_CHC_REP1_1.fastq.gz
+    12G MIF_GM12878_CHC_REP1_2.fastq.gz
+    242 MIF_GM12878_CHC_REP1_md5.txt
 
-    MIF_REP2/:
+    MIF_GM12878_CHC_REP2/:
     total 87G
-    36G MIF_REP2_1.fastq.gz
-    37G MIF_REP2_2.fastq.gz
-    490 MIF_REP2_md5.txt
+    36G MIF_GM12878_CHC_REP2_1.fastq.gz
+    37G MIF_GM12878_CHC_REP2_2.fastq.gz
+    490 MIF_GM12878_CHC_REP2_md5.txt
 
-    MIF_REP3/:
+    MIF_GM12878_CHC_REP3/:
     total 57G
-    24G MIF_REP3_1.fastq.gz
-    24G MIF_REP3_2.fastq.gz
-    366 MIF_REP3_md5.txt
+    24G MIF_GM12878_CHC_REP3_1.fastq.gz
+    24G MIF_GM12878_CHC_REP3_2.fastq.gz
+    366 MIF_GM12878_CHC_REP3_md5.txt
 
 The MD5 checksums are as follows:
 
 .. code-block:: console
 
-    $ cat MIF_REP*/MIF_REP*_md5.txt | grep -v ERR
-    c68ab47d9f8cb9b49c1701ff04c7fd41  MIF_REP1/MIF_REP1_1.fastq.gz
-    338980ac0a0bc1a3ea26bc6cf55dfb43  MIF_REP1/MIF_REP1_2.fastq.gz
-    b6c248b48ded9eee8c4e951f4ea8d4a4  MIF_REP2/MIF_REP2_1.fastq.gz
-    a3ff3dfde21d39dc41dc3c1212cbb3e3  MIF_REP2/MIF_REP2_2.fastq.gz
-    5ceed4dd8784a467afa35f00b83d132d  MIF_REP3/MIF_REP3_1.fastq.gz
-    4260c37ed24ee29c5046ef74096ba1f7  MIF_REP3/MIF_REP3_2.fastq.gz
+    $ cat MIF_GM12878_CHC_REP*/MIF_GM12878_CHC_REP*_md5.txt | grep -v ERR
+    c68ab47d9f8cb9b49c1701ff04c7fd41  MIF_GM12878_CHC_REP1/MIF_GM12878_CHC_REP1_1.fastq.gz
+    338980ac0a0bc1a3ea26bc6cf55dfb43  MIF_GM12878_CHC_REP1/MIF_GM12878_CHC_REP1_2.fastq.gz
+    b6c248b48ded9eee8c4e951f4ea8d4a4  MIF_GM12878_CHC_REP2/MIF_GM12878_CHC_REP2_1.fastq.gz
+    a3ff3dfde21d39dc41dc3c1212cbb3e3  MIF_GM12878_CHC_REP2/MIF_GM12878_CHC_REP2_2.fastq.gz
+    5ceed4dd8784a467afa35f00b83d132d  MIF_GM12878_CHC_REP3/MIF_GM12878_CHC_REP3_1.fastq.gz
+    4260c37ed24ee29c5046ef74096ba1f7  MIF_GM12878_CHC_REP3/MIF_GM12878_CHC_REP3_2.fastq.gz
 
 ******************************************
 Calling interactions with ``Diachromatic``
@@ -110,10 +110,10 @@ The prepared FASTQ files with the forward and reverse reads are specified using 
 
     $ java -jar Diachromatic.jar truncate \
        -e HindIII \
-       -q MIF_REP1/MIF_REP1_1.fastq.gz \
-       -r MIF_REP1/MIF_REP1_2.fastq.gz \
-       -o MIF_REP1 \
-       -x MIF_REP1
+       -q MIF_GM12878_CHC_REP1/MIF_GM12878_CHC_REP1_1.fastq.gz \
+       -r MIF_GM12878_CHC_REP1/MIF_GM12878_CHC_REP1_2.fastq.gz \
+       -o MIF_GM12878_CHC_REP1 \
+       -x MIF_GM12878_CHC_REP1
 
 All result files are written to the directory specified by the option ``-o`` and have the same prefix specified by the
 option ``-x``.
@@ -146,10 +146,10 @@ How to do this is documented here: :ref:`RST_Diachromatic_input_preparation`.
        -bsu \
        -p 4 \
        -d <DIGEST_MAP> \
-       -q MIF_REP1/MIF_REP1.truncated_R1.fastq.gz \
-       -r MIF_REP1/MIF_REP1.truncated_R2.fastq.gz \
-       -o MIF_REP1 \
-       -x MIF_REP1 \
+       -q MIF_GM12878_CHC_REP1/MIF_GM12878_CHC_REP1.truncated_R1.fastq.gz \
+       -r MIF_GM12878_CHC_REP1/MIF_GM12878_CHC_REP1.truncated_R2.fastq.gz \
+       -o MIF_GM12878_CHC_REP1 \
+       -x MIF_GM12878_CHC_REP1 \
        -j
 
 All result files from this step are written to the same directory (``-o``) and have the same prefix (``-x``) as the
@@ -170,16 +170,16 @@ The ``-s`` option causes the read pair counts to be reported separately for the 
 
     $ java -Xmx32000m -jar Diachromatic.jar count \
        -d <DIGEST_MAP>  \
-       -v MIF_REP1/MIF_REP1.valid_pairs.aligned.bam \
+       -v MIF_GM12878_CHC_REP1/MIF_GM12878_CHC_REP1.valid_pairs.aligned.bam \
        -s \
-       -o MIF_REP1 \
-       -x MIF_REP1
+       -o MIF_GM12878_CHC_REP1 \
+       -x MIF_GM12878_CHC_REP1
 
 The interactions are written to the following file:
 
 .. code-block:: console
 
-    MIF_REP1/MIF_REP1.interaction.counts.table.tsv
+    MIF_GM12878_CHC_REP1/MIF_GM12878_CHC_REP1.interaction.counts.table.tsv
 
 This file is in Diachromatic's interaction format:
 
@@ -213,9 +213,9 @@ We also discard all interactions on chromosome ``chrM``.
 .. code-block:: console
 
     $ mkdir gzdir
-    $ awk '{if($1==$5 && $6-$3>=20000){print $0}}' MIF_REP1/MIF_REP1.interaction.counts.table.tsv \
+    $ awk '{if($1==$5 && $6-$3>=20000){print $0}}' MIF_GM12878_CHC_REP1/MIF_GM12878_CHC_REP1.interaction.counts.table.tsv \
        | grep -v chrM \
-       | gzip > gzdir/MIF_REP1.interaction.counts.table.clr_200000.tsv.gz
+       | gzip > gzdir/MIF_GM12878_CHC_REP1.interaction.counts.table.clr_200000.tsv.gz
 
 Do the last four steps for the other two replicates as well.
 After that, the directory ``gzdir`` should contain three files.
@@ -223,65 +223,98 @@ After that, the directory ``gzdir`` should contain three files.
 .. code-block:: console
 
     $ ls gzdir
-    MIF_REP1.interaction.counts.table.clr_200000.tsv.gz
-    MIF_REP2.interaction.counts.table.clr_200000.tsv.gz
-    MIF_REP3.interaction.counts.table.clr_200000.tsv.gz
+    MIF_GM12878_CHC_REP1.interaction.counts.table.clr_200000.tsv.gz
+    MIF_GM12878_CHC_REP2.interaction.counts.table.clr_200000.tsv.gz
+    MIF_GM12878_CHC_REP3.interaction.counts.table.clr_200000.tsv.gz
 
 **********************************************
 Pooling interactions from different replicates
 **********************************************
 
-This is described here: :ref:`RST_Interaction_pooling`.
+In order to pool interactions from biological replicates,
+we discard interactions that occur in less than two replicates and,
+for the remaining interactions, we add up the read pair counts from
+all replicates separately for the four counts.
+For example, if the same interaction occurs in two replicates and has counts ``1:2:3:4``
+for the one replicate and counts ``4:3:2:1`` for the other, then the pooled counts will be
+``5:5:5:5``. We have implemented this way of pooling in the script ``pooler.py``, which is described
+here: :ref:`RST_Interaction_pooling`.
+
+The script expects a path to a directory that contains gzipped files in Diachromatic's interaction format
+(``--interaction-files-path``).
+
+In addition, the required number of replicates must be specified (``--required-replicates``).
+All interactions that occur in less replicates will be discarded.
+For the remaining interactions,
+the four read pair counts from different replicates
+will be added up separately.
+For this analysis,
+we require that an interaction must occur in at least two replicates.
+The name of each created file will have the same prefix ``--out-prefix``,
+which can also contain the path to an already existing directory.
 
 .. code-block:: console
 
-    $ mkdir MIF_REPC
-    $ diachrscripts/additional_scripts/pooler.py \
+    $ mkdir MIF_GM12878_CHC_REPC
+    $ diachrscripts/pooler.py \
        --interaction-files-path gzdir \
        --required-replicates 2 \
-       --out-prefix MIF_REPC/MIF_REPC
+       --out-prefix MIF_GM12878_CHC_REPC/MIF_GM12878_CHC_REPC
+
+The command above will generate the following two files:
 
 .. code-block:: console
 
-    $ ls MIF_REPC | cat
-    MIF_REPC_at_least_in_2_replicates_summary.txt
-    MIF_REPC_at_least_in_2_replicates_interactions.tsv.gz
+    $ ls MIF_GM12878_CHC_REPC | cat
+    MIF_GM12878_CHC_REPC_at_least_in_2_replicates_summary.txt
+    MIF_GM12878_CHC_REPC_at_least_in_2_replicates_interactions.tsv.gz
+
+The first file contains an overview of the numbers of interactions
+in the individual files and
+the second file contains the pooled interactions.
+
+Note: Diachromatic
+even outputs interactions that have only a single read pair.
+On the other hand, when pooling interactions,
+the interactions from multiple replicates must be read into memory.
+Therefore, the memory consumption can become very high
+and we carried out this step on a compute cluster.
 
 
 **********************************************
-Calling unbalanced interactions with ``DICer``
+Calling unbalanced interactions with ``UICer``
 **********************************************
 
 So far, this is only described in this
-`Jupyter Notebook <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/Demonstration_of_DICer.ipynb>`__.
+`Jupyter Notebook <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/Demonstration_of_UICer.ipynb>`__.
 
 .. code-block:: console
 
-    $ diachrscripts/DICer.py \
-        --out-prefix MIF_REPC/MIF_REPC \
-        --description-tag MIF_REPC \
-        --diachromatic-interaction-file MIF_REPC/MIF_REPC_at_least_in_2_replicates_interactions.tsv.gz \
+    $ diachrscripts/UICer.py \
+        --out-prefix MIF_GM12878_CHC_REPC/MIF_GM12878_CHC_REPC \
+        --description-tag MIF_GM12878_CHC_REPC \
+        --diachromatic-interaction-file MIF_GM12878_CHC_REPC/MIF_GM12878_CHC_REPC_at_least_in_2_replicates_interactions.tsv.gz \
         --fdr-threshold 0.05 \
         --iter-num 1000 \
         --random-seed 1 \
         --thread-num 4
 
-``DICer`` generates a file with the evaluated and categorized interactions and several files with statistics on the
+``UICer`` generates a file with the evaluated and categorized interactions and several files with statistics on the
 various processing steps.
 
 .. code-block:: console
 
-    $ ls MIF_REPC | cat
-    MIF_REPC_at_least_in_2_replicates_summary.txt
-    MIF_REPC_at_least_in_2_replicates_interactions.tsv.gz
-    MIF_REPC_evaluated_and_categorized_interactions.tsv.gz
-    MIF_REPC_randomization_histogram_at_001.pdf
-    MIF_REPC_randomization_histogram_at_005.pdf
-    MIF_REPC_randomization_histogram_at_010.pdf
-    MIF_REPC_randomization_histogram_at_threshold.pdf
-    MIF_REPC_randomization_plot.pdf
-    MIF_REPC_randomization_table.txt
-    MIF_REPC_reports.txt
+    $ ls MIF_GM12878_CHC_REPC | cat
+    MIF_GM12878_CHC_REPC_at_least_in_2_replicates_summary.txt
+    MIF_GM12878_CHC_REPC_at_least_in_2_replicates_interactions.tsv.gz
+    MIF_GM12878_CHC_REPC_evaluated_and_categorized_interactions.tsv.gz
+    MIF_GM12878_CHC_REPC_randomization_histogram_at_001.pdf
+    MIF_GM12878_CHC_REPC_randomization_histogram_at_005.pdf
+    MIF_GM12878_CHC_REPC_randomization_histogram_at_010.pdf
+    MIF_GM12878_CHC_REPC_randomization_histogram_at_threshold.pdf
+    MIF_GM12878_CHC_REPC_randomization_plot.pdf
+    MIF_GM12878_CHC_REPC_randomization_table.txt
+    MIF_GM12878_CHC_REPC_reports.txt
 
 The format of the interaction file corresponds to the Diachromatic interaction format with two additional columns for
 a score to evaluate the imbalances in the four counts and the interaction category.

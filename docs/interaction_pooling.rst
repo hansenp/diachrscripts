@@ -4,79 +4,48 @@
 Interaction pooling
 ###################
 
-In order to pool interactions from biological replicates,
-we discard interactions that occur in less than two replicates and,
-for the remaining interactions, we add up the read pair counts from
-all replicates separately for the four counts.
-For example, if the same interaction occurs in two replicates and has counts ``1:2:3:4``
-for the one replicate and counts ``4:3:2:1`` for the other, then the pooled counts will be
-``5:5:5:5``. We have implemented this way of pooling in the script ``pooler.py``.
 
-****************
-Using the script
-****************
+Write a short text about what the script can be used for
 
-We implemented the pooling of interactions from different replicates in the following script:
 
-.. code-block:: console
+Running the script ``pooler.py``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    $ python diachrscripts/additional_scripts/pooler.py
-       --interaction-files-path MK/gzdir
-       --required-replicates 2
-       --out-prefix MK/JAV_MK_RALT
+Use the following command to run the script: ::
 
-The script expects a path to a directory that contains gzipped files in Diachromatic's interaction format
-(``--interaction-files-path``).
-From the files output by Diachromatic,
-we have filtered out interactions between different chromosomes (trans),
-interactions with a distance of less than 20,000 bp and
-interactions with or on chromosome ``chrM``.
-This is the content of the directory with the gzipped files for ``MK``:
+    $ diachrscripts/pooler.py \
+       --interaction-files-path gzdir/ \
+       --required-replicates 2 \
+       --out-prefix out_dir/out_prefix
 
-.. code-block:: console
+Available arguments:
 
-    $ ls MK/gzdir
-    JAV_MK_R10.interaction.counts.table.clr_20000.tsv.gz
-    JAV_MK_R20.interaction.counts.table.clr_20000.tsv.gz
-    JAV_MK_R30.interaction.counts.table.clr_20000.tsv.gz
-    JAV_MK_R40.interaction.counts.table.clr_20000.tsv.gz
++---------------+----------------------------+---------------------+-----------+---------------------------------------------------------------------------------------------+-------------+
+| Short option  | Long option                | Example             | Required  | Description                                                                                 | Default     |
++===============+============================+=====================+===========+=============================================================================================+=============+
+| -i            | --interaction-files-path   | gzdir               | yes       | Path to directory with Diachromatic interaction files                                       | --          |
++---------------+----------------------------+---------------------+-----------+---------------------------------------------------------------------------------------------+-------------+
+| -r            | --required-replicates      | 2                   | no        | Interactions that occur in fewer files are discarded                                        | 2           |
++---------------+----------------------------+---------------------+-----------+---------------------------------------------------------------------------------------------+-------------+
+| -o            | --out-prefix               | out_dir/out_prefix  | no        | Prefix for output files, which can also contain the path to an already existing directory.  | OUT_PREFIX  |
++---------------+----------------------------+---------------------+-----------+---------------------------------------------------------------------------------------------+-------------+
 
-In addition, the required number of replicates must be specified (``--required-replicates``).
-All interactions that occur in less replicates
-will be discarded.
-For the remaining interactions,
-the four read pair counts from different replicates
-will be added up separately.
-For this analysis,
-we required that an interaction must occur in at least two replicates.
-The name of each created file will have the same prefix ``--out-prefix``,
-which can also contain the path to an already existing directory.
-For pooled replicates,
-we have used the abbreviation ``RALT``,
-where ``ALT`` stands for **A**\ t\  **L**\ east **T**\ wo.
 
-The command above will generate the following two files:
+Output files
+~~~~~~~~~~~~
 
-.. code-block:: console
+The script produces a Diachromatic interaction file containing the pooled interactions:
 
-    MK/JAV_MK_RALT_at_least_in_2_replicates_summary.txt
-    MK/JAV_MK_RALT_at_least_in_2_replicates_interactions.tsv.gz
+    * ``out_dir/out_prefix_at_least_in_2_replicates_interactions.tsv.gz``
 
-The first file contains an overview of the numbers of interactions
-in the individual files and
-the second file contains the pooled interactions.
+In addition, a file is produced that contains summary statistics.
+
+    * ``out_dir/out_prefix_at_least_in_2_replicates_summary.txt``
 
 
 ******************
 Testing the script
 ******************
-
-Diachromatic
-even outputs interactions that have only a single read pair.
-On the other hand, when pooling interactions,
-the interactions from multiple replicates must be read into memory.
-Therefore, the memory consumption can become very high
-and we carried out this step on a compute cluster.
 
 We have prepared small input files for testing
 so that this step can be followed here.
@@ -113,7 +82,7 @@ execute the following command:
 
 .. code-block:: console
 
-    $ python diachrscripts/additional_scripts/pooler.py \
+    $ python diachrscripts/pooler.py \
        --interaction-files-path tests/data/test_01/ \
        --required-replicates 2
        --out-prefix TEST \

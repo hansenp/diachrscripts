@@ -17,27 +17,29 @@ used for classification.
 Using the script
 ****************
 
-- ``--out-prefix <String>``
-Common prefix for all generated files, which can also contain a path.
-- ``--description-tag <String>``
-Short description that appears in generated tables and plots.
-- ``--diachromatic-interaction-file <String>``
-Input file in Diachromatic interaction format.
-- ``--min-inter-dist <Integer>``
-Minimal interaction distance
-- ``--fdr-threshold <Float>``
-The P-value is chosen so that the estimated FDR remains below this threshold.
-- ``--nominal-alpha-max <Float>``
-Maximum nominal alpha at which iteractions are classified as significant.
-- ``--nominal-alpha-step <Float>``
-Step size for nominal alphas.
-- ``--iter-num <Integer>``
-Number of randomizations that will be performed.
-- ``--random-seed <Integer>``
-Random seed that is used for the first iteration. The random seed is incremented by ``1`` for each further iteration.
-- ``--thread-num <Integer>``
-Number of processes in which the iterations are performed in batches of the same size.
-- ``--p-value-threshold <Float>``
++--------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+| Argument                                                                                   | Meaning                                                                |
++============================================================================================+========================================================================+
+| --out-prefix <String>                                                                      | Common prefix for all generated files, which can also include a path.  |
++--------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+| --description-tag <String>                                                                 | Short description tag that appears in generated tables and plots.      |
++--------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+| --diachromatic-interaction-file <String>                                                   | Path to an input file in diachromatic interaction format.              |
++--------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+| --min-inter-dist <Integer>                                                                 | Minimum interaction distance.                                          |
++--------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+| --read-pair-counts-rule <String>                                                           | Rule by which interactions are scored.                                 |
++--------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+| By default, the sum of the two highest counts is compared against                          |                                                                        |
++--------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+| the sum of the two lowest counts using a binomial test (ht).                               |                                                                        |
++--------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+| Alternatively, the sum of counts for type 0 and type 1 read pairs can be compared against  |                                                                        |
++--------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+| the sum of type 2 and type 3 read pairs (st).                                              |                                                                        |
++--------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+
+
 
 By default, the final P-value threshold is determined via randomization. If a P-value is specified, then this P-value threshold will be used and no randomizations will be performed.
 

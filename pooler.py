@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser(description='Combine interactions that occur in
 parser.add_argument('-o', '--out-prefix', help='Prefix for output.', default='OUT_PREFIX')
 parser.add_argument('-i', '--interaction-files-path', help='Path to directory with Diachromatic interaction files',
                     required=True)
-parser.add_argument('-r', '--required-replicates', help='Required number of replicates.', required=True)
+parser.add_argument('-r', '--required-replicates', help='Required number of replicates.', required=False, default=2)
 
 args = parser.parse_args()
 out_prefix = args.out_prefix
