@@ -83,7 +83,7 @@ we provide a script that can be used to create an appropriate digest file.
 
 .. code-block:: console
 
-    $ python diachrscripts/additional_scripts/create_diachromatic_digest_file.py
+    $ python diachrscripts/additional_scripts/ed_selector.py
         --enriched-digests-file <ENRICHED_DIGEST_COORDINATES>.bed
         --diachromatic-digest-file <DIGEST_FILE_TEMPLATE>.txt
         --out-prefix <CUSTOM_DIGEST_FILE_PREFIX>
@@ -151,7 +151,7 @@ a ``T`` and all others with an ``F``.
 
 .. code-block:: console
 
-    $ python diachrscripts/additional_scripts/create_diachromatic_digest_file.py \
+    $ python diachrscripts/additional_scripts/ed_selector.py \
         --enriched-digests-file mifsud_baited_digests_hg38.bed \
         --diachromatic-digest-file \
             diachrscripts/additional_files/template_digest_file_hg38_HindIII.txt \
@@ -213,7 +213,7 @@ with a ``T`` and all others with an ``F``.
 
 .. code-block:: console
 
-    $ python diachrscripts/additional_scripts/create_diachromatic_digest_file.py \
+    $ python diachrscripts/additional_scripts/ed_selector.py \
         --enriched-digests-file javierre_baited_digests_hg38.bed \
         --diachromatic-digest-file \
             diachrscripts/additional_files/template_digest_file_hg38_HindIII.txt \
@@ -310,7 +310,7 @@ are marked with a ``T`` and all others with an ``F``.
 
 .. code-block:: console
 
-    $ python diachrscripts/additional_scripts/create_diachromatic_digest_file.py \
+    $ python diachrscripts/additional_scripts/ed_selector.py \
         --enriched-digests-file montefiori_baited_digests_hg38.bed \
         --diachromatic-digest-file \
             diachrscripts/additional_files/template_digest_file_hg38_DpnII.txt \
@@ -362,7 +362,7 @@ are marked with a ``T`` and all others with an ``F``.
 
 .. code-block:: console
 
-    $ python diachrscripts/additional_scripts/create_diachromatic_digest_file.py \
+    $ python diachrscripts/additional_scripts/ed_selector.py \
         --enriched-digests-file schoenefelder_baited_digests_mm10.bed \
         --diachromatic-digest-file \
             diachrscripts/additional_files/template_digest_file_mm10_HindIII.txt \

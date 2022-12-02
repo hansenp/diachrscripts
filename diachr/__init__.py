@@ -1,4 +1,3 @@
-from .binomial_interaction_model import BinomialInteractionModel
 from .binomial_model import BinomialModel
 from .diachromatic_interaction import DiachromaticInteraction
 from .diachromatic_interaction import DiachromaticInteraction11
@@ -14,7 +13,6 @@ from .TIMViz import TIMViz
 
 __all__ = [
     "BinomialModel",
-    "BinomialInteractionModel",
     "DiachromaticInteraction",
     "DiachromaticInteraction11",
     "DiachromaticInteractionSet",
