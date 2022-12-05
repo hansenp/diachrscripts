@@ -7,9 +7,9 @@ Interaction pooling
 
 Write a short text about what the script can be used for
 
-
+********************************
 Running the script ``pooler.py``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+********************************
 
 Use the following command to run the script: ::
 
@@ -30,8 +30,9 @@ Available arguments:
 | ``-o``        | ``--out-prefix``              | ``out_dir/out_prefix``  | no        | Prefix for output files, which can also contain the path to an already existing directory.  | ``OUT_PREFIX``  |
 +---------------+-------------------------------+-------------------------+-----------+---------------------------------------------------------------------------------------------+-----------------+
 
+************
 Output files
-~~~~~~~~~~~~
+************
 
 The script produces a Diachromatic interaction file containing the pooled interactions:
 

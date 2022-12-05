@@ -49,12 +49,12 @@ parser.add_argument('--fdr-threshold',
                     help='The P-value is chosen so that the estimated FDR remains below this threshold.',
                     default=0.05)
 parser.add_argument('--nominal-alpha-max',
-                    help='Maximum nominal alpha at which interactions are classified as significant.',
+                    help='Maximum nominal alpha at which interactions are classified as unbalanced.',
                     default=0.025)
 parser.add_argument('--nominal-alpha-step',
                     help='Step size for nominal alphas.',
                     default=0.00001)
-parser.add_argument('-n','--iter-num',
+parser.add_argument('-n', '--iter-num',
                     help='Number of randomizations that will be performed.',
                     default=100)
 parser.add_argument('--random-seed',
@@ -64,7 +64,7 @@ parser.add_argument('--random-seed',
 parser.add_argument('--random-seed-shuff-inter',
                     help='Random seed that is used to randomize the order of interactions after parsing.',
                     default=1)
-parser.add_argument('-t','--thread-num',
+parser.add_argument('-t', '--thread-num',
                     help='Number of processes in which the iterations are performed in batches of the same size.',
                     default=0)
 parser.add_argument('--p-value-threshold',
@@ -73,7 +73,7 @@ parser.add_argument('--p-value-threshold',
                          'randomization will be performed.',
                     default=None)
 parser.add_argument('--enriched-digests-file',
-                    help='BED file with digests coordinates that were selected for target enrichment. The digest '
+                    help='BED file with digest coordinates that were selected for target enrichment. The digest '
                          'coordinates must match those in the digest file from GOPHER that was used as input for '
                          'Diachromatic. If such a file is passed, the enrichment tags in columns 4 and 8 of the '
                          'interaction file are overwritten accordingly.',
@@ -125,7 +125,8 @@ else:
     p_value_threshold = float(p_value_threshold)
     parameter_info += "\t\t[INFO] Will use this P-value threshold instead of the one determined by the FDR procedure." + '\n'
     parameter_info += "\t\t[INFO] We use the negative decadic logarithm of the P-values." + '\n'
-    parameter_info += "\t\t\t[INFO] The chosen threshold corresponds to: -log10(" + str(p_value_threshold) + ") = " + str(
+    parameter_info += "\t\t\t[INFO] The chosen threshold corresponds to: -log10(" + str(
+        p_value_threshold) + ") = " + str(
         -log10(p_value_threshold)) + '\n'
 if enriched_digests_file is not None:
     parameter_info += "\t[INFO] --enriched-digests-file: " + enriched_digests_file
@@ -135,7 +136,8 @@ print(parameter_info)
 ##################
 
 # Load interactions into a Diachromatic interaction set
-interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_digests_file, rpc_rule=read_pair_counts_rule)
+interaction_set = DiachromaticInteractionSet(enriched_digests_file=enriched_digests_file,
+                                             rpc_rule=read_pair_counts_rule)
 # To save memory, we only read interactions that can be significant at the maximum nominal alpha
 min_rp_num, min_rp_num_pval = interaction_set._p_values.find_smallest_significant_n(nominal_alpha_max)
 interaction_set.parse_file(diachromatic_interaction_file, min_rp_num=min_rp_num, min_dist=min_inter_dist, verbose=True)
@@ -151,7 +153,7 @@ if p_value_threshold is None:
     # Create list of nominal alphas
     nominal_alphas = arange(nominal_alpha_step, nominal_alpha_max + nominal_alpha_step, nominal_alpha_step)
     if 0.01 not in nominal_alphas:
-        nominal_alphas= append(nominal_alphas, 0.01)
+        nominal_alphas = append(nominal_alphas, 0.01)
     if 0.05 not in nominal_alphas:
         nominal_alphas = append(nominal_alphas, 0.05)
 
@@ -177,38 +179,38 @@ if p_value_threshold is None:
 
     # Get table row for randomization for the determined P-value threshold
     fdr_info_info_table_row = randomize_fdr.get_randomization_info_table_row(
-        nominal_alphas_selected = [p_value_threshold, 0.01, 0.05],
-        description=description_tag.replace(' ','_'))
+        nominal_alphas_selected=[p_value_threshold, 0.01, 0.05],
+        description=description_tag.replace(' ', '_'))
 
     # Get entire table with randomization results
     fdr_info_info_table = randomize_fdr.get_randomization_info_table_row(
-        description=description_tag.replace(' ','_'))
+        description=description_tag.replace(' ', '_'))
 
     # Create plot with Z-score and FDR for each nominal alpha
     randomize_fdr.get_randomization_info_plot_at_chosen_fdr_threshold(
-        chosen_fdr_threshold = fdr_threshold,
-        pdf_file_name = out_prefix + "_randomization_plot.pdf",
-        description = description_tag,
-        nominal_alpha_min = 0,
-        nominal_alpha_max = nominal_alpha_max)
+        chosen_fdr_threshold=fdr_threshold,
+        pdf_file_name=out_prefix + "_randomization_plot.pdf",
+        description=description_tag,
+        nominal_alpha_min=0,
+        nominal_alpha_max=nominal_alpha_max)
 
     # Create randomization histogram for the determined P-value threshold
     randomize_fdr.get_randomization_info_plot(
-        nominal_alpha_selected = p_value_threshold,
-        pdf_file_name  = out_prefix + "_randomization_histogram_at_threshold.pdf",
-        description = description_tag + " - At determined P-value threshold")
+        nominal_alpha_selected=p_value_threshold,
+        pdf_file_name=out_prefix + "_randomization_histogram_at_threshold.pdf",
+        description=description_tag + " - At determined P-value threshold")
 
     # Create randomization histogram for a nominal alpha of 0.01
     randomize_fdr.get_randomization_info_plot(
-        nominal_alpha_selected = 0.01,
-        pdf_file_name  = out_prefix + "_randomization_histogram_at_001.pdf",
-        description = description_tag + " - At a nominal alpha of 0.01")
+        nominal_alpha_selected=0.01,
+        pdf_file_name=out_prefix + "_randomization_histogram_at_001.pdf",
+        description=description_tag + " - At a nominal alpha of 0.01")
 
     # Create randomization histogram for a nominal alpha of 0.05
     randomize_fdr.get_randomization_info_plot(
-        nominal_alpha_selected = 0.05,
-        pdf_file_name  = out_prefix + "_randomization_histogram_at_005.pdf",
-        description = description_tag + " - At a nominal alpha of 0.05")
+        nominal_alpha_selected=0.05,
+        pdf_file_name=out_prefix + "_randomization_histogram_at_005.pdf",
+        description=description_tag + " - At a nominal alpha of 0.05")
 
 # Calculate P-values of interactions and assign interactions to 'DI' or 'UI'
 interaction_set.evaluate_and_categorize_interactions(p_value_threshold, verbose=True)
@@ -244,7 +246,7 @@ out_fh_summary.write(read_file_info_table_row + '\n')
 
 # Report on shuffling interactions
 out_fh_summary.write("[INFO] Report on shuffling interactions:" + '\n')
-out_fh_summary.write("\t[INFO] Random seed used: " + str(random_seed_shuff_inter)  + '\n')
+out_fh_summary.write("\t[INFO] Random seed used: " + str(random_seed_shuff_inter) + '\n')
 out_fh_summary.write("[INFO] End of report." + '\n\n')
 
 # Report on the determination of the P-value threshold using the FDR procedure
