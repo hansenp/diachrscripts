@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# macOS files
+.DS_Store
+
 # Local directories
 #data/
 results/
@@ -125,7 +128,4 @@ p38/
 # output of package
 OUTPREFIX*
 
-# generated files
-additional_files/javierre_2016/tad_regions_hg38/all_tad_boundaries.bed
-additional_files/javierre_2016/tad_regions_hg38/merged_tad_boundaries.bed
-additional_files/javierre_2016/tad_regions_hg38/sorted_tad_boundaries.bed
+
