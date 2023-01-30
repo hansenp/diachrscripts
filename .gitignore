@@ -11,6 +11,7 @@ __pycache__/
 results/
 .DS_Store
 
+
 # subdirectory with tool for GO analysis
 chc2go/
 
