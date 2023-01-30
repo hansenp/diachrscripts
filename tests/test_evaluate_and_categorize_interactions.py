@@ -19,17 +19,19 @@ class TestRateAndCategorizeInteractions(TestCase):
 
                data/test_04/diachromatic_interaction_file.tsv
 
-        For the test file, there are 18 clearly directed and 28 clearly undirected interactions.
+        For the test file, there are 18 clearly unbalanced and 28 clearly balanced interactions.
         In addition, there are four interactions that do not have enough read pairs to be significant at the given
-        P-value threshold. For 16 directed interactions, there are undirected reference interactions with a
+        P-value threshold. For 16 unbalanced interactions, there are balanced reference interactions with a
         corresponding number of read pairs, but for two interactions there is no matching reference interaction.
         These two interactions are moved to a separate category DIX.
 
         First, the test data is used to create an object of class 'DiachromaticInteractionSet'.
-        Within this project there are three processing steps that are tested here.
+        There are three processing steps that are tested here: (1) classification of unbalanced interactions,
+        (2) selection of reference interaction sets, and (3) writing new Diachromatic11 interaction files with
+        additional columns for interaction category and P-value.
         """
 
-        cls.interaction_set = DiachromaticInteractionSet()
+        cls.interaction_set = DiachromaticInteractionSet(rpc_rule='st')
         test_dir = os.path.dirname(__file__)
         interaction_file = os.path.join(test_dir, "data/test_04/diachromatic_interaction_file.tsv")
         cls.interaction_set.parse_file(interaction_file)
@@ -39,7 +41,7 @@ class TestRateAndCategorizeInteractions(TestCase):
     def test_rate_and_categorize_report_dict(self):
         """
         In the first processing step, P-values are calculated and, according to a given threshold, divided into
-        directed and undirected. Interactions that do not have enough read pairs to be significant are discarded.
+        unbalanced and balanced. Interactions that do not have enough read pairs to be significant are discarded.
         The function for evaluation and categorization returns a dictionary with intermediate results that are tested
         here.
         """
@@ -59,35 +61,35 @@ class TestRateAndCategorizeInteractions(TestCase):
         # Number of discarded interactions (not enough read pairs)
         self.assertEqual(4, self.rate_and_cat_report_dict['N_DISCARDED'][0])
 
-        # Number of directed interactions
+        # Number of unbalanced interactions
         self.assertEqual(18, self.rate_and_cat_report_dict['N_DIRECTED'][0])
 
-        # Number of undirected interactions
+        # Number of balanced interactions
         self.assertEqual(28, self.rate_and_cat_report_dict['N_UNDIRECTED'][0])
 
     def test_reference_selection_report_dict(self):
         """
-        In a next step, undirected reference interactions (UIR) are selected from the undirected interactions (UI).
+        In a next step, balanced reference interactions (UIR) are selected from the balanced interactions (UI).
         The function for reference selection returns a dictionary with intermediate results that are tested here.
         """
 
-        # Directed interactions
+        # Unbalanced interactions
         self.assertEqual(3, self.select_ref_report_dict['NN']['DI'][0])
         self.assertEqual(3, self.select_ref_report_dict['NE']['DI'][0])
         self.assertEqual(5, self.select_ref_report_dict['EN']['DI'][0])
         self.assertEqual(5, self.select_ref_report_dict['EE']['DI'][0])
 
-        # Directed interactions without reference (104 and 106 read pairs)
+        # Unbalanced interactions without reference (104 and 106 read pairs)
         self.assertEqual(1, self.select_ref_report_dict['NE']['DIX'][0])
         self.assertEqual(1, self.select_ref_report_dict['EE']['DIX'][0])
 
-        # Undirected reference interactions
+        # Balanced reference interactions
         self.assertEqual(3, self.select_ref_report_dict['NN']['UIR'][0])
         self.assertEqual(3, self.select_ref_report_dict['NE']['UIR'][0])
         self.assertEqual(5, self.select_ref_report_dict['EN']['UIR'][0])
         self.assertEqual(5, self.select_ref_report_dict['EE']['UIR'][0])
 
-        # Undirected reference interactions
+        # Balanced reference interactions
         self.assertEqual(3, self.select_ref_report_dict['NN']['UI'][0])
         self.assertEqual(3, self.select_ref_report_dict['NE']['UI'][0])
         self.assertEqual(3, self.select_ref_report_dict['EN']['UI'][0])
@@ -96,7 +98,7 @@ class TestRateAndCategorizeInteractions(TestCase):
     def test_reference_selection_created_file(self):
         """
         Finally, the interactions are written to Diachromatic interaction file, which has two additional columns on the
-        left for P-value and interaction category ('DI', 'UIR', 'UI').
+        left for P-value and interaction category ('DIX', 'DI', 'UIR', 'UI').
         In this test, the file is read in again and the interaction numbers in the various categories are compared
         with the known numbers.
         """
@@ -118,7 +120,8 @@ class TestRateAndCategorizeInteractions(TestCase):
                 F = line.rstrip().split('\t')
                 interaction_category = F[10]
                 enrichment_pair_tag = F[3] + F[7]
-                rp_total = int(F[8].split(':')[0]) + int(F[8].split(':')[1]) + int(F[8].split(':')[2]) + int(F[8].split(':')[3])
+                rp_total = int(F[8].split(':')[0]) + int(F[8].split(':')[1]) + int(F[8].split(':')[2]) + int(
+                    F[8].split(':')[3])
 
                 if rp_total not in rp_inter_dict[enrichment_pair_tag]:
                     rp_inter_dict[enrichment_pair_tag][interaction_category][rp_total] = 1
@@ -128,46 +131,46 @@ class TestRateAndCategorizeInteractions(TestCase):
         # Check values collected from file
         # --------------------------------
 
-        # There must be 3 directed interactions in category NN
+        # There must be 3 unbalanced interactions in category NN
         self.assertEqual(3, len(rp_inter_dict['NN']['DI']))
 
-        # There must be 3 directed interactions in category NE
+        # There must be 3 unbalanced interactions in category NE
         self.assertEqual(3, len(rp_inter_dict['NE']['DI']))
 
-        # There must be 5 directed interactions in category EN
+        # There must be 5 unbalanced interactions in category EN
         self.assertEqual(5, len(rp_inter_dict['EN']['DI']))
 
-        # There must be 5 directed interactions in category EE
+        # There must be 5 unbalanced interactions in category EE
         self.assertEqual(5, len(rp_inter_dict['EE']['DI']))
 
-        # For one directed interactions in category NE with 104 read pairs there is no undirected reference interaction
+        # For one unbalanced interactions in category NE with 104 read pairs there is no balanced reference interaction
         self.assertEqual(1, len(rp_inter_dict['NE']['DIX']))
 
-        # For one directed interactions in category EE with 104 read pairs there is no undirected reference interaction
+        # For one unbalanced interactions in category EE with 104 read pairs there is no balanced reference interaction
         self.assertEqual(1, len(rp_inter_dict['EE']['DIX']))
 
-        # There must be 3 undirected reference interactions in category NN
+        # There must be 3 balanced reference interactions in category NN
         self.assertEqual(3, len(rp_inter_dict['NN']['UIR']))
 
-        # There must be 3 undirected reference interactions in category NE (one missing)
+        # There must be 3 balanced reference interactions in category NE (one missing)
         self.assertEqual(3, len(rp_inter_dict['NE']['UIR']))
 
-        # There must be 5 undirected reference interactions in category EN
+        # There must be 5 balanced reference interactions in category EN
         self.assertEqual(5, len(rp_inter_dict['EN']['UIR']))
 
-        # There must be 5 undirected reference interactions in category EE (one missing)
+        # There must be 5 balanced reference interactions in category EE (one missing)
         self.assertEqual(5, len(rp_inter_dict['EE']['UIR']))
 
-        # There must be 3 undirected interactions in category NN
+        # There must be 3 balanced interactions in category NN
         self.assertEqual(3, len(rp_inter_dict['NN']['UI']))
 
-        # There must be 3 undirected interactions in category NE
+        # There must be 3 balanced interactions in category NE
         self.assertEqual(3, len(rp_inter_dict['NE']['UI']))
 
-        # There must be 3 undirected interactions in category EN
+        # There must be 3 balanced interactions in category EN
         self.assertEqual(3, len(rp_inter_dict['EN']['UI']))
 
-        # There must be 3 undirected interactions in category EE
+        # There must be 3 balanced interactions in category EE
         self.assertEqual(3, len(rp_inter_dict['EE']['UI']))
 
         # Test total read pair numbers in different enrichment categories
@@ -178,7 +181,7 @@ class TestRateAndCategorizeInteractions(TestCase):
         self.assertTrue(101 in rp_inter_dict['NE']['UIR'])
         self.assertTrue(102 in rp_inter_dict['NE']['UIR'])
         self.assertTrue(103 in rp_inter_dict['NE']['UIR'])
-        self.assertFalse(104 in rp_inter_dict['NE']['UIR']) # (missing)
+        self.assertFalse(104 in rp_inter_dict['NE']['UIR'])  # (missing)
 
         self.assertTrue(101 in rp_inter_dict['EN']['UIR'])
         self.assertTrue(102 in rp_inter_dict['EN']['UIR'])
@@ -191,7 +194,7 @@ class TestRateAndCategorizeInteractions(TestCase):
         self.assertTrue(103 in rp_inter_dict['EE']['UIR'])
         self.assertTrue(104 in rp_inter_dict['EE']['UIR'])
         self.assertTrue(105 in rp_inter_dict['EE']['UIR'])
-        self.assertFalse(106 in rp_inter_dict['EE']['UIR']) # (missing)
+        self.assertFalse(106 in rp_inter_dict['EE']['UIR'])  # (missing)
 
         # Remove created interaction file
         os.remove('i_file.tsv')

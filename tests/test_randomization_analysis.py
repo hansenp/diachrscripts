@@ -21,25 +21,25 @@ class TestRandomizationAnalysis(TestCase):
         test_dir = os.path.dirname(__file__)
 
         # Prepare test data to test for correct use of P-value thresholds
-        cls.interaction_set_1 = DiachromaticInteractionSet()
+        cls.interaction_set_1 = DiachromaticInteractionSet(rpc_rule='st')
         fdr_1_file = os.path.join(test_dir, "data/test_03/diachromatic_interaction_file_fdr_1.tsv.gz")
         cls.interaction_set_1.parse_file(fdr_1_file)
         cls.randomize_1 = RandomizeInteractionSet(random_seed=42)
 
         # Prepare interaction set using the test file with 1,000 interactions
-        cls.interaction_set_1000 = DiachromaticInteractionSet()
+        cls.interaction_set_1000 = DiachromaticInteractionSet(rpc_rule='st')
         fdr_top_1000_file = os.path.join(test_dir, "data/test_03/diachromatic_interaction_file_fdr_top_1000.tsv.gz")
         cls.interaction_set_1000.parse_file(fdr_top_1000_file)
         cls.randomize_1000 = RandomizeInteractionSet(random_seed=0)
 
         # Prepare interaction set using the test file with 64,000 interactions
-        cls.interaction_set_64000 = DiachromaticInteractionSet()
+        cls.interaction_set_64000 = DiachromaticInteractionSet(rpc_rule='st')
         fdr_top_64000_file = os.path.join(test_dir, "data/test_03/diachromatic_interaction_file_fdr_top_64000.tsv.gz")
         cls.interaction_set_64000.parse_file(fdr_top_64000_file)
         cls.randomize_64000 = RandomizeInteractionSet(random_seed=0)
 
         # Prepare interaction set to test for correct determination of potentially significant interaction numbers
-        cls.interaction_set_pot_sig = DiachromaticInteractionSet()
+        cls.interaction_set_pot_sig = DiachromaticInteractionSet(rpc_rule='st')
         fdr_pot_sig_file = os.path.join(test_dir, "data/test_03/diachromatic_interaction_file_test_pot_sig.tsv.gz")
         cls.interaction_set_pot_sig.parse_file(fdr_pot_sig_file)
         cls.randomize_pot_sig = RandomizeInteractionSet(random_seed=0)
@@ -112,9 +112,9 @@ class TestRandomizationAnalysis(TestCase):
         nominal_alpha_idx = random_analysis_info_dict['RESULTS']['NOMINAL_ALPHA'].index(0.0025)
 
         # The following results were obtained with an earlier version
-        expected_sig_num_r_mean = 51.01
-        expected_sig_num_r_sd = 6.902891
-        expected_z_score = 198.90073
+        expected_sig_num_r_mean = 152.9
+        expected_sig_num_r_sd = 12.47998
+        expected_z_score = 101.85109
 
         # The following results are obtained with the current version
         observed_sig_num_r_mean = random_analysis_info_dict['RESULTS']['SIG_NUM_R_MEAN'][nominal_alpha_idx]
@@ -126,7 +126,8 @@ class TestRandomizationAnalysis(TestCase):
                                msg='A different mean number of randomized significant interactions was obtained for an '
                                    'earlier version!')
         self.assertAlmostEqual(expected_sig_num_r_sd, observed_sig_num_r_sd, places=5,
-                               msg='A different standard deviation for the number of randomized significant interactions was '
+                               msg='A different standard deviation for the number of randomized significant '
+                                   'interactions was '
                                    'obtained for an earlier version!')
         self.assertAlmostEqual(expected_z_score, observed_z_score, places=5,
                                msg='A different Z-score was obtained for an earlier version!')
@@ -362,24 +363,24 @@ class TestRandomizationAnalysis(TestCase):
 
         # The determined P-value threshold must be 0.00375
         determined_pval_thresh = randomization_info_dict['RESULTS']['NOMINAL_ALPHA'][result_index]
-        self.assertAlmostEqual(0.00375, determined_pval_thresh, 5,
+        self.assertAlmostEqual(0.00075, determined_pval_thresh, 5,
                                msg='When this test was created, a different P-value threshold was determined!')
 
         # At the determined P-value threshold the number of significant interactions must be 1,585
         determined_sig_num_o = randomization_info_dict['RESULTS']['SIG_NUM_O'][result_index]
-        self.assertEqual(1585, determined_sig_num_o,
+        self.assertEqual(1004, determined_sig_num_o,
                          msg='When this test was created, a different number of significant interactions was '
                              'determined!')
 
         # At the determined P-value threshold the number of randomized significant interactions must be 77
         determined_sig_num_r = randomization_info_dict['RESULTS']['SIG_NUM_R_MEAN'][result_index]
-        self.assertEqual(77, determined_sig_num_r,
+        self.assertEqual(37, determined_sig_num_r,
                          msg='When this test was created, a different number of randomized significant interactions '
                              'was determined!')
 
         # At the determined P-value threshold the FDR must be 0.04858
         determined_fdr = randomization_info_dict['RESULTS']['FDR'][result_index]
-        self.assertAlmostEqual(0.04858, determined_fdr, 5, msg='When this test was created, a different FDR was '
+        self.assertAlmostEqual(0.03685, determined_fdr, 5, msg='When this test was created, a different FDR was '
                                                                'determined!')
 
         # At the determined P-value threshold the Z-Score must be "NA"
