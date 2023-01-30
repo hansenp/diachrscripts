@@ -4,8 +4,7 @@ from numpy import array, argsort
 class DiachromaticInteraction:
     """
     Class to represent an interaction between two different parts of the genome with status and count.
-    Each instance of this class represents one line of the Diachromatic output file.
-    See https://github.com/TheJacksonLaboratory/diachromatic
+    Each instance of this class represents one line of the Diachromatic interaction file.
     """
 
     def __init__(self, chrA: str, fromA: int, toA: int, statusA: str, chrB: str, fromB: int, toB: int, statusB: str,

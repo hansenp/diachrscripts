@@ -246,7 +246,7 @@ class BaitedDigestSet:
 
         return pair_dict
 
-    # PAIRS OF NUMBERS AT BAITS
+    # Number PAIRS AT BAITS
 
     def get_number_pairs_at_baits(self,
                                   number_pair_type: str = None,
@@ -972,38 +972,3 @@ class BaitedDigestSet:
             sorted_digest_key_lists[chr] = sorted_digest_key_list
 
         return sorted_digest_key_lists
-
-    def proportion_of_directed_interactions_on_individual_chromosomes(self):
-
-        for chr in self._baited_digest_dict.keys():
-            print(len(self._baited_digest_dict[chr]))
-            n_total_interactions = 0
-            n_di_interactions = 0
-            n_uir_interactions = 0
-            n_di_ne_interactions = 0
-            n_uir_ne_interactions = 0
-            for key, baited_digest in self._baited_digest_dict[chr].items():
-                n_total_interactions += baited_digest.n_total_interactions()
-                n_di_interactions += baited_digest.n_di_interactions()
-                n_uir_interactions += baited_digest.n_uir_interactions()
-                n_di_ne_interactions += baited_digest.n_di_ne_interactions()
-                n_uir_ne_interactions += baited_digest.n_uir_ne_interactions()
-            proportion_di = round(n_di_interactions / float(n_total_interactions), 2)
-            proportion_uir = round(n_uir_interactions / float(n_total_interactions), 2)
-            di_ne_proportion = round(n_di_ne_interactions / float(n_di_interactions), 2)
-            uir_ne_proportion = round(n_uir_ne_interactions / float(n_uir_interactions), 2)
-            print(chr + '\t' +
-                  str(n_total_interactions) + '\t' +
-                  str(n_di_interactions) + '\t' +
-                  str(proportion_di) + '\t' +
-                  str(proportion_uir) + '\t' +
-                  str(di_ne_proportion) + '\t' +
-                  str(uir_ne_proportion)
-                  )
-
-    def get_neen_pvals(self, i_cat):
-        for chrom in self._baited_digest_dict.keys():
-            for key, baited_digest in self._baited_digest_dict[chrom].items():
-                ne_num, en_num, p_val = baited_digest.get_neen_p_value(i_cat)
-                if(4 < p_val):
-                    print(key + '\t' + str(ne_num) + '\t' + str(en_num) + '\t' + str(p_val))

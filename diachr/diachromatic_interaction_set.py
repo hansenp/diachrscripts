@@ -18,13 +18,12 @@ class DiachromaticInteractionSet:
     operations on them:
 
         1. Calculation of P-values and classification into unbalanced and balanced
-        2. Selection of balanced reference interactions
+        2. Selection of two reference interaction sets, one for balanced and one for unbalanced
         3. Writing interactions that occur in a required number of input files to a new file
 
     If interactions have been evaluated and categorized (1,2), the output format is expanded by two columns on the left.
     Column 10 contains the negative of the natural logarithm of the P-value and column 11 the interaction category
     (DIX, DI, UI or UIR).
-
     """
 
     def __init__(self, enriched_digests_file: str = None, rpc_rule: str = 'ht'):
