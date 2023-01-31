@@ -1,7 +1,7 @@
 # diachrscripts
 
 This is a collection of Python (3.8) modules, scripts and Jupyter notebooks that can be used to investigate
-Diachromatic interactions in terms of the four counts for the different types of mapped paired-end reads.
+Diachromatic interactions in terms of the four counts for the different orientations of mapped paired-end reads.
 
 ## Setup
 
