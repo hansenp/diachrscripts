@@ -26,6 +26,8 @@ Install all required packages into this environment:
 (dscripts)$ pip install -r requirements.txt
 ```
 
+## Jupyter notebooks
+
 To make the environment available in Jupyter notebooks create a Jupyter kernel.
 ```
 (dscripts)$ pip install ipykernel
