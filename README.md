@@ -35,7 +35,17 @@ To make the environment available in Jupyter notebooks create a Jupyter kernel.
 ```
 When using Jupyter notebooks select the kernel `dscripts`.
 
-X
+Most of the analysis in `diachrscripts` is done in Jupyter notebooks.
+To get started with the analyses, change into the directory `jupyter_notebooks` and launch the notebook server.
+```
+(dscripts)$ cd jupyter_notebooks
+(dscripts)$ jupyter-notebook
+```
+Depending on the configurations, a browser window will then open automatically,
+showing the contents of the directory from which the notebook server was started.
+If this is not the case, copy the URL that was output to the terminal and paste it into your browser's address bar.
+In the browser, select the notebook
+[Get_started.ipynb](https://github.com/TheJacksonLaboratory/diachrscripts/blob/master/jupyter_notebooks/Get_started.ipynb).
 
 ## Documentation
 
