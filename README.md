@@ -35,6 +35,8 @@ To make the environment available in Jupyter notebooks create a Jupyter kernel.
 ```
 When using Jupyter notebooks select the kernel `dscripts`.
 
+X
+
 ## Documentation
 
 Change into the `docs` directory and generate
