@@ -22,7 +22,7 @@ class ReadTypeAndConfigCounter:
             rp_type_freq_dict[i_cat] = dict()
             for e_cat in ['NN', 'EE', 'NE', 'EN', 'ALL']:
                 rp_type_freq_dict[i_cat][e_cat] = dict()
-                for rp_type in ['T0', 'T1', 'T2', 'T3']:
+                for rp_type in ['C0', 'C1', 'C2', 'C3']:
                     rp_type_freq_dict[i_cat][e_cat][rp_type] = 0
 
         # Iterate over all interactions and count types
@@ -33,50 +33,50 @@ class ReadTypeAndConfigCounter:
             e_cat = d11_inter.enrichment_status_tag_pair
 
             # Counts within each category
-            rp_type_freq_dict[i_cat][e_cat]['T0'] += d11_inter._simple_1
-            rp_type_freq_dict[i_cat][e_cat]['T1'] += d11_inter._simple_2
-            rp_type_freq_dict[i_cat][e_cat]['T2'] += d11_inter._twisted_1
-            rp_type_freq_dict[i_cat][e_cat]['T3'] += d11_inter._twisted_2
+            rp_type_freq_dict[i_cat][e_cat]['C0'] += d11_inter._simple_1
+            rp_type_freq_dict[i_cat][e_cat]['C1'] += d11_inter._simple_2
+            rp_type_freq_dict[i_cat][e_cat]['C2'] += d11_inter._twisted_1
+            rp_type_freq_dict[i_cat][e_cat]['C3'] += d11_inter._twisted_2
 
             # Counts combined for interaction categories
-            rp_type_freq_dict['ALL'][e_cat]['T0'] += d11_inter._simple_1
-            rp_type_freq_dict['ALL'][e_cat]['T1'] += d11_inter._simple_2
-            rp_type_freq_dict['ALL'][e_cat]['T2'] += d11_inter._twisted_1
-            rp_type_freq_dict['ALL'][e_cat]['T3'] += d11_inter._twisted_2
+            rp_type_freq_dict['ALL'][e_cat]['C0'] += d11_inter._simple_1
+            rp_type_freq_dict['ALL'][e_cat]['C1'] += d11_inter._simple_2
+            rp_type_freq_dict['ALL'][e_cat]['C2'] += d11_inter._twisted_1
+            rp_type_freq_dict['ALL'][e_cat]['C3'] += d11_inter._twisted_2
 
             # Counts combined for enrichment categories
-            rp_type_freq_dict[i_cat]['ALL']['T0'] += d11_inter._simple_1
-            rp_type_freq_dict[i_cat]['ALL']['T1'] += d11_inter._simple_2
-            rp_type_freq_dict[i_cat]['ALL']['T2'] += d11_inter._twisted_1
-            rp_type_freq_dict[i_cat]['ALL']['T3'] += d11_inter._twisted_2
+            rp_type_freq_dict[i_cat]['ALL']['C0'] += d11_inter._simple_1
+            rp_type_freq_dict[i_cat]['ALL']['C1'] += d11_inter._simple_2
+            rp_type_freq_dict[i_cat]['ALL']['C2'] += d11_inter._twisted_1
+            rp_type_freq_dict[i_cat]['ALL']['C3'] += d11_inter._twisted_2
 
             # Counts combined for interaction and enrichment categories
-            rp_type_freq_dict['ALL']['ALL']['T0'] += d11_inter._simple_1
-            rp_type_freq_dict['ALL']['ALL']['T1'] += d11_inter._simple_2
-            rp_type_freq_dict['ALL']['ALL']['T2'] += d11_inter._twisted_1
-            rp_type_freq_dict['ALL']['ALL']['T3'] += d11_inter._twisted_2
+            rp_type_freq_dict['ALL']['ALL']['C0'] += d11_inter._simple_1
+            rp_type_freq_dict['ALL']['ALL']['C1'] += d11_inter._simple_2
+            rp_type_freq_dict['ALL']['ALL']['C2'] += d11_inter._twisted_1
+            rp_type_freq_dict['ALL']['ALL']['C3'] += d11_inter._twisted_2
 
             # Counts for all unbalanced (DIX and DI)
             if i_cat == 'DIX' or i_cat == 'DI':
-                rp_type_freq_dict['U'][e_cat]['T0'] += d11_inter._simple_1
-                rp_type_freq_dict['U'][e_cat]['T1'] += d11_inter._simple_2
-                rp_type_freq_dict['U'][e_cat]['T2'] += d11_inter._twisted_1
-                rp_type_freq_dict['U'][e_cat]['T3'] += d11_inter._twisted_2
-                rp_type_freq_dict['U']['ALL']['T0'] += d11_inter._simple_1
-                rp_type_freq_dict['U']['ALL']['T1'] += d11_inter._simple_2
-                rp_type_freq_dict['U']['ALL']['T2'] += d11_inter._twisted_1
-                rp_type_freq_dict['U']['ALL']['T3'] += d11_inter._twisted_2
+                rp_type_freq_dict['U'][e_cat]['C0'] += d11_inter._simple_1
+                rp_type_freq_dict['U'][e_cat]['C1'] += d11_inter._simple_2
+                rp_type_freq_dict['U'][e_cat]['C2'] += d11_inter._twisted_1
+                rp_type_freq_dict['U'][e_cat]['C3'] += d11_inter._twisted_2
+                rp_type_freq_dict['U']['ALL']['C0'] += d11_inter._simple_1
+                rp_type_freq_dict['U']['ALL']['C1'] += d11_inter._simple_2
+                rp_type_freq_dict['U']['ALL']['C2'] += d11_inter._twisted_1
+                rp_type_freq_dict['U']['ALL']['C3'] += d11_inter._twisted_2
 
             # Counts for all balanced (UIR and UI) and balanced interactions
             if i_cat == 'UIR' or i_cat == 'UI':
-                rp_type_freq_dict['B'][e_cat]['T0'] += d11_inter._simple_1
-                rp_type_freq_dict['B'][e_cat]['T1'] += d11_inter._simple_2
-                rp_type_freq_dict['B'][e_cat]['T2'] += d11_inter._twisted_1
-                rp_type_freq_dict['B'][e_cat]['T3'] += d11_inter._twisted_2
-                rp_type_freq_dict['B']['ALL']['T0'] += d11_inter._simple_1
-                rp_type_freq_dict['B']['ALL']['T1'] += d11_inter._simple_2
-                rp_type_freq_dict['B']['ALL']['T2'] += d11_inter._twisted_1
-                rp_type_freq_dict['B']['ALL']['T3'] += d11_inter._twisted_2
+                rp_type_freq_dict['B'][e_cat]['C0'] += d11_inter._simple_1
+                rp_type_freq_dict['B'][e_cat]['C1'] += d11_inter._simple_2
+                rp_type_freq_dict['B'][e_cat]['C2'] += d11_inter._twisted_1
+                rp_type_freq_dict['B'][e_cat]['C3'] += d11_inter._twisted_2
+                rp_type_freq_dict['B']['ALL']['C0'] += d11_inter._simple_1
+                rp_type_freq_dict['B']['ALL']['C1'] += d11_inter._simple_2
+                rp_type_freq_dict['B']['ALL']['C2'] += d11_inter._twisted_1
+                rp_type_freq_dict['B']['ALL']['C3'] += d11_inter._twisted_2
 
         # Fill second dictionary with relative frequencies
         rp_type_dens_dict = copy.deepcopy(rp_type_freq_dict)
@@ -84,15 +84,15 @@ class ReadTypeAndConfigCounter:
             for e_cat in ['NN', 'EE', 'NE', 'EN', 'ALL']:
                 rp_total = sum(rp_type_freq_dict[i_cat][e_cat].values())
                 if 0 < rp_total:
-                    rp_type_dens_dict[i_cat][e_cat]['T0'] = rp_type_freq_dict[i_cat][e_cat]['T0'] / rp_total
-                    rp_type_dens_dict[i_cat][e_cat]['T1'] = rp_type_freq_dict[i_cat][e_cat]['T1'] / rp_total
-                    rp_type_dens_dict[i_cat][e_cat]['T2'] = rp_type_freq_dict[i_cat][e_cat]['T2'] / rp_total
-                    rp_type_dens_dict[i_cat][e_cat]['T3'] = rp_type_freq_dict[i_cat][e_cat]['T3'] / rp_total
+                    rp_type_dens_dict[i_cat][e_cat]['C0'] = rp_type_freq_dict[i_cat][e_cat]['C0'] / rp_total
+                    rp_type_dens_dict[i_cat][e_cat]['C1'] = rp_type_freq_dict[i_cat][e_cat]['C1'] / rp_total
+                    rp_type_dens_dict[i_cat][e_cat]['C2'] = rp_type_freq_dict[i_cat][e_cat]['C2'] / rp_total
+                    rp_type_dens_dict[i_cat][e_cat]['C3'] = rp_type_freq_dict[i_cat][e_cat]['C3'] / rp_total
                 else:
-                    rp_type_dens_dict[i_cat][e_cat]['T0'] = 0.0
-                    rp_type_dens_dict[i_cat][e_cat]['T1'] = 0.0
-                    rp_type_dens_dict[i_cat][e_cat]['T2'] = 0.0
-                    rp_type_dens_dict[i_cat][e_cat]['T3'] = 0.0
+                    rp_type_dens_dict[i_cat][e_cat]['C0'] = 0.0
+                    rp_type_dens_dict[i_cat][e_cat]['C1'] = 0.0
+                    rp_type_dens_dict[i_cat][e_cat]['C2'] = 0.0
+                    rp_type_dens_dict[i_cat][e_cat]['C3'] = 0.0
 
         return rp_type_freq_dict, rp_type_dens_dict
 
@@ -105,12 +105,12 @@ class ReadTypeAndConfigCounter:
         for i_cat in i_cats:
             print(i_cat)
             print('\t', end='')
-            for e_cat in ['T0', 'T1', 'T2', 'T3']:
+            for e_cat in ['C0', 'C1', 'C2', 'C3']:
                 print('\t' + e_cat, end='')
             print()
             for e_cat in e_cats:
                 print('\t' + e_cat + ': ', end='')
-                for ht_tag in ['T0', 'T1', 'T2', 'T3']:
+                for ht_tag in ['C0', 'C1', 'C2', 'C3']:
                     if print_dens:
                         print('\t' + "{:.2f}".format(rp_type_dens_dict[i_cat][e_cat][ht_tag]), end='')
                     else:
@@ -129,7 +129,7 @@ class ReadTypeAndConfigCounter:
         # Specify colors and labels
         rp_cat_colors = [(255 / 255, 160 / 255, 200 / 255), (255 / 255, 80 / 255, 120 / 255),
                          (80 / 255, 190 / 255, 120 / 255), (60 / 255, 150 / 255, 120 / 255)]
-        rp_cat_labels = ['T0', 'T1', 'T2', 'T3']
+        rp_cat_labels = ['C0', 'C1', 'C2', 'C3']
         i_cat_titles = {'DIX': 'Unbalanced without reference',
                         'DI': 'Unbalanced with reference',
                         'UIR': 'Balanced reference',
