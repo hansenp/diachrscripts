@@ -64,4 +64,3 @@ Run all tests as follows:
 (dscripts)$ python -m unittest discover tests/
 ```
 To deactivate the environment use `deactivate`.
-
