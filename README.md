@@ -12,7 +12,7 @@ $ git clone https://github.com/TheJacksonLaboratory/diachrscripts.git
 
 If `virtualenv` is not installed on your system, install it with:
 ```
-pip install virtualenv
+$ pip install virtualenv
 ```
 
 Then change into the cloned directory, create a virtual environment and activate it:
