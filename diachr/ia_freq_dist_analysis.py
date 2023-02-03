@@ -492,7 +492,7 @@ class IaFreqDistAnalysis:
         ax[0][1].spines['bottom'].set_color('white')
         ax[0][1].tick_params(axis='x', colors='white')
         ax[0][1].tick_params(axis='y', colors='white')
-        fig.text(0.015 * (9.5 / 14.25), 1 - ((1 - 0.97) * (11.79 / fig_height)), num_dict['NUM_TYPE'] + 's',
+        fig.text(0.015 * (9.5 / 14.25), 1 - ((1 - 0.97) * (11.79 / fig_height)), num_dict['NUM_TYPE'],
                  fontsize=18,
                  fontweight='bold')
         fig.text(0.030 * (9.5 / 14.25), 1 - ((1 - 0.94) * (11.79 / fig_height)), 'Description: ' + description,
