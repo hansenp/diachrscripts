@@ -10,9 +10,6 @@ class ReadTypeAndConfigCounter:
     def __init__(self):
         self.x = 1
 
-    def test(self):
-        print('Hurz')
-
     @staticmethod
     def count_read_types(d11_interaction_set: DiachromaticInteractionSet = None):
 

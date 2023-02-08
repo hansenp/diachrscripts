@@ -7,6 +7,7 @@ from .read_type_and_configuration_counter import ReadTypeAndConfigCounter
 from .ia_freq_dist_analysis import IaFreqDistAnalysis
 from .baited_digest import BaitedDigest
 from .baited_digest_set import BaitedDigestSet
+from .bait_analysis import BaitAnalysis
 from .TIMViz import TIMViz
 
 __all__ = [
@@ -19,5 +20,6 @@ __all__ = [
     "IaFreqDistAnalysis",
     "BaitedDigest",
     "BaitedDigestSet",
+    "BaitAnalysis",
     "TIMViz"
 ]
