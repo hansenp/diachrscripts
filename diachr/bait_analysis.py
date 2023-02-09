@@ -7,6 +7,10 @@ from re import sub
 
 
 class BaitAnalysis:
+    """
+    This class contains functions required for the bait analysis performed in the Jupyter notebook
+    'jupyter_notebooks/analysis/bait_analysis.ipynb'.
+    """
 
     def __init__(self):
 
@@ -26,7 +30,7 @@ class BaitAnalysis:
             verbose: bool = False):
         """
         Creates a dictionary from which, given the coordinates of a baited fragment, the coordinates of the associated
-         baits and the BF class can be retrieved.
+        baits and the BF class can be retrieved.
         """
 
         print('[INFO] Init \'FRAGS_WITH_BAITS_dict\' ...')

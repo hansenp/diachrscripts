@@ -45,7 +45,7 @@ Depending on the configurations, a browser window will then open automatically,
 showing the contents of the directory from which the notebook server was started.
 If this is not the case, copy the URL that was output to the terminal and paste it into your browser's address bar.
 In the browser, select the notebook
-[Get_started.ipynb](https://github.com/TheJacksonLaboratory/diachrscripts/blob/master/jupyter_notebooks/Get_started.ipynb).
+[Get_started.ipynb](jupyter_notebooks/Get_started.ipynb).
 
 ## Documentation
 
