@@ -4,9 +4,7 @@
 Tutorial
 ########
 
-This tutorial describes the entire workflow from downloading the data, calling the interactions with ``Diachromatic``,
-pooling interactions from different replicates, calling unbalanced interactions with ``UICer`` up to the various
-analyzes of interactions with unbalanced read counts that can be performed in Jupyter Notebooks.
+This flowchart provides an overview of the entire workflow, which we will work through step by step below.
 
 .. image:: img/analysis_flowchart.png
 
@@ -16,7 +14,7 @@ Downloading paired-end data
 
 Use the script
 `dumpy.sh <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/additional_scripts/dumpy.sh>`__
-to download promoter capture Hi-C data on GM12878 cells
+to download paired-end data from promoter capture Hi-C experiments in GM12878 cells
 `(Mifsud et al. 2015) <https://pubmed.ncbi.nlm.nih.gov/25938943/>`_.
 For this dataset, ``200 GB`` hard disk space must be available.
 
@@ -27,22 +25,9 @@ For this dataset, ``200 GB`` hard disk space must be available.
     $ diachrscripts/additional_scripts/dumpy.sh MIF_GM12878_CHC_REP2 MIF_GM12878_CHC_REP2 "ERR436028;ERR436030;ERR436033"
     $ diachrscripts/additional_scripts/dumpy.sh MIF_GM12878_CHC_REP3 MIF_GM12878_CHC_REP3 "ERR436026;ERR436031"
 
-.. code-block:: console
-
-    $ diachrscripts/additional_scripts/dumpy.sh MON_CM_REP1 MON_CM_REP1 "ERR2365269"
-    $ diachrscripts/additional_scripts/dumpy.sh MON_CM_REP2 MON_CM_REP2 "ERR2365270"
-    $ diachrscripts/additional_scripts/dumpy.sh MON_CM_REP3 MON_CM_REP3 "ERR2365271"
-
-.. code-block:: console
-
-    $ diachrscripts/additional_scripts/dumpy.sh MON_IPSC_REP1 MON_IPSC_REP1 "ERR2365275"
-    $ diachrscripts/additional_scripts/dumpy.sh MON_IPSC_REP2 MON_IPSC_REP2 "ERR2365276"
-    $ diachrscripts/additional_scripts/dumpy.sh MON_IPSC_REP3 MON_IPSC_REP3 "ERR2365277"
-
-
 
 A separate directory is created for each of the three replicates.
-Because it is paired-end data, there are pairs of forward and reverse FASTQ files with
+Because this is paired-end data, there are pairs of forward and reverse FASTQ files with
 suffixes ``_1`` and ``_2``.
 Both files have the same number of lines and reads with the same line index form a pair.
 
@@ -83,28 +68,25 @@ The MD5 checksums are as follows:
 Calling interactions with ``Diachromatic``
 ******************************************
 
-We used the Java program
-`Diachromatic <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6678864/>`__
-to derive interactions from Hi-C and capture Hi-C data.
-There is a more
-`detailed documentation <https://diachromatic.readthedocs.io/en/latest/index.html>`__
-on this program.
+We have extended our previously published
+`Diachromatic software <https://diachromatic.readthedocs.io/en/latest/index.html>`__
+for initial processing and quality control of Hi-C
+and CHi-C data to report read pair counts of interactions separately for the four relative paired-end orientations.
 Diachromatic processes the data in three steps:
 
 1. Truncation of chimeric reads ``>`` Truncated reads
 2. Mapping and artifact removal ``>`` Valid mapped read pairs
-3. Counting supporting read pairs for interacting digest pairs ``>`` Interactions
+3. Counting supporting reads pairs of restriction fragment pairs ``>`` Interactions
 
 Truncation of chimeric reads
 ============================
 
-The sequencing of Hi-C libraries can result in chimeric reads containing sequences from different regions.
-Such reads cannot be mapped.
-Therefore, they must first be truncated so that they are no longer chimeric.
-This can be done with ``Diachromatic`` using the subcommand ``truncate``.
-The chimeric reads must be cut at the ligation sites, which is why the restriction enzyme used for the experiment must
-be specified (``-e``).
-The prepared FASTQ files with the forward and reverse reads are specified using the ``-q`` and ``-r`` options.
+Paired-end sequencing of Hi-C libraries can result in chimeric reads containing sequences from different
+genomic regions. Such reads cannot be mapped to the reference genome. Therefore, they must be truncated so that they
+are no longer chimeric. This can be done using ``Diachromatic`` with the subcommand ``truncate``.
+The chimeric reads must be cut at the ligation sites,
+which is why the restriction enzyme used for the experiment must be specified (``-e``).
+The prepared input FASTQ files with the forward and reverse reads are specified using ``-q`` and -``-r``.
 
 .. code-block:: console
 
@@ -115,8 +97,7 @@ The prepared FASTQ files with the forward and reverse reads are specified using 
        -o MIF_GM12878_CHC_REP1 \
        -x MIF_GM12878_CHC_REP1
 
-All result files are written to the directory specified by the option ``-o`` and have the same prefix specified by the
-option ``-x``.
+The result files are written to the directory specified using ``-o`` and have the same prefix specified using ``-x``.
 
 Mapping and artifact removal
 ============================
@@ -227,9 +208,10 @@ After that, the directory ``gzdir`` should contain three files.
     MIF_GM12878_CHC_REP2.interaction.counts.table.clr_200000.tsv.gz
     MIF_GM12878_CHC_REP3.interaction.counts.table.clr_200000.tsv.gz
 
-**********************************************
-Pooling interactions from different replicates
-**********************************************
+
+*******************************************************************
+Pooling interactions from different replicates using ```pooler.py``
+*******************************************************************
 
 In order to pool interactions from biological replicates,
 we discard interactions that occur in less than two replicates and,
@@ -238,7 +220,7 @@ all replicates separately for the four counts.
 For example, if the same interaction occurs in two replicates and has counts ``1:2:3:4``
 for the one replicate and counts ``4:3:2:1`` for the other, then the pooled counts will be
 ``5:5:5:5``. We have implemented this way of pooling in the script ``pooler.py``, which is described
-here: :ref:`RST_Interaction_pooling`.
+here: Jupyter notebook.
 
 The script expects a path to a directory that contains gzipped files in Diachromatic's interaction format
 (``--interaction-files-path``).
@@ -281,9 +263,9 @@ Therefore, the memory consumption can become very high
 and we carried out this step on a compute cluster.
 
 
-**********************************************
-Calling unbalanced interactions with ``UICer``
-**********************************************
+*************************************************
+Calling unbalanced interactions with ``UICer.py``
+*************************************************
 
 So far, this is only described in this
 `Jupyter Notebook <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/Demonstration_of_UICer.ipynb>`__.
@@ -341,3 +323,8 @@ The tags for the interaction categories have the following meanings:
 | ``UI``    | Balanced counts not selected as reference interaction        |
 +-----------+--------------------------------------------------------------+
 
+***********************************************************************
+Performing analyzes of imbalanced read pair counts in Jupyter notebooks
+***********************************************************************
+
+Get_started
