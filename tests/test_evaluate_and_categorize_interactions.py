@@ -62,10 +62,10 @@ class TestRateAndCategorizeInteractions(TestCase):
         self.assertEqual(4, self.rate_and_cat_report_dict['N_DISCARDED'][0])
 
         # Number of unbalanced interactions
-        self.assertEqual(18, self.rate_and_cat_report_dict['N_DIRECTED'][0])
+        self.assertEqual(18, self.rate_and_cat_report_dict['N_UNBALANCED'][0])
 
         # Number of balanced interactions
-        self.assertEqual(28, self.rate_and_cat_report_dict['N_UNDIRECTED'][0])
+        self.assertEqual(28, self.rate_and_cat_report_dict['N_BALANCED'][0])
 
     def test_reference_selection_report_dict(self):
         """

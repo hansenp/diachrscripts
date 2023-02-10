@@ -3,7 +3,6 @@ from .diachromatic_interaction_set import DiachromaticInteractionSet
 from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.ticker import FuncFormatter
 from matplotlib.ticker import FormatStrFormatter
 
 

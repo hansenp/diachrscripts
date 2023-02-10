@@ -341,8 +341,8 @@ class DiachromaticInteractionSet:
             'MIN_RP_PVAL': [min_rp_pval],
             'N_PROCESSED': [n_processed],
             'N_DISCARDED': [n_discarded],
-            'N_UNDIRECTED': [n_ui],
-            'N_DIRECTED': [n_di]
+            'N_BALANCED': [n_ui],
+            'N_UNBALANCED': [n_di]
         }
 
         if verbose:
@@ -783,9 +783,9 @@ class DiachromaticInteractionSet:
         report += "\t[INFO] Processed interactions: " + "{:,}".format(self._eval_cat_info_dict['N_PROCESSED'][0]) + '\n'
         report += "\t[INFO] Discarded interactions: " + "{:,}".format(self._eval_cat_info_dict['N_DISCARDED'][0]) + '\n'
         report += "\t[INFO] Not significant interactions (UI): " + "{:,}".format(
-            self._eval_cat_info_dict['N_UNDIRECTED'][0]) + '\n'
+            self._eval_cat_info_dict['N_BALANCED'][0]) + '\n'
         report += "\t[INFO] Significant interactions (DI): " + "{:,}".format(
-            self._eval_cat_info_dict['N_DIRECTED'][0]) + '\n'
+            self._eval_cat_info_dict['N_UNBALANCED'][0]) + '\n'
         report += "[INFO] End of report." + '\n'
 
         return report
@@ -803,8 +803,8 @@ class DiachromaticInteractionSet:
                     "MIN_RP_PVAL" + '\t' + \
                     "N_PROCESSED" + '\t' + \
                     "N_DISCARDED" + '\t' + \
-                    "N_UNDIRECTED" + '\t' \
-                                     "N_DIRECTED" + '\n'
+                    "N_BALANCED" + '\t' \
+                    "N_UNBALANCED" + '\n'
 
         table_row += ":TR_EVAL_CAT:" + '\t' + \
                      str(out_prefix) + '\t' + \
@@ -813,8 +813,8 @@ class DiachromaticInteractionSet:
                      "{:.5f}".format(self._eval_cat_info_dict['MIN_RP_PVAL'][0]) + '\t' + \
                      str(self._eval_cat_info_dict['N_PROCESSED'][0]) + '\t' + \
                      str(self._eval_cat_info_dict['N_DISCARDED'][0]) + '\t' + \
-                     str(self._eval_cat_info_dict['N_UNDIRECTED'][0]) + '\t' + \
-                     str(self._eval_cat_info_dict['N_DIRECTED'][0]) + '\n'
+                     str(self._eval_cat_info_dict['N_BALANCED'][0]) + '\t' + \
+                     str(self._eval_cat_info_dict['N_UNBALANCED'][0]) + '\n'
 
         return table_row
 
@@ -837,7 +837,7 @@ class DiachromaticInteractionSet:
             report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
                 self._select_ref_info_dict[enr_cat]['DIX'][0]) + '\n'
         report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
-        report += "\t[INFO] Numbers of unbalanced interactions (DI)" + '\n'
+        report += "\t[INFO] Numbers of unbalanced interactions with balanced reference (DI)" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             total += self._select_ref_info_dict[enr_cat]['DI'][0]
@@ -851,7 +851,7 @@ class DiachromaticInteractionSet:
             report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
                 self._select_ref_info_dict[enr_cat]['UIR'][0]) + '\n'
         report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
-        report += "\t[INFO] Numbers balanced interactions (UI)" + '\n'
+        report += "\t[INFO] Numbers of balanced interactions not selected as reference (UI)" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
             total += self._select_ref_info_dict[enr_cat]['UI'][0]

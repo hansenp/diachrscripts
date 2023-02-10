@@ -1061,10 +1061,10 @@ class RandomizeInteractionSet:
         # Plot number of significant interactions
         ax[5].plot(pval_thresh_column[:idx_max], sig_num_r_mean_column[:idx_max], label='SIG_NUM_R')
         ax[5].plot(pval_thresh_column[:idx_max], sig_num_o_column[:idx_max], label='SIG_NUM_O')
-        ax[5].set_title('Number of significant interactions: ' + "{:,}".format(sig_num_o_result) + ' (' + "{:,}".format(
+        ax[5].set_title('Number of unbalanced interactions: ' + "{:,}".format(sig_num_o_result) + ' (' + "{:,}".format(
             sig_num_r_mean_result) + ')', loc='left')
         ax[5].set(xlabel='Nominal alpha')
-        ax[5].set(ylabel='Significant interactions')
+        ax[5].set(ylabel='Unbalanced interactions')
         ax[5].legend(loc="upper left", fontsize=8)
         ax[5].axhline(sig_num_o_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
         ax[5].axvline(pval_thresh_result, linestyle='--', color=hv_col, linewidth=hv_lwd)
