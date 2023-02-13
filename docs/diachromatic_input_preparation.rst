@@ -8,7 +8,7 @@ Diachromatic input preparation
 bowtie2 index
 *************
 
-Diachromatic uses bowtie2 to map reads to a reference sequence, which requires an reference index.
+Diachromatic uses bowtie2 to map reads to a reference sequence, which requires a reference index.
 Such an index can be created with bowtie2 or a pre-calculated index can e.g. be downloaded from the
 `iGenomes website <https://support.illumina.com/sequencing/sequencing_software/igenome.html>`_:
 
@@ -39,13 +39,14 @@ Only the path together with the file prefix of these files are passed to Diachro
 Digest file
 ***********
 
-Diachromatic reports individual interactions as a pairs of restriction fragments (or digest pairs)
+Diachromatic reports interactions as pairs of restriction fragments (or digest pairs)
 along with the number of supporting read pairs.
 This requires the coordinates of all possible digests in the entire reference genome.
-These are passed to Diachromatic in form of a text file, which we refer to as digest file.
-For a given restriction enzyme and a reference genome, a corresponding
-`digest map can be created with the GOPHER software <https://diachromatic.readthedocs.io/en/latest/digest.html>`__.
-For example, here are the first few lines from a digest file:
+These are passed to Diachromatic in the form of a text file, which we refer to as digest file.
+For a given restriction enzyme and a reference genome,
+a corresponding `digest map can be created with the GOPHER software <https://diachromatic.readthedocs.io/en/latest/digest.html>`__.
+For instance, here are the first few lines of a digest file
+for the ``hg38`` genome digested with the restriction enzyme ``HindIII``:
 
 .. code-block:: console
 
@@ -55,31 +56,22 @@ For example, here are the first few lines from a digest file:
     chr1    24572   27981   3       HindIII HindIII 3410    0.046   0.046   0.000   0.044   F       0       0
     chr1    27982   30429   4       HindIII HindIII 2448    0.035   0.035   0.047   0.043   F       0       0
 
-Each line represents one digest.
+Each line represents one digest (or restriction fragment).
 The first three columns contain the digest coordinates.
-In the ``Selected`` column, enriched digests are marked with a ``T`` and all others with an ``F``.
+In the ``Selected`` column, digests selected for enrichment are marked with a ``T`` and all others with an ``F``.
 Diachromatic passes the information about enriched digests through to the reported interactions.
-In Diachromatic interaction files,
-an ``E`` corresponds to an ``T`` and an ``N`` to an ``F``.
+In Diachromatic interaction files, an ``E`` corresponds to a ``T`` and an ``N`` to an ``F``.
 
 .. code-block:: console
 
     chr11    9641153    9642657   E   chr11   47259263   47272706   N   5:4
 
-
 Selecting enriched digests
 ==========================
 
-If you have created the capture Hi-C design for your own experiment with GOPHER,
-then all digests for which baits were ordered will be marked with a ``T``.
-If this is not the case,
-then with promoter capture Hi-C experiments for which all promoters have been selected for target enrichment,
-there is the possibility to create a design with the shortcut ``All protein coding genes``
-before exporting the digest file from GOPHER.
-However, this is inaccurate because the selection of digests for enrichment depends on the software used and the
-parameter settings.
-For cases in which the coordinates of enriched digests are known,
-we provide a script that can be used to create an appropriate digest file.
+If you have created the capture bait design for your own experiment using GOPHER,
+then all digests in the digest file for which baits were ordered will be marked with a ``T``.
+For cases where the coordinates of baited digests are known, we provide a script to create a corresponding digest file.
 
 .. code-block:: console
 
@@ -88,13 +80,13 @@ we provide a script that can be used to create an appropriate digest file.
         --diachromatic-digest-file <DIGEST_FILE_TEMPLATE>.txt
         --out-prefix <CUSTOM_DIGEST_FILE_PREFIX>
 
-This script is passed a file containing the coordinates of the digests that have actually been selected for enrichment.
-Such information can be found, for example, in the supplementary material of the corresponding publication
-(see examples below).
+This script is passed a BED file containing the coordinates of the digests that have been selected for enrichment.
+Such information can be found, for example,
+in the supplementary material of the corresponding publication (see examples below).
 In addition, a digest file for the appropriate reference genome and restriction enzyme must be passed.
-You can export a digest file from GOPHER before creating a design or you can  take any existing digest file.
-The script uses the file only as a template and the information related to enrichment will be completely rewritten.
-For convenience, we have added a template file to this repository that just need to be decompressed:
+You can export such a digest file from GOPHER or you can use an existing digest file.
+The script will only use the file as a template and the enrichment information will be completely overwritten.
+For convenience, we've added a template digest file to this repository that just needs to be unzipped:
 
 .. code-block:: console
 
@@ -116,12 +108,12 @@ Save this table in text format and extract the coordinates.
 
 Use
 `UCSC's LiftOver tool <https://genome.ucsc.edu/cgi-bin/hgLiftOver>`_
-to convert the coordinates to from ``hg19`` to ``hg38``.
+to convert the coordinates from ``hg19`` to ``hg38``.
 Deselect ``Allow multiple output regions``.
 37,604 bait coordinates were successfully converted to ``hg38``.
-The conversion failed for 4 bait coordinates because the corresponding regions in ``hg38`` are either deleted or
+The conversion failed for the coordinates of 4 baits because the corresponding regions in ``hg38`` are either deleted or
 partially deleted.
-Furthermore, two bait coordinates are mapped to chromosome ``chr22_KI270879v1_alt`` of ``hg38``.
+Furthermore, the coordinates of two baits are mapped to chromosome ``chr22_KI270879v1_alt`` of ``hg38``.
 These can be removed as follows:
 
 .. code-block:: console
@@ -146,8 +138,8 @@ to extract all digests that contain at least one bait completely:
 
 This results in 22,076 baited digests.
 
-Finally, use our script to create a digest file in which digests that Mifsud et al. have selected for enrichment are marked with
-a ``T`` and all others with an ``F``.
+Finally, use our script to create a digest file in which digests that Mifsud et al. have selected for enrichment
+are marked with a ``T`` and all others with an ``F``.
 
 .. code-block:: console
 
@@ -178,7 +170,7 @@ First, download an archive that expands into a *design folder* that is intended 
     $ wget -O human_PCHiC_hg19_HindIII_design.tar.gz https://osf.io/e594p/download
     $ tar -xf human_PCHiC_hg19_HindIII_design.tar.gz
 
-Along with other files, this folder contains the
+Along with other files, this folder contains
 `CHiCAGO's bait map file <https://bioconductor.org/packages/devel/bioc/vignettes/Chicago/inst/doc/Chicago.html>`_
 that consists of the following columns:
 ``chr``, ``start``, ``end``, ``fragmentID``, ``geneName``.
@@ -201,7 +193,7 @@ Next, convert the bait map file into BED format:
 
 Then use
 `UCSC's LiftOver tool <https://genome.ucsc.edu/cgi-bin/hgLiftOver>`_
-to convert the coordinates to from ``hg19`` to ``hg38`` and save the resulting file as
+to convert the coordinates from ``hg19`` to ``hg38`` and save the resulting file as
 ``javierre_baited_digests_hg38.bed``.
 Deselect ``Allow multiple output regions``.
 22,056 digest coordinates were successfully converted  to ``hg38``.
@@ -226,9 +218,7 @@ Diachromatic.
 We examined these cases in more detail (``--verbose``) and concluded that these cases are due to the LiftOver step.
 We have added the file ``javierre_baited_digests_hg38.bed`` to this repository so that the digest file can be recreated
 if needed. For the files ``javierre_baited_digests_hg38.bed`` and ``mifsud_baited_digests_hg38.bed``,
-22,008 baited digests overlap, i.e. the digest files we generated for the Mifsud and Javierre data are also almost
-identical.
-
+22,008 baited digests overlap.
 
 Schoenefelder et al. 2015
 -------------------------
@@ -244,10 +234,10 @@ Save this table in text format and extract the coordinates.
 
 Use
 `UCSC's LiftOver tool <https://genome.ucsc.edu/cgi-bin/hgLiftOver>`_
-to convert the coordinates to from ``mm9`` to ``mm10``.
+to convert the coordinates from ``mm9`` to ``mm10``.
 Deselect ``Allow multiple output regions``.
 39,019 bait coordinates were successfully converted to ``mm10``.
-The conversion failed for 2 bait coordinates because the corresponding regions in ``mm10`` are  deleted.
+The conversion failed for the coordinates of 2 baits because the corresponding regions in ``mm10`` are  deleted.
 We save the BED file with the converted coordinates as ``schoenefelder_baits_mm10.bed``.
 
 Next, extract the coordinates of all digests in the genome from the digest file template and write them to a BED file:
@@ -281,96 +271,3 @@ are marked with a ``T`` and all others with an ``F``.
 
 This will produce the file ``schoenefelder_mm10_HindIII_diachromatic_digest_file.txt`` that can be used as input for
 Diachromatic.
-
-..
-    Montefiori et al. 2018
-    ----------------------
-
-    Supplementary Table 9.1 of the work published by
-    `Montefiori et al. 2018 <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6053306/#supp9>`__
-    contains the coordinates and sequences of the baits used.
-    Save this table in text format and extract the coordinates.
-    The first column contains the coordinates of the baits, some of which are identical.
-    First, we remove the duplicated coordinates.
-
-    .. code-block:: console
-
-        $ tail -n+3 supplementary_table_9_1.txt | \
-            awk '{print $1}' | sort | uniq \
-            > supplementary_table_9_1_unique.txt
-
-    Then we convert the coordinates to BED format.
-
-    .. code-block:: console
-
-        $ cat supplementary_table_9_1_unique.txt | \
-            awk '{split($0,a,":");split(a[2],b,"-");print a[1]"\t"b[1]-1"\t"b[2]}' \
-            > montefiori_baits_hg19.bed
-
-    This resulting file contains 79,011 unique bait coordinates.
-
-    We use
-    `UCSC's LiftOver tool <https://genome.ucsc.edu/cgi-bin/hgLiftOver>`_
-    to convert the coordinates to from ``hg19`` to ``hg38``.
-    Deselect ``Allow multiple output regions``.
-    78,963 bait coordinates were successfully converted to ``hg38``.
-    The conversion failed for 48 bait coordinates because the corresponding regions in ``hg38`` are either deleted,
-    partially deleted or split.
-    Furthermore, 29 bait coordinates are mapped to ``chr*_alt`` chromosomes of ``hg38``.
-    These can be removed as follows:
-
-    .. code-block:: console
-
-        $ grep -v '_' lift_over_results.bed > montefiori_baits_hg38.bed
-
-    The resulting file contains 78,934 bait coordinates.
-
-    Next, we extract the coordinates of all digests in the genome from the digest file template and write them to a BED file:
-
-    .. code-block:: console
-
-        $ tail -n+2 diachrscripts/additional_files/template_digest_file_hg38_DpnII.txt \
-        | awk '{print $1"\t"$2"\t"$3}' | grep -v '_' | grep -v 'chrM' > all_hg38_DpnII_digests.bed
-
-    The resulting BED file consists of 7,199,458 DpnII restriction fragments.
-
-    Then use
-    `bedtools <https://bedtools.readthedocs.io/en/latest/content/tools/intersect.html>`_
-    to extract all digests that contain at least one bait completely:
-
-    .. code-block:: console
-
-        $ intersectBed -wa -u -F 1.00 -a all_hg38_DpnII_digests.bed -b montefiori_baits_hg38.bed \
-        > montefiori_baited_digests_hg38.bed
-
-    This results in only 8,420 baited restriction fragments,
-    a much smaller number than that of the target promoters (22,600).
-    Montefiori et al. (2018) mention that they used Agilent's SureDesig software,
-    which can slightly shift the location and remove baits.
-    Therefore, we require an overlap of only 0.95 between bait and restriction fragment.
-
-    .. code-block:: console
-
-        $ intersectBed -wa -u -F 0.95 -a all_hg38_DpnII_digests.bed -b montefiori_baits_hg38.bed \
-        > montefiori_baited_digests_hg38.bed
-
-    This results in 52,284 baited digests.
-    This number is much larger than that of the of the target promoters (22,600).
-    This is probably due to the fact that Montefiori et al. (2018) keep al MbolI fragments
-    overlapping 10 kb around a RefSeq TSS.
-
-    Finally, use our script to create a digest file in which digests that Montefiori et al. have selected for enrichment
-    are marked with a ``T`` and all others with an ``F``.
-
-    .. code-block:: console
-
-        $ python diachrscripts/additional_scripts/ed_selector.py \
-            --enriched-digests-file montefiori_baited_digests_hg38.bed \
-            --diachromatic-digest-file \
-                diachrscripts/additional_files/template_digest_file_hg38_DpnII.txt \
-            --out-prefix montefiori_hg38_DpnII
-
-    This results in the file ``montefiori_hg38_DpnII_diachromatic_digest_file.txt``.
-    We use this file as input for Diachromatic.
-
-

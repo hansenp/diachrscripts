@@ -13,9 +13,9 @@ by orientation.
 In ``diachrscripts``, we implemented analysis and visualization methods in Python modules that can be used
 in scripts and Jupyter notebooks to study interactions with respect to imbalances in the four read pair counts.
 This tutorial provides an overview of the entire workflow, from downloading the paired-end data,
-through the initial processing with ``Diachromatic``, calling of unbalanced interactions with ``UICer.py``,
-pooling interactions from different replicates with ``pooler.py``
-up to the various analyzes in Jupyter notebooks.
+through the initial processing with ``Diachromatic``, pooling interactions from different replicates with ``pooler.py``,
+calling of unbalanced interactions with ``UICer.py``,
+to various analyses in Jupyter notebooks.
 
 .. toctree::
    :maxdepth: 2

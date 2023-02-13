@@ -13,7 +13,7 @@ Downloading paired-end data
 ***************************
 
 Use the script
-`dumpy.sh <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/additional_scripts/dumpy.sh>`__
+`dumpy.sh <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/additional_scripts/dumpy.sh>`_
 to download paired-end data from promoter capture Hi-C experiments in GM12878 cells
 `(Mifsud et al. 2015) <https://pubmed.ncbi.nlm.nih.gov/25938943/>`_.
 For this dataset, ``200 GB`` hard disk space must be available.
@@ -102,21 +102,24 @@ The result files are written to the directory specified using ``-o`` and have th
 Mapping and artifact removal
 ============================
 
-For Hi-C data, no distribution particular of distances between reads of mapped pairs can be assumed (insert size).
-However, for paired-end data, read mappers rely on a minimum and maximum insert size.
-Therefore, the truncated forward and reverse reads must be mapped independently, like single-end data, and the mapped
-reads must be re-paired afterwards.
-In addition, there are certain rules by which artifacts that are specific to Hi-C data can be recognized and removed.
-This can be done with ``Diachromatic`` using the subcommand ``align`` for which we recommend having ``16`` to ``32 GB``
+For mapped Hi-C paired-end reads, no particular distribution of distances (insert sizes) or relative orientation
+can be assumed.
+However, read mappers typically rely on a minimum and maximum insert size and that mapped read pairs point inwards.
+Therefore, the truncated forward and reverse reads must be mapped independently and the mapped reads must be re-paired
+afterwards.
+In addition, there are certain rules by which artifact read pairs that are specific to Hi-C data can be recognized
+and removed.
+This can be done using ``Diachromatic`` with the subcommand ``align``. We recommend having ``16`` to ``32 GB``
 memory available.
-For the single-end mappings, paths to ``bowtie2`` (``-b``) and to an index for the matching reference sequence (``-i``)
-must be specified. If the ``-bsu`` is used, then reads are considered to be mapped uniquely if they map to only one
-location. The ``-p`` option specifies how many CPUs can be used by ``bowtie2``.
-For the detection of artifacts, a digest file is required, which contains all restriction fragments resulting from a
-complete digestion of the genome and must be specified via the option ``-d``.
-The FASTQ files with the truncated forward and reverse reads are specified using the ``-q`` and ``-r`` options.
+A path to a bowtie2 executable (``-b``) and an index for a corresponding reference sequence (``-i``) must be specified.
+If the ``-bsu`` switch is used, reads are considered to be mapped uniquely if they map to only one location.
+The ``-p`` option can be used to specify how many CPUs will be used by bowtie2.
+For the detection of artifact read pairs, a digest file (``-d``) is required,
+which contains all restriction fragments resulting from a complete digestion of the genome.
+The FASTQ files with the truncated forward (``-q``) and reverse reads (``-r``) must be specified.
 
-In order to execute the following command, the ``bowtie2`` index and the digest map must first be prepared.
+Before the following command can be executed,
+the bowtie2 index and the digest map must first be prepared.
 How to do this is documented here: :ref:`RST_Diachromatic_input_preparation`.
 
 .. code-block:: console
@@ -133,19 +136,21 @@ How to do this is documented here: :ref:`RST_Diachromatic_input_preparation`.
        -x MIF_GM12878_CHC_REP1 \
        -j
 
-All result files from this step are written to the same directory (``-o``) and have the same prefix (``-x``) as the
-truncated reads.
+All result files from this step are written to the same directory (``-o``)
+and have the same prefix (``-x``) as the truncated reads.
 The main result from this step is a BAM file with valid mapped read pairs that have not been classified as artifacts.
-If the ``-j`` option is used, then an additional BAM file is created containing all read pairs that were determined to
-be invalid and therefore rejected.
+If the ``-j`` switch is used, then an additional BAM file is created containing all read pairs
+that were determined to be invalid and therefore rejected.
 
 Counting supporting read pairs for interacting digest pairs
 ===========================================================
 
-In ``Diachromatic``, an interactions is defined as any pair of digests having at least one supporting valid mapped read
-pair. Using the subcommand ``count``, the number of supporting read pairs for all interactions can be determined.
-To do this, a corresponding digest map (``-d``) and a BAM file containing valid mapped read pairs (``-v``) are required.
-The ``-s`` option causes the read pair counts to be reported separately for the four types.
+In Diachromatic, an interaction is defined as any pair of digests having at least one supporting valid mapped read pair.
+By using ``Diachromatic`` with the subcommand ``count``,
+all interactions with their counts of supporting read pairs can be determined.
+The corresponding digest map (``-d``) and
+the BAM file from the previous step containing the valid mapped read pairs (``-v``) must be specified.
+If the ``-s`` switch is used, the counts of supporting read pairs are reported separately by relative orientation.
 
 .. code-block:: console
 
@@ -162,7 +167,7 @@ The interactions are written to the following file:
 
     MIF_GM12878_CHC_REP1/MIF_GM12878_CHC_REP1.interaction.counts.table.tsv
 
-This file is in Diachromatic's interaction format:
+This file is in the Diachromatic interaction format:
 
 .. code-block:: console
 
@@ -174,21 +179,33 @@ This file is in Diachromatic's interaction format:
 Each line represents an interaction.
 Columns 1 to 3 and 5 to 7 contain the coordinates of the digest pair,
 whereby the digest with the smaller coordinates always comes before the other digest.
-Columns 4 and 8 indicate the enrichment states of the digests.
+Columns 4 and 8 indicate the enrichment states of the two digests.
 An ``E`` means that the corresponding digest has been selected for target enrichment
 and an ``N`` means that it has not been selected.
-The last column contains the counts of the supporting read pairs separated by type
-(``<Type 0>``:``<Type 1>``:``<Type 2>``:``<Type 3>``).
+The last column contains the counts of the supporting read pairs
+separated by relative orientations of mapped read pairs (``<Class 0>``:``<Class 1>``:``<Class 2>``:``<Class 3>``).
+
++--------+--------------------------------------+
+| Class  | Relative orientation                 |
++========+============================+=========+
+| ``0``  | Reads point inwards        |``-><-`` |
++--------+----------------------------+---------+
+| ``1``  | Reads point outwards       |``<-->`` |
++--------+----------------------------+---------+
+| ``2``  | Reads both point towards 3'| ``->->``|
++--------+----------------------------+---------+
+| ``3``  | Reads both point towards 5'| ``<-<-``|
++--------+----------------------------+---------+
 
 Filtering for cis-chromosomal long range interactions
 =====================================================
 
-Interactions between different chromosomes are referred to as trans-chromosomal and interactions within the same
-chromosome cis-chromosomal.
-We restricted our analyzes to cis-chromosomal interactions.
-Typically, interactions with particularly short distances are excluded from downstream analyzes.
+Interactions between different chromosomes are referred to as trans-chromosomal
+and interactions within the same chromosome as cis-chromosomal.
+In this tutorial, we restrict our analysis to cis-chromosomal interactions.
+Typically, interactions with particularly short distances are excluded from downstream analysis.
 We define the distance between the two inner ends of interacting digests (column 3 and 6) as interaction distance
-and discard all interactions with a distance smaller than 20,000 bp.
+and discard all interactions with a distance smaller than ``20,000 bp``.
 We also discard all interactions on chromosome ``chrM``.
 
 .. code-block:: console
@@ -208,32 +225,26 @@ After that, the directory ``gzdir`` should contain three files.
     MIF_GM12878_CHC_REP2.interaction.counts.table.clr_200000.tsv.gz
     MIF_GM12878_CHC_REP3.interaction.counts.table.clr_200000.tsv.gz
 
+*************************************************************
+``pooler.py``: Pooling interactions from different replicates
+*************************************************************
 
-*******************************************************************
-Pooling interactions from different replicates using ```pooler.py``
-*******************************************************************
+To pool interactions from different replicates,
+we discard those that occur in fewer than a specified number of replicates
+and for the remaining, overlapping interactions add up the read pair counts separately by orientation.
+For example, if the same interaction occurs in two replicates and has counts ``1:2:3:4`` for the one replicate
+and counts ``4:3:2:1`` for the other, then the pooled counts will be ``5:5:5:5``.
+We implemented this way of pooling in the pooler.py script,
+the usage of which is demonstrated here:
+`jupyter_notebooks/usage/usage_of_pooler.ipynb <https://github.com/TheJacksonLaboratory/diachrscripts/blob/master/jupyter_notebooks/usage/usage_of_pooler.ipynb>`_.
 
-In order to pool interactions from biological replicates,
-we discard interactions that occur in less than two replicates and,
-for the remaining interactions, we add up the read pair counts from
-all replicates separately for the four counts.
-For example, if the same interaction occurs in two replicates and has counts ``1:2:3:4``
-for the one replicate and counts ``4:3:2:1`` for the other, then the pooled counts will be
-``5:5:5:5``. We have implemented this way of pooling in the script ``pooler.py``, which is described
-here: Jupyter notebook.
-
-The script expects a path to a directory that contains gzipped files in Diachromatic's interaction format
-(``--interaction-files-path``).
-
-In addition, the required number of replicates must be specified (``--required-replicates``).
-All interactions that occur in less replicates will be discarded.
-For the remaining interactions,
-the four read pair counts from different replicates
-will be added up separately.
-For this analysis,
-we require that an interaction must occur in at least two replicates.
-The name of each created file will have the same prefix ``--out-prefix``,
-which can also contain the path to an already existing directory.
+As input, the script expects a path to a directory containing gzipped files
+in Diachromatic's interaction format (``--interaction-files-path``).
+In addition, the minimum number of replicates in which a pooled interaction must occur
+must be specified (``--required-replicates``).
+In this tutorial, we require that an interaction occurs in at least two replicates.
+The name of each file created has the same prefix (``--out-prefix``),
+which can also contain a path to a pre-existing directory.
 
 .. code-block:: console
 
@@ -243,7 +254,7 @@ which can also contain the path to an already existing directory.
        --required-replicates 2 \
        --out-prefix MIF_GM12878_CHC_REPC/MIF_GM12878_CHC_REPC
 
-The command above will generate the following two files:
+This command will generate the following two files:
 
 .. code-block:: console
 
@@ -251,24 +262,38 @@ The command above will generate the following two files:
     MIF_GM12878_CHC_REPC_at_least_in_2_replicates_summary.txt
     MIF_GM12878_CHC_REPC_at_least_in_2_replicates_interactions.tsv.gz
 
-The first file contains an overview of the numbers of interactions
-in the individual files and
-the second file contains the pooled interactions.
+The first file contains summary statistics and the second file contains the pooled interactions.
 
-Note: Diachromatic
-even outputs interactions that have only a single read pair.
-On the other hand, when pooling interactions,
-the interactions from multiple replicates must be read into memory.
-Therefore, the memory consumption can become very high
-and we carried out this step on a compute cluster.
+**Note:** Diachromatic reports each interaction with at least one supporting read pair.
+To pool interactions, all interactions must first be read into the main memory.
+Depending on the size of the input files, this can lead to high memory requirements.
 
+********************************************
+``UICer.py``: Unbalanced Interaction Caller
+********************************************
 
-*************************************************
-Calling unbalanced interactions with ``UICer.py``
-*************************************************
+We implemented the calling of unbalanced interactions in the Python script ``UICer.py``.
+The script performs the following processing steps:
 
-So far, this is only described in this
-`Jupyter Notebook <https://github.com/TheJacksonLaboratory/diachrscripts/blob/develop/jupyter_notebooks/Demonstration_of_UICer.ipynb>`__.
+1. **Randomization:** If no classification threshold is specified,
+then a threshold is determined using a randomization procedure so that the FDR remains below 5%.
+
+2. **Classification of interactions:** All interactions that do not have enough read pairs
+to be classified as unbalanced at the chosen classification threshold are discarded.
+The remaining interactions are classified as unbalanced or balanced and assigned a score.
+
+3. **Selection of comparison sets:** From the unbalanced and balanced interactions,
+two comparison sets are selected that are as large as possible and comparable
+with respect to their total read pair counts per interaction.
+
+The usage of ``UICer.py`` is demonstrated here:
+`jupyter_notebooks/usage/usage_of_UICer.ipynb <https://github.com/TheJacksonLaboratory/diachrscripts/blob/master/jupyter_notebooks/usage/usage_of_UICer.ipynb>`__.
+
+In this tutorial, we will use UICer with an FDR threshold of 5% (``--fdr-threshold``).
+This will invoke the randomization procedure with 1,000 iterations (``--iter-num``).
+Since the randomization procedure is very computationally intensive,
+the iterations are carried out in four batches of equal size (``--thread-num``) with 250 iterations each.
+As input, we'll use the pooled interactions file from the previous step (``--diachromatic-interaction-file``).
 
 .. code-block:: console
 
@@ -281,8 +306,7 @@ So far, this is only described in this
         --random-seed 1 \
         --thread-num 4
 
-``UICer`` generates a file with the evaluated and categorized interactions and several files with statistics on the
-various processing steps.
+``UICer.py`` reports summary statistics on all processing steps and generates corresponding plots.
 
 .. code-block:: console
 
@@ -298,9 +322,10 @@ various processing steps.
     MIF_GM12878_CHC_REPC_randomization_table.txt
     MIF_GM12878_CHC_REPC_reports.txt
 
-The format of the interaction file corresponds to the Diachromatic interaction format with two additional columns for
-a score to evaluate the imbalances in the four counts and the interaction category.
-Here is one line for each category as an example:
+The main result is a file of classified interactions evaluated in terms of their imbalances in the four counts.
+The format of this file corresponds to the Diachromatic interaction format with two additional columns,
+one for scores to assess the imbalances in the four read pair counts and one for the interaction categories.
+Here is one line for each of the categories for illustration:
 
 .. code-block:: console
 
@@ -309,22 +334,52 @@ Here is one line for each category as an example:
     chrX   151978880   151979018   N   chrX   152449365   152452950   E   11:3:7:7   1.03   UIR
     chr1    31956115    31963217   N   chr1    32695361    32706402   E   1:2:2:2    0.30   UI
 
-The tags for the interaction categories have the following meanings:
+There are four interaction categories:
 
 +-----------+--------------------------------------------------------------+
 | Category  | Meaning                                                      |
 +===========+==============================================================+
-| ``DIX``   | Unbalanced counts no reference interaction could be selected |
+| ``DIX``   | Unbalanced interaction without reference interaction         |
 +-----------+--------------------------------------------------------------+
-| ``DI``    | Unbalanced counts reference interaction could be selected    |
+| ``DI``    | Unbalanced interaction with reference interaction            |
 +-----------+--------------------------------------------------------------+
-| ``UIR``   | Balanced counts selected as reference interaction            |
+| ``UIR``   | Balanced interaction selected as reference interaction       |
 +-----------+--------------------------------------------------------------+
-| ``UI``    | Balanced counts not selected as reference interaction        |
+| ``UI``    | Balanced interaction not selected as reference interaction   |
 +-----------+--------------------------------------------------------------+
 
-***********************************************************************
-Performing analyzes of imbalanced read pair counts in Jupyter notebooks
-***********************************************************************
+**Note:** Depending on the size of the input and the number of iterations,
+the randomization procedure can be very computationally intensive.
+We provide the ``UICer.py`` output file resulting from the steps in this tutorial for download.
 
-Get_started
+********************************************************
+Analysis of unbalanced interactions in Jupyter Notebooks
+********************************************************
+
+We implemented a number of analysis and visualization methods in Python modules that we use in Jupyter notebooks
+to investigate interactions regarding imbalances in their four read pair counts.
+
+Get started
+===========
+
+All input files required for these analyses, including the file generated with ``UICer.py`` in this tutorial,
+can be downloaded using this notebook: `jupyter_notebooks/Get_started.ipynb <https://github.com/TheJacksonLaboratory/diachrscripts/blob/master/jupyter_notebooks/Get_started.ipynb>`_
+
+This notebook also contains brief explanations and links to the various analyses.
+
+Analyses
+========
+
+There are notebooks for the following analyses:
+
+1. `Frequencies of interaction configurations <https://github.com/TheJacksonLaboratory/diachrscripts/blob/master/jupyter_notebooks/analysis/frequencies_of_interaction_configurations.ipynb>`_
+
+2. `Visualization of configurations at baited fragments <https://github.com/TheJacksonLaboratory/diachrscripts/blob/master/jupyter_notebooks/analysis/visualization_of_configurations.ipynb>`_
+
+3. `Classification of baited fragments <https://github.com/TheJacksonLaboratory/diachrscripts/blob/master/jupyter_notebooks/analysis/baited_fragment_classification.ipynb>`_
+
+4. `Bait analysis <https://github.com/TheJacksonLaboratory/diachrscripts/blob/master/jupyter_notebooks/analysis/bait_analysis.ipynb>`__
+
+5. `Restriction fragment lengths <https://github.com/TheJacksonLaboratory/diachrscripts/blob/master/jupyter_notebooks/analysis/restriction_fragment_lengths.ipynb>`_
+
+6. `Distance-dependent contact frequencies <https://github.com/TheJacksonLaboratory/diachrscripts/blob/master/jupyter_notebooks/analysis/distance_dependent_contact_frequencies.ipynb>`_
