@@ -23,7 +23,7 @@ class DiachromaticInteractionSet:
 
     If interactions have been evaluated and categorized (1,2), the output format is expanded by two columns on the left.
     Column 10 contains the negative of the natural logarithm of the P-value and column 11 the interaction category
-    (DIX, DI, UI or UIR).
+    (UX, U, B or BR).
     """
 
     def __init__(self, enriched_digests_file: str = None, rpc_rule: str = 'ht'):
@@ -254,7 +254,7 @@ class DiachromaticInteractionSet:
 
     def evaluate_and_categorize_interactions(self, pval_thresh: float = None, verbose: bool = False):
         """
-        Calculate the P-value and define interaction category ('DI' or 'UI') for all interactions in this object.
+        Calculate the P-value and define interaction category ('U' or 'B') for all interactions in this object.
         'DiachromaticInteraction' objects will be replaced by 'DiachromaticInteraction11' objects.
 
         :param pval_thresh: Interactions with a lower P-value will be classified as significant
@@ -305,10 +305,10 @@ class DiachromaticInteractionSet:
 
             # Determine interaction category
             if log10_pval_thresh <= log10_p_val:
-                i_category = "DI"
+                i_category = "U"
                 n_di += 1
             else:
-                i_category = "UI"
+                i_category = "B"
                 n_ui += 1
 
             # Create new 'DiachromaticInteraction11' with P-value and category
@@ -357,7 +357,7 @@ class DiachromaticInteractionSet:
         of read pairs per interaction and return a dictionary with information on this selection process.
 
         The difference to the original version is that it is not distinguished between NE and EN.
-        Furthermore, an additional category DIX for DI interactions without counterpart in reference interactions
+        Furthermore, an additional category UX for U interactions without counterpart in reference interactions
         is introduced.
 
         :return: Dictionary with interaction numbers in different categories
@@ -377,20 +377,20 @@ class DiachromaticInteractionSet:
                          'EE': {}}
 
         # Count number of interactions in different categories
-        report_dict = {'NN': {'DIX': [0], 'DI': [0], 'UIR': [0], 'UI': [0]},
-                       'NE': {'DIX': [0], 'DI': [0], 'UIR': [0], 'UI': [0]},
-                       'EN': {'DIX': [0], 'DI': [0], 'UIR': [0], 'UI': [0]},
-                       'EE': {'DIX': [0], 'DI': [0], 'UIR': [0], 'UI': [0]}}
+        report_dict = {'NN': {'UX': [0], 'U': [0], 'BR': [0], 'B': [0]},
+                       'NE': {'UX': [0], 'U': [0], 'BR': [0], 'B': [0]},
+                       'EN': {'UX': [0], 'U': [0], 'BR': [0], 'B': [0]},
+                       'EE': {'UX': [0], 'U': [0], 'BR': [0], 'B': [0]}}
 
         if verbose:
             print("\t[INFO] First pass: Count unbalanced interactions for different read pair counts ...")
         for d11_inter in self._inter_dict.values():
 
-            if d11_inter.get_category() == 'DI':
+            if d11_inter.get_category() == 'U':
 
                 # Get enrichment status tag pair and read pair number
                 enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
-                report_dict[enrichment_pair_tag]['DI'][0] += 1
+                report_dict[enrichment_pair_tag]['U'][0] += 1
                 if enrichment_pair_tag == 'NE' or enrichment_pair_tag == 'EN':
                     enrichment_pair_tag = 'NEEN'
 
@@ -424,7 +424,7 @@ class DiachromaticInteractionSet:
 
         for d11_inter in self._inter_dict.values():
 
-            if d11_inter.get_category() != 'DI':
+            if d11_inter.get_category() != 'U':
 
                 enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
                 if enrichment_pair_tag == 'NE' or enrichment_pair_tag == 'EN':
@@ -447,18 +447,18 @@ class DiachromaticInteractionSet:
 
                 if rp_total in rp_inter_dict[enrichment_pair_tag] and 0 < rp_inter_dict[enrichment_pair_tag][rp_total]:
                     rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
-                    d11_inter.set_category('UIR')
-                    report_dict[d11_inter.enrichment_status_tag_pair]['UIR'][0] += 1
+                    d11_inter.set_category('BR')
+                    report_dict[d11_inter.enrichment_status_tag_pair]['BR'][0] += 1
                 else:
                     ui_inter_dict[enrichment_pair_tag] += 1
-                    d11_inter.set_category('UI')
-                    report_dict[d11_inter.enrichment_status_tag_pair]['UI'][0] += 1
+                    d11_inter.set_category('B')
+                    report_dict[d11_inter.enrichment_status_tag_pair]['B'][0] += 1
 
         if verbose:
-            print("\t[INFO] Third pass: Moving DI interactions for which there is no reference to DIX ...")
+            print("\t[INFO] Third pass: Moving U interactions for which there is no reference to UX ...")
 
         for d11_inter in self._inter_dict.values():
-            if d11_inter.get_category() == 'DI':
+            if d11_inter.get_category() == 'U':
 
                 enrichment_pair_tag = d11_inter.enrichment_status_tag_pair
                 if enrichment_pair_tag == 'NE' or enrichment_pair_tag == 'EN':
@@ -481,28 +481,28 @@ class DiachromaticInteractionSet:
 
                 if rp_total in rp_inter_dict[enrichment_pair_tag] and 0 < rp_inter_dict[enrichment_pair_tag][rp_total]:
                     rp_inter_dict[enrichment_pair_tag][rp_total] -= 1
-                    d11_inter.set_category('DIX')
-                    report_dict[d11_inter.enrichment_status_tag_pair]['DI'][0] -= 1
-                    report_dict[d11_inter.enrichment_status_tag_pair]['DIX'][0] += 1
+                    d11_inter.set_category('UX')
+                    report_dict[d11_inter.enrichment_status_tag_pair]['U'][0] -= 1
+                    report_dict[d11_inter.enrichment_status_tag_pair]['UX'][0] += 1
 
-        # Sanity check DI and UIR must have the same number of interactions in each enrichment category
+        # Sanity check U and BR must have the same number of interactions in each enrichment category
         for enr_cat in ['NN', 'EE']:
-            if report_dict[enr_cat]['DI'][0] - report_dict[enr_cat]['UIR'][0] != 0:
-                print("[ERROR] DI and UIR must have the same number of interactions in category NN and EE!")
+            if report_dict[enr_cat]['U'][0] - report_dict[enr_cat]['BR'][0] != 0:
+                print("[ERROR] U and BR must have the same number of interactions in category NN and EE!")
                 print("\t[ERROR] " + enr_cat)
-                print("\t[ERROR] DI: " + str(report_dict[enr_cat]['DI'][0]))
-                print("\t[ERROR] UIR: " + str(report_dict[enr_cat]['UIR'][0]))
+                print("\t[ERROR] U: " + str(report_dict[enr_cat]['U'][0]))
+                print("\t[ERROR] BR: " + str(report_dict[enr_cat]['BR'][0]))
                 exit(1)
-        neen_sum_di = report_dict['NE']['DI'][0] + report_dict['EN']['DI'][0]
-        neen_sum_uir = report_dict['NE']['UIR'][0] + report_dict['EN']['UIR'][0]
+        neen_sum_di = report_dict['NE']['U'][0] + report_dict['EN']['U'][0]
+        neen_sum_uir = report_dict['NE']['BR'][0] + report_dict['EN']['BR'][0]
         if neen_sum_di - neen_sum_uir != 0:
-            print("[ERROR] DI and UIR must have the same number of interactions in category NE and EN!")
-            print("\t[ERROR] DI-NE: " + str(report_dict['NE']['DI'][0] + report_dict['NE']['DI'][0]))
-            print("\t[ERROR] DI-EN: " + str(report_dict['NE']['DI'][0] + report_dict['EN']['DI'][0]))
-            print("\t[ERROR] DI-NEEN: " + str(neen_sum_di))
-            print("\t[ERROR] UIR-NE: " + str(report_dict['NE']['UIR'][0] + report_dict['NE']['UIR'][0]))
-            print("\t[ERROR] UIR-EN: " + str(report_dict['NE']['UIR'][0] + report_dict['EN']['UIR'][0]))
-            print("\t[ERROR] UIR-NEEN: " + str(neen_sum_uir))
+            print("[ERROR] U and BR must have the same number of interactions in category NE and EN!")
+            print("\t[ERROR] U-NE: " + str(report_dict['NE']['U'][0] + report_dict['NE']['U'][0]))
+            print("\t[ERROR] U-EN: " + str(report_dict['NE']['U'][0] + report_dict['EN']['U'][0]))
+            print("\t[ERROR] U-NEEN: " + str(neen_sum_di))
+            print("\t[ERROR] BR-NE: " + str(report_dict['NE']['BR'][0] + report_dict['NE']['BR'][0]))
+            print("\t[ERROR] BR-EN: " + str(report_dict['NE']['BR'][0] + report_dict['EN']['BR'][0]))
+            print("\t[ERROR] BR-NEEN: " + str(neen_sum_uir))
             return
 
         if verbose:
@@ -513,14 +513,14 @@ class DiachromaticInteractionSet:
 
     def deselect_reference_interactions(self):
         """
-        This function undoes the selection of reference interactions. The tag 'DIX' is replaced with 'DI' and the tag
-        'UIR' with 'UI'.
+        This function undoes the selection of reference interactions. The tag 'UX' is replaced with 'U' and the tag
+        'BR' with 'B'.
         """
         for d11_inter in self._inter_dict.values():
-            if d11_inter.get_category() == 'DIX':
-                d11_inter.set_category('DI')
-            if d11_inter.get_category() == 'UIR':
-                d11_inter.set_category('UI')
+            if d11_inter.get_category() == 'UX':
+                d11_inter.set_category('U')
+            if d11_inter.get_category() == 'BR':
+                d11_inter.set_category('B')
 
     def write_diachromatic_interaction_file(self, required_replicates: int = 1, target_file: str = None,
                                             verbose: bool = False):
@@ -782,9 +782,9 @@ class DiachromaticInteractionSet:
                   "{:.5f}".format(self._eval_cat_info_dict['MIN_RP_PVAL'][0]) + '\n'
         report += "\t[INFO] Processed interactions: " + "{:,}".format(self._eval_cat_info_dict['N_PROCESSED'][0]) + '\n'
         report += "\t[INFO] Discarded interactions: " + "{:,}".format(self._eval_cat_info_dict['N_DISCARDED'][0]) + '\n'
-        report += "\t[INFO] Not significant interactions (UI): " + "{:,}".format(
+        report += "\t[INFO] Not significant interactions (B): " + "{:,}".format(
             self._eval_cat_info_dict['N_BALANCED'][0]) + '\n'
-        report += "\t[INFO] Significant interactions (DI): " + "{:,}".format(
+        report += "\t[INFO] Significant interactions (U): " + "{:,}".format(
             self._eval_cat_info_dict['N_UNBALANCED'][0]) + '\n'
         report += "[INFO] End of report." + '\n'
 
@@ -830,33 +830,33 @@ class DiachromaticInteractionSet:
         """
 
         report = "[INFO] Report on selection of balanced reference interactions:" + '\n'
-        report += "\t[INFO] Numbers of unbalanced interactions without balanced reference (DIX)" + '\n'
+        report += "\t[INFO] Numbers of unbalanced interactions without balanced reference (UX)" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
-            total += self._select_ref_info_dict[enr_cat]['DIX'][0]
+            total += self._select_ref_info_dict[enr_cat]['UX'][0]
             report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
-                self._select_ref_info_dict[enr_cat]['DIX'][0]) + '\n'
+                self._select_ref_info_dict[enr_cat]['UX'][0]) + '\n'
         report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
-        report += "\t[INFO] Numbers of unbalanced interactions with balanced reference (DI)" + '\n'
+        report += "\t[INFO] Numbers of unbalanced interactions with balanced reference (U)" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
-            total += self._select_ref_info_dict[enr_cat]['DI'][0]
+            total += self._select_ref_info_dict[enr_cat]['U'][0]
             report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
-                self._select_ref_info_dict[enr_cat]['DI'][0]) + '\n'
+                self._select_ref_info_dict[enr_cat]['U'][0]) + '\n'
         report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
-        report += "\t[INFO] Numbers of balanced reference interactions (UIR)" + '\n'
+        report += "\t[INFO] Numbers of balanced reference interactions (BR)" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
-            total += self._select_ref_info_dict[enr_cat]['UIR'][0]
+            total += self._select_ref_info_dict[enr_cat]['BR'][0]
             report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
-                self._select_ref_info_dict[enr_cat]['UIR'][0]) + '\n'
+                self._select_ref_info_dict[enr_cat]['BR'][0]) + '\n'
         report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
-        report += "\t[INFO] Numbers of balanced interactions not selected as reference (UI)" + '\n'
+        report += "\t[INFO] Numbers of balanced interactions not selected as reference (B)" + '\n'
         total = 0
         for enr_cat in ['NN', 'NE', 'EN', 'EE']:
-            total += self._select_ref_info_dict[enr_cat]['UI'][0]
+            total += self._select_ref_info_dict[enr_cat]['B'][0]
             report += "\t\t[INFO] Interactions in " + enr_cat + ": " + "{:,}".format(
-                self._select_ref_info_dict[enr_cat]['UI'][0]) + '\n'
+                self._select_ref_info_dict[enr_cat]['B'][0]) + '\n'
         report += "\t\t[INFO] Total: " + "{:,}".format(total) + '\n'
         report += "[INFO] End of report." + '\n'
 
@@ -871,10 +871,10 @@ class DiachromaticInteractionSet:
         # Header line
         table_row = ":TR_SELECT:" + '\t'
         table_row += "DESCRIPTION" + '\t'
-        for i_cat in ['DIX', 'DI', 'UIR', 'UI']:
+        for i_cat in ['UX', 'U', 'BR', 'B']:
             for enr_cat in ['NN', 'NE', 'EN', 'EE']:
                 table_row += i_cat + '_' + enr_cat + '\t'
-            if i_cat != 'UI':
+            if i_cat != 'B':
                 table_row += i_cat + '_TOTAL' + '\t'
             else:
                 table_row += i_cat + '_TOTAL' + '\n'
@@ -882,12 +882,12 @@ class DiachromaticInteractionSet:
         # Line with values
         table_row += ":TR_SELECT:" + '\t'
         table_row += str(description) + '\t'
-        for i_cat in ['DIX', 'DI', 'UIR', 'UI']:
+        for i_cat in ['UX', 'U', 'BR', 'B']:
             total = 0
             for enr_cat in ['NN', 'NE', 'EN', 'EE']:
                 total += self._select_ref_info_dict[enr_cat][i_cat][0]
                 table_row += str(self._select_ref_info_dict[enr_cat][i_cat][0]) + '\t'
-            if i_cat != 'UI':
+            if i_cat != 'B':
                 table_row += str(total) + '\t'
             else:
                 table_row += str(total) + '\n'

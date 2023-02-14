@@ -199,35 +199,35 @@ class DiachromaticInteraction11(DiachromaticInteraction):
     def set_category(self, category: str):
         """
         Sets the category of an interaction.
-        :param category: A string, either UI, DI or UIR
+        :param category: A string, either B, U or BR
         """
 
-        if category == "UI":
+        if category == "B":
             self._category = 0
-        elif category == "DI":
+        elif category == "U":
             self._category = 1
-        elif category == "UIR":
+        elif category == "BR":
             self._category = 2
-        elif category == "DIX":
+        elif category == "UX":
             self._category = 3
         else:
             raise TypeError(
-                "Invalid tag for interaction category: " + category + ". Must be either 'UI', 'DI' or 'UIR'")
+                "Invalid tag for interaction category: " + category + ". Must be either 'B', 'U' or 'BR'")
 
     def get_category(self):
         """
         Returns the category of an interaction.
-        :param category: A string, either UI, DI or UIR
+        :param category: A string, either B, U or BR
         """
 
         if self._category == 0:
-            return "UI"
+            return "B"
         elif self._category == 1:
-            return "DI"
+            return "U"
         elif self._category == 2:
-            return "UIR"
+            return "BR"
         elif self._category == 3:
-            return "DIX"
+            return "UX"
         else:
             raise NameError("Interaction category not yet defined.")
 
