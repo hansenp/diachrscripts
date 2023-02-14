@@ -76,7 +76,7 @@ class TestDiachromaticInteraction(TestCase):
         self.assertEqual(d9_inter.get_diachromatic_interaction_line(), interaction_string_9_fields)
 
         # Get interaction string with 11 fields
-        interaction_string_11_fields = interaction_string_9_fields + '\t' + '2.13' + '\t' + 'DI'
+        interaction_string_11_fields = interaction_string_9_fields + '\t' + '2.13' + '\t' + 'UR'
 
         # Get DiachromaticInteraction object using '_parse_line()' method
         d11_inter = d_inter_set._parse_line(interaction_string_11_fields)

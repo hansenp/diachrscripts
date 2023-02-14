@@ -210,9 +210,14 @@ class DiachromaticInteraction11(DiachromaticInteraction):
             self._category = 2
         elif category == "UX":
             self._category = 3
+        elif category == "BX":
+            self._category = 4
+        elif category == "UR":
+            self._category = 5
         else:
             raise TypeError(
-                "Invalid tag for interaction category: " + category + ". Must be either 'B', 'U' or 'BR'")
+                "Invalid tag for interaction category: " + category + ". Must be either 'B', 'U', 'BR', 'UX', 'BX', "
+                                                                      "'UR'")
 
     def get_category(self):
         """
@@ -228,6 +233,10 @@ class DiachromaticInteraction11(DiachromaticInteraction):
             return "BR"
         elif self._category == 3:
             return "UX"
+        elif self._category == 4:
+            return "BX"
+        elif self._category == 5:
+            return "UR"
         else:
             raise NameError("Interaction category not yet defined.")
 

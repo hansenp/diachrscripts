@@ -23,7 +23,7 @@ class TestRateAndCategorizeInteractions(TestCase):
         In addition, there are four interactions that do not have enough read pairs to be significant at the given
         P-value threshold. For 16 unbalanced interactions, there are balanced reference interactions with a
         corresponding number of read pairs, but for two interactions there is no matching reference interaction.
-        These two interactions are moved to a separate category DIX.
+        These two interactions are moved to a separate category UX.
 
         First, the test data is used to create an object of class 'DiachromaticInteractionSet'.
         There are three processing steps that are tested here: (1) classification of unbalanced interactions,
@@ -69,36 +69,36 @@ class TestRateAndCategorizeInteractions(TestCase):
 
     def test_reference_selection_report_dict(self):
         """
-        In a next step, balanced reference interactions (UIR) are selected from the balanced interactions (UI).
+        In a next step, balanced reference interactions (BR) are selected from the balanced interactions (U).
         The function for reference selection returns a dictionary with intermediate results that are tested here.
         """
 
         # Unbalanced interactions
-        self.assertEqual(3, self.select_ref_report_dict['NN']['DI'][0])
-        self.assertEqual(3, self.select_ref_report_dict['NE']['DI'][0])
-        self.assertEqual(5, self.select_ref_report_dict['EN']['DI'][0])
-        self.assertEqual(5, self.select_ref_report_dict['EE']['DI'][0])
+        self.assertEqual(3, self.select_ref_report_dict['NN']['UR'][0])
+        self.assertEqual(3, self.select_ref_report_dict['NE']['UR'][0])
+        self.assertEqual(5, self.select_ref_report_dict['EN']['UR'][0])
+        self.assertEqual(5, self.select_ref_report_dict['EE']['UR'][0])
 
         # Unbalanced interactions without reference (104 and 106 read pairs)
-        self.assertEqual(1, self.select_ref_report_dict['NE']['DIX'][0])
-        self.assertEqual(1, self.select_ref_report_dict['EE']['DIX'][0])
+        self.assertEqual(1, self.select_ref_report_dict['NE']['UX'][0])
+        self.assertEqual(1, self.select_ref_report_dict['EE']['UX'][0])
 
         # Balanced reference interactions
-        self.assertEqual(3, self.select_ref_report_dict['NN']['UIR'][0])
-        self.assertEqual(3, self.select_ref_report_dict['NE']['UIR'][0])
-        self.assertEqual(5, self.select_ref_report_dict['EN']['UIR'][0])
-        self.assertEqual(5, self.select_ref_report_dict['EE']['UIR'][0])
+        self.assertEqual(3, self.select_ref_report_dict['NN']['BR'][0])
+        self.assertEqual(3, self.select_ref_report_dict['NE']['BR'][0])
+        self.assertEqual(5, self.select_ref_report_dict['EN']['BR'][0])
+        self.assertEqual(5, self.select_ref_report_dict['EE']['BR'][0])
 
-        # Balanced reference interactions
-        self.assertEqual(3, self.select_ref_report_dict['NN']['UI'][0])
-        self.assertEqual(3, self.select_ref_report_dict['NE']['UI'][0])
-        self.assertEqual(3, self.select_ref_report_dict['EN']['UI'][0])
-        self.assertEqual(3, self.select_ref_report_dict['EE']['UI'][0])
+        # Balanced interactions not selected as reference
+        self.assertEqual(3, self.select_ref_report_dict['NN']['BX'][0])
+        self.assertEqual(3, self.select_ref_report_dict['NE']['BX'][0])
+        self.assertEqual(3, self.select_ref_report_dict['EN']['BX'][0])
+        self.assertEqual(3, self.select_ref_report_dict['EE']['BX'][0])
 
     def test_reference_selection_created_file(self):
         """
         Finally, the interactions are written to Diachromatic interaction file, which has two additional columns on the
-        left for P-value and interaction category ('DIX', 'DI', 'UIR', 'UI').
+        left for P-value and interaction category ('UX', 'UR', 'BR', 'BX').
         In this test, the file is read in again and the interaction numbers in the various categories are compared
         with the known numbers.
         """
@@ -110,10 +110,10 @@ class TestRateAndCategorizeInteractions(TestCase):
         # -----------------------------
 
         # Nested dictionaries that store the numbers of interactions (value) for different read pair numbers (key)
-        rp_inter_dict = {'NN': {'DIX': {}, 'DI': {}, 'UIR': {}, 'UI': {}},
-                         'NE': {'DIX': {}, 'DI': {}, 'UIR': {}, 'UI': {}},
-                         'EN': {'DIX': {}, 'DI': {}, 'UIR': {}, 'UI': {}},
-                         'EE': {'DIX': {}, 'DI': {}, 'UIR': {}, 'UI': {}}}
+        rp_inter_dict = {'NN': {'UX': {}, 'UR': {}, 'BR': {}, 'BX': {}},
+                         'NE': {'UX': {}, 'UR': {}, 'BR': {}, 'BX': {}},
+                         'EN': {'UX': {}, 'UR': {}, 'BR': {}, 'BX': {}},
+                         'EE': {'UX': {}, 'UR': {}, 'BR': {}, 'BX': {}}}
 
         with gzip.open('i_file.tsv', 'rt') as fp:
             for line in fp:
@@ -132,69 +132,69 @@ class TestRateAndCategorizeInteractions(TestCase):
         # --------------------------------
 
         # There must be 3 unbalanced interactions in category NN
-        self.assertEqual(3, len(rp_inter_dict['NN']['DI']))
+        self.assertEqual(3, len(rp_inter_dict['NN']['UR']))
 
         # There must be 3 unbalanced interactions in category NE
-        self.assertEqual(3, len(rp_inter_dict['NE']['DI']))
+        self.assertEqual(3, len(rp_inter_dict['NE']['UR']))
 
         # There must be 5 unbalanced interactions in category EN
-        self.assertEqual(5, len(rp_inter_dict['EN']['DI']))
+        self.assertEqual(5, len(rp_inter_dict['EN']['UR']))
 
         # There must be 5 unbalanced interactions in category EE
-        self.assertEqual(5, len(rp_inter_dict['EE']['DI']))
+        self.assertEqual(5, len(rp_inter_dict['EE']['UR']))
 
         # For one unbalanced interactions in category NE with 104 read pairs there is no balanced reference interaction
-        self.assertEqual(1, len(rp_inter_dict['NE']['DIX']))
+        self.assertEqual(1, len(rp_inter_dict['NE']['UX']))
 
         # For one unbalanced interactions in category EE with 104 read pairs there is no balanced reference interaction
-        self.assertEqual(1, len(rp_inter_dict['EE']['DIX']))
+        self.assertEqual(1, len(rp_inter_dict['EE']['UX']))
 
         # There must be 3 balanced reference interactions in category NN
-        self.assertEqual(3, len(rp_inter_dict['NN']['UIR']))
+        self.assertEqual(3, len(rp_inter_dict['NN']['BR']))
 
         # There must be 3 balanced reference interactions in category NE (one missing)
-        self.assertEqual(3, len(rp_inter_dict['NE']['UIR']))
+        self.assertEqual(3, len(rp_inter_dict['NE']['BR']))
 
         # There must be 5 balanced reference interactions in category EN
-        self.assertEqual(5, len(rp_inter_dict['EN']['UIR']))
+        self.assertEqual(5, len(rp_inter_dict['EN']['BR']))
 
         # There must be 5 balanced reference interactions in category EE (one missing)
-        self.assertEqual(5, len(rp_inter_dict['EE']['UIR']))
+        self.assertEqual(5, len(rp_inter_dict['EE']['BR']))
 
         # There must be 3 balanced interactions in category NN
-        self.assertEqual(3, len(rp_inter_dict['NN']['UI']))
+        self.assertEqual(3, len(rp_inter_dict['NN']['BX']))
 
         # There must be 3 balanced interactions in category NE
-        self.assertEqual(3, len(rp_inter_dict['NE']['UI']))
+        self.assertEqual(3, len(rp_inter_dict['NE']['BX']))
 
         # There must be 3 balanced interactions in category EN
-        self.assertEqual(3, len(rp_inter_dict['EN']['UI']))
+        self.assertEqual(3, len(rp_inter_dict['EN']['BX']))
 
         # There must be 3 balanced interactions in category EE
-        self.assertEqual(3, len(rp_inter_dict['EE']['UI']))
+        self.assertEqual(3, len(rp_inter_dict['EE']['BX']))
 
         # Test total read pair numbers in different enrichment categories
-        self.assertTrue(101 in rp_inter_dict['NN']['UIR'])
-        self.assertTrue(102 in rp_inter_dict['NN']['UIR'])
-        self.assertTrue(103 in rp_inter_dict['NN']['UIR'])
+        self.assertTrue(101 in rp_inter_dict['NN']['BR'])
+        self.assertTrue(102 in rp_inter_dict['NN']['BR'])
+        self.assertTrue(103 in rp_inter_dict['NN']['BR'])
 
-        self.assertTrue(101 in rp_inter_dict['NE']['UIR'])
-        self.assertTrue(102 in rp_inter_dict['NE']['UIR'])
-        self.assertTrue(103 in rp_inter_dict['NE']['UIR'])
-        self.assertFalse(104 in rp_inter_dict['NE']['UIR'])  # (missing)
+        self.assertTrue(101 in rp_inter_dict['NE']['BR'])
+        self.assertTrue(102 in rp_inter_dict['NE']['BR'])
+        self.assertTrue(103 in rp_inter_dict['NE']['BR'])
+        self.assertFalse(104 in rp_inter_dict['NE']['BR'])  # (missing)
 
-        self.assertTrue(101 in rp_inter_dict['EN']['UIR'])
-        self.assertTrue(102 in rp_inter_dict['EN']['UIR'])
-        self.assertTrue(103 in rp_inter_dict['EN']['UIR'])
-        self.assertTrue(104 in rp_inter_dict['EN']['UIR'])
-        self.assertTrue(105 in rp_inter_dict['EN']['UIR'])
+        self.assertTrue(101 in rp_inter_dict['EN']['BR'])
+        self.assertTrue(102 in rp_inter_dict['EN']['BR'])
+        self.assertTrue(103 in rp_inter_dict['EN']['BR'])
+        self.assertTrue(104 in rp_inter_dict['EN']['BR'])
+        self.assertTrue(105 in rp_inter_dict['EN']['BR'])
 
-        self.assertTrue(101 in rp_inter_dict['EE']['UIR'])
-        self.assertTrue(102 in rp_inter_dict['EE']['UIR'])
-        self.assertTrue(103 in rp_inter_dict['EE']['UIR'])
-        self.assertTrue(104 in rp_inter_dict['EE']['UIR'])
-        self.assertTrue(105 in rp_inter_dict['EE']['UIR'])
-        self.assertFalse(106 in rp_inter_dict['EE']['UIR'])  # (missing)
+        self.assertTrue(101 in rp_inter_dict['EE']['BR'])
+        self.assertTrue(102 in rp_inter_dict['EE']['BR'])
+        self.assertTrue(103 in rp_inter_dict['EE']['BR'])
+        self.assertTrue(104 in rp_inter_dict['EE']['BR'])
+        self.assertTrue(105 in rp_inter_dict['EE']['BR'])
+        self.assertFalse(106 in rp_inter_dict['EE']['BR'])  # (missing)
 
         # Remove created interaction file
         os.remove('i_file.tsv')
