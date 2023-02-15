@@ -329,9 +329,9 @@ Here is one line for each of the categories for illustration:
 
 .. code-block:: console
 
-    chr1   245051445   245057234   N   chr1   245133022   245136428   E   16:0:0:6   6.62   DIX
-    chr21   18333585    18336116   N   chr21   18782489    18791793   E   4:0:0:3    2.11   DI
-    chrX   151978880   151979018   N   chrX   152449365   152452950   E   11:3:7:7   1.03   UIR
+    chr1   245051445   245057234   N   chr1   245133022   245136428   E   16:0:0:6   6.62   UX
+    chr21   18333585    18336116   N   chr21   18782489    18791793   E   4:0:0:3    2.11   UR
+    chrX   151978880   151979018   N   chrX   152449365   152452950   E   11:3:7:7   1.03   BR
     chr1    31956115    31963217   N   chr1    32695361    32706402   E   1:2:2:2    0.30   UI
 
 There are four interaction categories:
@@ -339,13 +339,13 @@ There are four interaction categories:
 +-----------+--------------------------------------------------------------+
 | Category  | Meaning                                                      |
 +===========+==============================================================+
-| ``DIX``   | Unbalanced interaction without reference interaction         |
+| ``UX``   | Unbalanced interaction without reference interaction         |
 +-----------+--------------------------------------------------------------+
-| ``DI``    | Unbalanced interaction with reference interaction            |
+| ``UR``    | Unbalanced interaction with reference interaction            |
 +-----------+--------------------------------------------------------------+
-| ``UIR``   | Balanced interaction selected as reference interaction       |
+| ``BR``   | Balanced interaction selected as reference interaction       |
 +-----------+--------------------------------------------------------------+
-| ``UI``    | Balanced interaction not selected as reference interaction   |
+| ``BX``    | Balanced interaction not selected as reference interaction   |
 +-----------+--------------------------------------------------------------+
 
 **Note:** Depending on the size of the input and the number of iterations,

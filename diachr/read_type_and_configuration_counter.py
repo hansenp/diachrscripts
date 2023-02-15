@@ -15,7 +15,7 @@ class ReadTypeAndConfigCounter:
 
         # Initialize dictionary for counts
         rp_type_freq_dict = dict()
-        for i_cat in ['DIX', 'DI', 'UIR', 'UI', 'ALL', 'U', 'B']:
+        for i_cat in ['UX', 'UR', 'BR', 'BX', 'ALL', 'U', 'B']:
             rp_type_freq_dict[i_cat] = dict()
             for e_cat in ['NN', 'EE', 'NE', 'EN', 'ALL']:
                 rp_type_freq_dict[i_cat][e_cat] = dict()
@@ -53,8 +53,8 @@ class ReadTypeAndConfigCounter:
             rp_type_freq_dict['ALL']['ALL']['C2'] += d11_inter._twisted_1
             rp_type_freq_dict['ALL']['ALL']['C3'] += d11_inter._twisted_2
 
-            # Counts for all unbalanced (DIX and DI)
-            if i_cat == 'DIX' or i_cat == 'DI':
+            # Counts for all unbalanced (UX and UR)
+            if i_cat == 'UX' or i_cat == 'UR':
                 rp_type_freq_dict['U'][e_cat]['C0'] += d11_inter._simple_1
                 rp_type_freq_dict['U'][e_cat]['C1'] += d11_inter._simple_2
                 rp_type_freq_dict['U'][e_cat]['C2'] += d11_inter._twisted_1
@@ -64,8 +64,8 @@ class ReadTypeAndConfigCounter:
                 rp_type_freq_dict['U']['ALL']['C2'] += d11_inter._twisted_1
                 rp_type_freq_dict['U']['ALL']['C3'] += d11_inter._twisted_2
 
-            # Counts for all balanced (UIR and UI) and balanced interactions
-            if i_cat == 'UIR' or i_cat == 'UI':
+            # Counts for all balanced (BR and BX) and balanced interactions
+            if i_cat == 'BR' or i_cat == 'BX':
                 rp_type_freq_dict['B'][e_cat]['C0'] += d11_inter._simple_1
                 rp_type_freq_dict['B'][e_cat]['C1'] += d11_inter._simple_2
                 rp_type_freq_dict['B'][e_cat]['C2'] += d11_inter._twisted_1
@@ -77,7 +77,7 @@ class ReadTypeAndConfigCounter:
 
         # Fill second dictionary with relative frequencies
         rp_type_dens_dict = copy.deepcopy(rp_type_freq_dict)
-        for i_cat in ['DIX', 'DI', 'UIR', 'UI', 'ALL', 'U', 'B']:
+        for i_cat in ['UX', 'UR', 'BR', 'BX', 'ALL', 'U', 'B']:
             for e_cat in ['NN', 'EE', 'NE', 'EN', 'ALL']:
                 rp_total = sum(rp_type_freq_dict[i_cat][e_cat].values())
                 if 0 < rp_total:
@@ -96,7 +96,7 @@ class ReadTypeAndConfigCounter:
     @staticmethod
     def print_read_type_frequency_tables(rp_type_freq_dict=None,
                                          rp_type_dens_dict=None,
-                                         i_cats=['DIX', 'DI', 'UIR', 'UI', 'ALL', 'U', 'B'],
+                                         i_cats=['UX', 'UR', 'BR', 'BX', 'ALL', 'U', 'B'],
                                          e_cats=['NN', 'EE', 'NE', 'EN', 'ALL'],
                                          print_dens=True):
         for i_cat in i_cats:
@@ -119,7 +119,7 @@ class ReadTypeAndConfigCounter:
     def create_read_type_frequency_bar_charts(
             rp_type_freq_dict=None,
             rp_type_dens_dict=None,
-            i_cats=['DIX', 'DI', 'UIR', 'UI', 'ALL', 'U', 'B'],
+            i_cats=['UX', 'UR', 'BR', 'BX', 'ALL', 'U', 'B'],
             e_cat='ALL',
             pdf_file_name='rp_type_frequency_bar_charts.pdf'):
 
@@ -127,10 +127,10 @@ class ReadTypeAndConfigCounter:
         rp_cat_colors = [(255 / 255, 160 / 255, 200 / 255), (255 / 255, 80 / 255, 120 / 255),
                          (80 / 255, 190 / 255, 120 / 255), (60 / 255, 150 / 255, 120 / 255)]
         rp_cat_labels = ['C0', 'C1', 'C2', 'C3']
-        i_cat_titles = {'DIX': 'Unbalanced without reference',
-                        'DI': 'Unbalanced with reference',
-                        'UIR': 'Balanced reference',
-                        'UI': 'Unbalanced no reference',
+        i_cat_titles = {'UX': 'Unbalanced without reference',
+                        'UR': 'Unbalanced with reference',
+                        'BR': 'Balanced reference',
+                        'BX': 'Unbalanced no reference',
                         'ALL': 'All',
                         'U': 'Unbalanced',
                         'B': 'Balanced'}
@@ -182,7 +182,7 @@ class ReadTypeAndConfigCounter:
 
         # Initialize dictionary for counts
         conf_freq_dict = dict()
-        for i_cat in ['DIX', 'DI', 'UIR', 'UI', 'ALL', 'U', 'B']:
+        for i_cat in ['UX', 'UR', 'BR', 'BX', 'ALL', 'U', 'B']:
             conf_freq_dict[i_cat] = dict()
             for e_cat in ['NN', 'EE', 'NE', 'EN', 'ALL']:
                 conf_freq_dict[i_cat][e_cat] = dict()
@@ -198,16 +198,16 @@ class ReadTypeAndConfigCounter:
             conf_freq_dict['ALL'][e_cat][ht_tag] += 1
             conf_freq_dict[i_cat]['ALL'][ht_tag] += 1
             conf_freq_dict['ALL']['ALL'][ht_tag] += 1
-            if i_cat == 'DIX' or i_cat == 'DI':
+            if i_cat == 'UX' or i_cat == 'UR':
                 conf_freq_dict['U'][e_cat][ht_tag] += 1
                 conf_freq_dict['U']['ALL'][ht_tag] += 1
-            if i_cat == 'UIR' or i_cat == 'UI':
+            if i_cat == 'BR' or i_cat == 'BX':
                 conf_freq_dict['B'][e_cat][ht_tag] += 1
                 conf_freq_dict['B']['ALL'][ht_tag] += 1
 
         # Fill second dictionary with relative frequencies
         conf_dens_dict = copy.deepcopy(conf_freq_dict)
-        for i_cat in ['DIX', 'DI', 'UIR', 'UI', 'ALL', 'U', 'B']:
+        for i_cat in ['UX', 'UR', 'BR', 'BX', 'ALL', 'U', 'B']:
             for e_cat in ['NN', 'EE', 'NE', 'EN', 'ALL']:
                 i_total = sum(conf_freq_dict[i_cat][e_cat].values())
                 if 0 < i_total:
@@ -222,7 +222,7 @@ class ReadTypeAndConfigCounter:
     @staticmethod
     def print_configuration_frequency_tables(conf_freq_dict=None,
                                              conf_dens_dict=None,
-                                             i_cats=['DIX', 'DI', 'UIR', 'UI', 'ALL', 'U', 'B'],
+                                             i_cats=['UX', 'UR', 'BR', 'BX', 'ALL', 'U', 'B'],
                                              e_cats=['NN', 'EE', 'NE', 'EN', 'ALL']):
         for i_cat in i_cats:
             print(i_cat)
@@ -240,7 +240,7 @@ class ReadTypeAndConfigCounter:
     def create_configuration_frequency_bar_charts(
             conf_freq_dict=None,
             e_cat_1='ALL',
-            i_cats=['DIX', 'DI', 'UIR', 'UI', 'ALL'],
+            i_cats=['UX', 'UR', 'BR', 'BX', 'ALL'],
             pdf_file_name='configuration_frequency_bar_charts.pdf'):
         """
         This function creates one bar chart for each interaction category.
@@ -250,10 +250,10 @@ class ReadTypeAndConfigCounter:
 
         # Define labels and colors
         config_colors = ['lightsteelblue', 'lightsteelblue', 'lightsteelblue', 'lightsteelblue', 'pink', 'red', 'lime', 'magenta', 'blue', 'turquoise']
-        i_cat_titles = {'DIX': 'Unbalanced without reference',
-                        'DI': 'Unbalanced with reference',
-                        'UIR': 'Balanced reference',
-                        'UI': 'Unbalanced no reference',
+        i_cat_titles = {'UX': 'Unbalanced without reference',
+                        'UR': 'Unbalanced with reference',
+                        'BR': 'Balanced reference',
+                        'BX': 'Unbalanced no reference',
                         'ALL': 'All',
                         'U': 'Unbalanced',
                         'B': 'Balanced'}
@@ -331,7 +331,7 @@ class ReadTypeAndConfigCounter:
     @staticmethod
     def create_configuration_frequency_bar_charts_2(
             conf_freq_dict=None,
-            i_cats=['DIX', 'DI', 'UIR', 'UI', 'ALL'],
+            i_cats=['UX', 'UR', 'BR', 'BX', 'ALL'],
             e_cat_1='NE',
             e_cat_2='EN',
             e_cat_1_color='darkred',
@@ -347,10 +347,10 @@ class ReadTypeAndConfigCounter:
 
         # Define colors and labels
         config_colors = ['grey', 'grey', 'grey', 'grey', 'pink', 'red', 'lime', 'magenta', 'blue', 'turquoise']
-        i_cat_titles = {'DIX': 'Unbalanced without reference',
-                        'DI': 'Unbalanced with reference',
-                        'UIR': 'Balanced reference',
-                        'UI': 'Unbalanced no reference',
+        i_cat_titles = {'UX': 'Unbalanced without reference',
+                        'UR': 'Unbalanced with reference',
+                        'BR': 'Balanced reference',
+                        'BX': 'Unbalanced no reference',
                         'ALL': 'All',
                         'U': 'Unbalanced',
                         'B': 'Balanced'}

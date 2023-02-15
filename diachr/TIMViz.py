@@ -21,10 +21,10 @@ class TIMViz:
 
         # Set plot colors
         self._i_cat_colors = {
-            'DIX': 'orangered',
-            'DI': 'orange',
-            'UIR': 'green',
-            'UI': 'gray'
+            'UX': 'orangered',
+            'UR': 'orange',
+            'BR': 'green',
+            'BX': 'gray'
         }
         self._ht_tag_colors = {
             '0X': 'lightsteelblue',
@@ -237,7 +237,7 @@ class TIMViz:
                              chrom: str,
                              begin: int,
                              end: int,
-                             inter_cat_list: List = ['DIX', 'DI', 'UIR', 'UI'],
+                             inter_cat_list: List = ['UX', 'UR', 'BR', 'BX'],
                              enr_cat_list: List = ['NE', 'EN', 'EE', 'NN'],
                              ht_tag_list: List = ['01', '02', '03', '12', '13', '23'],
                              color_i_cats: bool = True,
@@ -380,7 +380,7 @@ class TIMViz:
                 pp_color = self._i_cat_colors[d_inter.get_category()]
             else:
                 pp_color = self._ht_tag_colors[d_inter.get_ht_tag()]
-                if d_inter.get_category() == 'UI' or d_inter.get_category() == 'UIR':
+                if d_inter.get_category() == 'BX' or d_inter.get_category() == 'BR':
                     # pp_color = 'lightsteelblue'
                     # pp_color = 'black'
                     pp_color = 'dimgray'

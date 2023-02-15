@@ -222,7 +222,6 @@ class DiachromaticInteraction11(DiachromaticInteraction):
     def get_category(self):
         """
         Returns the category of an interaction.
-        :param category: A string, either B, U or BR
         """
 
         if self._category == 0:

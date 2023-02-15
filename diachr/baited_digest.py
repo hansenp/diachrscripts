@@ -5,8 +5,8 @@ import numpy as np
 class BaitedDigest:
     """
     Objects of this class are used to group interactions interactions that end in the same bait. Interactions are broken
-    down by category and direction as seen from the bait. For the interaction categories unbalanced (DI), balanced
-    reference (UIR), balanced (UI) and all interactions (ALL) there are two lists of interactions each, one with
+    down by category and direction as seen from the bait. For the interaction categories unbalanced (UR), balanced
+    reference (BR), balanced (BX) and all interactions (ALL) there are two lists of interactions each, one with
     interactions from the bait to the left (NE) and one with interactions from the bait to the right (EN).
     """
 
@@ -18,16 +18,16 @@ class BaitedDigest:
     def __init__(self):
 
         self.interactions = {
-            'DIX': {
+            'UX': {
                 'NE': [],
                 'EN': []},
-            'DI': {
+            'UR': {
                 'NE': [],
                 'EN': []},
-            'UIR': {
+            'BR': {
                 'NE': [],
                 'EN': []},
-            'UI': {
+            'BX': {
                 'NE': [],
                 'EN': []},
             'ALL': {
@@ -36,13 +36,13 @@ class BaitedDigest:
         }
 
         self.curb_nums = {
-            'DI': {
+            'UR': {
                 'NE': 0,
                 'EN': 0},
-            'UIR': {
+            'BR': {
                 'NE': 0,
                 'EN': 0},
-            'UI': {
+            'BX': {
                 'NE': 0,
                 'EN': 0},
             'ALL': {
@@ -161,16 +161,16 @@ class BaitedDigest:
         return len(self.interactions['ALL']['NE']) + len(self.interactions['ALL']['EN'])
 
     def n_di_interactions(self):
-        return len(self.interactions['DI']['NE']) + len(self.interactions['DI']['EN'])
+        return len(self.interactions['UR']['NE']) + len(self.interactions['UR']['EN'])
 
     def n_uir_interactions(self):
-        return len(self.interactions['UIR']['NE']) + len(self.interactions['UIR']['EN'])
+        return len(self.interactions['BR']['NE']) + len(self.interactions['BR']['EN'])
 
     def n_di_ne_interactions(self):
-        return len(self.interactions['DI']['NE'])
+        return len(self.interactions['UR']['NE'])
 
     def n_uir_ne_interactions(self):
-        return len(self.interactions['UIR']['NE'])
+        return len(self.interactions['BR']['NE'])
 
     def get_interactions_sorted_by_dist(self, i_cat, e_cat):
 

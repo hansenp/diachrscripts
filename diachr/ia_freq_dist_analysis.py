@@ -11,10 +11,10 @@ class IaFreqDistAnalysis:
 
         # Define interaction and enrichment categories
         self.i_cats = [
-            'DIX',
-            'DI',
-            'UIR',
-            'UI',
+            'UX',
+            'UR',
+            'BR',
+            'BX',
             'ALL']
         self.i_cat_colors = [
             'red',
@@ -40,25 +40,25 @@ class IaFreqDistAnalysis:
         # Dictionary with information about ingestion of interactions
         self._ingest_interaction_set_info_dict = {
             'TOTAL_INTERACTIONS_READ': 0,
-            'DIX': {
+            'UX': {
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
                 'EE': 0
             },
-            'DI': {
+            'UR': {
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
                 'EE': 0
             },
-            'UIR': {
+            'BR': {
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
                 'EE': 0
             },
-            'UI': {
+            'BX': {
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
@@ -138,7 +138,7 @@ class IaFreqDistAnalysis:
         report += "\t[INFO] Total number of interactions read: " + "{:,}".format(
             self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ']) + '\n'
         report += "\t[INFO] Broken down by interaction category and enrichment status: " + '\n'
-        for i_cat in ['DIX', 'DI', 'UIR', 'UI', 'ALL', ]:
+        for i_cat in ['UX', 'UR', 'BR', 'BX', 'ALL', ]:
             report += "\t\t[INFO] " + i_cat + ": " + '\n'
             for e_cat in ['NN', 'EE', 'NE', 'EN']:
                 report += "\t\t\t[INFO] " + e_cat + ": " + "{:,}".format(
@@ -221,7 +221,7 @@ class IaFreqDistAnalysis:
 
             self.rp_num_dict['CHROMOSOMES'].append(chrom)
             self.i_dist_dict['CHROMOSOMES'].append(chrom)
-            for i_cat in ['DIX', 'DI', 'UIR', 'UI', 'ALL']:
+            for i_cat in ['UX', 'UR', 'BR', 'BX', 'ALL']:
                 for e_cat in ['NN', 'NE', 'EN', 'EE']:
                     for d11_inter in self._grouped_interactions[chrom][i_cat][e_cat]:
                         self.rp_num_dict[i_cat][e_cat].append(d11_inter.rp_total)
@@ -254,11 +254,11 @@ class IaFreqDistAnalysis:
         """
 
         # Catch wrong input
-        allowed_i_cats = ['DIX', 'DI', 'UI', 'UIR', 'ALL']
+        allowed_i_cats = ['UX', 'UR', 'BX', 'BR', 'ALL']
         for i_cat in i_cats:
             if i_cat not in allowed_i_cats:
                 print(
-                    "[ERROR] Illegal interaction category tag! Allowed: 'DIX', 'DI', 'D_S', 'D_T', 'UI', 'UIR' and "
+                    "[ERROR] Illegal interaction category tag! Allowed: 'UX', 'UR', 'BX', 'BR' and "
                     "'ALL'")
                 return
 
@@ -433,7 +433,7 @@ class IaFreqDistAnalysis:
         interaction distance for different interaction categories and enrichment states.
 
         :param num_dict: A data structure that contains read pair numbers and distances for all interaction categories
-        :param i_cats: List of two interaction categories to be compared, e.g. ['DI', 'UIR']
+        :param i_cats: List of two interaction categories to be compared, e.g. ['UR', 'BR']
         :param e_cats: List of two enrichment categories to be compared, e.g. ['NE', 'EN']
         :param q_lim: Upper limit at quantile level
         :param perform_tests: If true, KS and Mann-Whitney U tests will be performed

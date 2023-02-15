@@ -20,25 +20,25 @@ class BaitedDigestSet:
         # Dictionary with information about ingestion of interactions
         self._ingest_interaction_set_info_dict = {
             'TOTAL_INTERACTIONS_READ': 0,
-            'DIX': {
+            'UX': {
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
                 'EE': 0
             },
-            'DI': {
+            'UR': {
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
                 'EE': 0
             },
-            'UIR': {
+            'BR': {
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
                 'EE': 0
             },
-            'UI': {
+            'BX': {
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
@@ -124,18 +124,18 @@ class BaitedDigestSet:
                    self._ingest_interaction_set_info_dict['ALL']['EN']
         report += "\t[INFO] Total number of ingested NE and EN interactions: " + "{:,}".format(ingested) + '\n'
         report += "\t[INFO] Broken down by interaction category and enrichment status: " + '\n'
-        report += "\t\t[INFO] DIX: " + '\n'
-        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DIX']['NE']) + '\n'
-        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DIX']['EN']) + '\n'
-        report += "\t\t[INFO] DI: " + '\n'
-        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI']['NE']) + '\n'
-        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['DI']['EN']) + '\n'
-        report += "\t\t[INFO] UIR: " + '\n'
-        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['UIR']['NE']) + '\n'
-        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['UIR']['EN']) + '\n'
-        report += "\t\t[INFO] UI: " + '\n'
-        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['UI']['NE']) + '\n'
-        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['UI']['EN']) + '\n'
+        report += "\t\t[INFO] UX: " + '\n'
+        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['UX']['NE']) + '\n'
+        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['UX']['EN']) + '\n'
+        report += "\t\t[INFO] UR: " + '\n'
+        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['UR']['NE']) + '\n'
+        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['UR']['EN']) + '\n'
+        report += "\t\t[INFO] BR: " + '\n'
+        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['BR']['NE']) + '\n'
+        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['BR']['EN']) + '\n'
+        report += "\t\t[INFO] BX: " + '\n'
+        report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['BX']['NE']) + '\n'
+        report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['BX']['EN']) + '\n'
         report += "\t\t[INFO] ALL: " + '\n'
         report += "\t\t\t[INFO] NE: " + "{:,}".format(self._ingest_interaction_set_info_dict['ALL']['NE']) + '\n'
         report += "\t\t\t[INFO] EN: " + "{:,}".format(self._ingest_interaction_set_info_dict['ALL']['EN']) + '\n'
@@ -157,17 +157,17 @@ class BaitedDigestSet:
         table_row += "DISCARDED" + '\t'
         table_row += "INGESTED" + '\t'
 
-        table_row += "DIX_NE" + '\t'
-        table_row += "DIX_EN" + '\t'
+        table_row += "UX_NE" + '\t'
+        table_row += "UX_EN" + '\t'
 
-        table_row += "DI_NE" + '\t'
-        table_row += "DI_EN" + '\t'
+        table_row += "UR_NE" + '\t'
+        table_row += "UR_EN" + '\t'
 
-        table_row += "UIR_NE" + '\t'
-        table_row += "UIR_EN" + '\t'
+        table_row += "BR_NE" + '\t'
+        table_row += "BR_EN" + '\t'
 
-        table_row += "UI_NE" + '\t'
-        table_row += "UI_EN" + '\t'
+        table_row += "BX_NE" + '\t'
+        table_row += "BX_EN" + '\t'
 
         table_row += "ALL_NE" + '\t'
         table_row += "ALL_EN" + '\t'
@@ -186,17 +186,17 @@ class BaitedDigestSet:
                    self._ingest_interaction_set_info_dict['ALL']['EN']
         table_row += str(ingested) + '\t'
 
-        table_row += str(self._ingest_interaction_set_info_dict['DIX']['NE']) + '\t'
-        table_row += str(self._ingest_interaction_set_info_dict['DIX']['EN']) + '\t'
+        table_row += str(self._ingest_interaction_set_info_dict['UX']['NE']) + '\t'
+        table_row += str(self._ingest_interaction_set_info_dict['UX']['EN']) + '\t'
 
-        table_row += str(self._ingest_interaction_set_info_dict['DI']['NE']) + '\t'
-        table_row += str(self._ingest_interaction_set_info_dict['DI']['EN']) + '\t'
+        table_row += str(self._ingest_interaction_set_info_dict['UR']['NE']) + '\t'
+        table_row += str(self._ingest_interaction_set_info_dict['UR']['EN']) + '\t'
 
-        table_row += str(self._ingest_interaction_set_info_dict['UIR']['NE']) + '\t'
-        table_row += str(self._ingest_interaction_set_info_dict['UIR']['EN']) + '\t'
+        table_row += str(self._ingest_interaction_set_info_dict['BR']['NE']) + '\t'
+        table_row += str(self._ingest_interaction_set_info_dict['BR']['EN']) + '\t'
 
-        table_row += str(self._ingest_interaction_set_info_dict['UI']['NE']) + '\t'
-        table_row += str(self._ingest_interaction_set_info_dict['UI']['EN']) + '\t'
+        table_row += str(self._ingest_interaction_set_info_dict['BX']['NE']) + '\t'
+        table_row += str(self._ingest_interaction_set_info_dict['BX']['EN']) + '\t'
 
         table_row += str(self._ingest_interaction_set_info_dict['ALL']['NE']) + '\t'
         table_row += str(self._ingest_interaction_set_info_dict['ALL']['EN']) + '\t'
@@ -272,8 +272,8 @@ class BaitedDigestSet:
             return 1
 
         # Prepare data structure for results
-        i_cats = ['DIX', 'DI', 'UIR', 'UI', 'ALL']
-        pair_dict = self.get_empty_pair_dict(['DIX', 'DI', 'UIR', 'UI', 'ALL'])
+        i_cats = ['UX', 'UR', 'BR', 'BX', 'ALL']
+        pair_dict = self.get_empty_pair_dict(['UX', 'UR', 'BR', 'BX', 'ALL'])
         pair_dict['BAIT_NUM_TOTAL'] = 0
         if number_pair_type == 'I_NUM':
             pair_dict['NUM_PAIR_TYPE'] = 'Interaction number'
@@ -560,12 +560,12 @@ class BaitedDigestSet:
         # Fill rectangular areas with content
         # -----------------------------------
 
-        # Adjust the bin size dynamically to DI and UIR
-        DI_UIR_MAX = max(max(pairs_dict['DI']['NE']),
-                         max(pairs_dict['DI']['EN']),
-                         max(pairs_dict['UIR']['NE']),
-                         max(pairs_dict['UIR']['EN']))
-        BIN_SIZE = int(np.ceil(DI_UIR_MAX / 100))
+        # Adjust the bin size dynamically to UR and BR
+        UR_BR_MAX = max(max(pairs_dict['UR']['NE']),
+                         max(pairs_dict['UR']['EN']),
+                         max(pairs_dict['BR']['NE']),
+                         max(pairs_dict['BR']['EN']))
+        BIN_SIZE = int(np.ceil(UR_BR_MAX / 100))
 
         # Get total number of baits and list of chromosomes for header
         BAITS_TOTAL = pairs_dict['BAIT_NUM_TOTAL']
@@ -590,7 +590,7 @@ class BaitedDigestSet:
             fig.text(0.045, 0.86, '[' + ", ".join(i for i in CHROMOSOMES[:22]) + ',', fontsize=8)
             fig.text(0.045, 0.84, ", ".join(i for i in CHROMOSOMES[22:]) + ']', fontsize=8)
 
-        # Unbalanced interactions (DI)
+        # Unbalanced interactions (UR)
         ax1_hx = plt.axes(r11)
         ax1_hx.tick_params(direction='in', labelbottom=False)
         ax1_hy = plt.axes(r8)
@@ -599,8 +599,8 @@ class BaitedDigestSet:
         ax1_s.tick_params(direction='in', top=True, right=True)
         self.create_single_pair_scatter_plot_with_histograms(
             i_cat_label='Unbalanced',
-            en_list=pairs_dict['DI']['EN'],
-            ne_list=pairs_dict['DI']['NE'],
+            en_list=pairs_dict['UR']['EN'],
+            ne_list=pairs_dict['UR']['NE'],
             x_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - EN',
             y_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - NE',
             i_cat_color='orange',
@@ -612,7 +612,7 @@ class BaitedDigestSet:
             ax_hy=ax1_hy,
             ax_s=ax1_s)
 
-        # Balanced reference interactions (UIR)
+        # Balanced reference interactions (BR)
         ax2_hx = plt.axes(r12)
         ax2_hx.tick_params(direction='in', labelbottom=False)
         ax2_hy = plt.axes(r10)
@@ -621,8 +621,8 @@ class BaitedDigestSet:
         ax2_s.tick_params(direction='in', top=True, right=True)
         self.create_single_pair_scatter_plot_with_histograms(
             i_cat_label='Balanced reference',
-            en_list=pairs_dict['UIR']['EN'],
-            ne_list=pairs_dict['UIR']['NE'],
+            en_list=pairs_dict['BR']['EN'],
+            ne_list=pairs_dict['BR']['NE'],
             x_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - EN',
             y_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - NE',
             i_cat_color='lightblue',
@@ -634,7 +634,7 @@ class BaitedDigestSet:
             ax_hy=ax2_hy,
             ax_s=ax2_s)
 
-        # Make axes for DI and UIR comparable
+        # Make axes for UR and BR comparable
         xy_max = int(max(ax1_s.get_xlim()[1], ax2_s.get_xlim()[1]))
         ticks, tick_labels = self.make_ticks(xy_max)
         # Scatterplots
@@ -658,8 +658,8 @@ class BaitedDigestSet:
 
         # Add text labels
         bait_num = 0
-        en_list = pairs_dict['DI']['EN']
-        ne_list = pairs_dict['DI']['NE']
+        en_list = pairs_dict['UR']['EN']
+        ne_list = pairs_dict['UR']['NE']
         i_num_en_total = 0
         i_num_ne_total = 0
         for i in range(0, len(en_list)):
@@ -690,8 +690,8 @@ class BaitedDigestSet:
         ax2_hy.set_ylim(ax1_s.get_ylim())
 
         bait_num = 0
-        en_list = pairs_dict['UIR']['EN']
-        ne_list = pairs_dict['UIR']['NE']
+        en_list = pairs_dict['BR']['EN']
+        ne_list = pairs_dict['BR']['NE']
         i_num_en_total = 0
         i_num_ne_total = 0
         for i in range(0, len(en_list)):
@@ -716,7 +716,7 @@ class BaitedDigestSet:
                     rotation=-90,
                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.85, boxstyle='round'))
 
-        # Unbalanced interactions without reference (DIX)
+        # Unbalanced interactions without reference (UX)
         ax3_hx = plt.axes(r5)
         ax3_hx.tick_params(direction='in', labelbottom=False)
         ax3_hy = plt.axes(r2)
@@ -725,8 +725,8 @@ class BaitedDigestSet:
         ax3_s.tick_params(direction='in', top=True, right=True)
         self.create_single_pair_scatter_plot_with_histograms(
             i_cat_label='Unbalanced without reference',
-            en_list=pairs_dict['DIX']['EN'],
-            ne_list=pairs_dict['DIX']['NE'],
+            en_list=pairs_dict['UX']['EN'],
+            ne_list=pairs_dict['UX']['NE'],
             x_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - EN',
             y_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - NE',
             i_cat_color='orangered',
@@ -738,7 +738,7 @@ class BaitedDigestSet:
             ax_s=ax3_s)
 
         if not plot_all_instead_of_ui:
-            # Balanced interactions (UI)
+            # Balanced interactions (BX)
             ax4_hx = plt.axes(r6)
             ax4_hx.tick_params(direction='in', labelbottom=False)
             ax4_hy = plt.axes(r4)
@@ -747,8 +747,8 @@ class BaitedDigestSet:
             ax4_s.tick_params(direction='in', top=True, right=True)
             self.create_single_pair_scatter_plot_with_histograms(
                 i_cat_label='Balanced',
-                en_list=pairs_dict['UI']['EN'],
-                ne_list=pairs_dict['UI']['NE'],
+                en_list=pairs_dict['BX']['EN'],
+                ne_list=pairs_dict['BX']['NE'],
                 x_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - EN',
                 y_lab=pairs_dict['NUM_PAIR_TYPE'] + ' - NE',
                 i_cat_color='gray',
@@ -816,27 +816,27 @@ class BaitedDigestSet:
 
         # Open streams for BED files
         bed_file_streams = {
-            'DI': [],
-            'UIR': [],
-            'UI': [],
+            'UR': [],
+            'BR': [],
+            'BX': [],
             'ALL': []
         }
         for i in range(0, 10):
             bed_stream = open(out_prefix + '_baited_interactions_' + str(i + 1) + '_di.bed', 'wt')
             bed_stream.write("track type=bed name=\"" + out_prefix + " Baited interactions " + str(i + 1) +
-                             " - DI" + "\" description=\"" + out_prefix + " Baited interactions " + str(i + 1) +
-                             " - DI" + "\" visibility=4 itemRgb=\"On\"" + '\n')
-            bed_file_streams['DI'].append(bed_stream)
+                             " - UR" + "\" description=\"" + out_prefix + " Baited interactions " + str(i + 1) +
+                             " - UR" + "\" visibility=4 itemRgb=\"On\"" + '\n')
+            bed_file_streams['UR'].append(bed_stream)
             bed_stream = open(out_prefix + '_baited_interactions_' + str(i + 1) + '_uir.bed', 'wt')
             bed_stream.write("track type=bed name=\"" + out_prefix + " Baited interactions " + str(i + 1) +
-                             " - UIR" + "\" description=\"" + out_prefix + " Baited interactions " + str(i + 1) +
-                             " - UIR" + "\" visibility=4 itemRgb=\"On\"" + '\n')
-            bed_file_streams['UIR'].append(bed_stream)
+                             " - BR" + "\" description=\"" + out_prefix + " Baited interactions " + str(i + 1) +
+                             " - BR" + "\" visibility=4 itemRgb=\"On\"" + '\n')
+            bed_file_streams['BR'].append(bed_stream)
             bed_stream = open(out_prefix + '_baited_interactions_' + str(i + 1) + '_ui.bed', 'wt')
             bed_stream.write("track type=bed name=\"" + out_prefix + " Baited interactions " + str(i + 1) +
-                             " - UI" + "\" description=\"" + out_prefix + " Baited interactions " + str(i + 1) +
-                             " - UI" + "\" visibility=4 itemRgb=\"On\"" + '\n')
-            bed_file_streams['UI'].append(bed_stream)
+                             " - BX" + "\" description=\"" + out_prefix + " Baited interactions " + str(i + 1) +
+                             " - BX" + "\" visibility=4 itemRgb=\"On\"" + '\n')
+            bed_file_streams['BX'].append(bed_stream)
             bed_stream = open(out_prefix + '_baited_interactions_' + str(i + 1) + '_all.bed', 'wt')
             bed_stream.write("track type=bed name=\"" + out_prefix + " Baited interactions " + str(i + 1) +
                              " - ALL" + "\" description=\"" + out_prefix + " Baited interactions " + str(i + 1) +
@@ -865,11 +865,11 @@ class BaitedDigestSet:
                 green_color = 355 - r_number_r - r_number_b
                 blue_color = r_number_b
                 strand = "+"
-                for d_inter in baited_digest.get_interactions_sorted_by_dist('DI', 'NE'):
+                for d_inter in baited_digest.get_interactions_sorted_by_dist('UR', 'NE'):
                     sta = str(d_inter.fromA)
                     end = str(d_inter.toB)
                     simple_twisted = str(d_inter.n_simple) + ':' + str(d_inter.n_twisted)
-                    bed_file_streams['DI'][bed_file_number].write(
+                    bed_file_streams['UR'][bed_file_number].write(
                         chrom + '\t' + sta + '\t' + end + '\t' + simple_twisted + "\t0\t" + strand + "\t" + sta + '\t' + end +
                         '\t' + str(red_color) + "," + str(green_color) + "," + str(blue_color) + '\n')
 
@@ -878,11 +878,11 @@ class BaitedDigestSet:
                 green_color = 355 - r_number_r - r_number_b
                 blue_color = r_number_r
                 strand = "+"
-                for d_inter in baited_digest.get_interactions_sorted_by_dist('DI', 'EN'):
+                for d_inter in baited_digest.get_interactions_sorted_by_dist('UR', 'EN'):
                     sta = str(d_inter.fromA)
                     end = str(d_inter.toB)
                     simple_twisted = str(d_inter.n_simple) + ':' + str(d_inter.n_twisted)
-                    bed_file_streams['DI'][bed_file_number].write(
+                    bed_file_streams['UR'][bed_file_number].write(
                         chrom + '\t' + sta + '\t' + end + '\t' + simple_twisted + "\t0\t" + strand + "\t" + sta + '\t' + end +
                         '\t' + str(red_color) + "," + str(green_color) + "," + str(blue_color) + '\n')
 
@@ -891,11 +891,11 @@ class BaitedDigestSet:
                 green_color = 355 - r_number_r - r_number_b
                 blue_color = r_number_b
                 strand = "+"
-                for d_inter in baited_digest.get_interactions_sorted_by_dist('UIR', 'NE'):
+                for d_inter in baited_digest.get_interactions_sorted_by_dist('BR', 'NE'):
                     sta = str(d_inter.fromA)
                     end = str(d_inter.toB)
                     simple_twisted = str(d_inter.n_simple) + ':' + str(d_inter.n_twisted)
-                    bed_file_streams['UIR'][bed_file_number].write(
+                    bed_file_streams['BR'][bed_file_number].write(
                         chrom + '\t' + sta + '\t' + end + '\t' + simple_twisted + "\t0\t" + strand + "\t" + sta + '\t' + end +
                         '\t' + str(red_color) + "," + str(green_color) + "," + str(blue_color) + '\n')
 
@@ -904,11 +904,11 @@ class BaitedDigestSet:
                 green_color = 355 - r_number_r - r_number_b
                 blue_color = r_number_r
                 strand = "+"
-                for d_inter in baited_digest.get_interactions_sorted_by_dist('UIR', 'EN'):
+                for d_inter in baited_digest.get_interactions_sorted_by_dist('BR', 'EN'):
                     sta = str(d_inter.fromA)
                     end = str(d_inter.toB)
                     simple_twisted = str(d_inter.n_simple) + ':' + str(d_inter.n_twisted)
-                    bed_file_streams['UIR'][bed_file_number].write(
+                    bed_file_streams['BR'][bed_file_number].write(
                         chrom + '\t' + sta + '\t' + end + '\t' + simple_twisted + "\t0\t" + strand + "\t" + sta + '\t' + end +
                         '\t' + str(red_color) + "," + str(green_color) + "," + str(blue_color) + '\n')
 
@@ -944,9 +944,9 @@ class BaitedDigestSet:
 
         # Close streams for BED files
         for i in range(0, 10):
-            bed_file_streams['DI'][i].close()
-            bed_file_streams['UIR'][i].close()
-            bed_file_streams['UI'][i].close()
+            bed_file_streams['UR'][i].close()
+            bed_file_streams['BR'][i].close()
+            bed_file_streams['BX'][i].close()
             bed_file_streams['ALL'][i].close()
 
     def get_baited_digest_keys_sorted_by_sta_pos(self):
