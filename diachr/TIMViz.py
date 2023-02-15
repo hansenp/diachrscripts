@@ -7,6 +7,10 @@ from descartes import PolygonPatch
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.diachromatic_interaction import DiachromaticInteraction
 from typing import List
+import warnings
+from shapely.errors import ShapelyDeprecationWarning
+warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+
 
 
 class TIMViz:
