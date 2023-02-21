@@ -17,6 +17,7 @@ $ pip install virtualenv
 
 Then change into the cloned directory, create a virtual environment and activate it:
 ```
+$ cd diachrscripts
 $ virtualenv dscripts
 $ source dscripts/bin/activate
 ```
@@ -25,6 +26,7 @@ Install all required packages into this environment:
 ```
 (dscripts)$ pip install -r requirements.txt
 ```
+This may take a few minutes to complete.
 
 ## Jupyter notebooks
 

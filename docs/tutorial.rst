@@ -339,11 +339,11 @@ There are four interaction categories:
 +-----------+--------------------------------------------------------------+
 | Category  | Meaning                                                      |
 +===========+==============================================================+
-| ``UX``   | Unbalanced interaction without reference interaction         |
+| ``UX``    | Unbalanced interaction without reference interaction         |
 +-----------+--------------------------------------------------------------+
 | ``UR``    | Unbalanced interaction with reference interaction            |
 +-----------+--------------------------------------------------------------+
-| ``BR``   | Balanced interaction selected as reference interaction       |
+| ``BR``    | Balanced interaction selected as reference interaction       |
 +-----------+--------------------------------------------------------------+
 | ``BX``    | Balanced interaction not selected as reference interaction   |
 +-----------+--------------------------------------------------------------+

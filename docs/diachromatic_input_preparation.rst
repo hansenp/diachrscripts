@@ -64,7 +64,7 @@ In Diachromatic interaction files, an ``E`` corresponds to a ``T`` and an ``N`` 
 
 .. code-block:: console
 
-    chr11    9641153    9642657   E   chr11   47259263   47272706   N   5:4
+    chr11    9641153    9642657   E   chr11   47259263   47272706   N   5:4:2:7
 
 Selecting enriched digests
 ==========================
@@ -220,17 +220,17 @@ We have added the file ``javierre_baited_digests_hg38.bed`` to this repository s
 if needed. For the files ``javierre_baited_digests_hg38.bed`` and ``mifsud_baited_digests_hg38.bed``,
 22,008 baited digests overlap.
 
-Schoenefelder et al. 2015
--------------------------
+Schoenfelder et al. 2015
+------------------------
 
 Supplementary Table 1 of the work published by
-`Schoenefelder et al. 2015 <https://pubmed.ncbi.nlm.nih.gov/25752748/>`__
+`Schoenfelder et al. 2015 <https://pubmed.ncbi.nlm.nih.gov/25752748/>`__
 contains the coordinates and sequences of the baits used.
 Save this table in text format and extract the coordinates.
 
 .. code-block:: console
 
-    $ tail -n+2 SuppTable1.txt | awk '{print $1"\t"$2-1"\t"$3}' > schoenefelder_baits_mm9.bed
+    $ tail -n+2 SuppTable1.txt | awk '{print $1"\t"$2-1"\t"$3}' > schoenfelder_baits_mm9.bed
 
 Use
 `UCSC's LiftOver tool <https://genome.ucsc.edu/cgi-bin/hgLiftOver>`_
@@ -238,7 +238,7 @@ to convert the coordinates from ``mm9`` to ``mm10``.
 Deselect ``Allow multiple output regions``.
 39,019 bait coordinates were successfully converted to ``mm10``.
 The conversion failed for the coordinates of 2 baits because the corresponding regions in ``mm10`` are  deleted.
-We save the BED file with the converted coordinates as ``schoenefelder_baits_mm10.bed``.
+We save the BED file with the converted coordinates as ``schoenfelder_baits_mm10.bed``.
 
 Next, extract the coordinates of all digests in the genome from the digest file template and write them to a BED file:
 
@@ -253,21 +253,21 @@ to extract all digests that contain at least one bait completely:
 
 .. code-block:: console
 
-    $ intersectBed -wa -u -F 1.00 -a all_mm10_HindIII_digests.bed -b schoenefelder_baits_mm10.bed \
-    > schoenefelder_baited_digests_mm10.bed
+    $ intersectBed -wa -u -F 1.00 -a all_mm10_HindIII_digests.bed -b schoenfelder_baits_mm10.bed \
+    > schoenfelder_baited_digests_mm10.bed
 
 This results in 22,224 baited digests.
 
-Finally, use our script to create a digest file in which digests that Schoenefelder et al. have selected for enrichment
+Finally, use our script to create a digest file in which digests that Schoenfelder et al. have selected for enrichment
 are marked with a ``T`` and all others with an ``F``.
 
 .. code-block:: console
 
     $ python diachrscripts/additional_scripts/ed_selector.py \
-        --enriched-digests-file schoenefelder_baited_digests_mm10.bed \
+        --enriched-digests-file schoenfelder_baited_digests_mm10.bed \
         --diachromatic-digest-file \
             diachrscripts/additional_files/template_digest_file_mm10_HindIII.txt \
-        --out-prefix schoenefelder_mm10_HindIII
+        --out-prefix schoenfelder_mm10_HindIII
 
-This will produce the file ``schoenefelder_mm10_HindIII_diachromatic_digest_file.txt`` that can be used as input for
+This will produce the file ``schoenfelder_mm10_HindIII_diachromatic_digest_file.txt`` that can be used as input for
 Diachromatic.
