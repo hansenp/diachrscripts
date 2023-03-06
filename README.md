@@ -21,6 +21,10 @@ $ cd diachrscripts
 $ virtualenv dscripts
 $ source dscripts/bin/activate
 ```
+We use the Python package `pybedtools`,
+which requires BedTools to be installed and available through the `$PATH` variable. 
+To install BedTools follow
+[these instructions](https://bedtools.readthedocs.io/en/latest/content/installation.html).
 
 Install all required packages into this environment:
 ```
