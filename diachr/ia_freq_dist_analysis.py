@@ -32,7 +32,8 @@ class IaFreqDistAnalysis:
             'NN',
             'NE',
             'EN',
-            'EE']
+            'EE',
+            'ALL']
 
         # Dictionary that contains ingested interaction grouped by chromosomes
         self._grouped_interactions = defaultdict()
@@ -44,31 +45,36 @@ class IaFreqDistAnalysis:
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
-                'EE': 0
+                'EE': 0,
+                'ALL': 0
             },
             'UR': {
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
-                'EE': 0
+                'EE': 0,
+                'ALL': 0
             },
             'BR': {
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
-                'EE': 0
+                'EE': 0,
+                'ALL': 0
             },
             'BX': {
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
-                'EE': 0
+                'EE': 0,
+                'ALL': 0
             },
             'ALL': {
                 'NN': 0,
                 'NE': 0,
                 'EN': 0,
-                'EE': 0
+                'EE': 0,
+                'ALL': 0
             }
         }
 
@@ -108,6 +114,8 @@ class IaFreqDistAnalysis:
             # Count interaction type
             self._ingest_interaction_set_info_dict[i_cat_type][e_cat_type] += 1
             self._ingest_interaction_set_info_dict['ALL'][e_cat_type] += 1
+            self._ingest_interaction_set_info_dict[i_cat_type]['ALL'] += 1
+            self._ingest_interaction_set_info_dict['ALL']['ALL'] += 1
 
             # Create a new dictionary for this chromosome, if this is the first interaction seen on this chromosome
             if d11_inter.chrA not in self._grouped_interactions:
@@ -120,6 +128,8 @@ class IaFreqDistAnalysis:
             # Add interaction to grouped interactions
             self._grouped_interactions[chrom][i_cat_type][e_cat_type].append(d11_inter)
             self._grouped_interactions[chrom]['ALL'][e_cat_type].append(d11_inter)
+            self._grouped_interactions[chrom][i_cat_type]['ALL'].append(d11_inter)
+            self._grouped_interactions[chrom]['ALL']['ALL'].append(d11_inter)
 
         if verbose:
             print("\t[INFO] Total number of interactions read: " + "{:,}".format(
@@ -138,9 +148,9 @@ class IaFreqDistAnalysis:
         report += "\t[INFO] Total number of interactions read: " + "{:,}".format(
             self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ']) + '\n'
         report += "\t[INFO] Broken down by interaction category and enrichment status: " + '\n'
-        for i_cat in ['UX', 'UR', 'BR', 'BX', 'ALL', ]:
+        for i_cat in ['UX', 'UR', 'BR', 'BX', 'ALL']:
             report += "\t\t[INFO] " + i_cat + ": " + '\n'
-            for e_cat in ['NN', 'EE', 'NE', 'EN']:
+            for e_cat in ['NN', 'EE', 'NE', 'EN', 'ALL']:
                 report += "\t\t\t[INFO] " + e_cat + ": " + "{:,}".format(
                     self._ingest_interaction_set_info_dict[i_cat][e_cat]) + '\n'
         report += "[INFO] End of report." + '\n'
@@ -222,7 +232,7 @@ class IaFreqDistAnalysis:
             self.rp_num_dict['CHROMOSOMES'].append(chrom)
             self.i_dist_dict['CHROMOSOMES'].append(chrom)
             for i_cat in ['UX', 'UR', 'BR', 'BX', 'ALL']:
-                for e_cat in ['NN', 'NE', 'EN', 'EE']:
+                for e_cat in ['NN', 'NE', 'EN', 'EE', 'ALL']:
                     for d11_inter in self._grouped_interactions[chrom][i_cat][e_cat]:
                         self.rp_num_dict[i_cat][e_cat].append(d11_inter.rp_total)
                         self.i_dist_dict[i_cat][e_cat].append(d11_inter.i_dist)
@@ -262,10 +272,10 @@ class IaFreqDistAnalysis:
                     "'ALL'")
                 return
 
-        allowed_e_cats = ['NN', 'NE', 'EN', 'EE']
+        allowed_e_cats = ['NN', 'NE', 'EN', 'EE', 'ALL']
         for e_cat in e_cats:
             if e_cat not in allowed_e_cats:
-                print("[ERROR] Illegal interaction enrichment tag! Allowed: 'NN', 'NE', 'EN', 'EE'")
+                print("[ERROR] Illegal interaction enrichment tag! Allowed: 'NN', 'NE', 'EN', 'EE', 'ALL'")
                 return
 
         # Prepare grid for individual plots

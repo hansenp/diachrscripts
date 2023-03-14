@@ -35,8 +35,11 @@ class UnbaitedFragmentAnalysis:
         elif test == 'RKS':
             print('\t' + str(stats.ranksums(b_list, u_list, alternative='two-sided')))
             print('\t' + str(stats.ranksums(u_list, b_list, alternative='two-sided')))
+        elif test == 'SRKS':
+            print('\t' + str(stats.wilcoxon(b_list, alternative='two-sided')))
+            print('\t' + str(stats.wilcoxon(u_list, alternative='two-sided')))
         else:
-            print('[ERROR] \'test\' must be \'MWU\' or \'RKS\'!')
+            print('[ERROR] \'test\' must be \'MWU\', \'RKS\' or \'SRKS\'!')
 
     @staticmethod
     def create_boxplots(
