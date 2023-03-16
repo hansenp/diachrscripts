@@ -10,6 +10,12 @@ First you need to clone this repository with:
 $ git clone https://github.com/TheJacksonLaboratory/diachrscripts.git
 ```
 
+Make sure you're using Python 3.8 or higher.
+```
+python --version
+```
+
+
 If `virtualenv` is not installed on your system, install it with:
 ```
 $ pip install virtualenv
@@ -31,6 +37,9 @@ Install all required packages into this environment:
 (dscripts)$ pip install -r requirements.txt
 ```
 This may take a few minutes to complete.
+Depending on your Python installation,
+you may get an error message saying that `Python.h` is missing.
+In this case, install `python-devel` and execute the last command again.
 
 ## Jupyter notebooks
 

@@ -14,16 +14,16 @@ warnings.filterwarnings('always')
 
 class DiachromaticInteractionSet:
     """
-    This class can read interactions from one ore more Diachromatic interaction files and perform the following
+    This class can read interactions from one or more Diachromatic interaction files and perform the following
     operations on them:
 
-        1. Calculation of P-values and classification into unbalanced and balanced
-        2. Selection of two reference interaction sets, one for balanced and one for unbalanced
-        3. Writing interactions that occur in a required number of input files to a new file
+        1. Calculation of binomial P-values and classification into unbalanced and balanced interactions.
+        2. Selection of two reference interaction sets, one for balanced and one for unbalanced interactions.
+        3. Writing interactions occurring in a required number of input files into a new interaction file.
 
-    If interactions have been evaluated and categorized (1,2), the output format is expanded by two columns on the left.
-    Column 10 contains the negative of the natural logarithm of the P-value and column 11 the interaction category
-    (UX, UR, BX or BR).
+    After interactions have been evaluated and categorized (1,2), the output format is expanded by two columns
+    (Diachromatic11 format). Column 10 contains the negative decadic logarithm of the P-values and column 11 the
+    interaction categories (UX, UR, BX or BR).
     """
 
     def __init__(self, enriched_digests_file: str = None, rpc_rule: str = 'ht'):
@@ -254,18 +254,18 @@ class DiachromaticInteractionSet:
 
     def evaluate_and_categorize_interactions(self, pval_thresh: float = None, verbose: bool = False):
         """
-        Calculate the P-value and define interaction category ('U' or 'B') for all interactions in this object.
-        'DiachromaticInteraction' objects will be replaced by 'DiachromaticInteraction11' objects.
+        This function calculates the P-value for each interaction and classifies it as either unbalanced ('U') or
+        balanced ('B'). DiachromaticInteraction objects will be replaced by DiachromaticInteraction11objects.
 
-        :param pval_thresh: Interactions with a lower P-value will be classified as significant
+        :param pval_thresh: Interactions with a lower P-value will be classified as unbalanced
         :param verbose:  If true, messages about progress will be written to the screen
-        :return: Dictionary with information on processing.
+        :return: Dictionary with information on processing
         """
 
         # Check whether an equal or smaller P-value threshold was used before
         if self._smallest_pval_thresh <= pval_thresh:
             warnings.warn(
-                "This interaction set has previously categorized using an equal or smaller threshold value!" + '\n'
+                "This interaction set has previously been categorized using an equal or smaller threshold value!" + '\n'
                                                                                                                "Nothing is done. Interaction set remains unchanged.")
             return self._eval_cat_info_dict
         else:
@@ -353,14 +353,12 @@ class DiachromaticInteractionSet:
 
     def select_reference_interactions(self, selection_rule: str = "RPNUM", verbose: bool = False):
         """
-        Select balanced reference interactions that match unbalanced interactions in terms of enrichment category and total number
-        of read pairs per interaction and return a dictionary with information on this selection process.
+        For each of the enrichment categories NN, NE+EN and EE, this function selects two comparison sets from unbalanced
+        (UR) and balanced interactions (BR) that have identical (NN and EE) or almost identical (NE+EN) distributions of
+        the total read pair counts per interaction. Interactions that do not belong to the comparison sets are assigned to
+        the interaction categories UX or BX.
 
-        The difference to the original version is that it is not distinguished between NE and EN.
-        Furthermore, an additional category UX for U interactions without counterpart in reference interactions
-        is introduced.
-
-        :return: Dictionary with interaction numbers in different categories
+        :return: Dictionary with interaction counts for different categories and enrichment states
         """
 
         if verbose:
@@ -527,12 +525,11 @@ class DiachromaticInteractionSet:
     def write_diachromatic_interaction_file(self, required_replicates: int = 1, target_file: str = None,
                                             verbose: bool = False):
         """
-        Write interactions that occur in a specified minimum number of replicates to a file and return a dictionary
-        with information on this writing process.
+        Write interactions that occur in a required number of input files to a new interaction file.
 
-        :param required_replicates: Minimum number of replicates
-        :param target_file_name: Generated file with interactions that occur in the required number of replicates
-        :return: Dictionary with information on this writing process
+        :param required_replicates: Required number of input files
+        :param target_file: New interaction file
+        :return: Dictionary with logging information
         """
 
         if verbose:
@@ -903,52 +900,3 @@ class DiachromaticInteractionSet:
     @property
     def interaction_dict(self):
         return self._inter_dict
-
-    def get_num_of_inter_with_as_many_or_more_read_pairs(self, min_rp_num: int = None):
-        """
-        Determine the number of interactions that have a given number of more read pairs.
-
-        :param min_rp_num: Minimum number of read pairs
-        :return: Number of interactions with given number or more read pairs
-        """
-        i_num = 0
-        for d_inter in self.interaction_list:
-            if min_rp_num <= d_inter.rp_total:
-                i_num += 1
-        return i_num
-
-    def sort_and_select_top_n_interactions(self, sort_by: str = 'RPNUM', top_n: int = 100000):
-
-        # Get list of interactions
-        interaction_list = list(self._inter_dict.values())
-
-        if len(interaction_list) < top_n:
-            print('[ERROR] Invalid \'top_n\' parameter! Must be less then the total number of interactions, ' + \
-                  'which is ' + '{:,}'.format(len(interaction_list)) + '.')
-
-        # Get list of interaction indices
-        idx_list = list(range(0, len(interaction_list)))
-
-        # Get RPNUM or RPMAX list
-        if sort_by == 'RPNUM':
-            rp_list = [d_inter.rp_total for d_inter in interaction_list]
-        elif sort_by == 'RPMAX':
-            rp_list = [max(d_inter._simple_1, d_inter._simple_2, d_inter._twisted_1, d_inter._twisted_2) \
-                       for d_inter in interaction_list]
-        elif sort_by == 'RPMAX2':
-            rp_list = [max(d_inter._twisted_1, d_inter._twisted_2) \
-                       for d_inter in interaction_list]
-        else:
-            print('[ERROR] Invalid \'sort_by\' parameter! Must be \'RPNUM\' or \'RPMAX\'')
-
-        # Sort interaction indices by read pair number
-        sorted_idx = [i for _, i in sorted(zip(rp_list, idx_list), reverse=True)]
-
-        # Select indices of the top n interactions
-        sorted_idx = sorted_idx[0:top_n]
-
-        # Create and return new interaction set with top n interactions
-        return_interaction_set = DiachromaticInteractionSet()
-        for idx in sorted_idx:
-            return_interaction_set._inter_dict[interaction_list[idx].key] = interaction_list[idx]
-        return return_interaction_set

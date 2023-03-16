@@ -86,18 +86,18 @@ class IaFreqDistAnalysis:
 
     def ingest_interaction_set(self, d11_inter_set: DiachromaticInteractionSet, verbose: bool = False):
         """
-        Ingests interactions from a 'DiachromaticInteractionSet' and groups them by chromosomes as well as interaction
-        and enrichment category.
+        Ingests interactions from a DiachromaticInteractionSet and groups them by chromosomes, interaction categories
+        and enrichment states.
 
         :param d11_inter_set: DiachromaticInteractionSet with DiachromaticInteraction11 interactions
-        :param verbose: If true, progress information will be displayed
-        :return: Dictionary containing information about ingested  interactions
+        :param verbose: If true, progress information will be written to the screen
+        :return: Dictionary containing logging information
         """
 
         if verbose:
             print(
-                "[INFO] Reading interactions and group them according to chromosomes, interaction and enrichment "
-                "category ...")
+                "[INFO] Reading interactions and group them according to chromosomes, interaction category and "
+                "enrichment state  ...")
 
         for d11_inter in d11_inter_set.interaction_list:
             self._ingest_interaction_set_info_dict['TOTAL_INTERACTIONS_READ'] += 1

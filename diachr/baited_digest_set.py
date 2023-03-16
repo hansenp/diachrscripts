@@ -10,6 +10,46 @@ def histogram_tick_format_func(value, tick_number):
     return '%.2f'.format(value)
 
 
+def get_empty_pair_dict(i_cats: list = None,
+                        i_cat_colors: list = None,
+                        i_cat_names: list = None):
+    """
+    This function initializes a data structure that can be filled with interaction numbers, read pair
+    numbers or median interaction distances.
+
+    The data structure consists of a dictionary with further sub-dictionaries. At the top level there are four
+    dictionaries, one for each interaction category. In the level below, there are two lists for each category,
+    one for NE and one for EN.
+
+    In addition to the lists with the pairs, there is a list with chromosomes that were taken into account.
+
+    When number pairs are stored in this data structure, for a given interaction category, two list elements with
+    the same index should form a pair. In this case, the lists for NE and EN are the same length for each
+    interaction category.
+
+    The data structure can be filled with number pairs using the following functions 'get_*_pairs_at_baits()' and a
+    filled 'pair_dict' can be plotted using the function 'get_pair_scatter_plots_with_histograms()'.
+
+    :return: A dictionary containing lists of numbers for the various interaction and enrichment categories and
+    a list of chromosomes that were taken into account.
+    """
+
+    pair_dict = dict()
+
+    e_cats = ['NE', 'EN']
+    for i in range(len(i_cats)):
+        pair_dict[i_cats[i]] = dict()
+        for e_cat in e_cats:
+            pair_dict[i_cats[i]][e_cat] = []
+        if i_cat_names is not None:
+            pair_dict[i_cats[i]]['NAME'] = i_cat_names[i]
+        if i_cat_colors is not None:
+            pair_dict[i_cats[i]]['COLOR'] = i_cat_colors[i]
+    pair_dict['CHROMOSOMES'] = []
+
+    return pair_dict
+
+
 class BaitedDigestSet:
 
     def __init__(self):
@@ -205,47 +245,7 @@ class BaitedDigestSet:
 
         return table_row
 
-    def get_empty_pair_dict(self,
-                            i_cats: list = None,
-                            i_cat_colors: list = None,
-                            i_cat_names: list = None):
-        """
-        This function initializes a data structure that can be filled with interaction numbers, read pair
-        numbers or median interaction distances.
-
-        The data structure consists of a dictionary with further sub-dictionaries. At the top level there are four
-        dictionaries, one for each interaction category. In the level below, there are two lists for each category,
-        one for NE and one for EN.
-
-        In addition to the lists with the pairs, there is a list with chromosomes that were taken into account.
-
-        When number pairs are stored in this data structure, for a given interaction category, two list elements with
-        the same index should form a pair. In this case, the lists for NE and EN are the same length for each
-        interaction category.
-
-        The data structure can be filled with number pairs using the following functions 'get_*_pairs_at_baits()' and a
-        filled 'pair_dict' can be plotted using the function 'get_pair_scatter_plots_with_histograms()'.
-
-        :return: A dictionary containing lists of numbers for the various interaction aand enrichment categories and
-        a list of chromosomes that were taken into account.
-        """
-
-        pair_dict = dict()
-
-        e_cats = ['NE', 'EN']
-        for i in range(len(i_cats)):
-            pair_dict[i_cats[i]] = dict()
-            for e_cat in e_cats:
-                pair_dict[i_cats[i]][e_cat] = []
-            if i_cat_names is not None:
-                pair_dict[i_cats[i]]['NAME'] = i_cat_names[i]
-            if i_cat_colors is not None:
-                pair_dict[i_cats[i]]['COLOR'] = i_cat_colors[i]
-        pair_dict['CHROMOSOMES'] = []
-
-        return pair_dict
-
-    # Number PAIRS AT BAITS
+    # The code below is deprecated and not used at the moment
 
     def get_number_pairs_at_baits(self,
                                   number_pair_type: str = None,
@@ -273,7 +273,7 @@ class BaitedDigestSet:
 
         # Prepare data structure for results
         i_cats = ['UX', 'UR', 'BR', 'BX', 'ALL']
-        pair_dict = self.get_empty_pair_dict(['UX', 'UR', 'BR', 'BX', 'ALL'])
+        pair_dict = get_empty_pair_dict(['UX', 'UR', 'BR', 'BX', 'ALL'])
         pair_dict['BAIT_NUM_TOTAL'] = 0
         if number_pair_type == 'I_NUM':
             pair_dict['NUM_PAIR_TYPE'] = 'Interaction number'
@@ -810,7 +810,6 @@ class BaitedDigestSet:
         return fig
 
     ############################
-
 
     def write_bed_files_with_baited_interactions(self, out_prefix: str = 'OUT_PREFIX', chromosomes: [str] = None):
 

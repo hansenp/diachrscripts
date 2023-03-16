@@ -23,6 +23,7 @@ from numpy import append, arange, log10
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.randomize_interaction_set import RandomizeInteractionSet
 
+
 # Parse command line
 ####################
 

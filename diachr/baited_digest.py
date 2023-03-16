@@ -4,10 +4,9 @@ import numpy as np
 
 class BaitedDigest:
     """
-    Objects of this class are used to group interactions interactions that end in the same bait. Interactions are broken
-    down by category and direction as seen from the bait. For the interaction categories unbalanced (UR), balanced
-    reference (BR), balanced (BX) and all interactions (ALL) there are two lists of interactions each, one with
-    interactions from the bait to the left (NE) and one with interactions from the bait to the right (EN).
+    This class can be used to group interactions by baited fragments (digest), interaction categories, and enrichment
+    states. An object of this class typically contains all NE and EN interactions that are associated with a given
+    baited fragment. NN or EE interactions cannot be assigned to this class.
     """
 
     # Dictionary with lists of interactions at this baited digests

@@ -1,26 +1,19 @@
 from scipy.stats import binom
-from numpy import exp, inf, log, logaddexp
+from numpy import inf, log, logaddexp
 import time
 
 
 class BinomialModel:
     """
-    In this class, interactions are statistically evaluated in terms of directionality. The main task of this class
-    is the calculation and storage of P-values. To save time, P-values that have already been calculated for given
-    pairs of simple and twisted read pair counts are saved in a dictionary to save time.
-
-    There is a function under development further down in this class. This function is fast and could therefore be
-    used to calculate all P-values in advance. In addition, this function does not require a probability of success
-    of 0.5, but any probabilities can be selected.
+    In this class, interactions are statistically evaluated with respect to imbalances in their read pair counts. To
+    save time, P-values for given pairs of counts (the two highest vs. the two others) are stored in a dictionary so
+    they only need to be computed once.
     """
 
     def __init__(self, two_sided: bool = True) -> None:
 
         # Perform two-sided or one-sided tests
         self._two_sided = two_sided
-
-        # Background frequency of simple read pairs
-        self._prob_simple = 0.5
 
         # Dictionary for already calculated P-values
         self._pval_dict = {}
@@ -31,14 +24,14 @@ class BinomialModel:
 
     def get_binomial_log10_p_value(self, n_simple, n_twisted):
         """
-        This function returns already calculated P-values from the dictionary or,
-        if the P-value has not yet been calculated, a function is called to
-        calculate the P-value. This P-value is then added to the dictionary and returned.
+        Given a pair of counts, this function returns the negative decadic logarithm of the binomial P-value. If an
+        identical pair of counts has been seen before, then the P-value is retrieved from the dictionary. Otherwise,
+        the P-value is calculated, added to the dictionary, and returned.
 
-        :return: The negative of the decadic logarithm of the P-value
+        :return: Negative decadic logarithm of the binomial P-value
         """
 
-        # Create key from simple and twisted read pair counts
+        # Create key for pair of counts
         key = "{}-{}".format(n_simple, n_twisted)
 
         if key not in self._pval_dict:
@@ -48,22 +41,20 @@ class BinomialModel:
 
     def get_binomial_p_value(self, n_simple, n_twisted):
         """
-        :param n_simple: Number of simple read pairs
-        :param n_twisted: Number of simple read pairs
-        :return: P-value of a two-sided test for directionality
+        :param n_simple: Number of simple read pairs (or the two highest counts)
+        :param n_twisted: Number of simple read pairs (or the two counts that are not the highest)
+        :return: P-value
         """
         return 10 ** -self.get_binomial_log10_p_value(n_simple, n_twisted)
 
     def _calculate_binomial_log10_p_value(self, n_simple, n_twisted):
         """
-        This function calculates the decadic logarithm of a P-value from a two-sided test and returns the negative
-        of it. We assume a background frequency of 0.5 for simple and twisted read pairs. Therefore, the distribution
-        is symmetrical and we return twice the P-value from a one-sided test as the P-value for a two-sided test.
-        For P-values that are too small to be represented, we return -inf.
+        For a given pair of counts, this function calculates the negative decadic logarithm of the P-value from a one-
+        or two-sided binomial test. For P-values that are too small to be represented, 'inf' is returned.
 
-        :param n_simple: Number of simple read pairs
-        :param n_twisted: Number of twisted read pairs
-        :return: The negative of the decadic logarithm of the P-value
+        :param n_simple: Number of simple read pairs (or the two highest counts)
+        :param n_twisted: Number of twisted read pairs (or the two counts that are not the highest)
+        :return: The negative of the decadic logarithm of the binomial P-value
         """
         try:
             if n_simple == n_twisted:
@@ -85,12 +76,12 @@ class BinomialModel:
 
     def find_smallest_significant_n(self, p_val_thresh: float = 0.01, verbose: bool = False):
         """
-        This function finds the smallest number of read pairs that gives a significant P-value at a chosen threshold.
-        A tuple consisting of this smallest number and the associated largest significant P-value is returned.
+        This function finds the smallest total number of read pairs that gives a significant P-value at a chosen
+        threshold (classifiable interactions).
 
         :param p_val_thresh: P-value threshold
         :param verbose: If true, messages about progress will be written to the screen
-        :return: (Smallest number of read pairs, Associated P-value):
+        :return: (Smallest total number of read pairs, Associated P-value):
         """
 
         if verbose:
