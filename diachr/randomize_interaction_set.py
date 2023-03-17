@@ -128,33 +128,32 @@ class RandomizeInteractionSet:
             iter_start_idx = 0
             sig_num_r_list_of_lists = self._perform_n_iterations(iter_start_idx, iter_num, log10_nominal_alphas, verbose)
         else:
+            # Perform permutation for 'thread_num' batches
+            with mp.get_context('fork').Pool(processes=thread_num) as pool:
 
-            # Perform permutation for 'thread_num' batches with balanced numbers of iterations
-            pool = mp.Pool(processes=thread_num)
+                # Divide iterations into 'thread_num' batches of equal size
+                batch_iter_nums = list(itertools.repeat(int(iter_num / thread_num), thread_num))
+                if 0 < iter_num - thread_num * int(iter_num / thread_num):
+                    # If there is a remainder, add it to the first element of list
+                    batch_iter_nums[0] = batch_iter_nums[0] + iter_num - thread_num * int(iter_num / thread_num)
 
-            # Divide iterations into 'thread_num' batches of equal size
-            batch_iter_nums = list(itertools.repeat(int(iter_num / thread_num), thread_num))
-            if 0 < iter_num - thread_num * int(iter_num / thread_num):
-                # If there is a remainder, add it to the first element of list
-                batch_iter_nums[0] = batch_iter_nums[0] + iter_num - thread_num * int(iter_num / thread_num)
+                # Process batches in a separate process
+                results = []
+                iter_start_idx = 0
+                for batch_iter_num in batch_iter_nums:
+                    result = pool.apply_async(self._perform_n_iterations, args=(iter_start_idx, iter_start_idx + batch_iter_num, log10_nominal_alphas, verbose))
+                    results.append(result)
+                    iter_start_idx += batch_iter_num
 
-            # Process batches in a separate process
-            results = []
-            iter_start_idx = 0
-            for batch_iter_num in batch_iter_nums:
-                result = pool.apply_async(self._perform_n_iterations, args=(iter_start_idx, iter_start_idx + batch_iter_num, log10_nominal_alphas, verbose))
-                results.append(result)
-                iter_start_idx += batch_iter_num
+                # Wait until all processes are finished
+                [result.wait() for result in results]
 
-            # Wait until all processes are finished
-            [result.wait() for result in results]
+                # Combine results from different processes
+                batch_results = [p.get() for p in results]
+                sig_num_r_list_of_lists = list(itertools.chain.from_iterable(batch_results))
 
-            # Combine results from different processes
-            batch_results = [p.get() for p in results]
-            sig_num_r_list_of_lists = list(itertools.chain.from_iterable(batch_results))
-
-            # Shut down the pool
-            pool.close()
+                # Shut down the pool
+                pool.close()
 
         if verbose:
             print("\t[INFO] Combining results from all iterations for different nominal alphas ...")

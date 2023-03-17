@@ -19,6 +19,7 @@ The usage of UICer is demonstrated in the following Jupyter notebook:
 """
 
 import argparse
+from sys import platform, exit
 from numpy import append, arange, log10
 from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 from diachr.randomize_interaction_set import RandomizeInteractionSet
@@ -132,6 +133,11 @@ else:
 if enriched_digests_file is not None:
     parameter_info += "\t[INFO] --enriched-digests-file: " + enriched_digests_file
 print(parameter_info)
+
+if 0 < thread_num and not (platform.startswith('darwin') or platform.startswith('linux')):
+    print("[ERROR] Platform: " + platform)
+    print("[ERROR] Multiprocessing is only supported on Mac ('darwin') and Linux ('linux') machines.")
+    exit(1)
 
 # Perform analysis
 ##################
