@@ -1,6 +1,6 @@
 # diachrscripts
 
-This is a collection of Python (3.8) modules, scripts and Jupyter notebooks that can be used to investigate
+This is a collection of Python modules, scripts and Jupyter notebooks that can be used to investigate
 Diachromatic interactions in terms of the four counts for the different orientations of mapped paired-end reads.
 
 ## Setup
@@ -10,21 +10,16 @@ First you need to clone this repository with:
 $ git clone https://github.com/TheJacksonLaboratory/diachrscripts.git
 ```
 
-Make sure you're using Python 3.8 or higher.
+Check which Python version you are using:
 ```
 python --version
 ```
-
-
-If `virtualenv` is not installed on your system, install it with:
-```
-$ pip install virtualenv
-```
+We tested Python versions `3.7`, `3.8` and `3.9` on macOS.
 
 Then change into the cloned directory, create a virtual environment and activate it:
 ```
 $ cd diachrscripts
-$ virtualenv dscripts
+$ python -m venv dscripts
 $ source dscripts/bin/activate
 ```
 We use the Python package `pybedtools`,
