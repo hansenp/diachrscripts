@@ -27,6 +27,7 @@ class BaitAnalysis:
             bfc0_bed_file: str = None,
             bfc1_bed_file: str = None,
             bfc2_bed_file: str = None,
+            overlap_fraction: float = 1.00,
             verbose: bool = False):
         """
         Creates a dictionary from which, given the coordinates of a baited fragment, the coordinates of the associated
@@ -46,7 +47,7 @@ class BaitAnalysis:
         # The option 'F=1.00' causes an overlap to be reported only if a bait is completely contained in the digest.
         bait_bt_file = pybedtools.BedTool(bait_bed_file)
         baited_fragment_bt_file = pybedtools.BedTool(baited_fragment_bed_file)
-        fragments_with_bait_coords = baited_fragment_bt_file.intersect(bait_bt_file, wa=True, wb=True, F=1.00)
+        fragments_with_bait_coords = baited_fragment_bt_file.intersect(bait_bt_file, wa=True, wb=True, F=overlap_fraction)
 
         # Check bait to fragment assignment
         print('\t\t[INFO] Total number of baits: ' + '{:,}'.format(len(bait_bt_file)))
