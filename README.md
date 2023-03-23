@@ -14,7 +14,12 @@ Check which Python version you are using:
 ```
 python --version
 ```
-We tested Python versions `3.7`, `3.8` and `3.9` on macOS.
+For convenience, you could do something like this: `alias python=python3.9`
+We tested Python versions `3.7`, `3.8`, `3.9` and `3.10` on macOS.
+<span style="color:red">For Python version `3.11` we get an error when installing the `pysam` package
+[we get an error when pip installing the `pysam` package](https://github.com/pysam-developers/pysam/issues/1154).</span>
+
+
 
 Then change into the cloned directory, create a virtual environment and activate it:
 ```
