@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
 """
-This script takes a path to a directory containing Diachromatic interaction files and combines interactions that occur
-in a specified number of files into one interaction with summed simple and twisted read pair counts.
+This script pools the four read pair counts of interactions from different files found at a given path.
 
-You can find a detailed documentation on this script in the relevant section in the RTD of this repository.
+The usage of pooler is demonstrated in the following Jupyter notebook:
+
+      diachrscripts/jupyter_notebooks/usage/usage_of_pooler.ipynb
 """
 
 import argparse
@@ -16,7 +17,8 @@ from diachr.diachromatic_interaction_set import DiachromaticInteractionSet
 
 parser = argparse.ArgumentParser(description='Combine interactions that occur in a specified number of replicates.')
 parser.add_argument('-o', '--out-prefix', help='Prefix for output.', default='OUT_PREFIX')
-parser.add_argument('-i', '--interaction-files-path', help='Path to directory with Diachromatic interaction files',
+parser.add_argument('-i', '--interaction-files-path', help='Path to directory with Diachromatic interaction files. '
+                                                           'The interaction files may or may not be gzipped.',
                     required=True)
 parser.add_argument('-r', '--required-replicates', help='Required number of replicates.', required=False, default=2)
 

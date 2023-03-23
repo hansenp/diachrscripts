@@ -6,6 +6,12 @@ from scipy import stats
 
 
 class IaFreqDistAnalysis:
+    """
+    This class contains functions required for the analysis of distance-dependent contact frequencies performed in
+    the Jupyter notebook:
+
+        jupyter_notebooks/analysis/distance_dependent_contact_frequencies.ipynb
+    """
 
     def __init__(self):
 
@@ -165,8 +171,8 @@ class IaFreqDistAnalysis:
         """
         This function initializes a data structure that can be filled with interaction numbers or read pair numbers.
 
-        The data structure consists of a dictionary with further sub-dictionaries. At the top level there are six
-        dictionaries, one for each interaction category. In the level below, there are four lists for each category,
+        The data structure consists of a dictionary with further sub-dictionaries. At the top level there are five
+        dictionaries, one for each interaction category. In the level below, there are five lists for each category,
         one for each enrichment category (NN, NE, EN, EE).
 
         In addition to the lists with the pairs, there is a list with chromosomes that were taken into account.

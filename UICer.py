@@ -6,9 +6,9 @@ The script performs the following processing steps:
 1. Randomization: If no P-value threshold is specified, then a threshold is determined using randomization so that
 the FDR remains below 5%.
 
-2. Calling of unbalanced interactions: All interactions that do not have enough read pairs to
-achieve a significant test result at the chosen P-threshold are discarded. The remaining interactions that achieve a
-significant test result are classified as unbalanced and all others as balanced.
+2. Calling of unbalanced interactions: All interactions that do not have enough read pairs to achieve a significant
+test result at the chosen P-value threshold are discarded. The remaining interactions that achieve a significant test
+result are classified as unbalanced and all others as balanced.
 
 3. Selection of comparison sets: From the unbalanced and balanced interactions, two comparison sets are selected that
 are as large as possible and comparable with respect to their total read pair counts per interaction.
@@ -28,8 +28,8 @@ from diachr.randomize_interaction_set import RandomizeInteractionSet
 # Parse command line
 ####################
 
-parser = argparse.ArgumentParser(description='Determine P-value threshold at a chosen FDR threshold, define directed '
-                                             'interactions at this P-value threshold, and select undirected '
+parser = argparse.ArgumentParser(description='Determine P-value threshold at a chosen FDR threshold, define unbalanced '
+                                             'interactions at this P-value threshold, and select balanced '
                                              'reference interactions.')
 parser.add_argument('-o', '--out-prefix',
                     help='Common prefix for all generated files, which can also contain the path.',
@@ -225,7 +225,7 @@ eval_cat_info_report = interaction_set.get_eval_cat_info_report()
 eval_cat_info_table_row = interaction_set.get_eval_cat_info_table_row(out_prefix)
 print()
 
-# Select undirected reference interactions from 'UI'
+# Select balanced reference interactions from 'UI'
 interaction_set.select_reference_interactions(verbose=True)
 select_ref_info_report = interaction_set.get_select_ref_info_report()
 select_ref_info_table_row = interaction_set.get_select_ref_info_table_row(out_prefix)

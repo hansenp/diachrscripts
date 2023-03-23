@@ -12,11 +12,13 @@ from shapely.errors import ShapelyDeprecationWarning
 warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
 
 
-
 class TIMViz:
     """
     This class coordinates the visualization of interactions as polygons along the genomic axis (triangle interaction
-    maps).
+    maps) performed in the Jupyter notebooks:
+
+        jupyter_notebooks/analysis/visualization_of_configurations.ipynb
+        jupyter_notebooks/usage/usage_of_TIMViz.ipynb
     """
 
     def __init__(self, i_file: str = None, t_file: str = None, b_file: str = None, verbose: bool = False) -> None:

@@ -8,8 +8,9 @@ from re import sub
 
 class BaitAnalysis:
     """
-    This class contains functions required for the bait analysis performed in the Jupyter notebook
-    'jupyter_notebooks/analysis/bait_analysis.ipynb'.
+    This class contains functions required for the bait analysis performed in the Jupyter notebook:
+
+        jupyter_notebooks/analysis/bait_analysis.ipynb
     """
 
     def __init__(self):

@@ -6,8 +6,9 @@ import seaborn as sns
 
 class UnbaitedFragmentAnalysis:
     """
-    This class contains functions required for the analysis of unbaited fragments performed in the Jupyter notebook
-    'jupyter_notebooks/analysis/unbaited_fragment_analysis.ipynb'.
+    This class contains functions required for the analysis of unbaited fragments performed in the Jupyter notebook:
+
+        jupyter_notebooks/analysis/unbaited_fragment_analysis.ipynb
     """
 
     def __init__(self):

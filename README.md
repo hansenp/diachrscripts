@@ -60,7 +60,7 @@ In the browser, select the notebook
 ## Documentation
 
 Change into the `docs` directory and generate
-the RTD documentation as follows:
+the ReadTheDocs documentation as follows:
 ```
 (dscripts)$ cd docs
 (dscripts)$ make html

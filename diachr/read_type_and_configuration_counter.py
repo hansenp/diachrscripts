@@ -6,6 +6,12 @@ from .diachromatic_interaction_set import DiachromaticInteractionSet
 
 
 class ReadTypeAndConfigCounter:
+    """
+    This class contains functions required for the analysis of interaction configurations performed in the Jupyter
+    notebook:
+
+        jupyter_notebooks/analysis/frequencies_of_interaction_configurations.ipynb
+    """
 
     def __init__(self):
         self.x = 1

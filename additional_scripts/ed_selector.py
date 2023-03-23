@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 
 """
-This script takes a BED file with coordinates of digests selected for enrichment as well as a Diachromatic digest file
-and creates a new Diachromatic digest file in which digest regions that are contained in the BED file are marked with a
- '1' and all other digests are marked with '0'.
+This script is used to prepare a DigestMap file as Diachromatic expects it as input. A DigestMap file contains all
+restriction fragments of the genome resulting from a complete digestion with a given enzyme, with all fragments
+selected for enrichment marked accordingly. Such a file can be exported from GOPHER for a bait design created in
+GOPHER.
 
-You can find a detailed documentation on this script in the relevant section of RTD for this repository.
+If the bait design was not created in GOPHER, a corresponding template DigestMap file (for a specific genome and
+enzyme) can be passed to this script along with a BED file containing the coordinates of all fragments selected for
+enrichment. The result is a DigestMap file with the corresponding fragments marked as enriched.
 
-THIS SCRIPT IS NECESSARY TO REPRODUCE THE RESULTS. DO NOT DELETE!
+Documentation for this script can be found in the ReadTheDocs documentation for this repository in section
+“Diachromatic input preparation”.
 """
 
 import argparse
@@ -43,7 +47,6 @@ print("[INFO] Reading list with digests selected for enrichment ...")
 enriched_digests_set = set()
 with open(enriched_digests_file, 'rt') as fp:
     for line in fp:
-        #chr, sta, end = line.rstrip().split('\t')
         fields = line.rstrip().split('\t')
         chr = fields[0]
         sta = fields[1]

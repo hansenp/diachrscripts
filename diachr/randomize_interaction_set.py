@@ -422,19 +422,19 @@ class RandomizeInteractionSet:
 
     def _determine_potentially_significant_inter_num_at_nominal_alphas_log10(self, log10_nominal_alphas: [float], rp_nums: [int]):
         """
-        Determine numbers of potentially significant interactions at different nominal alphas (thresholds).
+        Determine numbers of classifiable interactions at different nominal alphas (thresholds).
 
         :param log10_nominal_alphas: List of nominal alphas (negative decadic logarithm)
         :param rp_nums: List of read pair numbers
         :return: List which has the same length as 'nominal_alphas' and contains, for each nominal alpha 'a',
-        the number of potentially significant interactions.
+        the number of classifiable interactions.
         """
 
         # Sort input lists in ascending order
         log10_nominal_alphas = sorted(log10_nominal_alphas, reverse=True)
         rp_nums = sorted(rp_nums, reverse=True)
 
-        # List of potentially  significant interactions that will be returned
+        # List of potentially significant interactions that will be returned
         sig_num_list = []
 
         # Index variable for the list of read pair numbers
