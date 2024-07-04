@@ -12,7 +12,7 @@ $ git clone https://github.com/TheJacksonLaboratory/diachrscripts.git
 
 Check which Python version you are using:
 ```
-python --version
+$ python --version
 ```
 For convenience, you could do something like this: `alias python=python3.9`.
 We tested Python versions `3.7`, `3.8`, `3.9` and `3.10` on macOS.

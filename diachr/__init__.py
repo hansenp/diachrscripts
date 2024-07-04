@@ -8,6 +8,7 @@ from .ia_freq_dist_analysis import IaFreqDistAnalysis
 from .baited_digest import BaitedDigest
 from .baited_digest_set import BaitedDigestSet
 from .bait_analysis import BaitAnalysis
+from .original_bait_analysis import OriginalBaitAnalysis
 from .unbaited_fragment_analysis import UnbaitedFragmentAnalysis
 from .TIMViz import TIMViz
 
@@ -22,6 +23,7 @@ __all__ = [
     "BaitedDigest",
     "BaitedDigestSet",
     "BaitAnalysis",
+    "OriginalBaitAnalysis",
     "UnbaitedFragmentAnalysis",
     "TIMViz"
 ]
